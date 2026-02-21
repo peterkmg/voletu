@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "voletu",
+  "version": "0.1.0",
+  "identifier": "dev.peterkmg.voletu",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @voletu/frontend dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm --filter @voletu/frontend build",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "voletu",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:3030 http://127.0.0.1:3030; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
