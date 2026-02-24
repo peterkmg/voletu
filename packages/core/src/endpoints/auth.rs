@@ -53,7 +53,9 @@ async fn change_password(
 }
 
 pub fn auth_routes(state: Arc<ApiState>) -> OpenApiRouter {
-  let public = OpenApiRouter::new().routes(routes!(login, change_password));
+  let public = OpenApiRouter::new()
+    .routes(routes!(login))
+    .routes(routes!(change_password));
   //     .routes(routes!(register))
 
   // let protected = OpenApiRouter::new()

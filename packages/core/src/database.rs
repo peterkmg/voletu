@@ -6,9 +6,9 @@ use uuid::Uuid;
 
 use crate::{
   config::{DatabaseType, DbConfig, NodeConfig},
-  constants::{DEFAULT_DATABASE_COMMON_NAME, DEFAULT_DATABASE_NODE_TYPE},
-  entities::{database_instance, local, role},
-  utils::{jwt, paths::ensure_parent_dir},
+  constants::{DEFAULT_ADMIN_USERNAME, DEFAULT_DATABASE_COMMON_NAME, DEFAULT_DATABASE_NODE_TYPE},
+  entities::{database_instance, local, role, user},
+  utils::{jwt, password::hash_password, paths::ensure_parent_dir},
 };
 
 pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Model> {
@@ -22,6 +22,15 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
     trace!("Seeded {} role.", role_type.as_str());
   }
   debug!("Roles seeded.");
+
+  let _ = user::ActiveModel {
+    username: Set(DEFAULT_ADMIN_USERNAME.to_string()),
+    password_hash: Set(hash_password("admin").await?),
+    role_id: Set(role::RoleType::Admin.uuid()),
+    ..Default::default()
+  }
+  .insert(db)
+  .await?;
 
   let instance = database_instance::ActiveModel {
     common_name: Set(DEFAULT_DATABASE_COMMON_NAME.to_string()),
