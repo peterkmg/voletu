@@ -14,3 +14,12 @@ impl JwtConfig {
     }
   }
 }
+
+impl Default for JwtConfig {
+  fn default() -> Self {
+    Self {
+      expiration_seconds: 28800,
+      refresh_expiration_seconds: 604800,
+    }
+  }
+}

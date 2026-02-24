@@ -1,7 +1,7 @@
 use anyhow::{Ok, Result};
 use uuid::Uuid;
 
-use crate::{utils::jwt::Claims, ApiConfig};
+use crate::{config::ApiConfig, utils::jwt::Claims};
 
 pub struct TokenService {
   secret: String,
