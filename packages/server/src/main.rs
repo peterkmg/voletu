@@ -1,23 +1,12 @@
 mod config;
-mod logging;
-
-use voletu_core::init_api;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-  logging::init_logging()?;
+  let (host, port, db_cfg, jwt_cfg, logging_cfg) = config::load_config_from_env();
+  voletu_core::logging::init_logging(&logging_cfg)?;
 
-  tracing::info!("=== Voletu Server Starting ===");
+  tracing::info!("Starting voletu server...");
 
-  let cfg = config::load_config_from_env();
-
-  tracing::info!("Config: address={}", cfg.address);
-
-  let (router, _openapi) = init_api(cfg.clone()).await?.split_for_parts();
-
-  let listener = tokio::net::TcpListener::bind(cfg.address).await?;
-  tracing::info!("Listening on http://{}", cfg.address);
-
-  axum::serve(listener, router).await?;
+  voletu_core::serve_api(host, port, db_cfg, jwt_cfg).await?;
   Ok(())
 }

@@ -1,76 +1,65 @@
-use std::{env, net::SocketAddr};
+use std::{env, path::PathBuf};
 
-use voletu_core::{AppConfig, DatabaseConfig, DatabaseType, JwtConfig};
+use voletu_core::{DatabaseType, DbConfig, DbParams, JwtConfig, LoggingConfig};
 
 fn env_required(name: &str) -> String {
   env::var(name).unwrap_or_else(|_| panic!("Missing required environment variable: {name}"))
 }
 
-fn env_parse_or_default<T>(name: &str, default: T) -> T
+fn env_parse_required<T>(name: &str) -> T
 where
   T: std::str::FromStr,
   <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-  match env::var(name) {
-    Ok(raw) => raw
-      .parse::<T>()
-      .unwrap_or_else(|err| panic!("Invalid value for {name}: {err}")),
-    Err(_) => default,
-  }
+  let raw = env_required(name);
+  raw
+    .parse::<T>()
+    .unwrap_or_else(|err| panic!("Invalid value for {name}: {err}"))
 }
 
-pub fn load_config_from_env() -> AppConfig {
+pub fn load_config_from_env() -> (String, String, DbConfig, JwtConfig, LoggingConfig) {
   let _ = dotenvy::dotenv();
 
   let host = env_required("API_HOST");
   let port = env_required("API_PORT");
+  let _ = port
+    .parse::<u16>()
+    .unwrap_or_else(|_| panic!("API_PORT must be a valid port number"));
 
-  let address: SocketAddr = format!("{}:{}", host, port)
-    .parse()
-    .expect("API_HOST and API_PORT must form a valid socket address");
+  let jwt = JwtConfig::new(
+    env_parse_required("JWT_EXPIRATION_SECONDS"),
+    env_parse_required("JWT_REFRESH_EXPIRATION_SECONDS"),
+  );
 
-  let jwt = JwtConfig {
-    secret: env_required("JWT_SECRET"),
-    expiration_seconds: env_parse_or_default("JWT_EXPIRATION_SECONDS", 28800_i64),
-    refresh_expiration_seconds: env_parse_or_default("JWT_REFRESH_EXPIRATION_SECONDS", 604800_i64),
-  };
+  let db_type = DatabaseType::parse(&env_required("DB_TYPE")).unwrap_or_else(|err| panic!("{err}"));
+  let db_password = env_required("DB_PASSWORD");
 
-  let db_type_raw = env_required("DB_TYPE");
-  let db_type = match db_type_raw.to_ascii_lowercase().as_str() {
-    "sqlite" => DatabaseType::SQLite,
-    "postgres" | "postgresql" => DatabaseType::Postgres,
-    "mysql" => DatabaseType::MySQL,
-    _ => panic!(
-      "Invalid DB_TYPE value '{}'. Expected sqlite|postgres|mysql",
-      db_type_raw
+  let db = match db_type {
+    DatabaseType::SQLite => DbConfig::new(DbParams::sqlite(env_required("DB_FILE")), db_password),
+    DatabaseType::Postgres => DbConfig::new(
+      DbParams::postgres(
+        env_required("DB_HOST"),
+        env_parse_required("DB_PORT"),
+        env_required("DB_NAME"),
+        env_required("DB_USER"),
+      ),
+      db_password,
+    ),
+    DatabaseType::MySQL => DbConfig::new(
+      DbParams::mysql(
+        env_required("DB_HOST"),
+        env_parse_required("DB_PORT"),
+        env_required("DB_NAME"),
+        env_required("DB_USER"),
+      ),
+      db_password,
     ),
   };
 
-  let password = env_required("DB_PASSWORD");
+  let logging = LoggingConfig::new(
+    env_required("LOG_FILTER"),
+    PathBuf::from(env_required("LOG_FILE")),
+  );
 
-  let db = match db_type {
-    DatabaseType::SQLite => {
-      let file = env_required("DB_FILE");
-      DatabaseConfig::sqlite(&file, password)
-    }
-    DatabaseType::Postgres | DatabaseType::MySQL => {
-      let default_port = if matches!(db_type, DatabaseType::Postgres) {
-        5432_u16
-      } else {
-        3306_u16
-      };
-
-      DatabaseConfig {
-        db_type,
-        file: None,
-        host: Some(env_required("DB_HOST")),
-        port: Some(env_parse_or_default("DB_PORT", default_port)),
-        database: Some(env_required("DB_NAME")),
-        username: Some(env_required("DB_USER")),
-        password,
-      }
-    }
-  };
-
-  AppConfig { address, jwt, db }
+  (host, port, db, jwt, logging)
 }
