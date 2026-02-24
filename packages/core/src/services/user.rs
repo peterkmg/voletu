@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use sea_orm::{
-  ActiveModelBehavior, ActiveModelTrait, ActiveValue::Set, DatabaseConnection, DeleteResult,
-  EntityLoaderTrait, EntityTrait,
-};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, DatabaseConnection, DeleteResult, EntityLoaderTrait, EntityTrait};
 use uuid::Uuid;
 
 use crate::{
@@ -82,7 +79,7 @@ impl UserService {
       .map_err(ApiError::Internal)?;
 
     // Build and insert the active model
-    let mut am = user::ActiveModel::new();
+    let mut am: user::ActiveModel = Default::default();
     am.username = Set(dto.username.clone());
     am.fullname = Set(dto.fullname.clone());
     am.password_hash = Set(password_hash);
