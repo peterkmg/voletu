@@ -1,4 +1,10 @@
-use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
+use sea_orm::prelude::async_trait::async_trait;
+use sea_orm::ConnectionTrait;
+use sea_orm::{
+  entity::prelude::*,
+  model,
+  ActiveValue::{NotSet, Set},
+};
 
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
@@ -14,11 +20,12 @@ pub struct Model {
   pub jwt_secret: String, // rotating this value invalidates all existing tokens.
 }
 
+#[async_trait]
 impl ActiveModelBehavior for ActiveModel {
-  fn new() -> Self {
-    Self {
-      id: Set(1), // singleton row — there is exactly one record, always with id = 1
-      ..Default::default()
+  async fn before_save<C: ConnectionTrait>(mut self, _db: &C, insert: bool) -> Result<Self, DbErr> {
+    if insert && matches!(self.id, NotSet) {
+      self.id = Set(1);
     }
+    Ok(self)
   }
 }

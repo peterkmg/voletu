@@ -67,7 +67,7 @@ axum-valid = { version = "0.24", features = [
 ] }
 argon2 = "0.5"
 axum-extra = { version = "0.12", features = [ "typed-header" ] }
-jsonwebtoken = { version = "10" }
+jsonwebtoken = { version = "10", default-features = false, features = ["rust_crypto"] }
 
 libsqlite3-sys = { version = "0.30.1", features = [ "bundled-sqlcipher-vendored-openssl", ] }
 

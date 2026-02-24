@@ -1,6 +1,10 @@
 use sea_orm::prelude::async_trait::async_trait;
 use sea_orm::ConnectionTrait;
-use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
+use sea_orm::{
+  entity::prelude::*,
+  model,
+  ActiveValue::{NotSet, Set},
+};
 use uuid::Uuid;
 
 use crate::dtos::user::UserResponse;
@@ -24,19 +28,19 @@ pub struct Model {
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
-  fn new() -> Self {
-    Self {
-      id: Set(Uuid::now_v7()),
-      created_at: Set(ChronoUtc::now()),
-      updated_at: Set(ChronoUtc::now()),
-      ..Default::default()
-    }
-  }
-
   async fn before_save<C: ConnectionTrait>(mut self, _db: &C, insert: bool) -> Result<Self, DbErr> {
-    if !insert {
-      self.updated_at = Set(ChronoUtc::now());
+    let now = ChronoUtc::now();
+
+    if insert {
+      if matches!(self.id, NotSet) {
+        self.id = Set(Uuid::now_v7());
+      }
+      if matches!(self.created_at, NotSet) {
+        self.created_at = Set(now);
+      }
     }
+
+    self.updated_at = Set(now);
     Ok(self)
   }
 }

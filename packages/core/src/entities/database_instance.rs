@@ -1,4 +1,10 @@
-use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
+use sea_orm::prelude::async_trait::async_trait;
+use sea_orm::ConnectionTrait;
+use sea_orm::{
+  entity::prelude::*,
+  model,
+  ActiveValue::{NotSet, Set},
+};
 use uuid::Uuid;
 
 #[model]
@@ -15,11 +21,12 @@ pub struct Model {
   pub base_id: Option<Uuid>,
 }
 
+#[async_trait]
 impl ActiveModelBehavior for ActiveModel {
-  fn new() -> Self {
-    Self {
-      id: Set(Uuid::now_v7()),
-      ..Default::default()
+  async fn before_save<C: ConnectionTrait>(mut self, _db: &C, insert: bool) -> Result<Self, DbErr> {
+    if insert && matches!(self.id, NotSet) {
+      self.id = Set(Uuid::now_v7());
     }
+    Ok(self)
   }
 }
