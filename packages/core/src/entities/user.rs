@@ -1,11 +1,11 @@
 use sea_orm::prelude::async_trait::async_trait;
 use sea_orm::ConnectionTrait;
-use sea_orm::{entity::prelude::*, ActiveValue::Set};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
 use crate::dtos::user::UserResponse;
 
-#[sea_orm::model]
+#[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
 pub struct Model {
@@ -52,7 +52,7 @@ impl ModelEx {
       id: self.id,
       username: self.username.clone(),
       fullname: self.fullname.clone(),
-      role: role.name.clone(),
+      role: role.common_name.as_str().into(),
     })
   }
 }

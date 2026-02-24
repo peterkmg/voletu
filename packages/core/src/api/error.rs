@@ -3,58 +3,22 @@ use axum::{
   response::{IntoResponse, Response},
   Json,
 };
-use serde::Serialize;
-use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ErrorData {
-  pub code: String,
-  pub message: String,
-}
+use super::response::ApiResponse;
 
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ApiResponse<T: Serialize> {
-  pub success: bool,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub data: Option<T>,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub error: Option<ErrorData>,
-}
-
-impl<T: Serialize> IntoResponse for ApiResponse<T> {
-  fn into_response(self) -> Response {
-    let status = if self.success {
-      StatusCode::OK
-    } else {
-      StatusCode::INTERNAL_SERVER_ERROR
-    };
-    (status, Json(self)).into_response()
-  }
-}
-
-impl<T: Serialize> ApiResponse<T> {
-  pub fn success(data: T) -> Self {
-    Self {
-      success: true,
-      data: Some(data),
-      error: None,
-    }
-  }
-
-  pub fn error(code: String, message: String) -> Self {
-    Self {
-      success: false,
-      data: None,
-      error: Some(ErrorData { code, message }),
-    }
-  }
-}
-
+/// All errors that can be returned from API handlers.
+///
+/// Variants map to HTTP status codes and are automatically logged at the
+/// appropriate level when converted to an HTTP response:
+/// - 4xx client errors → `WARN`
+/// - 5xx server errors → `ERROR`
 #[derive(Debug, thiserror::Error)]
 pub enum ApiError {
   #[error("Not found: {0}")]
   NotFound(String),
-  #[error("Validation: {0}")]
+  #[error("Bad request: {0}")]
+  BadRequest(String),
+  #[error("Validation error: {0}")]
   Validation(String),
   #[error("Conflict: {0}")]
   Conflict(String),
@@ -72,7 +36,7 @@ impl ApiError {
   pub fn status_code(&self) -> StatusCode {
     match self {
       Self::NotFound(_) => StatusCode::NOT_FOUND,
-      Self::Validation(_) => StatusCode::BAD_REQUEST,
+      Self::BadRequest(_) | Self::Validation(_) => StatusCode::BAD_REQUEST,
       Self::Conflict(_) => StatusCode::CONFLICT,
       Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
       Self::Forbidden(_) => StatusCode::FORBIDDEN,
@@ -83,6 +47,7 @@ impl ApiError {
   pub fn error_code(&self) -> &'static str {
     match self {
       Self::NotFound(_) => "NOT_FOUND",
+      Self::BadRequest(_) => "BAD_REQUEST",
       Self::Validation(_) => "VALIDATION_ERROR",
       Self::Conflict(_) => "CONFLICT",
       Self::Unauthorized(_) => "UNAUTHORIZED",
@@ -95,10 +60,16 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
   fn into_response(self) -> Response {
+    // Log at the appropriate level so callers don't have to.
     match &self {
       Self::Internal(err) => tracing::error!("Internal error: {err:#}"),
       Self::Database(err) => tracing::error!("Database error: {err}"),
-      _ => {} // todo: handle other errors with appropriate logging levels and messages
+      Self::NotFound(msg) => tracing::warn!("Not found: {msg}"),
+      Self::BadRequest(msg) => tracing::warn!("Bad request: {msg}"),
+      Self::Validation(msg) => tracing::warn!("Validation error: {msg}"),
+      Self::Conflict(msg) => tracing::warn!("Conflict: {msg}"),
+      Self::Unauthorized(msg) => tracing::warn!("Unauthorized: {msg}"),
+      Self::Forbidden(msg) => tracing::warn!("Forbidden: {msg}"),
     }
 
     let status = self.status_code();
@@ -110,33 +81,8 @@ impl IntoResponse for ApiError {
   }
 }
 
-// impl From<DbErr> for ApiError {
-//   fn from(db_error: DbErr) -> Self {
-//     match &db_error {
-//       DbErr::RecordNotFound(msg) => Self::NotFound(msg.clone()),
-//       _ => Self::Database(db_error),
-//     }
-//   }
-// }
-
-// impl From<anyhow::Error> for ApiError {
-//   fn from(err: anyhow::Error) -> Self {
-//     Self::Internal(err)
-//   }
-// }
-
 impl From<serde_json::Error> for ApiError {
   fn from(err: serde_json::Error) -> Self {
     Self::Validation(err.to_string())
   }
 }
-
-pub type ApiResult<T> = Result<ApiResponse<T>, ApiError>;
-// impl IntoResponse for ApiResult<()> {
-//   fn into_response(self) -> Response {
-//     match self {
-//       Ok(success) => (StatusCode::OK, Json(success)).into_response(),
-//       Err(err) => err.into_response(),
-//     }
-//   }
-// }

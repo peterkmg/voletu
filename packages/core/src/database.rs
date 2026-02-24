@@ -1,122 +1,84 @@
-use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
-use serde::{Deserialize, Serialize};
-use tracing::log::LevelFilter;
+use sea_orm::{
+  ActiveModelTrait, ActiveValue::Set, ConnectOptions, Database, DatabaseConnection, EntityTrait,
+};
+use tracing::{debug, log::LevelFilter, trace};
+use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum DatabaseType {
-  SQLite,
-  Postgres,
-  MySQL,
+use crate::{
+  config::{DatabaseType, DbConfig, NodeConfig},
+  constants::{DEFAULT_DATABASE_COMMON_NAME, DEFAULT_DATABASE_NODE_TYPE},
+  entities::{database_instance, local, role},
+  utils::{jwt, paths::ensure_parent_dir},
+};
+
+pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Model> {
+  debug!("Bootstrapping default data...");
+  for role_type in role::RoleType::all() {
+    let m = role::ActiveModel {
+      id: Set(role_type.uuid()),
+      common_name: Set(role_type.clone()),
+    };
+    m.insert(db).await?;
+    trace!("Seeded {} role.", role_type.as_str());
+  }
+  debug!("Roles seeded.");
+
+  let instance = database_instance::ActiveModel {
+    common_name: Set(DEFAULT_DATABASE_COMMON_NAME.to_string()),
+    node_type: Set(DEFAULT_DATABASE_NODE_TYPE.to_string()),
+    base_id: Set(None),
+    ..Default::default()
+  }
+  .insert(db)
+  .await?;
+
+  debug!("Seeded default database instance with id {}.", instance.id);
+
+  let local = local::ActiveModel {
+    local_db_id: Set(instance.id),
+    is_initialized: Set(false),
+    jwt_secret: Set(jwt::generate_secret()),
+    ..Default::default()
+  }
+  .insert(db)
+  .await?;
+
+  debug!("Seeded local settings.");
+
+  Ok(local)
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DatabaseConfig {
-  pub db_type: DatabaseType,
-  pub file: Option<String>, // sqlite
-  pub host: Option<String>,
-  pub port: Option<u16>,
-  pub database: Option<String>,
-  pub username: Option<String>,
-  pub password: String,
-}
-
-impl DatabaseConfig {
-  pub fn sqlite(filename: impl Into<String>, passwd: impl Into<String>) -> Self {
-    Self {
-      db_type: DatabaseType::SQLite,
-      file: Some(filename.into()),
-      host: None,
-      port: None,
-      database: None,
-      username: None,
-      password: passwd.into(),
-    }
-  }
-
-  fn external(
-    db_type: DatabaseType,
-    host: impl Into<String>,
-    port: u16,
-    db: impl Into<String>,
-    user: impl Into<String>,
-    passwd: impl Into<String>,
-  ) -> Self {
-    Self {
-      db_type,
-      file: None,
-      host: Some(host.into()),
-      port: Some(port),
-      database: Some(db.into()),
-      username: Some(user.into()),
-      password: passwd.into(),
-    }
-  }
-
-  pub fn postgres(
-    host: impl Into<String>,
-    port: u16,
-    db: impl Into<String>,
-    user: impl Into<String>,
-    passwd: impl Into<String>,
-  ) -> Self {
-    Self::external(DatabaseType::Postgres, host, port, db, user, passwd)
-  }
-
-  pub fn mysql(
-    host: impl Into<String>,
-    port: u16,
-    db: impl Into<String>,
-    user: impl Into<String>,
-    passwd: impl Into<String>,
-  ) -> Self {
-    Self::external(DatabaseType::MySQL, host, port, db, user, passwd)
-  }
-
-  /// Build database connection URL
-  pub fn connection_url(&self) -> String {
-    match self.db_type {
-      DatabaseType::SQLite => {
-        let file = self
-          .file
-          .as_deref()
-          .expect("SQLite configuration requires a file path");
-        format!("sqlite://{}?mode=rwc", file)
-      }
-      DatabaseType::Postgres | DatabaseType::MySQL => {
-        let host = self.host.as_deref().expect("Host is required");
-        let port = self.port.expect("Port is required");
-        let database = self.database.as_deref().expect("Database name is required");
-        let username = self.username.as_deref().expect("Username is required");
-        let password = self.password.as_str();
-        let scheme = match self.db_type {
-          DatabaseType::Postgres => "postgres",
-          DatabaseType::MySQL => "mysql",
-          _ => unreachable!(),
-        };
-
-        format!(
-          "{}://{}:{}@{}:{}/{}",
-          scheme, username, password, host, port, database
-        )
-      }
-    }
-  }
-}
-
-pub async fn init_database(cfg: &DatabaseConfig) -> Result<DatabaseConnection, DbErr> {
-  tracing::info!("Initializing database...");
+pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection, NodeConfig)> {
+  trace!("Initializing database options...");
 
   let mut options = ConnectOptions::new(cfg.connection_url());
   options.sqlx_logging(true);
   options.sqlx_logging_level(LevelFilter::Trace);
 
-  if let DatabaseType::SQLite = cfg.db_type {
+  if matches!(cfg.params.db_type, DatabaseType::SQLite) {
+    if let Some(file) = &cfg.params.file {
+      ensure_parent_dir(file)?;
+    }
     options.sqlcipher_key(cfg.password.clone());
   }
 
-  Ok(
-    Database::connect(options)
-      .await
-      .expect("Failed to connect to database"),
-  )
+  trace!("Connecting to database...");
+  let db = Database::connect(options).await?;
+  trace!("Database connection established.");
+
+  trace!("Synchronizing database schema...");
+  db.get_schema_registry("voletu-core::entities::*")
+    .sync(&db)
+    .await?;
+  trace!("Database schema synchronized.");
+
+  let local = local::Entity::find()
+    .one(&db)
+    .await?
+    .unwrap_or(seed_defaults(&db).await?);
+
+  Ok((db, NodeConfig {
+    database_id: Uuid::from(local.local_db_id),
+    jwt_secret: local.jwt_secret,
+  }))
 }

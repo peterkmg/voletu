@@ -9,8 +9,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
-  api::{ApiResponse, ApiResult},
-  app::AppState,
+  api::{ApiResponse, ApiResult, ApiState},
   dtos::user::{CreateUserRequest, UserResponse},
 };
 
@@ -22,7 +21,7 @@ use crate::{
   )
 )]
 #[axum::debug_handler]
-async fn list_users(State(state): State<Arc<AppState>>) -> ApiResult<Vec<UserResponse>> {
+async fn list_users(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<UserResponse>> {
   tracing::debug!("GET /users");
   let users = state.user_service.list().await?;
   Ok(ApiResponse::success(users))
@@ -41,7 +40,7 @@ async fn list_users(State(state): State<Arc<AppState>>) -> ApiResult<Vec<UserRes
 )]
 #[axum::debug_handler]
 async fn create_user(
-  State(state): State<Arc<AppState>>,
+  State(state): State<Arc<ApiState>>,
   Valid(Json(req)): Valid<Json<CreateUserRequest>>,
 ) -> ApiResult<UserResponse> {
   tracing::debug!(username = %req.username, "POST /users");
@@ -61,13 +60,13 @@ async fn create_user(
   )
 )]
 #[axum::debug_handler]
-async fn delete_user(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>) -> ApiResult<()> {
+async fn delete_user(State(state): State<Arc<ApiState>>, Path(id): Path<Uuid>) -> ApiResult<()> {
   tracing::debug!(id = %id, "DELETE /users/:id");
   state.user_service.delete(id).await?;
   Ok(ApiResponse::success(()))
 }
 
-pub fn user_routes(state: Arc<AppState>) -> OpenApiRouter {
+pub fn user_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(list_users, create_user))
     .routes(routes!(delete_user))

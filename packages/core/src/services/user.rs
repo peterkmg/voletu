@@ -9,8 +9,11 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos::user::{CreateUserRequest, UserResponse},
-  entities::{role, user},
-  utils::hasher::hash_password,
+  entities::{
+    role::{self, RoleType},
+    user,
+  },
+  utils::password::hash_password,
 };
 
 pub struct UserService {
@@ -58,9 +61,14 @@ impl UserService {
       )));
     }
 
+    let req_role = RoleType::from_str(&dto.role_name).map_err(|_| {
+      tracing::warn!(role_name = %dto.role_name, "Invalid role name provided");
+      ApiError::BadRequest(format!("Invalid role name '{}'", dto.role_name))
+    })?;
+
     // Resolve role
     let role: role::ModelEx = role::Entity::load()
-      .filter_by_name(&dto.role_name)
+      .filter_by_common_name(req_role)
       .one(&*self.db)
       .await?
       .ok_or_else(|| {

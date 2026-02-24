@@ -5,10 +5,14 @@ use axum_valid::Valid;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
-  api::{ApiResponse, ApiResult},
-  app::AppState,
-  dtos::auth::{LoginRequest, LoginResponse},
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::auth::{ChangePasswordRequest, LoginRequest, LoginResponse},
 };
+
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+struct ChangePasswordResponse {
+  message: String,
+}
 
 #[utoipa::path(
   post,
@@ -21,15 +25,35 @@ use crate::{
 )]
 #[axum::debug_handler]
 async fn login(
-  State(state): State<Arc<AppState>>,
+  State(state): State<Arc<ApiState>>,
   Valid(Json(req)): Valid<Json<LoginRequest>>,
 ) -> ApiResult<LoginResponse> {
   let res = state.auth_service.authenticate(&req).await?;
   Ok(ApiResponse::success(res))
 }
 
-pub fn auth_routes(state: Arc<AppState>) -> OpenApiRouter {
-  let public = OpenApiRouter::new().routes(routes!(login));
+#[utoipa::path(
+  post,
+  path = "/change-password",
+  request_body = ChangePasswordRequest,
+  responses(
+    (status = 200, description = "Password changed", body = ApiResponse<ChangePasswordResponse>),
+    (status = 401, description = "Unauthorized")
+  )
+)]
+#[axum::debug_handler]
+async fn change_password(
+  State(state): State<Arc<ApiState>>,
+  Valid(Json(req)): Valid<Json<ChangePasswordRequest>>,
+) -> ApiResult<ChangePasswordResponse> {
+  state.auth_service.change_password(&req).await?;
+  Ok(ApiResponse::success(ChangePasswordResponse {
+    message: "Password changed".to_string(),
+  }))
+}
+
+pub fn auth_routes(state: Arc<ApiState>) -> OpenApiRouter {
+  let public = OpenApiRouter::new().routes(routes!(login, change_password));
   //     .routes(routes!(register))
 
   // let protected = OpenApiRouter::new()

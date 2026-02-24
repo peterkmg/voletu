@@ -8,16 +8,15 @@ use axum_extra::headers::authorization::Bearer;
 use axum_extra::headers::Authorization;
 use chrono::Utc;
 
-use crate::api::ApiError;
-use crate::app::AppState;
+use crate::api::{ApiError, ApiState};
 
 pub async fn auth_middleware(
-  State(state): State<Arc<AppState>>,
+  State(state): State<Arc<ApiState>>,
   TypedHeader(auth): TypedHeader<Authorization<Bearer>>,
   mut req: Request,
   next: Next,
 ) -> Result<Response, ApiError> {
-  let claims = state.jwt_service.verify_jwt(auth.token()).await?;
+  let claims = state.jwt_service.verify_access(auth.token()).await?;
 
   if claims.exp < Utc::now().timestamp() as usize {
     return Err(ApiError::Unauthorized("Token expired".to_string()));

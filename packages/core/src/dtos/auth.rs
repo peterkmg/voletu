@@ -19,3 +19,13 @@ pub struct LoginResponse {
   pub refresh_token: String,
   pub user: UserResponse,
 }
+
+#[derive(Debug, Deserialize, ToSchema, Validate)]
+pub struct ChangePasswordRequest {
+  #[validate(length(min = 3))]
+  pub username: String,
+  #[validate(length(min = 6))]
+  pub current_password: String,
+  #[validate(length(min = 8))]
+  pub new_password: String,
+}
