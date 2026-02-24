@@ -1,5 +1,6 @@
 use sea_orm::{
   ActiveModelTrait, ActiveValue::Set, ConnectOptions, Database, DatabaseConnection, EntityTrait,
+  TransactionTrait,
 };
 use tracing::{debug, log::LevelFilter, trace};
 use uuid::Uuid;
@@ -13,12 +14,14 @@ use crate::{
 
 pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Model> {
   debug!("Bootstrapping default data...");
+  let txn = db.begin().await?;
+
   for role_type in role::RoleType::all() {
     let m = role::ActiveModel {
       id: Set(role_type.uuid()),
       common_name: Set(role_type.clone()),
     };
-    m.insert(db).await?;
+    m.insert(&txn).await?;
     trace!("Seeded {} role.", role_type.as_str());
   }
   debug!("Roles seeded.");
@@ -29,7 +32,7 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
     role_id: Set(role::RoleType::Admin.uuid()),
     ..Default::default()
   }
-  .insert(db)
+  .insert(&txn)
   .await?;
 
   let instance = database_instance::ActiveModel {
@@ -38,7 +41,7 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
     base_id: Set(None),
     ..Default::default()
   }
-  .insert(db)
+  .insert(&txn)
   .await?;
 
   debug!("Seeded default database instance with id {}.", instance.id);
@@ -49,8 +52,10 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
     jwt_secret: Set(jwt::generate_secret()),
     ..Default::default()
   }
-  .insert(db)
+  .insert(&txn)
   .await?;
+
+  txn.commit().await?;
 
   debug!("Seeded local settings.");
 
