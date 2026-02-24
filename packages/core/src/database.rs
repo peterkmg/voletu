@@ -86,10 +86,10 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     .await?;
   trace!("Database schema synchronized.");
 
-  let local = local::Entity::find()
-    .one(&db)
-    .await?
-    .unwrap_or(seed_defaults(&db).await?);
+  let local = match local::Entity::find().one(&db).await? {
+    Some(existing) => existing,
+    None => seed_defaults(&db).await?,
+  };
 
   Ok((db, NodeConfig {
     database_id: Uuid::from(local.local_db_id),
