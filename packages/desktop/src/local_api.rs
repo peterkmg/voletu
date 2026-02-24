@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context};
 use tauri::AppHandle;
 use tauri::{async_runtime::JoinHandle, Manager};
+use tokio::sync::oneshot;
 use voletu_core::{
   ensure_dir, ensure_parent_dir, logging::init_logging, resolve_relative, DatabaseType, DbConfig,
   DbParams, JwtConfig, LoggingConfig,
@@ -49,18 +50,14 @@ fn spawn_local_api_task(
   db_params: DbParams,
   jwt_cfg: JwtConfig,
   db_password: String,
-  previous_task: Option<JoinHandle<()>>,
+  shutdown_rx: oneshot::Receiver<()>,
 ) -> JoinHandle<()> {
-  if let Some(task) = previous_task {
-    task.abort();
-  }
-
   let db_cfg = DbConfig::new(db_params, db_password);
   let host = DEFAULT_LOCAL_HOST.to_string();
   let port = DEFAULT_LOCAL_PORT.to_string();
 
   tauri::async_runtime::spawn(async move {
-    if let Err(err) = voletu_core::serve_api(host, port, db_cfg, jwt_cfg).await {
+    if let Err(err) = voletu_core::serve_api_with_shutdown(host, port, db_cfg, jwt_cfg, Some(shutdown_rx)).await {
       tracing::error!("local api exited with error: {err:#}");
     }
   })
@@ -84,12 +81,14 @@ pub fn start_local_mode(
     state.logging_initialized = true;
   }
 
+  let (shutdown_tx, shutdown_rx) = oneshot::channel();
   let task = spawn_local_api_task(
     normalized_db_params,
     jwt_cfg,
     db_password.to_string(),
-    state.local_api_task.take(),
+    shutdown_rx,
   );
+  state.local_api_shutdown = Some(shutdown_tx);
   state.local_api_task = Some(task);
   Ok(local_api_base_url())
 }

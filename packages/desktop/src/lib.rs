@@ -7,7 +7,7 @@ mod local_api;
 mod state;
 
 use state::AppState;
-use tauri::{App, Manager};
+use tauri::{App, Manager, RunEvent};
 use tokio::sync::Mutex;
 
 use crate::init::initialize_state;
@@ -26,7 +26,7 @@ pub fn setup_tauri(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> anyhow::Result<()> {
-  tauri::Builder::default()
+  let app = tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![
       commands::get_startup_state,
@@ -36,6 +36,18 @@ pub fn run() -> anyhow::Result<()> {
       commands::reset_config_and_mode
     ])
     .setup(setup_tauri)
-    .run(tauri::generate_context!())
-    .map_err(|e| e.into())
+    .build(tauri::generate_context!())?;
+
+  app.run(|app_handle, event| {
+    if matches!(event, RunEvent::ExitRequested { .. } | RunEvent::Exit) {
+      let handle = app_handle.clone();
+      tauri::async_runtime::spawn(async move {
+        let state = handle.state::<Mutex<AppState>>();
+        let mut state = state.lock().await;
+        state.stop_local_api().await;
+      });
+    }
+  });
+
+  Ok(())
 }

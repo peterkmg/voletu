@@ -42,7 +42,7 @@ pub async fn save_remote_config(
   cfg.save().map_err(to_cmd_error)?;
   state.config = cfg;
 
-  state.stop_local_api();
+  state.stop_local_api().await;
   state.startup.needs_setup = false;
   state.startup.mode = Some(AppMode::Remote);
   state.startup.api_base_url = Some(remote_url);
@@ -83,6 +83,8 @@ pub async fn start_local_api(
   state: State<'_, Mutex<AppState>>,
 ) -> CmdResult<StartupState> {
   let mut state = state.lock().await;
+  state.stop_local_api().await;
+
   let db_params = state
     .config
     .db_params
@@ -114,7 +116,7 @@ pub async fn reset_config_and_mode(state: State<'_, Mutex<AppState>>) -> CmdResu
   state.config = cfg.clone();
   clear_db_password().map_err(to_cmd_error)?;
 
-  state.stop_local_api();
+  state.stop_local_api().await;
   let (needs_setup, mode, api_base_url) = compute_startup_state(&cfg, false);
   state.startup.needs_setup = needs_setup;
   state.startup.mode = mode;
