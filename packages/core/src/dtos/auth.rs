@@ -8,7 +8,7 @@ use crate::dtos::user::UserResponse;
 pub struct LoginRequest {
   #[validate(length(min = 3))]
   pub username: String,
-  #[validate(length(min = 6))]
+  #[validate(length(min = 5))]
   pub password: String,
 }
 
@@ -24,7 +24,7 @@ pub struct LoginResponse {
 pub struct ChangePasswordRequest {
   #[validate(length(min = 3))]
   pub username: String,
-  #[validate(length(min = 6))]
+  #[validate(length(min = 5))]
   pub current_password: String,
   #[validate(length(min = 8))]
   pub new_password: String,
