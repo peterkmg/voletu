@@ -1,6 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["packages/core", "packages/server", "packages/desktop"]
+members = [
+  "packages/core",
+  "packages/core-macros",
+  "packages/server",
+  "packages/desktop",
+]
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -21,6 +26,7 @@ sea-orm = { version = "2.0.0-rc.34", features = [
   "macros",
   "schema-sync",
   "entity-registry",
+  "mock",
 ] }
 
 chrono = "0.4"
@@ -59,6 +65,7 @@ dotenvy = "0.15"
 keyring = { version = "3", features = ["windows-native"] }
 rand = "0.10"
 base64 = "0.22"
+ts-rs = { version = "10", features = ["chrono-impl", "uuid-impl"] }
 reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "rustls-tls",
