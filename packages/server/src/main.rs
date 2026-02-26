@@ -22,7 +22,8 @@ async fn wait_for_shutdown_signal() {
   {
     use tokio::signal::unix::{signal, SignalKind};
 
-    let mut terminate = signal(SignalKind::terminate()).expect("failed to register SIGTERM handler");
+    let mut terminate =
+      signal(SignalKind::terminate()).expect("failed to register SIGTERM handler");
     tokio::select! {
       _ = tokio::signal::ctrl_c() => {},
       _ = terminate.recv() => {},

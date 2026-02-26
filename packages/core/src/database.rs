@@ -1,5 +1,11 @@
 use sea_orm::{
-  ActiveModelTrait, ActiveValue::Set, ConnectOptions, Database, DatabaseConnection, EntityTrait,
+  entity::prelude::ChronoUtc,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ConnectOptions,
+  Database,
+  DatabaseConnection,
+  EntityTrait,
   TransactionTrait,
 };
 use tracing::{debug, log::LevelFilter, trace};
@@ -7,16 +13,19 @@ use uuid::Uuid;
 
 use crate::{
   config::{DatabaseType, DbConfig, NodeConfig},
-  constants::{DEFAULT_ADMIN_USERNAME, DEFAULT_DATABASE_COMMON_NAME, DEFAULT_DATABASE_NODE_TYPE},
-  entities::{database_instance, local, role, user},
+  constants::{DEFAULT_ADMIN_PASSWORD, DEFAULT_ADMIN_USERNAME, DEFAULT_DATABASE_COMMON_NAME},
+  entities::{database_instance, enums, local, role, user},
   utils::{jwt, password::hash_password, paths::ensure_parent_dir},
 };
 
 pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Model> {
   debug!("Bootstrapping default data...");
   let txn = db.begin().await?;
+  let bootstrap_db_id = Uuid::now_v7();
+  let bootstrap_admin_id = Uuid::now_v7();
+  let now = ChronoUtc::now();
 
-  for role_type in role::RoleType::all() {
+  for role_type in enums::RoleType::all() {
     let m = role::ActiveModel {
       id: Set(role_type.uuid()),
       common_name: Set(role_type.clone()),
@@ -26,20 +35,18 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
   }
   debug!("Roles seeded.");
 
-  let _ = user::ActiveModel {
-    username: Set(DEFAULT_ADMIN_USERNAME.to_string()),
-    password_hash: Set(hash_password("admin").await?),
-    role_id: Set(role::RoleType::Admin.uuid()),
-    ..Default::default()
-  }
-  .insert(&txn)
-  .await?;
-
   let instance = database_instance::ActiveModel {
+    id: Set(bootstrap_db_id),
     common_name: Set(DEFAULT_DATABASE_COMMON_NAME.to_string()),
-    node_type: Set(DEFAULT_DATABASE_NODE_TYPE.to_string()),
+    node_type: Set(enums::NodeType::Peripheral),
     base_id: Set(None),
-    ..Default::default()
+    created_at: Set(now),
+    updated_at: Set(now),
+    deleted_at: Set(None),
+    created_by: Set(bootstrap_admin_id),
+    updated_by: Set(bootstrap_admin_id),
+    deleted_by: Set(None),
+    origin_db_id: Set(bootstrap_db_id),
   }
   .insert(&txn)
   .await?;
@@ -50,6 +57,23 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
     local_db_id: Set(instance.id),
     is_initialized: Set(false),
     jwt_secret: Set(jwt::generate_secret()),
+    ..Default::default()
+  }
+  .insert(&txn)
+  .await?;
+
+  let _ = user::ActiveModel {
+    id: Set(bootstrap_admin_id),
+    username: Set(DEFAULT_ADMIN_USERNAME.to_string()),
+    password_hash: Set(hash_password(DEFAULT_ADMIN_PASSWORD).await?),
+    role_id: Set(enums::RoleType::Admin.uuid()),
+    created_at: Set(now),
+    updated_at: Set(now),
+    deleted_at: Set(None),
+    created_by: Set(bootstrap_admin_id),
+    updated_by: Set(bootstrap_admin_id),
+    deleted_by: Set(None),
+    origin_db_id: Set(bootstrap_db_id),
     ..Default::default()
   }
   .insert(&txn)

@@ -10,7 +10,8 @@
     "build:server": "cargo build --package voletu-server --release",
     "build:tauri": "pnpm tauri build",
     "tauri": "tauri",
-    "check": "cargo check --workspace"
+    "check": "cargo check --workspace",
+    "format": "cargo +nightly fmt --all"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.4.3",

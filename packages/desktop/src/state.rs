@@ -1,7 +1,9 @@
 use serde::Serialize;
 use tauri::async_runtime::JoinHandle;
-use tokio::sync::oneshot;
-use tokio::time::{timeout, Duration};
+use tokio::{
+  sync::oneshot,
+  time::{timeout, Duration},
+};
 
 use crate::config::{AppConfig, AppMode};
 

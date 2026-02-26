@@ -1,5 +1,7 @@
-use serde::Deserialize;
 use std::path::PathBuf;
+
+use anyhow::anyhow;
+use serde::Deserialize;
 use voletu_core::{DatabaseType, DbParams, JwtConfig};
 
 #[derive(Debug, Deserialize)]
@@ -24,10 +26,10 @@ pub struct SaveLocalConfigRequest {
 
 impl SaveLocalConfigRequest {
   fn require_non_empty(value: Option<String>, field: &str) -> anyhow::Result<String> {
-    let raw = value.ok_or_else(|| anyhow::anyhow!("{field} is required"))?;
+    let raw = value.ok_or_else(|| anyhow!("{field} is required"))?;
     let trimmed = raw.trim();
     if trimmed.is_empty() {
-      return Err(anyhow::anyhow!("{field} cannot be empty"));
+      return Err(anyhow!("{field} cannot be empty"));
     }
     Ok(trimmed.to_string())
   }
@@ -41,7 +43,7 @@ impl SaveLocalConfigRequest {
       }
       DatabaseType::Postgres | DatabaseType::MySQL => {
         let host = Self::require_non_empty(self.host.clone(), "host")?;
-        let port = self.port.ok_or_else(|| anyhow::anyhow!("port is required"))?;
+        let port = self.port.ok_or_else(|| anyhow!("port is required"))?;
         let database = Self::require_non_empty(self.database.clone(), "database")?;
         let username = Self::require_non_empty(self.username.clone(), "username")?;
         Ok(DbParams::external(db_type, host, port, database, username))
@@ -50,6 +52,9 @@ impl SaveLocalConfigRequest {
   }
 
   pub fn parse_jwt_config(&self) -> JwtConfig {
-    JwtConfig::new(self.jwt_expiration_seconds, self.jwt_refresh_expiration_seconds)
+    JwtConfig::new(
+      self.jwt_expiration_seconds,
+      self.jwt_refresh_expiration_seconds,
+    )
   }
 }

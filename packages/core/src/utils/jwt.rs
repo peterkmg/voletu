@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use chrono::{Duration, Utc};
 use rand::Rng;
@@ -27,9 +28,11 @@ impl Claims {
     role: String,
     expiration_seconds: i64,
   ) -> anyhow::Result<Self> {
+    let expiration =
+      Duration::try_seconds(expiration_seconds).ok_or(anyhow!("Invalid expiration time"))?;
     let exp = Utc::now()
-      .checked_add_signed(Duration::seconds(expiration_seconds))
-      .ok_or(anyhow::anyhow!("Invalid expiration time"))?
+      .checked_add_signed(expiration)
+      .ok_or(anyhow!("Invalid expiration time"))?
       .timestamp() as usize;
 
     Ok(Self {

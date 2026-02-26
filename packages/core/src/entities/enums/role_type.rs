@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
-use sea_orm::{entity::prelude::*, model};
+use anyhow::anyhow;
+use sea_orm::entity::prelude::*;
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
@@ -17,7 +18,6 @@ pub enum RoleType {
 }
 
 impl RoleType {
-  /// All role variants in seeding order (most-privileged first).
   pub fn all() -> &'static [RoleType] {
     &[
       RoleType::Admin,
@@ -42,7 +42,7 @@ impl RoleType {
       "senior_supervisor" => Ok(RoleType::SeniorSupervisor),
       "supervisor" => Ok(RoleType::Supervisor),
       "operator" => Ok(RoleType::Operator),
-      _ => Err(anyhow::anyhow!("Invalid role type: {}", s)),
+      _ => Err(anyhow!("Invalid role type: {}", s)),
     }
   }
 
@@ -55,17 +55,3 @@ impl RoleType {
     }
   }
 }
-
-#[model]
-#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "roles")]
-pub struct Model {
-  #[sea_orm(primary_key)]
-  pub id: Uuid,
-  #[sea_orm(unique)]
-  pub common_name: RoleType,
-  #[sea_orm(has_many)]
-  pub users: HasMany<super::user::Entity>,
-}
-
-impl ActiveModelBehavior for ActiveModel {}

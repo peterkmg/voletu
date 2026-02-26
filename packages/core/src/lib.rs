@@ -2,6 +2,7 @@ pub mod api;
 pub mod app;
 pub mod config;
 pub mod constants;
+pub mod context;
 pub mod database;
 pub mod dtos;
 pub mod endpoints;

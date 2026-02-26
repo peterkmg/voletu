@@ -1,12 +1,18 @@
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context};
-use tauri::AppHandle;
-use tauri::{async_runtime::JoinHandle, Manager};
+use tauri::{async_runtime::JoinHandle, AppHandle, Manager};
 use tokio::sync::oneshot;
 use voletu_core::{
-  ensure_dir, ensure_parent_dir, logging::init_logging, resolve_relative, DatabaseType, DbConfig,
-  DbParams, JwtConfig, LoggingConfig,
+  ensure_dir,
+  ensure_parent_dir,
+  logging::init_logging,
+  resolve_relative,
+  DatabaseType,
+  DbConfig,
+  DbParams,
+  JwtConfig,
+  LoggingConfig,
 };
 
 use crate::{
@@ -57,7 +63,9 @@ fn spawn_local_api_task(
   let port = DEFAULT_LOCAL_PORT.to_string();
 
   tauri::async_runtime::spawn(async move {
-    if let Err(err) = voletu_core::serve_api_with_shutdown(host, port, db_cfg, jwt_cfg, Some(shutdown_rx)).await {
+    if let Err(err) =
+      voletu_core::serve_api_with_shutdown(host, port, db_cfg, jwt_cfg, Some(shutdown_rx)).await
+    {
       tracing::error!("local api exited with error: {err:#}");
     }
   })

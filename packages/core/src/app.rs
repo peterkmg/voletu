@@ -1,15 +1,15 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use anyhow::Result;
-use tokio::net::TcpListener;
-use tokio::sync::oneshot;
+use tokio::{net::TcpListener, sync::oneshot};
 use tracing::info;
 
 use crate::{
   api::{router::build_router, ApiState},
   config::ApiConfig,
   database::init_database,
-  DbConfig, JwtConfig,
+  DbConfig,
+  JwtConfig,
 };
 
 pub async fn serve_api(
