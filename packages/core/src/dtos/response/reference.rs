@@ -1,3 +1,4 @@
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
@@ -59,7 +60,7 @@ pub struct StorageResponse {
   pub warehouse_id: Uuid,
   pub common_name: String,
   pub long_name: Option<String>,
-  pub capacity: Option<f64>,
+  pub capacity: Option<Decimal>,
   pub is_type_specific: bool,
   pub product_type_id: Option<Uuid>,
 }

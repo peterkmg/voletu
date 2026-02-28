@@ -81,7 +81,7 @@ dotenvy = "0.15"
 keyring = { version = "3", features = ["windows-native"] }
 rand = "0.10"
 base64 = "0.22"
-ts-rs = { version = "12", features = ["chrono-impl", "uuid-impl"] }
+rust_decimal = { version = "1", features = ["serde-with-str"] }
 reqwest = { version = "0.13.2", default-features = false, features = [
   "json",
   "rustls",

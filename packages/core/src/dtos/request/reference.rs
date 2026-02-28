@@ -1,3 +1,4 @@
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
@@ -5,6 +6,7 @@ use voletu_core_macros::request_dto;
 pub struct CreateCompanyRequest {
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub legal_name: Option<String>,
   pub is_contractor: bool,
   pub is_exporter: bool,
@@ -16,6 +18,7 @@ pub struct CreateCompanyRequest {
 pub struct CreateProductTypeRequest {
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub long_name: Option<String>,
 }
 
@@ -24,6 +27,7 @@ pub struct CreateProductGroupRequest {
   pub product_type_id: Uuid,
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub long_name: Option<String>,
 }
 
@@ -33,7 +37,9 @@ pub struct CreateProductRequest {
   pub manufacturer_id: Option<Uuid>,
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub long_name: Option<String>,
+  #[validate(length(min = 2))]
   pub add_identification: Option<String>,
   pub is_component: Option<bool>,
 }
@@ -42,6 +48,7 @@ pub struct CreateProductRequest {
 pub struct CreateBaseRequest {
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub long_name: Option<String>,
 }
 
@@ -50,6 +57,7 @@ pub struct CreateWarehouseRequest {
   pub base_id: Uuid,
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub long_name: Option<String>,
 }
 
@@ -58,8 +66,9 @@ pub struct CreateStorageRequest {
   pub warehouse_id: Uuid,
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub long_name: Option<String>,
-  pub capacity: Option<f64>,
+  pub capacity: Option<Decimal>,
   pub is_type_specific: Option<bool>,
   pub product_type_id: Option<Uuid>,
 }
@@ -68,5 +77,6 @@ pub struct CreateStorageRequest {
 pub struct CreatePortRequest {
   #[validate(length(min = 2))]
   pub common_name: String,
+  #[validate(length(min = 2))]
   pub country: Option<String>,
 }

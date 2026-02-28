@@ -1,3 +1,4 @@
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
@@ -26,7 +27,7 @@ pub struct DispatchItemResponse {
   pub dispatch_doc_id: Uuid,
   pub product_id: Uuid,
   pub storage_id: Uuid,
-  pub dispatched_amount: f64,
+  pub dispatched_amount: Decimal,
 }
 
 #[response_dto]
@@ -34,14 +35,14 @@ pub struct DispatchMeasurementResponse {
   pub id: Uuid,
   pub dispatch_doc_id: Uuid,
   pub storage_id: Uuid,
-  pub before_height: Option<f64>,
-  pub before_volume: Option<f64>,
-  pub before_density: Option<f64>,
-  pub before_mass: f64,
-  pub after_height: Option<f64>,
-  pub after_volume: Option<f64>,
-  pub after_density: Option<f64>,
-  pub after_mass: f64,
+  pub before_height: Option<Decimal>,
+  pub before_volume: Option<Decimal>,
+  pub before_density: Option<Decimal>,
+  pub before_mass: Decimal,
+  pub after_height: Option<Decimal>,
+  pub after_volume: Option<Decimal>,
+  pub after_density: Option<Decimal>,
+  pub after_mass: Decimal,
 }
 
 #[response_dto]

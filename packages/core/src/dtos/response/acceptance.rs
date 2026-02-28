@@ -1,3 +1,4 @@
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
@@ -21,7 +22,7 @@ pub struct AcceptanceItemResponse {
   pub acceptance_doc_id: Uuid,
   pub product_id: Uuid,
   pub contractor_id: Uuid,
-  pub accepted_amount: f64,
+  pub accepted_amount: Decimal,
 }
 
 #[response_dto]
@@ -29,7 +30,7 @@ pub struct AcceptanceAllocationResponse {
   pub id: Uuid,
   pub acceptance_item_id: Uuid,
   pub storage_id: Uuid,
-  pub allocated_amount: f64,
+  pub allocated_amount: Decimal,
 }
 
 #[response_dto]

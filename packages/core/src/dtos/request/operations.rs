@@ -1,10 +1,12 @@
 use chrono::{DateTime, Utc};
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
 use crate::dtos::enums::AdjustmentType;
 
 #[request_dto]
+#[validate(schema(function = "crate::dtos::validators::validate_physical_transfer_request"))]
 pub struct CreatePhysicalTransferRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
@@ -15,7 +17,7 @@ pub struct CreatePhysicalTransferRequest {
   pub product_id: Uuid,
   pub from_storage_id: Uuid,
   pub to_storage_id: Uuid,
-  pub amount_transferred: f64,
+  pub amount_transferred: Decimal,
 }
 
 #[request_dto]
@@ -25,7 +27,7 @@ pub struct CreateOwnershipTransferRequest {
   pub product_id: Uuid,
   pub from_contractor_id: Uuid,
   pub to_contractor_id: Uuid,
-  pub amount_transferred: f64,
+  pub amount_transferred: Decimal,
 }
 
 #[request_dto]
@@ -55,13 +57,13 @@ pub struct CreateBlendingResultRequest {
 pub struct BlendingComponentCompositeRequest {
   pub storage_id: Uuid,
   pub source_product_id: Uuid,
-  pub amount_used: f64,
+  pub amount_used: Decimal,
 }
 
 #[request_dto]
 pub struct BlendingResultCompositeRequest {
   pub storage_id: Uuid,
-  pub produced_amount: f64,
+  pub produced_amount: Decimal,
 }
 
 #[request_dto]
@@ -79,7 +81,8 @@ pub struct CreateInventoryAdjustmentRequest {
   pub product_id: Uuid,
   pub contractor_id: Uuid,
   pub adjustment_type: AdjustmentType,
-  pub amount: f64,
+  pub amount: Decimal,
+  #[validate(length(min = 1))]
   pub reason: Option<String>,
 }
 

@@ -40,6 +40,14 @@ pub enum SyncDirection {
 }
 
 #[enum_dto]
+pub enum SyncAuditAction {
+  Insert,
+  Update,
+  SoftDelete,
+  HardDelete,
+}
+
+#[enum_dto]
 pub enum InitializeAdminAction {
   Replace,
   Delete,

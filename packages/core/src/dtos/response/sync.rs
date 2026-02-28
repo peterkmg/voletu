@@ -3,7 +3,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::dtos::enums::SyncDirection;
+use crate::dtos::enums::{SyncAuditAction, SyncDirection};
 
 #[response_dto]
 #[derive(Deserialize)]
@@ -29,7 +29,7 @@ pub struct AuditLogResponse {
   pub id: Uuid,
   pub table_name: String,
   pub record_id: Uuid,
-  pub action: String,
+  pub action: SyncAuditAction,
   pub target_base_ids: String,
   pub user_role_weight: i32,
   pub user_id: Option<Uuid>,

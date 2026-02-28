@@ -21,6 +21,7 @@ pub struct ChangePasswordRequest {
 }
 
 #[request_dto]
+#[validate(schema(function = "crate::dtos::validators::validate_complete_initialization_request"))]
 pub struct CompleteInitializationRequest {
   pub action: InitializeAdminAction,
   pub node_type: Option<NodeType>,
@@ -28,6 +29,7 @@ pub struct CompleteInitializationRequest {
   pub new_username: Option<String>,
   #[validate(length(min = 8))]
   pub new_password: Option<String>,
+  #[validate(length(min = 2, max = 100))]
   pub fullname: Option<String>,
 }
 
@@ -45,8 +47,10 @@ pub struct CreateUserRequest {
   #[validate(length(min = 6))]
   #[schema(example = "s3cr3t!")]
   pub password: String,
+  #[validate(length(min = 2, max = 100))]
   #[schema(example = "John Doe")]
   pub fullname: Option<String>,
+  #[validate(length(min = 2, max = 50))]
   #[schema(example = "admin")]
   pub role_name: String,
 }

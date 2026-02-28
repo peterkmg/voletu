@@ -1,10 +1,12 @@
 use chrono::{DateTime, Utc};
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
 use crate::dtos::enums::{BunkerType, DispatchMethod, DispatchPurpose};
 
 #[request_dto]
+#[validate(schema(function = "crate::dtos::validators::validate_dispatch_request"))]
 pub struct CreateDispatchRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
@@ -13,6 +15,7 @@ pub struct CreateDispatchRequest {
   pub dispatch_method: DispatchMethod,
   pub contractor_id: Uuid,
   pub destination_base_id: Option<Uuid>,
+  #[validate(length(min = 1))]
   pub receiver_entity: Option<String>,
   pub start_cargo_ops: Option<DateTime<Utc>>,
   pub end_cargo_ops: Option<DateTime<Utc>>,
@@ -31,14 +34,14 @@ pub struct CreateDispatchItemRequest {
 #[request_dto]
 pub struct DispatchMeasurementCompositeRequest {
   pub storage_id: Uuid,
-  pub before_height: Option<f64>,
-  pub before_volume: Option<f64>,
-  pub before_density: Option<f64>,
-  pub before_mass: f64,
-  pub after_height: Option<f64>,
-  pub after_volume: Option<f64>,
-  pub after_density: Option<f64>,
-  pub after_mass: f64,
+  pub before_height: Option<Decimal>,
+  pub before_volume: Option<Decimal>,
+  pub before_density: Option<Decimal>,
+  pub before_mass: Decimal,
+  pub after_height: Option<Decimal>,
+  pub after_volume: Option<Decimal>,
+  pub after_density: Option<Decimal>,
+  pub after_mass: Decimal,
 }
 
 #[request_dto]
@@ -52,7 +55,7 @@ pub struct CreateDispatchMeasurementRequest {
 pub struct DispatchItemCompositeRequest {
   pub product_id: Uuid,
   pub storage_id: Uuid,
-  pub dispatched_amount: f64,
+  pub dispatched_amount: Decimal,
 }
 
 #[request_dto]
@@ -61,5 +64,6 @@ pub struct CreateDispatchCompositeRequest {
   pub dispatch: CreateDispatchRequest,
   #[validate(length(min = 1))]
   pub items: Vec<DispatchItemCompositeRequest>,
+  #[validate(length(min = 1))]
   pub storage_measurements: Option<Vec<DispatchMeasurementCompositeRequest>>,
 }

@@ -1,4 +1,5 @@
 use chrono::{DateTime, NaiveDate, Utc};
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
@@ -44,28 +45,28 @@ pub struct CreateRailWagonManifestRequest {
 #[request_dto]
 pub struct CreateRailWagonMeasurementRequest {
   pub wagon_manifest_id: Uuid,
-  pub measured_height: f64,
-  pub lab_density: Option<f64>,
-  pub calculated_mass: f64,
+  pub measured_height: Decimal,
+  pub lab_density: Option<Decimal>,
+  pub calculated_mass: Decimal,
 }
 
 #[request_dto]
 pub struct CreateRailWagonWeightRequest {
   pub wagon_manifest_id: Uuid,
-  pub gross_weight: f64,
-  pub tare_weight: f64,
-  pub net_product_weight: f64,
+  pub gross_weight: Decimal,
+  pub tare_weight: Decimal,
+  pub net_product_weight: Decimal,
 }
 
 #[request_dto]
 pub struct TruckWaybillItemCompositeRequest {
   pub product_id: Uuid,
-  pub declared_amount: f64,
+  pub declared_amount: Decimal,
 }
 
 #[request_dto]
 pub struct TruckWeightDocCompositeRequest {
-  pub total_weight: f64,
+  pub total_weight: Decimal,
 }
 
 #[request_dto]
@@ -73,6 +74,7 @@ pub struct IntakeAcceptanceCompositeRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
   pub date_accepted: DateTime<Utc>,
+  #[validate(length(min = 1))]
   pub source_entity: Option<String>,
   #[validate(length(min = 1))]
   pub items: Vec<AcceptanceItemCompositeRequest>,
@@ -95,25 +97,27 @@ pub struct RailWagonManifestCompositeRequest {
   #[validate(length(min = 1))]
   pub wagon_number: String,
   pub product_id: Uuid,
-  pub declared_volume: f64,
-  pub declared_density: f64,
-  pub declared_mass: f64,
+  pub declared_volume: Decimal,
+  pub declared_density: Decimal,
+  pub declared_mass: Decimal,
 }
 
 #[request_dto]
 pub struct RailWagonMeasurementCompositeRequest {
+  #[validate(length(min = 1))]
   pub wagon_number: String,
-  pub measured_height: f64,
-  pub lab_density: Option<f64>,
-  pub calculated_mass: f64,
+  pub measured_height: Decimal,
+  pub lab_density: Option<Decimal>,
+  pub calculated_mass: Decimal,
 }
 
 #[request_dto]
 pub struct RailWagonWeightCompositeRequest {
+  #[validate(length(min = 1))]
   pub wagon_number: String,
-  pub gross_weight: f64,
-  pub tare_weight: f64,
-  pub net_product_weight: f64,
+  pub gross_weight: Decimal,
+  pub tare_weight: Decimal,
+  pub net_product_weight: Decimal,
 }
 
 #[request_dto]
@@ -124,7 +128,9 @@ pub struct RailIntakeCompositeRequest {
   pub sender_id: Uuid,
   #[validate(length(min = 1))]
   pub manifests: Vec<RailWagonManifestCompositeRequest>,
+  #[validate(length(min = 1))]
   pub measurements: Option<Vec<RailWagonMeasurementCompositeRequest>>,
+  #[validate(length(min = 1))]
   pub weights: Option<Vec<RailWagonWeightCompositeRequest>>,
   pub acceptance: Option<IntakeAcceptanceCompositeRequest>,
   pub arrival_type: Option<ArrivalType>,

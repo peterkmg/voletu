@@ -1,3 +1,4 @@
+use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
@@ -14,14 +15,14 @@ pub struct TruckWaybillItemResponse {
   pub id: Uuid,
   pub truck_waybill_id: Uuid,
   pub product_id: Uuid,
-  pub declared_amount: f64,
+  pub declared_amount: Decimal,
 }
 
 #[response_dto]
 pub struct TruckWeightDocResponse {
   pub id: Uuid,
   pub truck_waybill_id: Uuid,
-  pub total_weight: f64,
+  pub total_weight: Decimal,
 }
 
 #[response_dto]
@@ -38,27 +39,27 @@ pub struct RailWagonManifestResponse {
   pub rail_waybill_id: Uuid,
   pub wagon_number: String,
   pub product_id: Uuid,
-  pub declared_volume: f64,
-  pub declared_density: f64,
-  pub declared_mass: f64,
+  pub declared_volume: Decimal,
+  pub declared_density: Decimal,
+  pub declared_mass: Decimal,
 }
 
 #[response_dto]
 pub struct RailWagonMeasurementResponse {
   pub id: Uuid,
   pub wagon_manifest_id: Uuid,
-  pub measured_height: f64,
-  pub lab_density: Option<f64>,
-  pub calculated_mass: f64,
+  pub measured_height: Decimal,
+  pub lab_density: Option<Decimal>,
+  pub calculated_mass: Decimal,
 }
 
 #[response_dto]
 pub struct RailWagonWeightResponse {
   pub id: Uuid,
   pub wagon_manifest_id: Uuid,
-  pub gross_weight: f64,
-  pub tare_weight: f64,
-  pub net_product_weight: f64,
+  pub gross_weight: Decimal,
+  pub tare_weight: Decimal,
+  pub net_product_weight: Decimal,
 }
 
 #[response_dto]
