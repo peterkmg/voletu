@@ -7,10 +7,8 @@ pub enum ArrivalType {
   Truck,
   #[sea_orm(string_value = "RAIL")]
   Rail,
-  #[sea_orm(string_value = "EXTERNAL_VESSEL")]
-  ExternalVessel,
   #[sea_orm(string_value = "EXTERNAL_TERMINAL")]
-  ExternalTerminal,
+  External,
   #[sea_orm(string_value = "INITIAL_BALANCE")]
   InitialBalance,
 }

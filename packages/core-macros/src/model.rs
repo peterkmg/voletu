@@ -1,7 +1,15 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-  parse::Parser, parse_macro_input, parse_quote, Expr, Fields, ItemStruct, Meta, Path, Token,
+  parse::Parser,
+  parse_macro_input,
+  parse_quote,
+  Expr,
+  Fields,
+  ItemStruct,
+  Meta,
+  Path,
+  Token,
 };
 
 const BEFORE_SAVE_PATH_ERROR: &str = "before_save must be a function path";

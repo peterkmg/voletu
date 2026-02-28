@@ -110,7 +110,8 @@
   ],
   "cSpell.words": [
     "confy",
-    "CONFY"
+    "CONFY",
+    "libsqlite"
   ],
   "chat.tools.terminal.autoApprove": {
     "cargo test": true

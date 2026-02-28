@@ -3,7 +3,7 @@ use sea_orm::{entity::prelude::*, model};
 use uuid::Uuid;
 
 use crate::{
-  dtos::user::UserResponse,
+  dtos::UserResponse,
   entities::{base, refresh_token, role},
 };
 

@@ -3,35 +3,34 @@ name = "voletu-core"
 version = "0.1.0"
 edition = "2021"
 
-# [lib]
-# name = "voletu_core"
-# crate-type = ["dylib", "rlib"]
-
 [dependencies]
 voletu-core-macros = { path = "../core-macros" }
-tokio = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-axum = { workspace = true }
-tower = { workspace = true }
-tower-http = { workspace = true }
-sea-orm = { workspace = true }
-anyhow = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
-tracing-appender = { workspace = true }
-chrono = { workspace = true }
-validator = { workspace = true }
-utoipa = { workspace = true }
-utoipa-axum = { workspace = true }
-utoipa-swagger-ui = { workspace = true }
-uuid = { workspace = true }
-axum-valid = { workspace = true }
-argon2 = { workspace = true }
-axum-extra = { workspace = true }
-jsonwebtoken = { workspace = true }
-libsqlite3-sys = { workspace = true }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+sea-orm.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+chrono.workspace = true
+validator.workspace = true
+utoipa.workspace = true
+utoipa-axum.workspace = true
+utoipa-swagger-ui.workspace = true
+uuid.workspace = true
+axum-valid.workspace = true
+argon2.workspace = true
+jsonwebtoken.workspace = true
+libsqlite3-sys.workspace = true
 rand.workspace = true
 base64.workspace = true
-ts-rs = { workspace = true }
+ts-rs.workspace = true
+reqwest.workspace = true
+
+[dev-dependencies]
+sea-orm = { workspace = true, features = ["mock"] }

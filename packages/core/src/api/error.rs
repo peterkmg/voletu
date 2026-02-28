@@ -6,6 +6,14 @@ use axum::{
 
 use super::response::ApiResponse;
 
+/// Zero-sized marker inserted into response extensions by `ApiError::into_response`.
+/// [`error_envelope_middleware`] uses this to skip responses that are already
+/// correctly enveloped — no body reading or JSON parsing required.
+///
+/// [`error_envelope_middleware`]: crate::middleware::error_envelope::error_envelope_middleware
+#[derive(Clone)]
+pub(crate) struct HandledByApiError;
+
 /// All errors that can be returned from API handlers.
 ///
 /// Variants map to HTTP status codes and are automatically logged at the
@@ -60,7 +68,6 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
   fn into_response(self) -> Response {
-    // Log at the appropriate level so callers don't have to.
     match &self {
       Self::Internal(err) => tracing::error!("Internal error: {err:#}"),
       Self::Database(err) => tracing::error!("Database error: {err}"),
@@ -77,12 +84,21 @@ impl IntoResponse for ApiError {
       self.error_code().to_string(),
       self.to_string(),
     ));
-    (status, body).into_response()
+    let mut response = (status, body).into_response();
+    // Tag so the normalisation middleware can skip body-sniffing.
+    response.extensions_mut().insert(HandledByApiError);
+    response
   }
 }
 
 impl From<serde_json::Error> for ApiError {
   fn from(err: serde_json::Error) -> Self {
+    Self::Validation(err.to_string())
+  }
+}
+
+impl From<validator::ValidationErrors> for ApiError {
+  fn from(err: validator::ValidationErrors) -> Self {
     Self::Validation(err.to_string())
   }
 }

@@ -2,11 +2,13 @@ mod database;
 mod jwt;
 mod logging;
 mod node;
+mod sync;
 
 pub use database::{DatabaseType, DbConfig, DbParams};
 pub use jwt::JwtConfig;
 pub use logging::LoggingConfig;
 pub use node::NodeConfig;
+pub use sync::SyncConfig;
 
 #[derive(Clone)]
 pub struct ApiConfig {

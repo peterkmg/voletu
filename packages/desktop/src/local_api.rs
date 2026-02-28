@@ -63,9 +63,7 @@ fn spawn_local_api_task(
   let port = DEFAULT_LOCAL_PORT.to_string();
 
   tauri::async_runtime::spawn(async move {
-    if let Err(err) =
-      voletu_core::serve_api_with_shutdown(host, port, db_cfg, jwt_cfg, Some(shutdown_rx)).await
-    {
+    if let Err(err) = voletu_core::serve_api(host, port, db_cfg, jwt_cfg, shutdown_rx).await {
       tracing::error!("local api exited with error: {err:#}");
     }
   })
@@ -96,6 +94,7 @@ pub fn start_local_mode(
     db_password.to_string(),
     shutdown_rx,
   );
+
   state.local_api_shutdown = Some(shutdown_tx);
   state.local_api_task = Some(task);
   Ok(local_api_base_url())

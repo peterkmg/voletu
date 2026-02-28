@@ -115,8 +115,22 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     None => seed_defaults(&db).await?,
   };
 
-  Ok((db, NodeConfig {
-    database_id: Uuid::from(local.local_db_id),
-    jwt_secret: local.jwt_secret,
-  }))
+  let instance = database_instance::Entity::find_by_id(local.local_db_id)
+    .one(&db)
+    .await?
+    .ok_or_else(|| anyhow::anyhow!("Database instance row is missing"))?;
+
+  Ok((
+    db,
+    NodeConfig::new(
+      Uuid::from(local.local_db_id),
+      instance.node_type.as_str().to_string(),
+      local.jwt_secret,
+      local
+        .central_api_url
+        .as_ref()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty()),
+    ),
+  ))
 }

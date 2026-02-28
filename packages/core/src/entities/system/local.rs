@@ -14,6 +14,7 @@ pub struct Model {
   #[sea_orm(belongs_to, from = "local_db_id", to = "id")]
   pub database_instance: HasOne<database_instance::Entity>,
   pub jwt_secret: String, // rotating this value invalidates all existing tokens.
+  pub central_api_url: Option<String>,
 }
 
 #[async_trait]

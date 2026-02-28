@@ -3,17 +3,19 @@ use axum::{
   response::{IntoResponse, Response},
   Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ErrorData {
   pub code: String,
   pub message: String,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ApiResponse<T: Serialize> {
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiResponse<T> {
   pub success: bool,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub data: Option<T>,
@@ -23,12 +25,15 @@ pub struct ApiResponse<T: Serialize> {
 
 impl<T: Serialize> IntoResponse for ApiResponse<T> {
   fn into_response(self) -> Response {
-    let status = if self.success {
-      StatusCode::OK
-    } else {
-      StatusCode::INTERNAL_SERVER_ERROR
-    };
-    (status, Json(self)).into_response()
+    // Handlers return ApiResponse only on the success path; errors go through
+    // ApiError::into_response().  Calling this with success=false means the
+    // call site bypassed ApiError entirely, which is a bug.
+    debug_assert!(
+      self.success,
+      "ApiResponse::into_response called with success=false; \
+       error responses must be produced via ApiError"
+    );
+    (StatusCode::OK, Json(self)).into_response()
   }
 }
 
@@ -46,6 +51,37 @@ impl<T: Serialize> ApiResponse<T> {
       success: false,
       data: None,
       error: Some(ErrorData { code, message }),
+    }
+  }
+}
+
+impl<T> ApiResponse<T> {
+  pub fn into_anyhow_data(self, method: &str, url: &str, status: StatusCode) -> anyhow::Result<T> {
+    if self.success {
+      return self.data.ok_or_else(|| {
+        anyhow::anyhow!(
+          "{} {} succeeded but no data payload was returned",
+          method,
+          url
+        )
+      });
+    }
+
+    match self.error {
+      Some(error) => anyhow::bail!(
+        "{} {} failed (status {}): {} ({})",
+        method,
+        url,
+        status,
+        error.message,
+        error.code
+      ),
+      None => anyhow::bail!(
+        "{} {} failed (status {}): no error payload",
+        method,
+        url,
+        status
+      ),
     }
   }
 }
