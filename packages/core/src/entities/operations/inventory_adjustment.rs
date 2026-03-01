@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{company, enums, inventory_reconciliation, product, storage};
+use crate::{
+  dtos::CreateInventoryAdjustmentRequest,
+  entities::{company, enums, inventory_reconciliation, product, storage},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -26,4 +29,19 @@ pub struct Model {
   pub adjustment_type: enums::AdjustmentType,
   pub amount: Decimal,
   pub reason: Option<String>,
+}
+
+impl From<&CreateInventoryAdjustmentRequest> for ActiveModel {
+  fn from(dto: &CreateInventoryAdjustmentRequest) -> Self {
+    Self {
+      reconciliation_id: Set(dto.reconciliation_id),
+      storage_id: Set(dto.storage_id),
+      product_id: Set(dto.product_id),
+      contractor_id: Set(dto.contractor_id),
+      adjustment_type: Set(dto.adjustment_type),
+      amount: Set(dto.amount),
+      reason: Set(dto.reason.clone()),
+      ..Default::default()
+    }
+  }
 }

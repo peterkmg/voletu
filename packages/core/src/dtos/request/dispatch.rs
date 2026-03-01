@@ -3,7 +3,7 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
-use crate::dtos::enums::{BunkerType, DispatchMethod, DispatchPurpose};
+use crate::enums::{BunkerType, DispatchMethod, DispatchPurpose};
 
 #[request_dto]
 #[validate(schema(function = "crate::dtos::validators::validate_dispatch_request"))]

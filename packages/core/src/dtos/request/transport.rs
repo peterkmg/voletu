@@ -3,7 +3,7 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
-use crate::dtos::{enums::ArrivalType, AcceptanceItemCompositeRequest};
+use crate::{dtos::AcceptanceItemCompositeRequest, enums::ArrivalType};
 
 #[request_dto]
 pub struct CreateTruckWaybillRequest {

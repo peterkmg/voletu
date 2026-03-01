@@ -1,7 +1,7 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::product;
+use crate::{dtos::CreateCompanyRequest, entities::product};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -20,4 +20,18 @@ pub struct Model {
   pub is_sender: bool,
   #[sea_orm(has_many)]
   pub products: HasMany<product::Entity>,
+}
+
+impl From<&CreateCompanyRequest> for ActiveModel {
+  fn from(dto: &CreateCompanyRequest) -> Self {
+    Self {
+      common_name: Set(dto.common_name.clone()),
+      legal_name: Set(dto.legal_name.clone()),
+      is_contractor: Set(dto.is_contractor),
+      is_exporter: Set(dto.is_exporter),
+      is_manufacturer: Set(dto.is_manufacturer),
+      is_sender: Set(dto.is_sender),
+      ..Default::default()
+    }
+  }
 }

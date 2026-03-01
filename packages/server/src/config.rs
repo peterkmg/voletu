@@ -31,7 +31,9 @@ pub fn load_config_from_env() -> (String, String, DbConfig, JwtConfig, LoggingCo
     env_parse_required("JWT_REFRESH_EXPIRATION_SECONDS"),
   );
 
-  let db_type = DatabaseType::parse(&env_required("DB_TYPE")).unwrap_or_else(|err| panic!("{err}"));
+  let db_type = env_required("DB_TYPE")
+    .parse::<DatabaseType>()
+    .unwrap_or_else(|err| panic!("Invalid value for DB_TYPE: {err}"));
   let db_password = env_required("DB_PASSWORD");
 
   let db = match db_type {

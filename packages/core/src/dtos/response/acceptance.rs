@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::dtos::enums::ArrivalType;
+use crate::enums::ArrivalType;
 
 #[response_dto]
 pub struct AcceptanceResponse {

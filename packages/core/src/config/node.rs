@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct NodeConfig {
-  pub database_id: Uuid,
+  pub db_id: Uuid,
   pub node_type: String,
   pub jwt_secret: String,
   pub central_api_url: Option<String>,
@@ -10,13 +10,13 @@ pub struct NodeConfig {
 
 impl NodeConfig {
   pub fn new(
-    database_id: Uuid,
+    db_id: Uuid,
     node_type: String,
     jwt_secret: String,
     central_api_url: Option<String>,
   ) -> Self {
     Self {
-      database_id,
+      db_id,
       node_type,
       jwt_secret,
       central_api_url,

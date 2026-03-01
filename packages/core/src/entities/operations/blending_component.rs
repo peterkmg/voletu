@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{blending_document, product, storage};
+use crate::{
+  dtos::CreateBlendingComponentRequest,
+  entities::{blending_document, product, storage},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -21,4 +24,16 @@ pub struct Model {
   #[sea_orm(belongs_to, from = "source_product_id", to = "id")]
   pub source_product: HasOne<product::Entity>,
   pub amount_used: Decimal,
+}
+
+impl From<&CreateBlendingComponentRequest> for ActiveModel {
+  fn from(dto: &CreateBlendingComponentRequest) -> Self {
+    Self {
+      blending_doc_id: Set(dto.blending_doc_id),
+      storage_id: Set(dto.component.storage_id),
+      source_product_id: Set(dto.component.source_product_id),
+      amount_used: Set(dto.component.amount_used),
+      ..Default::default()
+    }
+  }
 }

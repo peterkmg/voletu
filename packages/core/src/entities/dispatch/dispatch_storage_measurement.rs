@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{dispatch_document, storage};
+use crate::{
+  dtos::CreateDispatchMeasurementRequest,
+  entities::{dispatch_document, storage},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -25,4 +28,22 @@ pub struct Model {
   pub after_volume: Option<Decimal>,
   pub after_density: Option<Decimal>,
   pub after_mass: Decimal,
+}
+
+impl From<&CreateDispatchMeasurementRequest> for ActiveModel {
+  fn from(dto: &CreateDispatchMeasurementRequest) -> Self {
+    Self {
+      dispatch_doc_id: Set(dto.dispatch_doc_id),
+      storage_id: Set(dto.measurement.storage_id),
+      before_height: Set(dto.measurement.before_height),
+      before_volume: Set(dto.measurement.before_volume),
+      before_density: Set(dto.measurement.before_density),
+      before_mass: Set(dto.measurement.before_mass),
+      after_height: Set(dto.measurement.after_height),
+      after_volume: Set(dto.measurement.after_volume),
+      after_density: Set(dto.measurement.after_density),
+      after_mass: Set(dto.measurement.after_mass),
+      ..Default::default()
+    }
+  }
 }

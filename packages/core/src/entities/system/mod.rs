@@ -1,5 +1,6 @@
 pub mod audit_log;
 pub mod database_instance;
+pub mod idempotency_request;
 pub mod local;
 pub mod refresh_token;
 pub mod role;

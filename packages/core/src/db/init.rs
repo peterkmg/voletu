@@ -8,6 +8,7 @@ use sea_orm::{
   EntityTrait,
   TransactionTrait,
 };
+use strum::VariantArray;
 use tracing::{debug, log::LevelFilter, trace};
 use uuid::Uuid;
 
@@ -25,13 +26,13 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
   let bootstrap_admin_id = Uuid::now_v7();
   let now = ChronoUtc::now();
 
-  for role_type in enums::RoleType::all() {
+  for role_type in enums::RoleType::VARIANTS {
     let m = role::ActiveModel {
       id: Set(role_type.uuid()),
-      common_name: Set(role_type.clone()),
+      common_name: Set(*role_type),
     };
     m.insert(&txn).await?;
-    trace!("Seeded {} role.", role_type.as_str());
+    trace!("Seeded {} role.", role_type);
   }
   debug!("Roles seeded.");
 
@@ -89,7 +90,10 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
 pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection, NodeConfig)> {
   trace!("Initializing database options...");
 
-  let mut options = ConnectOptions::new(cfg.connection_url());
+  let connection_url = cfg
+    .connection_url()
+    .map_err(|err| anyhow::anyhow!("Invalid database configuration: {err}"))?;
+  let mut options = ConnectOptions::new(connection_url);
   options.sqlx_logging(true);
   options.sqlx_logging_level(LevelFilter::Trace);
 
@@ -124,7 +128,7 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     db,
     NodeConfig::new(
       Uuid::from(local.local_db_id),
-      instance.node_type.as_str().to_string(),
+      instance.node_type.to_string(),
       local.jwt_secret,
       local
         .central_api_url

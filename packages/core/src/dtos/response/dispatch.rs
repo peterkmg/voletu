@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::dtos::enums::{BunkerType, DispatchMethod, DispatchPurpose};
+use crate::enums::{BunkerType, DispatchMethod, DispatchPurpose};
 
 #[response_dto]
 pub struct DispatchResponse {

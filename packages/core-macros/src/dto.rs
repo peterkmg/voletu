@@ -16,6 +16,43 @@ use syn::{
   TypePath,
 };
 
+fn to_snake_case(input: &str) -> String {
+  let chars: Vec<char> = input.chars().collect();
+  let mut out = String::with_capacity(input.len() + 8);
+
+  for (index, ch) in chars.iter().enumerate() {
+    if *ch == '-' || *ch == ' ' {
+      if !out.ends_with('_') {
+        out.push('_');
+      }
+      continue;
+    }
+
+    if ch.is_uppercase() {
+      if index > 0 {
+        let prev = chars[index - 1];
+        let next = chars.get(index + 1).copied();
+        let boundary = prev.is_lowercase()
+          || prev.is_ascii_digit()
+          || (prev.is_uppercase() && next.is_some_and(|c| c.is_lowercase()));
+        if boundary && !out.ends_with('_') {
+          out.push('_');
+        }
+      }
+      out.extend(ch.to_lowercase());
+      continue;
+    }
+
+    out.push(*ch);
+  }
+
+  out
+}
+
+fn to_screaming_snake_case(input: &str) -> String {
+  to_snake_case(input).to_ascii_uppercase()
+}
+
 fn type_path_ident(type_path: &TypePath) -> Option<&syn::Ident> {
   type_path.path.segments.last().map(|segment| &segment.ident)
 }
@@ -258,12 +295,58 @@ pub(crate) fn response_dto(item: TokenStream) -> TokenStream {
   })
 }
 
-pub(crate) fn enum_dto(item: TokenStream) -> TokenStream {
-  let item_enum = parse_macro_input!(item as ItemEnum);
+pub(crate) fn enum_type(attr: TokenStream, item: TokenStream) -> TokenStream {
+  if !attr.is_empty() {
+    return syn::Error::new(
+      proc_macro2::Span::call_site(),
+      "`#[enum_type]` does not accept arguments",
+    )
+    .to_compile_error()
+    .into();
+  }
+
+  let mut item_enum = parse_macro_input!(item as ItemEnum);
+  let enum_name = to_snake_case(&item_enum.ident.to_string());
+
+  for variant in &mut item_enum.variants {
+    let has_string_value = variant.attrs.iter().any(|attr| {
+      attr.path().is_ident("sea_orm")
+        && attr
+          .meta
+          .to_token_stream()
+          .to_string()
+          .contains("string_value")
+    });
+    if has_string_value {
+      continue;
+    }
+
+    let string_value = to_screaming_snake_case(&variant.ident.to_string());
+    variant
+      .attrs
+      .push(parse_quote!(#[sea_orm(string_value = #string_value)]));
+  }
 
   TokenStream::from(quote! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
+    #[derive(
+      Clone,
+      Copy,
+      Debug,
+      PartialEq,
+      Eq,
+      ::sea_orm::EnumIter,
+      ::sea_orm::DeriveActiveEnum,
+      serde::Serialize,
+      serde::Deserialize,
+      utoipa::ToSchema,
+      strum::EnumString,
+      strum::Display,
+      strum::AsRefStr,
+      strum::VariantArray,
+    )]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[strum(serialize_all = "SCREAMING_SNAKE_CASE", ascii_case_insensitive)]
+    #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = #enum_name)]
     #item_enum
   })
 }

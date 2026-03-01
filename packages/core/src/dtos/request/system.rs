@@ -1,6 +1,6 @@
 use voletu_core_macros::request_dto;
 
-use crate::dtos::enums::{InitializeAdminAction, NodeType};
+use crate::enums::{InitializeAdminAction, NodeType};
 
 #[request_dto]
 pub struct LoginRequest {
@@ -51,6 +51,6 @@ pub struct CreateUserRequest {
   #[schema(example = "John Doe")]
   pub fullname: Option<String>,
   #[validate(length(min = 2, max = 50))]
-  #[schema(example = "admin")]
+  #[schema(example = "ADMIN")]
   pub role_name: String,
 }

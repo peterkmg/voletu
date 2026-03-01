@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{dispatch_document, product, storage};
+use crate::{
+  dtos::CreateDispatchItemRequest,
+  entities::{dispatch_document, product, storage},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -21,4 +24,16 @@ pub struct Model {
   #[sea_orm(belongs_to, from = "storage_id", to = "id")]
   pub storage: HasOne<storage::Entity>,
   pub dispatched_amount: Decimal,
+}
+
+impl From<&CreateDispatchItemRequest> for ActiveModel {
+  fn from(dto: &CreateDispatchItemRequest) -> Self {
+    Self {
+      dispatch_doc_id: Set(dto.dispatch_doc_id),
+      product_id: Set(dto.item.product_id),
+      storage_id: Set(dto.item.storage_id),
+      dispatched_amount: Set(dto.item.dispatched_amount),
+      ..Default::default()
+    }
+  }
 }

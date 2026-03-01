@@ -1,7 +1,7 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::rail_wagon_manifest;
+use crate::{dtos::CreateRailWagonWeightRequest, entities::rail_wagon_manifest};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -18,4 +18,16 @@ pub struct Model {
   pub gross_weight: Decimal,
   pub tare_weight: Decimal,
   pub net_product_weight: Decimal,
+}
+
+impl From<&CreateRailWagonWeightRequest> for ActiveModel {
+  fn from(dto: &CreateRailWagonWeightRequest) -> Self {
+    Self {
+      wagon_manifest_id: Set(dto.wagon_manifest_id),
+      gross_weight: Set(dto.gross_weight),
+      tare_weight: Set(dto.tare_weight),
+      net_product_weight: Set(dto.net_product_weight),
+      ..Default::default()
+    }
+  }
 }

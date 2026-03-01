@@ -1,7 +1,7 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::truck_waybill;
+use crate::{dtos::CreateTruckWeightDocRequest, entities::truck_waybill};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -15,4 +15,14 @@ pub struct Model {
   #[sea_orm(belongs_to, from = "truck_waybill_id", to = "id")]
   pub truck_waybill: HasOne<truck_waybill::Entity>,
   pub total_weight: Decimal,
+}
+
+impl From<&CreateTruckWeightDocRequest> for ActiveModel {
+  fn from(dto: &CreateTruckWeightDocRequest) -> Self {
+    Self {
+      truck_waybill_id: Set(dto.truck_waybill_id),
+      total_weight: Set(dto.weight_doc.total_weight),
+      ..Default::default()
+    }
+  }
 }

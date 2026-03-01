@@ -1,13 +1,13 @@
 use sea_orm::entity::prelude::Decimal;
 use validator::ValidationError;
 
-use crate::dtos::{
-  enums::{DispatchMethod, DispatchPurpose, InitializeAdminAction},
-  request::{
+use crate::{
+  dtos::request::{
     dispatch::CreateDispatchRequest,
     operations::CreatePhysicalTransferRequest,
     system::CompleteInitializationRequest,
   },
+  enums::{DispatchMethod, DispatchPurpose, InitializeAdminAction},
 };
 
 pub fn validate_non_negative_decimal(value: &Decimal) -> Result<(), ValidationError> {

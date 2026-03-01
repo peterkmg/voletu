@@ -35,7 +35,10 @@ impl SaveLocalConfigRequest {
   }
 
   pub fn parse_db_params(&self) -> anyhow::Result<DbParams> {
-    let db_type = DatabaseType::parse(&self.db_type).map_err(anyhow::Error::msg)?;
+    let db_type = self
+      .db_type
+      .parse::<DatabaseType>()
+      .map_err(anyhow::Error::msg)?;
     match db_type {
       DatabaseType::SQLite => {
         let file = Self::require_non_empty(self.sqlite_file.clone(), "sqliteFile")?;

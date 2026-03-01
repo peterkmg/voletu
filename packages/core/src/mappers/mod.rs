@@ -1,16 +1,15 @@
-pub mod acceptance;
-pub mod dispatch;
-pub mod enums;
+pub mod catalog;
+pub mod docs;
 pub mod ledger;
 pub mod operations;
-pub mod reference;
+pub mod sync;
 pub mod system;
 pub mod transport;
 
-pub use acceptance::*;
-pub use dispatch::*;
+pub use catalog::*;
+pub use docs::*;
 pub use ledger::*;
 pub use operations::*;
-pub use reference::*;
+pub use sync::*;
 pub use system::*;
 pub use transport::*;

@@ -1,7 +1,7 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::rail_wagon_manifest;
+use crate::{dtos::CreateRailWagonMeasurementRequest, entities::rail_wagon_manifest};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -18,4 +18,16 @@ pub struct Model {
   pub measured_height: Decimal,
   pub lab_density: Option<Decimal>,
   pub calculated_mass: Decimal,
+}
+
+impl From<&CreateRailWagonMeasurementRequest> for ActiveModel {
+  fn from(dto: &CreateRailWagonMeasurementRequest) -> Self {
+    Self {
+      wagon_manifest_id: Set(dto.wagon_manifest_id),
+      measured_height: Set(dto.measured_height),
+      lab_density: Set(dto.lab_density),
+      calculated_mass: Set(dto.calculated_mass),
+      ..Default::default()
+    }
+  }
 }

@@ -1,27 +1,31 @@
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+use strum::{Display, EnumString};
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, thiserror::Error)]
+pub enum DbConfigError {
+  #[error("SQLite file path is required")]
+  MissingSqliteFile,
+  #[error("SQLite path must be valid UTF-8")]
+  InvalidSqlitePath,
+  #[error("Host is required")]
+  MissingHost,
+  #[error("Port is required")]
+  MissingPort,
+  #[error("Database name is required")]
+  MissingDatabase,
+  #[error("Username is required")]
+  MissingUsername,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, EnumString, Display)]
+#[strum(serialize_all = "lowercase")]
 pub enum DatabaseType {
   #[default]
   SQLite,
   Postgres,
   MySQL,
-}
-
-impl DatabaseType {
-  pub fn parse(raw: &str) -> Result<Self, String> {
-    match raw.to_ascii_lowercase().as_str() {
-      "sqlite" => Ok(Self::SQLite),
-      "postgres" | "postgresql" => Ok(Self::Postgres),
-      "mysql" => Ok(Self::MySQL),
-      _ => Err(format!(
-        "Invalid database type '{}'. Expected sqlite|postgres|mysql",
-        raw
-      )),
-    }
-  }
 }
 
 /// Serialisable subset of database configuration (no password).
@@ -103,43 +107,73 @@ impl DbConfig {
     }
   }
 
-  pub fn connection_url(&self) -> String {
+  pub fn connection_url(&self) -> Result<String, DbConfigError> {
     match self.params.db_type {
-      DatabaseType::SQLite => {
-        let file = self
-          .params
-          .file
-          .as_ref()
-          .expect("SQLite file path is required");
-        format!(
-          "sqlite://{}?mode=rwc",
-          file.to_str().expect("SQLite path must be valid UTF-8")
-        )
-      }
+      DatabaseType::SQLite => Ok(format!("sqlite://{}?mode=rwc", self.sqlite_path()?)),
       DatabaseType::Postgres | DatabaseType::MySQL => {
-        let host = self.params.host.as_deref().expect("Host is required");
-        let port = self.params.port.expect("Port is required");
-        let database = self
-          .params
-          .database
-          .as_deref()
-          .expect("Database name is required");
-        let username = self
-          .params
-          .username
-          .as_deref()
-          .expect("Username is required");
-        let password = self.password.as_str();
-        let scheme = match self.params.db_type {
-          DatabaseType::Postgres => "postgres",
-          DatabaseType::MySQL => "mysql",
-          _ => unreachable!(),
-        };
-        format!(
+        let (scheme, host, port, database, username) = self.validated_external()?;
+        Ok(format!(
           "{}://{}:{}@{}:{}/{}",
-          scheme, username, password, host, port, database
-        )
+          scheme, username, self.password, host, port, database
+        ))
       }
     }
   }
+
+  pub fn connection_url_public(&self) -> Result<String, DbConfigError> {
+    let url = self.connection_url()?;
+    match self.params.db_type {
+      DatabaseType::SQLite => Ok(
+        url
+          .split_once('?')
+          .map_or(url.clone(), |(pre_query, _)| pre_query.to_string()),
+      ),
+      DatabaseType::Postgres | DatabaseType::MySQL => Ok(strip_sensitive(&url)),
+    }
+  }
+
+  fn sqlite_path(&self) -> Result<&str, DbConfigError> {
+    self
+      .params
+      .file
+      .as_ref()
+      .ok_or(DbConfigError::MissingSqliteFile)?
+      .to_str()
+      .ok_or(DbConfigError::InvalidSqlitePath)
+  }
+
+  fn validated_external(&self) -> Result<(String, &str, u16, &str, &str), DbConfigError> {
+    let host = self
+      .params
+      .host
+      .as_deref()
+      .ok_or(DbConfigError::MissingHost)?;
+    let port = self.params.port.ok_or(DbConfigError::MissingPort)?;
+    let database = self
+      .params
+      .database
+      .as_deref()
+      .ok_or(DbConfigError::MissingDatabase)?;
+    let username = self
+      .params
+      .username
+      .as_deref()
+      .ok_or(DbConfigError::MissingUsername)?;
+
+    let scheme = self.params.db_type.to_string();
+
+    Ok((scheme, host, port, database, username))
+  }
+}
+
+fn strip_sensitive(url: &str) -> String {
+  let Some((scheme, rest)) = url.split_once("://") else {
+    return url.to_string();
+  };
+
+  let Some((_, without_userinfo)) = rest.split_once('@') else {
+    return url.to_string();
+  };
+
+  format!("{}://{}", scheme, without_userinfo)
 }

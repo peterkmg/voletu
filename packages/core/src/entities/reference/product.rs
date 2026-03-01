@@ -5,7 +5,10 @@ use sea_orm::{
   ConnectionTrait,
 };
 
-use crate::entities::{company, product_group};
+use crate::{
+  dtos::CreateProductRequest,
+  entities::{company, product_group},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps(before_save = product_before_save)]
@@ -36,4 +39,18 @@ pub async fn product_before_save<C: ConnectionTrait>(
     model.is_component = Set(true);
   }
   Ok(model)
+}
+
+impl From<&CreateProductRequest> for ActiveModel {
+  fn from(dto: &CreateProductRequest) -> Self {
+    Self {
+      product_group_id: Set(dto.product_group_id),
+      manufacturer_id: Set(dto.manufacturer_id),
+      common_name: Set(dto.common_name.clone()),
+      long_name: Set(dto.long_name.clone()),
+      add_identification: Set(dto.add_identification.clone()),
+      is_component: Set(dto.is_component.unwrap_or(true)),
+      ..Default::default()
+    }
+  }
 }

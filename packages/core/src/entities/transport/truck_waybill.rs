@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{company, truck_waybill_item, truck_weight_doc};
+use crate::{
+  dtos::{CreateTruckWaybillRequest, TruckIntakeCompositeRequest},
+  entities::{company, truck_waybill_item, truck_weight_doc},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -21,4 +24,26 @@ pub struct Model {
   pub items: HasMany<truck_waybill_item::Entity>,
   #[sea_orm(has_many)]
   pub weight_docs: HasMany<truck_weight_doc::Entity>,
+}
+
+impl From<&CreateTruckWaybillRequest> for ActiveModel {
+  fn from(dto: &CreateTruckWaybillRequest) -> Self {
+    Self {
+      document_number: Set(dto.document_number.clone()),
+      date: Set(dto.date),
+      sender_id: Set(dto.sender_id),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&TruckIntakeCompositeRequest> for ActiveModel {
+  fn from(dto: &TruckIntakeCompositeRequest) -> Self {
+    Self {
+      document_number: Set(dto.document_number.clone()),
+      date: Set(dto.date),
+      sender_id: Set(dto.sender_id),
+      ..Default::default()
+    }
+  }
 }

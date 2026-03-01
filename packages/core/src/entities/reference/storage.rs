@@ -5,7 +5,10 @@ use sea_orm::{
   ConnectionTrait,
 };
 
-use crate::entities::{product_type, warehouse};
+use crate::{
+  dtos::CreateStorageRequest,
+  entities::{product_type, warehouse},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps(before_save = storage_before_save)]
@@ -36,4 +39,18 @@ pub async fn storage_before_save<C: ConnectionTrait>(
     model.is_type_specific = Set(false);
   }
   Ok(model)
+}
+
+impl From<&CreateStorageRequest> for ActiveModel {
+  fn from(dto: &CreateStorageRequest) -> Self {
+    Self {
+      warehouse_id: Set(dto.warehouse_id),
+      common_name: Set(dto.common_name.clone()),
+      long_name: Set(dto.long_name.clone()),
+      capacity: Set(dto.capacity),
+      is_type_specific: Set(dto.is_type_specific.unwrap_or(false)),
+      product_type_id: Set(dto.product_type_id),
+      ..Default::default()
+    }
+  }
 }

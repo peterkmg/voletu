@@ -39,6 +39,6 @@ pub fn response_dto(_attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn enum_dto(_attr: TokenStream, item: TokenStream) -> TokenStream {
-  dto::enum_dto(item)
+pub fn enum_type(attr: TokenStream, item: TokenStream) -> TokenStream {
+  dto::enum_type(attr, item)
 }

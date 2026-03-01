@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{database_instance, user, warehouse};
+use crate::{
+  dtos::CreateBaseRequest,
+  entities::{database_instance, user, warehouse},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -20,4 +23,14 @@ pub struct Model {
   pub users: HasMany<user::Entity>,
   #[sea_orm(has_many)]
   pub database_instances: HasMany<database_instance::Entity>,
+}
+
+impl From<&CreateBaseRequest> for ActiveModel {
+  fn from(dto: &CreateBaseRequest) -> Self {
+    Self {
+      common_name: Set(dto.common_name.clone()),
+      long_name: Set(dto.long_name.clone()),
+      ..Default::default()
+    }
+  }
 }

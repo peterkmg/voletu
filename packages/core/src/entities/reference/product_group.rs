@@ -1,7 +1,10 @@
-use sea_orm::{entity::prelude::*, model};
+use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
-use crate::entities::{product, product_type};
+use crate::{
+  dtos::CreateProductGroupRequest,
+  entities::{product, product_type},
+};
 
 #[voletu_core_macros::with_audit_fields]
 #[voletu_core_macros::handle_uuid_timestamps]
@@ -19,4 +22,15 @@ pub struct Model {
   pub long_name: Option<String>,
   #[sea_orm(has_many)]
   pub products: HasMany<product::Entity>,
+}
+
+impl From<&CreateProductGroupRequest> for ActiveModel {
+  fn from(dto: &CreateProductGroupRequest) -> Self {
+    Self {
+      product_type_id: Set(dto.product_type_id),
+      common_name: Set(dto.common_name.clone()),
+      long_name: Set(dto.long_name.clone()),
+      ..Default::default()
+    }
+  }
 }

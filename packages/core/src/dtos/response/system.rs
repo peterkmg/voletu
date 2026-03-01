@@ -9,7 +9,7 @@ pub struct UserResponse {
   pub username: String,
   #[schema(example = "John Doe")]
   pub fullname: Option<String>,
-  #[schema(example = "admin")]
+  #[schema(example = "ADMIN")]
   pub role: String,
 }
 

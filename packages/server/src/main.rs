@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
     let _ = shutdown_tx.send(());
   });
 
-  voletu_core::serve_api_with_shutdown(host, port, db_cfg, jwt_cfg, Some(shutdown_rx)).await?;
+  voletu_core::serve_api(host, port, db_cfg, jwt_cfg, shutdown_rx).await?;
   Ok(())
 }
 

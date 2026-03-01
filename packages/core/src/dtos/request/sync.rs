@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
-use crate::dtos::enums::SyncAuditAction;
+use crate::enums::AuditAction;
 
 #[request_dto]
 pub struct PushAuditLogRequest {
@@ -10,7 +10,7 @@ pub struct PushAuditLogRequest {
   #[validate(length(min = 1))]
   pub table_name: String,
   pub record_id: Uuid,
-  pub action: SyncAuditAction,
+  pub action: AuditAction,
   pub old_values_json: Option<String>,
   pub new_values_json: Option<String>,
   #[validate(length(min = 1))]
