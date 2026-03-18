@@ -2,36 +2,32 @@ pub mod request;
 pub mod response;
 pub mod validators;
 
+/*
+DTO macro contracts:
+
+- #[request_dto]
+  Adds derives: Debug, Deserialize, Serialize, Validate, ToSchema.
+  Adds serde rename_all = "camelCase".
+  For Decimal fields it applies string serde/schema representation.
+  For request strings with length validation it also enforces non-blank validation.
+  Parameters: none.
+
+- #[response_dto]
+  Adds derives: Debug, Serialize, ToSchema.
+  Adds serde rename_all = "camelCase".
+  Supports optional service field generation only when explicitly requested.
+  Parameters:
+  - no params: do not inject any service fields.
+  - service_fields(common): inject created/updated/deleted timestamps and actors + origin_db_id.
+  - service_fields(document): inject common fields + status + executed/reverted lifecycle fields.
+  - service_fields(all): inject document fields + version.
+  - service_fields(field_a, field_b, ...): inject only listed supported service fields.
+  - service_fields(): explicit no-op (equivalent to no params).
+*/
+
 pub use request::{
-  acceptance::{
-    AcceptanceAllocationCompositeRequest,
-    AcceptanceItemCompositeRequest,
-    CreateAcceptanceAllocationRequest,
-    CreateAcceptanceCompositeRequest,
-    CreateAcceptanceItemRequest,
-    CreateAcceptanceRequest,
-  },
-  dispatch::{
-    CreateDispatchCompositeRequest,
-    CreateDispatchItemRequest,
-    CreateDispatchMeasurementRequest,
-    CreateDispatchRequest,
-    DispatchItemCompositeRequest,
-    DispatchMeasurementCompositeRequest,
-  },
-  operations::{
-    BlendingComponentCompositeRequest,
-    BlendingResultCompositeRequest,
-    CreateBlendingComponentRequest,
-    CreateBlendingCompositeRequest,
-    CreateBlendingRequest,
-    CreateBlendingResultRequest,
-    CreateInventoryAdjustmentRequest,
-    CreateInventoryReconciliationRequest,
-    CreateOwnershipTransferRequest,
-    CreatePhysicalTransferRequest,
-  },
-  reference::{
+  audit::{PushAuditLogRequest, PushAuditLogsRequest},
+  catalog::{
     CreateBaseRequest,
     CreateCompanyRequest,
     CreatePortRequest,
@@ -40,16 +36,36 @@ pub use request::{
     CreateProductTypeRequest,
     CreateStorageRequest,
     CreateWarehouseRequest,
+    UpdateBaseRequest,
+    UpdateCompanyRequest,
+    UpdatePortRequest,
+    UpdateProductGroupRequest,
+    UpdateProductRequest,
+    UpdateProductTypeRequest,
+    UpdateStorageRequest,
+    UpdateWarehouseRequest,
   },
-  sync::{PushAuditLogRequest, PushAuditLogsRequest},
-  system::{
-    ChangePasswordRequest,
-    CompleteInitializationRequest,
-    CreateUserRequest,
-    LoginRequest,
-    RefreshTokenRequest,
-  },
-  transport::{
+  document::{
+    AcceptanceItemCompositeRequest,
+    BlendingComponentCompositeRequest,
+    BlendingResultCompositeRequest,
+    CreateAcceptanceCompositeRequest,
+    CreateAcceptanceItemRequest,
+    CreateAcceptanceRequest,
+    CreateBlendingComponentRequest,
+    CreateBlendingCompositeRequest,
+    CreateBlendingRequest,
+    CreateBlendingResultRequest,
+    CreateDispatchCompositeRequest,
+    CreateDispatchItemRequest,
+    CreateDispatchMeasurementRequest,
+    CreateDispatchRequest,
+    CreateInventoryAdjustmentRequest,
+    CreateInventoryReconciliationRequest,
+    CreateOwnershipTransferItemRequest,
+    CreateOwnershipTransferRequest,
+    CreatePhysicalTransferItemRequest,
+    CreatePhysicalTransferRequest,
     CreateRailWagonManifestRequest,
     CreateRailWagonMeasurementRequest,
     CreateRailWagonWeightRequest,
@@ -57,42 +73,52 @@ pub use request::{
     CreateTruckWaybillItemRequest,
     CreateTruckWaybillRequest,
     CreateTruckWeightDocRequest,
-    IntakeAcceptanceCompositeRequest,
-    RailIntakeCompositeRequest,
+    DispatchItemCompositeRequest,
+    DispatchMeasurementCompositeRequest,
+    OwnershipTransferItemCompositeRequest,
+    PhysicalTransferItemCompositeRequest,
     RailWagonManifestCompositeRequest,
     RailWagonMeasurementCompositeRequest,
     RailWagonWeightCompositeRequest,
-    TruckIntakeCompositeRequest,
+    RailWaybillCompositeRequest,
+    TransportAcceptanceCompositeRequest,
+    TruckWaybillCompositeRequest,
     TruckWaybillItemCompositeRequest,
     TruckWeightDocCompositeRequest,
+    UpdateAcceptanceItemRequest,
+    UpdateAcceptanceRequest,
+    UpdateBlendingComponentRequest,
+    UpdateBlendingRequest,
+    UpdateBlendingResultRequest,
+    UpdateDispatchItemRequest,
+    UpdateDispatchMeasurementRequest,
+    UpdateDispatchRequest,
+    UpdateInventoryAdjustmentRequest,
+    UpdateInventoryReconciliationRequest,
+    UpdateOwnershipTransferItemRequest,
+    UpdateOwnershipTransferRequest,
+    UpdatePhysicalTransferItemRequest,
+    UpdatePhysicalTransferRequest,
+    UpdateRailWagonManifestRequest,
+    UpdateRailWagonMeasurementRequest,
+    UpdateRailWagonWeightRequest,
+    UpdateRailWaybillRequest,
+    UpdateTruckWaybillItemRequest,
+    UpdateTruckWaybillRequest,
+    UpdateTruckWeightDocRequest,
+  },
+  system::{
+    ChangePasswordRequest,
+    CompleteInitializationRequest,
+    CreateUserRequest,
+    LoginRequest,
+    RefreshTokenRequest,
+    UpdateUserRequest,
   },
 };
 pub use response::{
-  acceptance::{
-    AcceptanceAllocationResponse,
-    AcceptanceCompositeResponse,
-    AcceptanceItemCompositeResponse,
-    AcceptanceItemResponse,
-    AcceptanceResponse,
-  },
-  dispatch::{
-    DispatchCompositeResponse,
-    DispatchItemResponse,
-    DispatchMeasurementResponse,
-    DispatchResponse,
-  },
-  ledger::LedgerEntryResponse,
-  operations::{
-    BlendingComponentResponse,
-    BlendingCompositeResponse,
-    BlendingResponse,
-    BlendingResultResponse,
-    InventoryAdjustmentResponse,
-    InventoryReconciliationResponse,
-    OwnershipTransferResponse,
-    PhysicalTransferResponse,
-  },
-  reference::{
+  audit::AuditLogResponse,
+  catalog::{
     BaseResponse,
     CompanyResponse,
     PortResponse,
@@ -102,23 +128,42 @@ pub use response::{
     StorageResponse,
     WarehouseResponse,
   },
-  sync::{
-    AuditLogResponse,
-    PullAuditLogsResponse,
-    PushAuditLogsResponse,
-    SyncStatusResponse,
-    SyncWatermarkResponse,
-  },
-  system::{LoginResponse, UserResponse},
-  transport::{
-    RailIntakeCompositeResponse,
+  document::{
+    AcceptanceCompositeResponse,
+    AcceptanceItemResponse,
+    AcceptanceResponse,
+    BlendingComponentResponse,
+    BlendingCompositeResponse,
+    BlendingResponse,
+    BlendingResultResponse,
+    DispatchCompositeResponse,
+    DispatchItemResponse,
+    DispatchMeasurementResponse,
+    DispatchResponse,
+    InventoryAdjustmentResponse,
+    InventoryReconciliationResponse,
+    OwnershipTransferItemResponse,
+    OwnershipTransferResponse,
+    PhysicalTransferItemResponse,
+    PhysicalTransferResponse,
     RailWagonManifestResponse,
     RailWagonMeasurementResponse,
     RailWagonWeightResponse,
+    RailWaybillCompositeResponse,
     RailWaybillResponse,
-    TruckIntakeCompositeResponse,
+    TruckWaybillCompositeResponse,
     TruckWaybillItemResponse,
     TruckWaybillResponse,
     TruckWeightDocResponse,
+  },
+  ledger::LedgerEntryResponse,
+  sync::{PullAuditLogsResponse, PushAuditLogsResponse, SyncStatusResponse, SyncWatermarkResponse},
+  system::{
+    DatabaseInstanceResponse,
+    LocalResponse,
+    LoginResponse,
+    RefreshTokenResponse,
+    RoleResponse,
+    UserResponse,
   },
 };

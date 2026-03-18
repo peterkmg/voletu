@@ -3,8 +3,7 @@ use validator::ValidationError;
 
 use crate::{
   dtos::request::{
-    dispatch::CreateDispatchRequest,
-    operations::CreatePhysicalTransferRequest,
+    document::{CreateDispatchRequest, CreatePhysicalTransferRequest},
     system::CompleteInitializationRequest,
   },
   enums::{DispatchMethod, DispatchPurpose, InitializeAdminAction},

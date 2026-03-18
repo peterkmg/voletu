@@ -3,6 +3,9 @@ use std::str::FromStr;
 use uuid::Uuid;
 use voletu_core_macros::enum_type;
 
+mod audit_table;
+pub(crate) use audit_table::AuditTable;
+
 #[enum_type]
 pub enum ArrivalType {
   Truck,
@@ -46,7 +49,6 @@ pub enum SyncDirection {
 pub enum AuditAction {
   Insert,
   Update,
-  SoftDelete,
   HardDelete,
 }
 
@@ -66,7 +68,6 @@ pub enum NodeType {
 pub enum DocumentStatus {
   Draft,
   Posted,
-  SoftDeleted,
 }
 
 #[enum_type]

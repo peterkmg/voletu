@@ -54,3 +54,19 @@ pub struct CreateUserRequest {
   #[schema(example = "ADMIN")]
   pub role_name: String,
 }
+
+#[request_dto]
+pub struct UpdateUserRequest {
+  #[validate(length(min = 3, max = 50))]
+  #[schema(example = "johndoe")]
+  pub username: Option<String>,
+  #[validate(length(min = 6))]
+  #[schema(example = "s3cr3t!")]
+  pub password: Option<String>,
+  #[validate(length(min = 2, max = 100))]
+  #[schema(example = "John Doe")]
+  pub fullname: Option<String>,
+  #[validate(length(min = 2, max = 50))]
+  #[schema(example = "ADMIN")]
+  pub role_name: Option<String>,
+}
