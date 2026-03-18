@@ -2,7 +2,7 @@ use axum::Json;
 use serde::Serialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-use crate::api::ApiResponse;
+use crate::{api::ApiResponse, endpoints::paths};
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct HealthData {
@@ -11,7 +11,11 @@ pub struct HealthData {
 
 #[utoipa::path(
   get,
-  path = "/health",
+  tag = "System - Health",
+  operation_id = "system_health",
+  summary = "Health check",
+  description = "Returns basic API liveness status used by orchestration and readiness probes.",
+  path = paths::health::ROOT,
   responses((status = 200, description = "Health check", body = ApiResponse<HealthData>))
 )]
 #[axum::debug_handler]
