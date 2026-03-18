@@ -1,6 +1,5 @@
 pub mod acceptance;
 pub mod dispatch;
-pub mod enums;
 pub mod ledger;
 pub mod operations;
 pub mod reference;

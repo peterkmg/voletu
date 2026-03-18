@@ -2,12 +2,12 @@ use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
 use crate::{
-  dtos::{CreateTruckWaybillRequest, TruckIntakeCompositeRequest},
+  dtos::{CreateTruckWaybillRequest, TruckWaybillCompositeRequest},
   entities::{company, truck_waybill_item, truck_weight_doc},
 };
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields]
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "truck_waybills")]
@@ -37,8 +37,8 @@ impl From<&CreateTruckWaybillRequest> for ActiveModel {
   }
 }
 
-impl From<&TruckIntakeCompositeRequest> for ActiveModel {
-  fn from(dto: &TruckIntakeCompositeRequest) -> Self {
+impl From<&TruckWaybillCompositeRequest> for ActiveModel {
+  fn from(dto: &TruckWaybillCompositeRequest) -> Self {
     Self {
       document_number: Set(dto.document_number.clone()),
       date: Set(dto.date),

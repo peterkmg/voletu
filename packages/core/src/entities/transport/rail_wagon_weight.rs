@@ -3,8 +3,8 @@ use uuid::Uuid;
 
 use crate::{dtos::CreateRailWagonWeightRequest, entities::rail_wagon_manifest};
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields]
 #[model]
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "rail_wagon_weights")]

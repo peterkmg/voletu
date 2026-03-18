@@ -13,7 +13,7 @@ use syn::{
 };
 
 const BEFORE_SAVE_PATH_ERROR: &str = "before_save must be a function path";
-const UNSUPPORTED_ATTR_ERROR: &str = "unsupported attribute. Use #[handle_uuid_timestamps], #[handle_uuid], or #[handle_timestamps] optionally with (before_save = path::to::fn)";
+const UNSUPPORTED_ATTR_ERROR: &str = "unsupported attribute. Use #[handle_service_fields], #[handle_uuid], or #[handle_timestamps] optionally with (before_save = path::to::fn)";
 
 enum HookMode {
   Uuid,
@@ -21,7 +21,7 @@ enum HookMode {
   UuidTimestamps,
 }
 
-pub(crate) fn with_audit_fields(item: TokenStream) -> TokenStream {
+pub(crate) fn handle_audit(item: TokenStream) -> TokenStream {
   let mut item_struct = parse_macro_input!(item as ItemStruct);
 
   if let Fields::Named(fields) = &mut item_struct.fields {
@@ -46,7 +46,7 @@ pub(crate) fn before_save_uuid_created_updated(item: TokenStream) -> TokenStream
   expand_before_save(item, HookMode::UuidTimestamps, None)
 }
 
-pub(crate) fn handle_uuid_timestamps(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub(crate) fn handle_service_fields(attr: TokenStream, item: TokenStream) -> TokenStream {
   parse_and_expand(attr, item, HookMode::UuidTimestamps)
 }
 
@@ -125,7 +125,10 @@ fn expand_before_save(
   mode: HookMode,
   custom_before_save: Option<Path>,
 ) -> TokenStream {
-  let item_struct = parse_macro_input!(item as ItemStruct);
+  let mut item_struct = parse_macro_input!(item as ItemStruct);
+  item_struct
+    .attrs
+    .push(parse_quote!(#[derive(serde::Serialize, serde::Deserialize)]));
 
   let has_id = has_named_field(&item_struct, "id");
   let has_created_at = has_named_field(&item_struct, "created_at");
@@ -133,6 +136,7 @@ fn expand_before_save(
   let has_created_by = has_named_field(&item_struct, "created_by");
   let has_updated_by = has_named_field(&item_struct, "updated_by");
   let has_origin_db_id = has_named_field(&item_struct, "origin_db_id");
+  let has_version = has_named_field(&item_struct, "version");
 
   let custom_call = if let Some(path) = custom_before_save {
     quote! {
@@ -207,6 +211,23 @@ fn expand_before_save(
     quote! {}
   };
 
+  let version_step = if has_version {
+    quote! {
+      if insert {
+        crate::utils::model::set_on_insert(&mut self.version, true, 1_i32);
+      } else {
+        match self.version.clone() {
+          sea_orm::ActiveValue::Set(version) | sea_orm::ActiveValue::Unchanged(version) => {
+            self.version = sea_orm::ActiveValue::Set(version + 1);
+          }
+          sea_orm::ActiveValue::NotSet => {}
+        }
+      }
+    }
+  } else {
+    quote! {}
+  };
+
   let hook_call = match mode {
     HookMode::Uuid => {
       quote! {
@@ -229,6 +250,7 @@ fn expand_before_save(
         #created_by_step
         #updated_by_step
         #origin_step
+        #version_step
       }
     }
   };

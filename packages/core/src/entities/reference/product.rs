@@ -10,8 +10,8 @@ use crate::{
   entities::{company, product_group},
 };
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps(before_save = product_before_save)]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields(before_save = product_before_save)]
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "products")]

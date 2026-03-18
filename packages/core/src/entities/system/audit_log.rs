@@ -1,6 +1,6 @@
 use sea_orm::{entity::prelude::*, model, ActiveValue::Set, ConnectionTrait};
 
-use crate::entities::enums;
+use crate::enums;
 
 #[voletu_core_macros::handle_uuid(before_save = audit_log_before_save)]
 #[model]
@@ -16,7 +16,7 @@ pub struct Model {
   pub new_values: Option<Json>,
   pub target_base_ids: String,
   pub user_role_weight: i32,
-  pub user_id: Option<Uuid>,
+  pub user_id: Uuid,
   pub timestamp: DateTimeUtc,
   pub origin_db_id: Uuid,
 }

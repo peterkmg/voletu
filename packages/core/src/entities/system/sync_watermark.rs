@@ -1,6 +1,6 @@
 use sea_orm::{entity::prelude::*, model, ActiveValue::Set, ConnectionTrait};
 
-use crate::entities::{database_instance, enums};
+use crate::{entities::database_instance, enums};
 
 #[voletu_core_macros::handle_uuid(before_save = sync_watermark_before_save)]
 #[model]

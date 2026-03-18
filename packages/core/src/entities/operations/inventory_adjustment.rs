@@ -3,11 +3,12 @@ use uuid::Uuid;
 
 use crate::{
   dtos::CreateInventoryAdjustmentRequest,
-  entities::{company, enums, inventory_reconciliation, product, storage},
+  entities::{company, inventory_reconciliation, product, storage},
+  enums,
 };
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields]
 #[model]
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "inventory_adjustments")]

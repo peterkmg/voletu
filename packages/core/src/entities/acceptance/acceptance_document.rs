@@ -3,11 +3,12 @@ use uuid::Uuid;
 
 use crate::{
   dtos::CreateAcceptanceRequest,
-  entities::{acceptance_item, dispatch_document, enums, rail_waybill, truck_waybill},
+  entities::{acceptance_item, dispatch_document, rail_waybill, truck_waybill},
+  enums,
 };
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields]
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "acceptance_documents")]
@@ -44,7 +45,6 @@ impl From<&CreateAcceptanceRequest> for ActiveModel {
       document_number: Set(dto.document_number.clone()),
       date_accepted: Set(dto.date_accepted),
       status: Set(enums::DocumentStatus::Draft),
-      version: Set(1),
       executed_at: Set(None),
       executed_by: Set(None),
       reverted_at: Set(None),

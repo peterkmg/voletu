@@ -1,20 +1,162 @@
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
+  parenthesized,
+  parse::{Parse, ParseStream},
   parse_macro_input,
   parse_quote,
   AngleBracketedGenericArguments,
   Attribute,
+  Error,
   Field,
   Fields,
   GenericArgument,
+  Ident,
   ItemEnum,
   ItemStruct,
   Meta,
   PathArguments,
+  Result,
+  Token,
   Type,
   TypePath,
 };
+
+struct ResponseDtoArgs {
+  service_fields: Vec<Ident>,
+  service_fields_specified: bool,
+}
+
+fn default_service_field_idents() -> Vec<Ident> {
+  vec![
+    Ident::new("created_at", proc_macro2::Span::call_site()),
+    Ident::new("updated_at", proc_macro2::Span::call_site()),
+    Ident::new("deleted_at", proc_macro2::Span::call_site()),
+    Ident::new("created_by", proc_macro2::Span::call_site()),
+    Ident::new("updated_by", proc_macro2::Span::call_site()),
+    Ident::new("deleted_by", proc_macro2::Span::call_site()),
+    Ident::new("origin_db_id", proc_macro2::Span::call_site()),
+  ]
+}
+
+fn document_service_field_idents() -> Vec<Ident> {
+  let mut fields = default_service_field_idents();
+  fields.push(Ident::new("status", proc_macro2::Span::call_site()));
+  fields.push(Ident::new("executed_at", proc_macro2::Span::call_site()));
+  fields.push(Ident::new("executed_by", proc_macro2::Span::call_site()));
+  fields.push(Ident::new("reverted_at", proc_macro2::Span::call_site()));
+  fields.push(Ident::new("reverted_by", proc_macro2::Span::call_site()));
+  fields
+}
+
+fn resolve_service_fields(input: Vec<Ident>) -> Result<Vec<Ident>> {
+  if input.is_empty() {
+    return Ok(Vec::new());
+  }
+
+  if input.len() == 1 {
+    let key = input[0].to_string();
+    return match key.as_str() {
+      "common" => Ok(default_service_field_idents()),
+      "document" => Ok(document_service_field_idents()),
+      "all" => {
+        let mut fields = document_service_field_idents();
+        fields.push(Ident::new("version", proc_macro2::Span::call_site()));
+        Ok(fields)
+      }
+      _ => Ok(input),
+    };
+  }
+
+  Ok(input)
+}
+
+impl Parse for ResponseDtoArgs {
+  fn parse(input: ParseStream) -> Result<Self> {
+    let mut service_fields = Vec::new();
+    let mut service_fields_specified = false;
+
+    while !input.is_empty() {
+      let key: Ident = input.parse()?;
+      if key == "service_fields" {
+        service_fields_specified = true;
+        let content;
+        parenthesized!(content in input);
+        while !content.is_empty() {
+          service_fields.push(content.parse()?);
+          if content.peek(Token![,]) {
+            let _: Token![,] = content.parse()?;
+          }
+        }
+      } else {
+        return Err(Error::new_spanned(
+          key,
+          "Unknown response_dto argument. Supported: service_fields(...)",
+        ));
+      }
+
+      if input.peek(Token![,]) {
+        let _: Token![,] = input.parse()?;
+      }
+    }
+
+    Ok(Self {
+      service_fields,
+      service_fields_specified,
+    })
+  }
+}
+
+fn inject_service_fields(
+  mut item_struct: ItemStruct,
+  service_fields: &[Ident],
+) -> Result<ItemStruct> {
+  if service_fields.is_empty() {
+    return Ok(item_struct);
+  }
+
+  let Fields::Named(fields) = &mut item_struct.fields else {
+    return Err(Error::new_spanned(
+      item_struct,
+      "response_dto service_fields(...) is supported only for structs with named fields",
+    ));
+  };
+
+  for field in service_fields {
+    let name = field.to_string();
+    let already_present = fields
+      .named
+      .iter()
+      .any(|existing| existing.ident.as_ref().is_some_and(|ident| ident == &name));
+    if already_present {
+      continue;
+    }
+
+    let parsed: Field = match name.as_str() {
+      "created_at" | "updated_at" => parse_quote! { pub #field: String },
+      "deleted_at" => parse_quote! { pub #field: Option<String> },
+      "created_by" | "updated_by" | "origin_db_id" => {
+        parse_quote! { pub #field: uuid::Uuid }
+      }
+      "deleted_by" | "executed_by" | "reverted_by" => {
+        parse_quote! { pub #field: Option<uuid::Uuid> }
+      }
+      "status" => parse_quote! { pub #field: crate::enums::DocumentStatus },
+      "executed_at" | "reverted_at" => parse_quote! { pub #field: Option<String> },
+      "version" => parse_quote! { pub #field: i32 },
+      _ => {
+        return Err(Error::new_spanned(
+          field,
+          "Unsupported service field for response_dto. Supported: created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, origin_db_id, status, executed_at, executed_by, reverted_at, reverted_by, version",
+        ));
+      }
+    };
+
+    fields.named.push(parsed);
+  }
+
+  Ok(item_struct)
+}
 
 fn to_snake_case(input: &str) -> String {
   let chars: Vec<char> = input.chars().collect();
@@ -279,14 +421,28 @@ pub(crate) fn request_dto(item: TokenStream) -> TokenStream {
   let item_struct = process_struct(parse_macro_input!(item as ItemStruct), true);
 
   TokenStream::from(quote! {
-    #[derive(Debug, serde::Deserialize, serde::Serialize, validator::Validate, utoipa::ToSchema)]
+    #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, validator::Validate, utoipa::ToSchema)]
     #[serde(rename_all = "camelCase")]
     #item_struct
   })
 }
 
-pub(crate) fn response_dto(item: TokenStream) -> TokenStream {
-  let item_struct = process_struct(parse_macro_input!(item as ItemStruct), false);
+pub(crate) fn response_dto(attr: TokenStream, item: TokenStream) -> TokenStream {
+  let args = parse_macro_input!(attr as ResponseDtoArgs);
+  let service_fields = if args.service_fields_specified {
+    match resolve_service_fields(args.service_fields) {
+      Ok(value) => value,
+      Err(error) => return error.to_compile_error().into(),
+    }
+  } else {
+    Vec::new()
+  };
+  let item_struct = parse_macro_input!(item as ItemStruct);
+  let item_struct = match inject_service_fields(item_struct, &service_fields) {
+    Ok(value) => value,
+    Err(error) => return error.to_compile_error().into(),
+  };
+  let item_struct = process_struct(item_struct, false);
 
   TokenStream::from(quote! {
     #[derive(Debug, serde::Serialize, utoipa::ToSchema)]

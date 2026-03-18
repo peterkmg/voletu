@@ -2,12 +2,12 @@ use sea_orm::{entity::prelude::*, model, ActiveValue::Set};
 use uuid::Uuid;
 
 use crate::{
-  dtos::{CreateRailWaybillRequest, RailIntakeCompositeRequest},
+  dtos::{CreateRailWaybillRequest, RailWaybillCompositeRequest},
   entities::{company, rail_wagon_manifest},
 };
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields]
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "rail_waybills")]
@@ -35,8 +35,8 @@ impl From<&CreateRailWaybillRequest> for ActiveModel {
   }
 }
 
-impl From<&RailIntakeCompositeRequest> for ActiveModel {
-  fn from(dto: &RailIntakeCompositeRequest) -> Self {
+impl From<&RailWaybillCompositeRequest> for ActiveModel {
+  fn from(dto: &RailWaybillCompositeRequest) -> Self {
     Self {
       document_number: Set(dto.document_number.clone()),
       date: Set(dto.date),

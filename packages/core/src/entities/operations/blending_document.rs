@@ -6,8 +6,8 @@ use crate::{
   entities::{blending_component, blending_result, company, product},
 };
 
-#[voletu_core_macros::with_audit_fields]
-#[voletu_core_macros::handle_uuid_timestamps]
+#[voletu_core_macros::handle_audit]
+#[voletu_core_macros::handle_service_fields]
 #[model]
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "blending_documents")]
@@ -41,7 +41,6 @@ impl From<&CreateBlendingRequest> for ActiveModel {
       document_number: Set(dto.document_number.clone()),
       date: Set(dto.date),
       status: Set(crate::enums::DocumentStatus::Draft),
-      version: Set(1),
       executed_at: Set(None),
       executed_by: Set(None),
       reverted_at: Set(None),
@@ -59,7 +58,6 @@ impl From<&CreateBlendingCompositeRequest> for ActiveModel {
       document_number: Set(dto.document_number.clone()),
       date: Set(dto.date),
       status: Set(crate::enums::DocumentStatus::Draft),
-      version: Set(1),
       executed_at: Set(None),
       executed_by: Set(None),
       reverted_at: Set(None),

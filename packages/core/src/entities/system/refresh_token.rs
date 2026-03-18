@@ -7,7 +7,7 @@ use sea_orm::{
 
 use crate::entities::user;
 
-#[voletu_core_macros::handle_uuid_timestamps(before_save = refresh_token_before_save)]
+#[voletu_core_macros::handle_service_fields(before_save = refresh_token_before_save)]
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "refresh_tokens")]

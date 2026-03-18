@@ -1,7 +1,7 @@
 use sea_orm::{entity::prelude::*, model};
 use uuid::Uuid;
 
-use crate::entities::{enums, user};
+use crate::{entities::user, enums};
 
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
