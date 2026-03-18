@@ -5,6 +5,8 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::api::ApiError;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
   pub sub: String,
@@ -62,4 +64,19 @@ impl Claims {
       .claims,
     )
   }
+}
+
+pub fn parse_refresh_token(token: &str) -> Result<(Uuid, String), ApiError> {
+  let (id_part, secret_part) = token.split_once('.').ok_or(ApiError::Unauthorized(
+    "Invalid refresh token format".to_string(),
+  ))?;
+  let refresh_id = Uuid::parse_str(id_part)
+    .map_err(|_| ApiError::Unauthorized("Invalid refresh token format".to_string()))?;
+  if secret_part.is_empty() {
+    return Err(ApiError::Unauthorized(
+      "Invalid refresh token format".to_string(),
+    ));
+  }
+
+  Ok((refresh_id, secret_part.to_string()))
 }

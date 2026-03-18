@@ -25,23 +25,11 @@ pub async fn auth_middleware(
     .ok_or_else(|| ApiError::Unauthorized("Missing or invalid Authorization header".to_string()))?
     .to_owned();
 
-  let claims = state.token_svc.verify_access(&token).await?;
+  let claims = state.svc.system.verify_access(&token).await?;
 
   req.extensions_mut().insert(claims.clone());
 
-  let origin_db_id = state
-    .cfg
-    .read()
-    .expect("ApiConfig lock poisoned")
-    .node
-    .database_id;
+  let db_id = state.cfg.node.db_id;
 
-  Ok(
-    with_audit_context(
-      claims.uid,
-      origin_db_id,
-      || async move { next.run(req).await },
-    )
-    .await,
-  )
+  Ok(with_audit_context(claims.uid, db_id, || async move { next.run(req).await }).await)
 }

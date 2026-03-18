@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.dependencies]
-tokio = { version = "1", default-features = false, features = [
+tokio = { version = "1.50", default-features = false, features = [
   "rt-multi-thread",
   "macros",
   "net",
@@ -39,7 +39,7 @@ utoipa = { version = "5", default-features = false, features = [
 utoipa-axum = "0.2"
 utoipa-swagger-ui = { version = "9", features = ["axum", "vendored"] }
 
-sea-orm = { version = "2.0.0-rc.35", features = [
+sea-orm = { version = "2.0.0-rc.37", features = [
   "sqlx-all",
   "with-uuid",
   "runtime-tokio-rustls",
@@ -47,20 +47,20 @@ sea-orm = { version = "2.0.0-rc.35", features = [
   "entity-registry",
 ] }
 
-chrono = { version = "0.4", default-features = false, features = [
+chrono = { version = "0.4.44", default-features = false, features = [
   "std",
   "serde",
 ] }
-uuid = { version = "1.21", features = ["v7", "serde"] }
+uuid = { version = "1.22", features = ["v7", "serde"] }
 
-tauri = { version = "2" }
+tauri = { version = "2.10.3" }
 tauri-plugin-opener = "2"
-anyhow = "1"
+anyhow = "1.0.102"
 thiserror = "2"
 
 tracing = "0.1"
 tracing-appender = "0.2"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 validator = { version = "0.20", features = ["derive"] }
 axum-valid = { version = "0.24", features = ["validator"] }
@@ -86,4 +86,4 @@ reqwest = { version = "0.13.2", default-features = false, features = [
   "json",
   "rustls",
 ] }
-strum = { version = "0.27", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }

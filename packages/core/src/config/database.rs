@@ -35,6 +35,10 @@ pub struct DbParams {
   pub db_type: DatabaseType,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file: Option<PathBuf>, // only for SQLite; must be an absolute path
+  #[serde(default)]
+  pub sqlite_in_memory: bool,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub sqlite_shared_memory_name: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub host: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -50,6 +54,34 @@ impl DbParams {
     Self {
       db_type: DatabaseType::SQLite,
       file: Some(file.into()),
+      sqlite_in_memory: false,
+      sqlite_shared_memory_name: None,
+      host: None,
+      port: None,
+      database: None,
+      username: None,
+    }
+  }
+
+  pub fn sqlite_memory() -> Self {
+    Self {
+      db_type: DatabaseType::SQLite,
+      file: None,
+      sqlite_in_memory: true,
+      sqlite_shared_memory_name: None,
+      host: None,
+      port: None,
+      database: None,
+      username: None,
+    }
+  }
+
+  pub fn sqlite_shared_memory(name: impl Into<String>) -> Self {
+    Self {
+      db_type: DatabaseType::SQLite,
+      file: None,
+      sqlite_in_memory: false,
+      sqlite_shared_memory_name: Some(name.into()),
       host: None,
       port: None,
       database: None,
@@ -67,6 +99,8 @@ impl DbParams {
     Self {
       db_type,
       file: None,
+      sqlite_in_memory: false,
+      sqlite_shared_memory_name: None,
       host: Some(host.into()),
       port: Some(port),
       database: Some(database.into()),
@@ -109,7 +143,17 @@ impl DbConfig {
 
   pub fn connection_url(&self) -> Result<String, DbConfigError> {
     match self.params.db_type {
-      DatabaseType::SQLite => Ok(format!("sqlite://{}?mode=rwc", self.sqlite_path()?)),
+      DatabaseType::SQLite => {
+        if self.params.sqlite_in_memory {
+          return Ok("sqlite::memory:".to_string());
+        }
+
+        if let Some(name) = self.params.sqlite_shared_memory_name.as_deref() {
+          return Ok(format!("sqlite:file:{name}?mode=memory&cache=shared"));
+        }
+
+        Ok(format!("sqlite://{}?mode=rwc", self.sqlite_path()?))
+      }
       DatabaseType::Postgres | DatabaseType::MySQL => {
         let (scheme, host, port, database, username) = self.validated_external()?;
         Ok(format!(
@@ -123,11 +167,17 @@ impl DbConfig {
   pub fn connection_url_public(&self) -> Result<String, DbConfigError> {
     let url = self.connection_url()?;
     match self.params.db_type {
-      DatabaseType::SQLite => Ok(
-        url
-          .split_once('?')
-          .map_or(url.clone(), |(pre_query, _)| pre_query.to_string()),
-      ),
+      DatabaseType::SQLite => {
+        if self.params.sqlite_in_memory {
+          return Ok(url);
+        }
+
+        Ok(
+          url
+            .split_once('?')
+            .map_or(url.clone(), |(pre_query, _)| pre_query.to_string()),
+        )
+      }
       DatabaseType::Postgres | DatabaseType::MySQL => Ok(strip_sensitive(&url)),
     }
   }

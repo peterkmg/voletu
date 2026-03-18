@@ -4,6 +4,10 @@ pub use crate::config::LoggingConfig;
 use crate::utils::paths::{ensure_parent_dir, split_file_path};
 
 pub fn init_logging(cfg: &LoggingConfig) -> anyhow::Result<()> {
+  if !cfg.enabled {
+    return Ok(());
+  }
+
   ensure_parent_dir(&cfg.log_file)?;
   let (log_directory, filename) = split_file_path(&cfg.log_file)?;
 

@@ -3,7 +3,9 @@ use std::{future::Future, pin::Pin};
 use sea_orm::{
   DatabaseConnection,
   DatabaseTransaction,
+  EntityName,
   EntityTrait,
+  ModelTrait,
   PrimaryKeyTrait,
   TransactionTrait,
 };
@@ -70,4 +72,8 @@ pub async fn load_local_bootstrap(
     .await
     .map_err(ApiError::Database)?;
   require_found(local, "Local bootstrap row is missing")
+}
+
+pub(crate) fn model_table_name<M: ModelTrait>() -> String {
+  <<M as ModelTrait>::Entity as EntityName>::table_name(&Default::default()).to_string()
 }

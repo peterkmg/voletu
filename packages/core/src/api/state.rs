@@ -1,32 +1,36 @@
-use std::sync::Arc;
-
-use sea_orm::DatabaseConnection;
-
-use crate::{
-  config::ApiConfig,
-  services::{auth::AuthService, token::TokenService, user::UserService},
+use std::{
+  collections::HashMap,
+  sync::{Arc, Mutex},
+  time::Instant,
 };
 
-#[derive(Clone)]
+use sea_orm::DatabaseConnection;
+use tokio::sync::oneshot;
+use uuid::Uuid;
+
+use crate::{api::ApiServices, config::ApiConfig};
+
 pub struct ApiState {
-  pub cfg: ApiConfig,
   pub db: Arc<DatabaseConnection>,
-  pub jwt_service: Arc<TokenService>,
-  pub auth_service: Arc<AuthService>,
-  pub user_service: Arc<UserService>,
+  pub cfg: Arc<ApiConfig>,
+  pub restart_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
+  pub idempotency_cache: Arc<Mutex<HashMap<Uuid, Instant>>>,
+  pub svc: ApiServices,
 }
 
 impl ApiState {
-  pub(crate) fn build(cfg: ApiConfig, db: Arc<DatabaseConnection>) -> Self {
-    let token_service = Arc::new(TokenService::new(&cfg));
-    let auth_service = Arc::new(AuthService::new(db.clone(), token_service.clone()));
-    let user_service = Arc::new(UserService::new(db.clone()));
+  pub fn new(
+    db: Arc<DatabaseConnection>,
+    cfg: Arc<ApiConfig>,
+    restart_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
+  ) -> Self {
+    let svc = ApiServices::new(db.clone(), cfg.clone());
     Self {
-      cfg,
       db,
-      jwt_service: token_service,
-      auth_service,
-      user_service,
+      cfg,
+      restart_tx,
+      idempotency_cache: Arc::new(Mutex::new(HashMap::new())),
+      svc,
     }
   }
 }

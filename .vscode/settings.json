@@ -115,5 +115,12 @@
   ],
   "chat.tools.terminal.autoApprove": {
     "cargo test": true
+  },
+  "[markdown]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "mervin.markdown-formatter",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "never"
+    }
   }
 }

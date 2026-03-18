@@ -3,6 +3,9 @@ name = "voletu-core"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+doctest = false
+
 [dependencies]
 voletu-core-macros = { path = "../core-macros" }
 tokio.workspace = true
@@ -35,3 +38,4 @@ strum.workspace = true
 
 [dev-dependencies]
 sea-orm = { workspace = true, features = ["mock"] }
+assert-json-diff = "2"

@@ -15,16 +15,14 @@ use uuid::Uuid;
 use crate::{
   config::{DatabaseType, DbConfig, NodeConfig},
   constants::{DEFAULT_ADMIN_PASSWORD, DEFAULT_ADMIN_USERNAME, DEFAULT_DATABASE_COMMON_NAME},
-  entities::{database_instance, enums, local, role, user},
+  entities::{database_instance, local, role, user},
+  enums,
   utils::{jwt, password::hash_password, paths::ensure_parent_dir},
 };
 
 pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Model> {
   debug!("Bootstrapping default data...");
   let txn = db.begin().await?;
-  let bootstrap_db_id = Uuid::now_v7();
-  let bootstrap_admin_id = Uuid::now_v7();
-  let now = ChronoUtc::now();
 
   for role_type in enums::RoleType::VARIANTS {
     let m = role::ActiveModel {
@@ -35,6 +33,10 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
     trace!("Seeded {} role.", role_type);
   }
   debug!("Roles seeded.");
+
+  let bootstrap_db_id = Uuid::now_v7();
+  let bootstrap_admin_id = Uuid::now_v7();
+  let now = ChronoUtc::now();
 
   let instance = database_instance::ActiveModel {
     id: Set(bootstrap_db_id),
@@ -101,7 +103,9 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     if let Some(file) = &cfg.params.file {
       ensure_parent_dir(file)?;
     }
-    options.sqlcipher_key(cfg.password.clone());
+    if !cfg.params.sqlite_in_memory && cfg.params.sqlite_shared_memory_name.is_none() {
+      options.sqlcipher_key(cfg.password.clone());
+    }
   }
 
   trace!("Connecting to database...");
