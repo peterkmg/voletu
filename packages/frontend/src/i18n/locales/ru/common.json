@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "dashboard": "Панель",
+    "catalog": "Справочники",
+    "companies": "Компании",
+    "productTypes": "Типы продукции",
+    "productGroups": "Группы продукции",
+    "products": "Продукция",
+    "infrastructure": "Инфраструктура",
+    "bases": "Базы",
+    "warehouses": "Склады",
+    "storages": "Ёмкости",
+    "ports": "Порты",
+    "documents": "Документы",
+    "acceptance": "Приёмка",
+    "dispatch": "Отгрузка",
+    "blending": "Смешение",
+    "transfers": "Перемещения",
+    "physicalTransfer": "Физическое перемещение",
+    "ownershipTransfer": "Смена владельца",
+    "reconciliation": "Инвентаризация",
+    "transport": "Транспорт",
+    "truckWaybills": "Автомобильные накладные",
+    "railWaybills": "Железнодорожные накладные",
+    "system": "Система",
+    "ledger": "Реестр запасов",
+    "users": "Пользователи",
+    "syncStatus": "Статус синхронизации",
+    "overview": "Обзор",
+    "settings": "Настройки"
+  },
+  "actions": {
+    "create": "Создать",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "execute": "Провести",
+    "revert": "Отменить проведение",
+    "confirm": "Подтвердить",
+    "reset": "Сбросить",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "export": "Экспорт",
+    "import": "Импорт",
+    "refresh": "Обновить",
+    "back": "Назад",
+    "close": "Закрыть",
+    "submit": "Отправить",
+    "view": "Просмотр",
+    "details": "Подробности",
+    "softDelete": "Архивировать",
+    "hardDelete": "Удалить навсегда"
+  },
+  "table": {
+    "id": "ID",
+    "name": "Наименование",
+    "commonName": "Краткое наименование",
+    "longName": "Полное наименование",
+    "status": "Статус",
+    "actions": "Действия",
+    "createdAt": "Дата создания",
+    "updatedAt": "Дата изменения",
+    "noResults": "Нет результатов.",
+    "rowsPerPage": "Строк на странице",
+    "page": "Страница",
+    "of": "из",
+    "goToFirstPage": "К первой странице",
+    "goToLastPage": "К последней странице",
+    "goToPreviousPage": "К предыдущей странице",
+    "goToNextPage": "К следующей странице",
+    "columns": "Столбцы",
+    "ascending": "По возрастанию",
+    "descending": "По убыванию",
+    "hide": "Скрыть"
+  },
+  "form": {
+    "required": "Обязательное поле",
+    "invalidEmail": "Неверный адрес электронной почты",
+    "minLength": "Минимум {{min}} символов",
+    "maxLength": "Максимум {{max}} символов"
+  },
+  "status": {
+    "draft": "Черновик",
+    "executed": "Проведён",
+    "active": "Активный",
+    "deleted": "В архиве"
+  },
+  "confirm": {
+    "deleteTitle": "Вы уверены?",
+    "deleteDescription": "Это действие нельзя отменить. Запись будет удалена навсегда.",
+    "archiveTitle": "Архивировать запись?",
+    "archiveDescription": "Запись будет архивирована и может быть восстановлена позже."
+  },
+  "toast": {
+    "createSuccess": "{{entity}} успешно создан(а)",
+    "updateSuccess": "{{entity}} успешно обновлён(а)",
+    "deleteSuccess": "{{entity}} успешно удалён(а)",
+    "executeSuccess": "{{entity}} успешно проведён(а)",
+    "revertSuccess": "Проведение {{entity}} отменено",
+    "error": "Произошла ошибка",
+    "sessionExpired": "Сессия истекла!"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский"
+  },
+  "theme": {
+    "light": "Светлая",
+    "dark": "Тёмная",
+    "system": "Системная"
+  }
+}

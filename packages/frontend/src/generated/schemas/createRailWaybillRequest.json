@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "required": ["documentNumber", "date", "senderId"],
+  "properties": {
+    "date": { "type": "string", "format": "date", "example": "2026-01-01" },
+    "documentNumber": { "type": "string", "example": "example" },
+    "senderId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  },
+  "x-readme-ref-name": "CreateRailWaybillRequest"
+}

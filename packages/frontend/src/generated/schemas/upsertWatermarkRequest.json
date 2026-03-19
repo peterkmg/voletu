@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "required": ["targetNodeId", "direction", "lastAuditLogId"],
+  "properties": {
+    "direction": {
+      "type": "string",
+      "enum": ["PUSH", "PULL"],
+      "x-readme-ref-name": "SyncDirection"
+    },
+    "lastAuditLogId": { "type": "string", "format": "uuid" },
+    "targetNodeId": { "type": "string", "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpsertWatermarkRequest"
+}

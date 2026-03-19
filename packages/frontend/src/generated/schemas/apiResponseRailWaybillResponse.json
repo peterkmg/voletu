@@ -1,0 +1,70 @@
+{
+  "type": "object",
+  "required": ["success"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "description": "Response DTO for the `rail_waybill` entity.",
+      "required": [
+        "id",
+        "documentNumber",
+        "date",
+        "senderId",
+        "createdAt",
+        "updatedAt",
+        "createdBy",
+        "updatedBy",
+        "originDbId"
+      ],
+      "properties": {
+        "createdAt": { "type": "string", "example": "example" },
+        "createdBy": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "date": { "type": "string", "example": "example" },
+        "deletedAt": { "type": ["string", "null"], "example": "example" },
+        "deletedBy": { "type": ["string", "null"], "format": "uuid" },
+        "documentNumber": { "type": "string", "example": "example" },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "originDbId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "senderId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "updatedAt": { "type": "string", "example": "example" },
+        "updatedBy": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "x-readme-ref-name": "ErrorData"
+        }
+      ]
+    },
+    "success": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "ApiResponse_RailWaybillResponse"
+}

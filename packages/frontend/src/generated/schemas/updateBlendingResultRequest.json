@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "producedAmount": { "type": ["string", "null"], "example": "100.00" },
+    "storageId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateBlendingResultRequest"
+}

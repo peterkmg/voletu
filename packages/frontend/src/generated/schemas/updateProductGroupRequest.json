@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "commonName": { "type": ["string", "null"], "example": "example" },
+    "longName": { "type": ["string", "null"], "example": "example" },
+    "productTypeId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateProductGroupRequest"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "grossWeight": { "type": ["string", "null"], "example": "100.00" },
+    "netProductWeight": { "type": ["string", "null"], "example": "100.00" },
+    "tareWeight": { "type": ["string", "null"], "example": "100.00" }
+  },
+  "x-readme-ref-name": "UpdateRailWagonWeightRequest"
+}

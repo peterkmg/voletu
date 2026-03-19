@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "date": { "type": ["string", "null"], "format": "date" },
+    "documentNumber": { "type": ["string", "null"], "example": "example" },
+    "senderId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateRailWaybillRequest"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "baseId": { "type": ["string", "null"], "format": "uuid" },
+    "commonName": { "type": ["string", "null"], "example": "example" },
+    "longName": { "type": ["string", "null"], "example": "example" }
+  },
+  "x-readme-ref-name": "UpdateWarehouseRequest"
+}

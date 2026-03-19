@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "catalog": "Catalog",
+    "companies": "Companies",
+    "productTypes": "Product Types",
+    "productGroups": "Product Groups",
+    "products": "Products",
+    "infrastructure": "Infrastructure",
+    "bases": "Bases",
+    "warehouses": "Warehouses",
+    "storages": "Storages",
+    "ports": "Ports",
+    "documents": "Documents",
+    "acceptance": "Acceptance",
+    "dispatch": "Dispatch",
+    "blending": "Blending",
+    "transfers": "Transfers",
+    "physicalTransfer": "Physical Transfer",
+    "ownershipTransfer": "Ownership Transfer",
+    "reconciliation": "Reconciliation",
+    "transport": "Transport",
+    "truckWaybills": "Truck Waybills",
+    "railWaybills": "Rail Waybills",
+    "system": "System",
+    "ledger": "Inventory Ledger",
+    "users": "Users",
+    "syncStatus": "Sync Status",
+    "overview": "Overview",
+    "settings": "Settings"
+  },
+  "actions": {
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "execute": "Execute",
+    "revert": "Revert",
+    "confirm": "Confirm",
+    "reset": "Reset",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "back": "Back",
+    "close": "Close",
+    "submit": "Submit",
+    "view": "View",
+    "details": "Details",
+    "softDelete": "Archive",
+    "hardDelete": "Permanently Delete"
+  },
+  "table": {
+    "id": "ID",
+    "name": "Name",
+    "commonName": "Common Name",
+    "longName": "Long Name",
+    "status": "Status",
+    "actions": "Actions",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "noResults": "No results.",
+    "rowsPerPage": "Rows per page",
+    "page": "Page",
+    "of": "of",
+    "goToFirstPage": "Go to first page",
+    "goToLastPage": "Go to last page",
+    "goToPreviousPage": "Go to previous page",
+    "goToNextPage": "Go to next page",
+    "columns": "Columns",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "hide": "Hide"
+  },
+  "form": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must be at most {{max}} characters"
+  },
+  "status": {
+    "draft": "Draft",
+    "executed": "Executed",
+    "active": "Active",
+    "deleted": "Archived"
+  },
+  "confirm": {
+    "deleteTitle": "Are you sure?",
+    "deleteDescription": "This action cannot be undone. This will permanently delete this record.",
+    "archiveTitle": "Archive record?",
+    "archiveDescription": "This record will be archived and can be restored later."
+  },
+  "toast": {
+    "createSuccess": "{{entity}} created successfully",
+    "updateSuccess": "{{entity}} updated successfully",
+    "deleteSuccess": "{{entity}} deleted successfully",
+    "executeSuccess": "{{entity}} executed successfully",
+    "revertSuccess": "{{entity}} reverted successfully",
+    "error": "An error occurred",
+    "sessionExpired": "Session expired!"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  }
+}

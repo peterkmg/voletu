@@ -1,0 +1,34 @@
+{
+  "allOf": [
+    {
+      "type": "object",
+      "required": ["storageId", "sourceProductId", "amountUsed"],
+      "properties": {
+        "amountUsed": { "type": "string", "example": "100.00" },
+        "sourceProductId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "storageId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "x-readme-ref-name": "BlendingComponentCompositeRequest"
+    },
+    {
+      "type": "object",
+      "required": ["blendingDocId"],
+      "properties": {
+        "blendingDocId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    }
+  ],
+  "x-readme-ref-name": "CreateBlendingComponentRequest"
+}

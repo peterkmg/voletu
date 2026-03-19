@@ -1,0 +1,41 @@
+{
+  "truck": {
+    "title": "Truck Waybills",
+    "singular": "Truck Waybill",
+    "create": "Create Truck Waybill",
+    "edit": "Edit Truck Waybill",
+    "columns": {
+      "waybillNumber": "Waybill No.",
+      "date": "Date",
+      "sender": "Sender",
+      "receiver": "Receiver"
+    },
+    "form": {
+      "documentNumber": "Document Number",
+      "date": "Date",
+      "senderId": "Sender ID"
+    },
+    "items": "Items",
+    "weightDocs": "Weight Documents"
+  },
+  "rail": {
+    "title": "Rail Waybills",
+    "singular": "Rail Waybill",
+    "create": "Create Rail Waybill",
+    "edit": "Edit Rail Waybill",
+    "columns": {
+      "waybillNumber": "Waybill No.",
+      "date": "Date",
+      "sender": "Sender",
+      "receiver": "Receiver"
+    },
+    "form": {
+      "documentNumber": "Document Number",
+      "date": "Date",
+      "senderId": "Sender ID"
+    },
+    "manifests": "Wagon Manifests",
+    "measurements": "Measurements",
+    "weights": "Weights"
+  }
+}

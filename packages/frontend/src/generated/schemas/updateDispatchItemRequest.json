@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "dispatchedAmount": { "type": ["string", "null"], "example": "100.00" },
+    "productId": { "type": ["string", "null"], "format": "uuid" },
+    "storageId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateDispatchItemRequest"
+}

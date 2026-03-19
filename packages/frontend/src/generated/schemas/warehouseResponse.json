@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "description": "Response DTO for the `warehouse` entity.",
+  "required": [
+    "id",
+    "baseId",
+    "commonName",
+    "createdAt",
+    "updatedAt",
+    "createdBy",
+    "updatedBy",
+    "originDbId"
+  ],
+  "properties": {
+    "baseId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "commonName": { "type": "string", "example": "example" },
+    "createdAt": { "type": "string", "example": "example" },
+    "createdBy": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "deletedAt": { "type": ["string", "null"], "example": "example" },
+    "deletedBy": { "type": ["string", "null"], "format": "uuid" },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "longName": { "type": ["string", "null"], "example": "example" },
+    "originDbId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "updatedAt": { "type": "string", "example": "example" },
+    "updatedBy": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  },
+  "x-readme-ref-name": "WarehouseResponse"
+}

@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "required": ["documentNumber", "date", "contractorId", "targetProductId"],
+  "properties": {
+    "contractorId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "date": {
+      "type": "string",
+      "format": "date-time",
+      "example": "2026-01-01T00:00:00Z"
+    },
+    "documentNumber": { "type": "string", "example": "example" },
+    "targetProductId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  },
+  "x-readme-ref-name": "CreateBlendingRequest"
+}

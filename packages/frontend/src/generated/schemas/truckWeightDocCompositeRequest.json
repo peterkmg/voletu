@@ -1,0 +1,6 @@
+{
+  "type": "object",
+  "required": ["totalWeight"],
+  "properties": { "totalWeight": { "type": "string", "example": "100.00" } },
+  "x-readme-ref-name": "TruckWeightDocCompositeRequest"
+}

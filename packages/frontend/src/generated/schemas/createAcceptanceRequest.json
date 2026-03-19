@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["documentNumber", "dateAccepted", "arrivalType"],
+  "properties": {
+    "arrivalType": {
+      "type": "string",
+      "enum": ["TRUCK", "RAIL", "EXTERNAL", "INITIAL_BALANCE"],
+      "x-readme-ref-name": "ArrivalType"
+    },
+    "dateAccepted": {
+      "type": "string",
+      "format": "date-time",
+      "example": "2026-01-01T00:00:00Z"
+    },
+    "documentNumber": { "type": "string", "example": "example" },
+    "railWaybillId": { "type": ["string", "null"], "format": "uuid" },
+    "sourceEntity": { "type": ["string", "null"], "example": "example" },
+    "transitDispatchId": { "type": ["string", "null"], "format": "uuid" },
+    "truckWaybillId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "CreateAcceptanceRequest"
+}

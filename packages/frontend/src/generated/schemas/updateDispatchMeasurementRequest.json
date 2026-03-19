@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "afterDensity": { "type": ["string", "null"], "example": "100.00" },
+    "afterHeight": { "type": ["string", "null"], "example": "100.00" },
+    "afterMass": { "type": ["string", "null"], "example": "100.00" },
+    "afterVolume": { "type": ["string", "null"], "example": "100.00" },
+    "beforeDensity": { "type": ["string", "null"], "example": "100.00" },
+    "beforeHeight": { "type": ["string", "null"], "example": "100.00" },
+    "beforeMass": { "type": ["string", "null"], "example": "100.00" },
+    "beforeVolume": { "type": ["string", "null"], "example": "100.00" },
+    "storageId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateDispatchMeasurementRequest"
+}

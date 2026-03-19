@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "required": [
+    "reconciliationId",
+    "storageId",
+    "productId",
+    "contractorId",
+    "adjustmentType",
+    "amount"
+  ],
+  "properties": {
+    "adjustmentType": {
+      "type": "string",
+      "enum": ["SURPLUS", "LOSS"],
+      "x-readme-ref-name": "AdjustmentType"
+    },
+    "amount": { "type": "string", "example": "100.00" },
+    "contractorId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "productId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "reason": { "type": ["string", "null"], "example": "example" },
+    "reconciliationId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "storageId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  },
+  "x-readme-ref-name": "CreateInventoryAdjustmentRequest"
+}

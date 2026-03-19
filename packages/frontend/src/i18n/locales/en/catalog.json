@@ -1,0 +1,132 @@
+{
+  "company": {
+    "title": "Companies",
+    "singular": "Company",
+    "create": "Create Company",
+    "edit": "Edit Company",
+    "columns": {
+      "commonName": "Common Name",
+      "legalName": "Legal Name",
+      "isContractor": "Contractor",
+      "isExporter": "Exporter",
+      "isManufacturer": "Manufacturer",
+      "isSender": "Sender"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "legalName": "Legal Name",
+      "isContractor": "Is Contractor",
+      "isExporter": "Is Exporter",
+      "isManufacturer": "Is Manufacturer",
+      "isSender": "Is Sender"
+    }
+  },
+  "productType": {
+    "title": "Product Types",
+    "singular": "Product Type",
+    "create": "Create Product Type",
+    "edit": "Edit Product Type",
+    "columns": {
+      "commonName": "Common Name",
+      "longName": "Long Name"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "longName": "Long Name"
+    }
+  },
+  "productGroup": {
+    "title": "Product Groups",
+    "singular": "Product Group",
+    "create": "Create Product Group",
+    "edit": "Edit Product Group",
+    "columns": {
+      "commonName": "Common Name",
+      "productType": "Product Type"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "productTypeId": "Product Type"
+    }
+  },
+  "product": {
+    "title": "Products",
+    "singular": "Product",
+    "create": "Create Product",
+    "edit": "Edit Product",
+    "columns": {
+      "commonName": "Common Name",
+      "productGroup": "Product Group",
+      "manufacturer": "Manufacturer",
+      "identification": "Identification"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "productGroupId": "Product Group",
+      "manufacturerId": "Manufacturer",
+      "identification": "Identification"
+    }
+  },
+  "base": {
+    "title": "Bases",
+    "singular": "Base",
+    "create": "Create Base",
+    "edit": "Edit Base",
+    "columns": {
+      "commonName": "Common Name",
+      "longName": "Long Name"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "longName": "Long Name"
+    }
+  },
+  "warehouse": {
+    "title": "Warehouses",
+    "singular": "Warehouse",
+    "create": "Create Warehouse",
+    "edit": "Edit Warehouse",
+    "columns": {
+      "commonName": "Common Name",
+      "base": "Base"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "baseId": "Base"
+    }
+  },
+  "storage": {
+    "title": "Storages",
+    "singular": "Storage",
+    "create": "Create Storage",
+    "edit": "Edit Storage",
+    "columns": {
+      "commonName": "Common Name",
+      "warehouse": "Warehouse",
+      "capacity": "Capacity",
+      "productType": "Product Type",
+      "isTypeSpecific": "Type Specific"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "warehouseId": "Warehouse",
+      "capacity": "Capacity",
+      "productTypeId": "Product Type",
+      "isTypeSpecific": "Type Specific"
+    }
+  },
+  "port": {
+    "title": "Ports",
+    "singular": "Port",
+    "create": "Create Port",
+    "edit": "Edit Port",
+    "columns": {
+      "commonName": "Common Name",
+      "longName": "Long Name"
+    },
+    "form": {
+      "commonName": "Common Name",
+      "longName": "Long Name"
+    }
+  }
+}

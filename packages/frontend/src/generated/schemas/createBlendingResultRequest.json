@@ -1,0 +1,29 @@
+{
+  "allOf": [
+    {
+      "type": "object",
+      "required": ["storageId", "producedAmount"],
+      "properties": {
+        "producedAmount": { "type": "string", "example": "100.00" },
+        "storageId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "x-readme-ref-name": "BlendingResultCompositeRequest"
+    },
+    {
+      "type": "object",
+      "required": ["blendingDocId"],
+      "properties": {
+        "blendingDocId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    }
+  ],
+  "x-readme-ref-name": "CreateBlendingResultRequest"
+}

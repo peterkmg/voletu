@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "contractorId": { "type": ["string", "null"], "format": "uuid" },
+    "date": { "type": ["string", "null"], "format": "date-time" },
+    "documentNumber": { "type": ["string", "null"], "example": "example" },
+    "targetProductId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateBlendingRequest"
+}

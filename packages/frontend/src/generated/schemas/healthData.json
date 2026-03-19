@@ -1,0 +1,6 @@
+{
+  "type": "object",
+  "required": ["status"],
+  "properties": { "status": { "type": "string" } },
+  "x-readme-ref-name": "HealthData"
+}

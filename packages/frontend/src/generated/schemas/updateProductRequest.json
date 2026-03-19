@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "addIdentification": { "type": ["string", "null"], "example": "example" },
+    "commonName": { "type": ["string", "null"], "example": "example" },
+    "isComponent": { "type": ["boolean", "null"] },
+    "longName": { "type": ["string", "null"], "example": "example" },
+    "manufacturerId": { "type": ["string", "null"], "format": "uuid" },
+    "productGroupId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateProductRequest"
+}

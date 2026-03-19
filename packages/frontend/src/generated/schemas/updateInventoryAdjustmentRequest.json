@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "adjustmentType": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "enum": ["SURPLUS", "LOSS"],
+          "x-readme-ref-name": "AdjustmentType"
+        }
+      ]
+    },
+    "amount": { "type": ["string", "null"], "example": "100.00" },
+    "contractorId": { "type": ["string", "null"], "format": "uuid" },
+    "productId": { "type": ["string", "null"], "format": "uuid" },
+    "reason": { "type": ["string", "null"], "example": "example" },
+    "storageId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateInventoryAdjustmentRequest"
+}

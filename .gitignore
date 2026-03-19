@@ -1,4 +1,8 @@
 target
+/*.md
+.info
+frontend-example
+.dual-graph/
 
 # Logs
 logs

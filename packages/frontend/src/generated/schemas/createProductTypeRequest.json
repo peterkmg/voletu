@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["commonName"],
+  "properties": {
+    "commonName": { "type": "string", "example": "example" },
+    "longName": { "type": ["string", "null"], "example": "example" }
+  },
+  "x-readme-ref-name": "CreateProductTypeRequest"
+}

@@ -1,0 +1,78 @@
+{
+  "acceptance": {
+    "title": "Acceptance Documents",
+    "singular": "Acceptance Document",
+    "create": "Create Acceptance",
+    "edit": "Edit Acceptance",
+    "columns": {
+      "documentNumber": "Document No.",
+      "date": "Date",
+      "status": "Status",
+      "arrivalType": "Arrival Type"
+    },
+    "form": {
+      "documentNumber": "Document Number",
+      "dateAccepted": "Date Accepted",
+      "arrivalType": "Arrival Type",
+      "sourceEntity": "Source Entity"
+    },
+    "arrivalTypes": {
+      "Pipeline": "Pipeline",
+      "Truck": "Truck",
+      "Rail": "Rail",
+      "Transit": "Transit"
+    }
+  },
+  "dispatch": {
+    "title": "Dispatch Documents",
+    "singular": "Dispatch Document",
+    "create": "Create Dispatch",
+    "columns": {
+      "documentNumber": "Document No.",
+      "date": "Date",
+      "status": "Status",
+      "purpose": "Purpose",
+      "method": "Method"
+    }
+  },
+  "blending": {
+    "title": "Blending Documents",
+    "singular": "Blending Document",
+    "create": "Create Blending",
+    "columns": {
+      "documentNumber": "Document No.",
+      "date": "Date",
+      "status": "Status"
+    }
+  },
+  "physicalTransfer": {
+    "title": "Physical Transfers",
+    "singular": "Physical Transfer",
+    "create": "Create Physical Transfer"
+  },
+  "ownershipTransfer": {
+    "title": "Ownership Transfers",
+    "singular": "Ownership Transfer",
+    "create": "Create Ownership Transfer"
+  },
+  "reconciliation": {
+    "title": "Inventory Reconciliations",
+    "singular": "Inventory Reconciliation",
+    "create": "Create Reconciliation"
+  },
+  "lifecycle": {
+    "execute": "Execute Document",
+    "revert": "Revert Document",
+    "executeConfirm": "Are you sure you want to execute this document? This action processes all items.",
+    "revertConfirm": "Are you sure you want to revert this document? This will undo all processed items."
+  },
+  "items": {
+    "title": "Items",
+    "addItem": "Add Item",
+    "removeItem": "Remove Item",
+    "product": "Product",
+    "storage": "Storage",
+    "contractor": "Contractor",
+    "quantity": "Quantity"
+  }
+}

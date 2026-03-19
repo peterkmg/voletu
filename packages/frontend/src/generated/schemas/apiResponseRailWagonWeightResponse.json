@@ -1,0 +1,72 @@
+{
+  "type": "object",
+  "required": ["success"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "description": "Response DTO for the `rail_wagon_weight` entity.",
+      "required": [
+        "id",
+        "wagonManifestId",
+        "grossWeight",
+        "tareWeight",
+        "netProductWeight",
+        "createdAt",
+        "updatedAt",
+        "createdBy",
+        "updatedBy",
+        "originDbId"
+      ],
+      "properties": {
+        "createdAt": { "type": "string", "example": "example" },
+        "createdBy": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "deletedAt": { "type": ["string", "null"], "example": "example" },
+        "deletedBy": { "type": ["string", "null"], "format": "uuid" },
+        "grossWeight": { "type": "string", "example": "100.00" },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "netProductWeight": { "type": "string", "example": "100.00" },
+        "originDbId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "tareWeight": { "type": "string", "example": "100.00" },
+        "updatedAt": { "type": "string", "example": "example" },
+        "updatedBy": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "wagonManifestId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "x-readme-ref-name": "ErrorData"
+        }
+      ]
+    },
+    "success": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "ApiResponse_RailWagonWeightResponse"
+}

@@ -1,0 +1,5 @@
+{
+  "type": "string",
+  "enum": ["PUSH", "PULL"],
+  "x-readme-ref-name": "SyncDirection"
+}

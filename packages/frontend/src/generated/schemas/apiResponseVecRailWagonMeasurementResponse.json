@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "required": ["success"],
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Response DTO for the `rail_wagon_measurement` entity.",
+        "required": [
+          "id",
+          "wagonManifestId",
+          "measuredHeight",
+          "calculatedMass",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "updatedBy",
+          "originDbId"
+        ],
+        "properties": {
+          "calculatedMass": { "type": "string", "example": "100.00" },
+          "createdAt": { "type": "string", "example": "example" },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "deletedAt": { "type": ["string", "null"], "example": "example" },
+          "deletedBy": { "type": ["string", "null"], "format": "uuid" },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "labDensity": { "type": ["string", "null"], "example": "100.00" },
+          "measuredHeight": { "type": "string", "example": "100.00" },
+          "originDbId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "updatedAt": { "type": "string", "example": "example" },
+          "updatedBy": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "wagonManifestId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "x-readme-ref-name": "ErrorData"
+        }
+      ]
+    },
+    "success": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "ApiResponse_Vec_RailWagonMeasurementResponse"
+}

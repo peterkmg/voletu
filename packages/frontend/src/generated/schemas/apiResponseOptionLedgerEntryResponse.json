@@ -1,0 +1,85 @@
+{
+  "type": "object",
+  "required": ["success"],
+  "properties": {
+    "data": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "description": "Response DTO for the `inventory_ledger_entry` entity.",
+          "required": [
+            "id",
+            "storageId",
+            "productId",
+            "contractorId",
+            "currentAmount",
+            "createdAt",
+            "updatedAt",
+            "createdBy",
+            "updatedBy",
+            "originDbId"
+          ],
+          "properties": {
+            "contractorId": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "createdAt": { "type": "string", "example": "example" },
+            "createdBy": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "currentAmount": { "type": "string", "example": "100.00" },
+            "deletedAt": { "type": ["string", "null"], "example": "example" },
+            "deletedBy": { "type": ["string", "null"], "format": "uuid" },
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "originDbId": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "productId": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "storageId": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "updatedAt": { "type": "string", "example": "example" },
+            "updatedBy": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            }
+          }
+        }
+      ]
+    },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "x-readme-ref-name": "ErrorData"
+        }
+      ]
+    },
+    "success": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "ApiResponse_Option_LedgerEntryResponse"
+}

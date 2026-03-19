@@ -1,0 +1,36 @@
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { z } from 'zod'
+import { LoginForm } from '~/features/auth/components/login-form'
+import { useAuthStore } from '~/stores/auth-store'
+import { useStartupStore } from '~/stores/startup-store'
+
+const searchSchema = z.object({
+  redirect: z.string().optional(),
+})
+
+export const Route = createFileRoute('/(auth)/sign-in')({
+  validateSearch: searchSchema,
+  beforeLoad: () => {
+    const { auth } = useAuthStore.getState()
+    const { startupState } = useStartupStore.getState()
+
+    if (startupState?.needsSetup) {
+      throw redirect({ to: '/setup' })
+    }
+
+    if (auth.accessToken) {
+      throw redirect({ to: '/' })
+    }
+  },
+  component: SignInPage,
+})
+
+function SignInPage() {
+  const { redirect: redirectTo } = Route.useSearch()
+
+  return (
+    <div className="flex min-h-svh items-center justify-center p-4">
+      <LoginForm redirect={redirectTo} />
+    </div>
+  )
+}

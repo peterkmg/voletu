@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "totalWeight": { "type": ["string", "null"], "example": "100.00" }
+  },
+  "x-readme-ref-name": "UpdateTruckWeightDocRequest"
+}

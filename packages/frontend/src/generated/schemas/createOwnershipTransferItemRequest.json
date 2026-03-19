@@ -1,0 +1,50 @@
+{
+  "allOf": [
+    {
+      "type": "object",
+      "required": [
+        "storageId",
+        "productId",
+        "fromContractorId",
+        "toContractorId",
+        "amount"
+      ],
+      "properties": {
+        "amount": { "type": "string", "example": "100.00" },
+        "fromContractorId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "productId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "storageId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "toContractorId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "x-readme-ref-name": "OwnershipTransferItemCompositeRequest"
+    },
+    {
+      "type": "object",
+      "required": ["ownershipTransferId"],
+      "properties": {
+        "ownershipTransferId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    }
+  ],
+  "x-readme-ref-name": "CreateOwnershipTransferItemRequest"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "date": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "x-readme-ref-name": "UpdateOwnershipTransferRequest"
+}

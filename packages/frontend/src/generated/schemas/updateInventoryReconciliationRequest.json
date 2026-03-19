@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "date": { "type": ["string", "null"], "format": "date-time" },
+    "documentNumber": { "type": ["string", "null"], "example": "example" },
+    "warehouseId": { "type": ["string", "null"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "UpdateInventoryReconciliationRequest"
+}

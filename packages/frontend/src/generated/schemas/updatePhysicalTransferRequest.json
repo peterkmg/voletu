@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "date": { "type": ["string", "null"], "format": "date-time" },
+    "documentNumber": { "type": ["string", "null"], "example": "example" },
+    "endCargoOps": { "type": ["string", "null"], "format": "date-time" },
+    "startCargoOps": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "x-readme-ref-name": "UpdatePhysicalTransferRequest"
+}

@@ -1,0 +1,87 @@
+{
+  "type": "object",
+  "description": "Response DTO for the `dispatch_document` entity.",
+  "required": [
+    "id",
+    "documentNumber",
+    "date",
+    "dispatchPurpose",
+    "dispatchMethod",
+    "contractorId",
+    "createdAt",
+    "updatedAt",
+    "createdBy",
+    "updatedBy",
+    "originDbId",
+    "status"
+  ],
+  "properties": {
+    "bunkerType": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "enum": ["EXPORT", "DOMESTIC"],
+          "x-readme-ref-name": "BunkerType"
+        }
+      ]
+    },
+    "contractorId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "createdAt": { "type": "string", "example": "example" },
+    "createdBy": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "date": { "type": "string", "example": "example" },
+    "deletedAt": { "type": ["string", "null"], "example": "example" },
+    "deletedBy": { "type": ["string", "null"], "format": "uuid" },
+    "destinationBaseId": { "type": ["string", "null"], "format": "uuid" },
+    "dispatchMethod": {
+      "type": "string",
+      "enum": ["TRUCK", "VESSEL_TERMINAL", "BUNKERING"],
+      "x-readme-ref-name": "DispatchMethod"
+    },
+    "dispatchPurpose": {
+      "type": "string",
+      "enum": ["EXTERNAL", "INTERNAL"],
+      "x-readme-ref-name": "DispatchPurpose"
+    },
+    "documentNumber": { "type": "string", "example": "example" },
+    "endCargoOps": { "type": ["string", "null"], "example": "example" },
+    "executedAt": { "type": ["string", "null"], "example": "example" },
+    "executedBy": { "type": ["string", "null"], "format": "uuid" },
+    "exporterId": { "type": ["string", "null"], "format": "uuid" },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "originDbId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    "portId": { "type": ["string", "null"], "format": "uuid" },
+    "receiverEntity": { "type": ["string", "null"], "example": "example" },
+    "revertedAt": { "type": ["string", "null"], "example": "example" },
+    "revertedBy": { "type": ["string", "null"], "format": "uuid" },
+    "startCargoOps": { "type": ["string", "null"], "example": "example" },
+    "status": {
+      "type": "string",
+      "enum": ["DRAFT", "POSTED"],
+      "x-readme-ref-name": "DocumentStatus"
+    },
+    "updatedAt": { "type": "string", "example": "example" },
+    "updatedBy": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  },
+  "x-readme-ref-name": "DispatchResponse"
+}

@@ -1,0 +1,5 @@
+{
+  "type": "string",
+  "enum": ["EXPORT", "DOMESTIC"],
+  "x-readme-ref-name": "BunkerType"
+}

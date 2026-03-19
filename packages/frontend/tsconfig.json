@@ -41,7 +41,7 @@
     // "resolvePackageJsonImports": true,                // Use package.json 'imports' for resolution
     // "customConditions": [],                           // Custom conditions for resolving imports
     "resolveJsonModule": true, // Enable importing .json files
-    "types": ["vite/client", "vite-plugin-pages/client-react"],
+    "types": ["vite/client"],
     // "rootDirs": [],                                   // Allow multiple folders as one for module resolution
     // "typeRoots": [],                                  // Specify multiple folders for type definitions
     // "types": ["node", "vite/client"],                 // Type declaration files to include

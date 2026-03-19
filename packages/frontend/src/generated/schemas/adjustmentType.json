@@ -1,0 +1,5 @@
+{
+  "type": "string",
+  "enum": ["SURPLUS", "LOSS"],
+  "x-readme-ref-name": "AdjustmentType"
+}

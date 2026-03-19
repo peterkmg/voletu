@@ -1,0 +1,48 @@
+{
+  "users": {
+    "title": "Users",
+    "singular": "User",
+    "create": "Create User",
+    "columns": {
+      "username": "Username",
+      "fullname": "Full Name",
+      "role": "Role",
+      "homeBase": "Home Base"
+    },
+    "form": {
+      "username": "Username",
+      "fullname": "Full Name",
+      "password": "Password",
+      "roleId": "Role",
+      "homeBaseId": "Home Base"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "seniorSupervisor": "Senior Supervisor",
+      "supervisor": "Supervisor",
+      "operator": "Operator"
+    }
+  },
+  "sync": {
+    "title": "Sync Status",
+    "status": "Current Status",
+    "watermarks": "Watermarks",
+    "auditLogs": "Audit Logs",
+    "lastSync": "Last Sync",
+    "pending": "Pending Changes"
+  },
+  "ledger": {
+    "title": "Inventory Ledger",
+    "columns": {
+      "storage": "Storage",
+      "product": "Product",
+      "contractor": "Contractor",
+      "quantity": "Quantity"
+    },
+    "filters": {
+      "storage": "Filter by Storage",
+      "product": "Filter by Product",
+      "contractor": "Filter by Contractor"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": ["wagonManifestId", "measuredHeight", "calculatedMass"],
+  "properties": {
+    "calculatedMass": { "type": "string", "example": "100.00" },
+    "labDensity": { "type": ["string", "null"], "example": "100.00" },
+    "measuredHeight": { "type": "string", "example": "100.00" },
+    "wagonManifestId": {
+      "type": "string",
+      "format": "uuid",
+      "example": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  },
+  "x-readme-ref-name": "CreateRailWagonMeasurementRequest"
+}
