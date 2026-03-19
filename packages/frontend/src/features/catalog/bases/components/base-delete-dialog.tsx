@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteBase,
-  invalidateBases,
-  softDeleteBase,
-} from '../data/base-api'
+import { catalogBaseHardDelete, catalogBaseSoftDelete } from '~/generated/client'
+import { catalogBaseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface BaseDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function BaseDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteBase(currentRow.id)
+        await catalogBaseHardDelete(currentRow.id)
       }
       else {
-        await softDeleteBase(currentRow.id)
+        await catalogBaseSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function BaseDeleteDialog({
           entity: t('catalog:base.singular'),
         }),
       )
-      await invalidateBases()
+      await queryClient.invalidateQueries({ queryKey: catalogBaseListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

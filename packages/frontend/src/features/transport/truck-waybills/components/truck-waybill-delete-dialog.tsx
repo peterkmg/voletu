@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteTruckWaybill,
-  invalidateTruckWaybills,
-  softDeleteTruckWaybill,
-} from '../data/truck-waybill-api'
+import { transportTruckWaybillHardDelete, transportTruckWaybillSoftDelete } from '~/generated/client'
+import { transportTruckWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface TruckWaybillDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function TruckWaybillDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteTruckWaybill(currentRow.id)
+        await transportTruckWaybillHardDelete(currentRow.id)
       }
       else {
-        await softDeleteTruckWaybill(currentRow.id)
+        await transportTruckWaybillSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function TruckWaybillDeleteDialog({
           entity: t('transport:truck.singular'),
         }),
       )
-      await invalidateTruckWaybills()
+      await queryClient.invalidateQueries({ queryKey: transportTruckWaybillListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

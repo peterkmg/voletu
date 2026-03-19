@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createBlendingDocument,
-  invalidateBlendingDocuments,
-  updateBlendingDocument,
-} from '../data/blending-api'
+import { blendingDocumentCreate, blendingDocumentUpdate } from '~/generated/client'
+import { blendingDocumentListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 const blendingFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -85,7 +83,7 @@ export function BlendingMutateDrawer({
   const onSubmit = async (values: BlendingFormValues) => {
     try {
       if (isUpdate && currentRow) {
-        await updateBlendingDocument(currentRow.id, values)
+        await blendingDocumentUpdate(currentRow.id, values)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('documents:blending.singular'),
@@ -93,7 +91,7 @@ export function BlendingMutateDrawer({
         )
       }
       else {
-        await createBlendingDocument(values)
+        await blendingDocumentCreate(values)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:blending.singular'),
@@ -101,7 +99,7 @@ export function BlendingMutateDrawer({
         )
       }
 
-      await invalidateBlendingDocuments()
+      await queryClient.invalidateQueries({ queryKey: blendingDocumentListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

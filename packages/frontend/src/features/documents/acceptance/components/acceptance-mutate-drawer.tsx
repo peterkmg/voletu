@@ -31,11 +31,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createAcceptanceDocument,
-  invalidateAcceptanceDocuments,
-  updateAcceptanceDocument,
-} from '../data/acceptance-api'
+import { acceptanceDocumentCreate, acceptanceDocumentUpdate } from '~/generated/client'
+import { acceptanceDocumentListQueryKey } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 const arrivalTypes = ['TRUCK', 'RAIL', 'EXTERNAL', 'INITIAL_BALANCE'] as const
 
@@ -101,7 +99,7 @@ export function AcceptanceMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateAcceptanceDocument(currentRow.id, payload)
+        await acceptanceDocumentUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('documents:acceptance.singular'),
@@ -109,7 +107,7 @@ export function AcceptanceMutateDrawer({
         )
       }
       else {
-        await createAcceptanceDocument(payload)
+        await acceptanceDocumentCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:acceptance.singular'),
@@ -117,7 +115,7 @@ export function AcceptanceMutateDrawer({
         )
       }
 
-      await invalidateAcceptanceDocuments()
+      await queryClient.invalidateQueries({ queryKey: acceptanceDocumentListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

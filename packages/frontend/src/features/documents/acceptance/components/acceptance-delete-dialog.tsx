@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteAcceptanceDocument,
-  invalidateAcceptanceDocuments,
-  softDeleteAcceptanceDocument,
-} from '../data/acceptance-api'
+import { acceptanceDocumentHardDelete, acceptanceDocumentSoftDelete } from '~/generated/client'
+import { acceptanceDocumentListQueryKey } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface AcceptanceDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function AcceptanceDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteAcceptanceDocument(currentRow.id)
+        await acceptanceDocumentHardDelete(currentRow.id)
       }
       else {
-        await softDeleteAcceptanceDocument(currentRow.id)
+        await acceptanceDocumentSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function AcceptanceDeleteDialog({
           entity: t('documents:acceptance.singular'),
         }),
       )
-      await invalidateAcceptanceDocuments()
+      await queryClient.invalidateQueries({ queryKey: acceptanceDocumentListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

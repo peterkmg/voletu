@@ -22,10 +22,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createOwnershipTransfer,
-  invalidateOwnershipTransfers,
-} from '../data/ownership-transfer-api'
+import { ownershipTransferCreate } from '~/generated/client'
+import { ownershipTransferListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferList'
+import { queryClient } from '~/shared/api/query-client'
 
 const ownershipTransferFormSchema = z.object({
   date: z.string().min(1, 'Date is required'),
@@ -53,7 +52,7 @@ export function OwnershipTransferMutateDrawer({
 
   const onSubmit = async (values: OwnershipTransferFormValues) => {
     try {
-      await createOwnershipTransfer({
+      await ownershipTransferCreate({
         ...values,
         items: [],
       })
@@ -62,7 +61,7 @@ export function OwnershipTransferMutateDrawer({
           entity: t('documents:ownershipTransfer.singular'),
         }),
       )
-      await invalidateOwnershipTransfers()
+      await queryClient.invalidateQueries({ queryKey: ownershipTransferListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

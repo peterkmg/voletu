@@ -25,11 +25,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createCompany,
-  invalidateCompanies,
-  updateCompany,
-} from '../data/company-api'
+import { catalogCompanyCreate, catalogCompanyUpdate } from '~/generated/client'
+import { catalogCompanyListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { queryClient } from '~/shared/api/query-client'
 
 const companyFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -99,7 +97,7 @@ export function CompanyMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateCompany(currentRow.id, payload)
+        await catalogCompanyUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:company.singular'),
@@ -107,7 +105,7 @@ export function CompanyMutateDrawer({
         )
       }
       else {
-        await createCompany(payload)
+        await catalogCompanyCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:company.singular'),
@@ -115,7 +113,7 @@ export function CompanyMutateDrawer({
         )
       }
 
-      await invalidateCompanies()
+      await queryClient.invalidateQueries({ queryKey: catalogCompanyListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

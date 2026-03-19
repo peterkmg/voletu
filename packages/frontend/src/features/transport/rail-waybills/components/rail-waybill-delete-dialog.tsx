@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteRailWaybill,
-  invalidateRailWaybills,
-  softDeleteRailWaybill,
-} from '../data/rail-waybill-api'
+import { transportRailWaybillHardDelete, transportRailWaybillSoftDelete } from '~/generated/client'
+import { transportRailWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface RailWaybillDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function RailWaybillDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteRailWaybill(currentRow.id)
+        await transportRailWaybillHardDelete(currentRow.id)
       }
       else {
-        await softDeleteRailWaybill(currentRow.id)
+        await transportRailWaybillSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function RailWaybillDeleteDialog({
           entity: t('transport:rail.singular'),
         }),
       )
-      await invalidateRailWaybills()
+      await queryClient.invalidateQueries({ queryKey: transportRailWaybillListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

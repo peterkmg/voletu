@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  executeBlendingDocument,
-  invalidateBlendingDocuments,
-  revertBlendingDocument,
-} from '../data/blending-api'
+import { blendingDocumentExecute, blendingDocumentRevert } from '~/generated/client'
+import { blendingDocumentListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface BlendingLifecycleDialogProps {
   open: boolean
@@ -32,7 +30,7 @@ export function BlendingLifecycleDialog({
 
     try {
       if (variant === 'execute') {
-        await executeBlendingDocument(currentRow.id)
+        await blendingDocumentExecute(currentRow.id)
         toast.success(
           t('common:toast.executeSuccess', {
             entity: t('documents:blending.singular'),
@@ -40,7 +38,7 @@ export function BlendingLifecycleDialog({
         )
       }
       else {
-        await revertBlendingDocument(currentRow.id)
+        await blendingDocumentRevert(currentRow.id)
         toast.success(
           t('common:toast.revertSuccess', {
             entity: t('documents:blending.singular'),
@@ -48,7 +46,7 @@ export function BlendingLifecycleDialog({
         )
       }
 
-      await invalidateBlendingDocuments()
+      await queryClient.invalidateQueries({ queryKey: blendingDocumentListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

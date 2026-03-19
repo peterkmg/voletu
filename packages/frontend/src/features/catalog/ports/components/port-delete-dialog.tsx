@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeletePort,
-  invalidatePorts,
-  softDeletePort,
-} from '../data/port-api'
+import { catalogPortHardDelete, catalogPortSoftDelete } from '~/generated/client'
+import { catalogPortListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogPortList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface PortDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function PortDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeletePort(currentRow.id)
+        await catalogPortHardDelete(currentRow.id)
       }
       else {
-        await softDeletePort(currentRow.id)
+        await catalogPortSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function PortDeleteDialog({
           entity: t('catalog:port.singular'),
         }),
       )
-      await invalidatePorts()
+      await queryClient.invalidateQueries({ queryKey: catalogPortListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

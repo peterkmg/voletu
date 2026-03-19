@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  executeOwnershipTransfer,
-  invalidateOwnershipTransfers,
-  revertOwnershipTransfer,
-} from '../data/ownership-transfer-api'
+import { ownershipTransferExecute, ownershipTransferRevert } from '~/generated/client'
+import { ownershipTransferListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface OwnershipTransferLifecycleDialogProps {
   open: boolean
@@ -32,7 +30,7 @@ export function OwnershipTransferLifecycleDialog({
 
     try {
       if (action === 'execute') {
-        await executeOwnershipTransfer(currentRow.id)
+        await ownershipTransferExecute(currentRow.id)
         toast.success(
           t('common:toast.executeSuccess', {
             entity: t('documents:ownershipTransfer.singular'),
@@ -40,7 +38,7 @@ export function OwnershipTransferLifecycleDialog({
         )
       }
       else {
-        await revertOwnershipTransfer(currentRow.id)
+        await ownershipTransferRevert(currentRow.id)
         toast.success(
           t('common:toast.revertSuccess', {
             entity: t('documents:ownershipTransfer.singular'),
@@ -48,7 +46,7 @@ export function OwnershipTransferLifecycleDialog({
         )
       }
 
-      await invalidateOwnershipTransfers()
+      await queryClient.invalidateQueries({ queryKey: ownershipTransferListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

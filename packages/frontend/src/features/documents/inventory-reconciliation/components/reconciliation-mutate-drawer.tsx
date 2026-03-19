@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createReconciliationDocument,
-  invalidateReconciliations,
-  updateReconciliationDocument,
-} from '../data/reconciliation-api'
+import { reconciliationCreate, reconciliationUpdate } from '~/generated/client'
+import { reconciliationListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
+import { queryClient } from '~/shared/api/query-client'
 
 const reconciliationFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -81,7 +79,7 @@ export function ReconciliationMutateDrawer({
   const onSubmit = async (values: ReconciliationFormValues) => {
     try {
       if (isUpdate && currentRow) {
-        await updateReconciliationDocument(currentRow.id, values)
+        await reconciliationUpdate(currentRow.id, values)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('documents:reconciliation.singular'),
@@ -89,7 +87,7 @@ export function ReconciliationMutateDrawer({
         )
       }
       else {
-        await createReconciliationDocument(values)
+        await reconciliationCreate(values)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:reconciliation.singular'),
@@ -97,7 +95,7 @@ export function ReconciliationMutateDrawer({
         )
       }
 
-      await invalidateReconciliations()
+      await queryClient.invalidateQueries({ queryKey: reconciliationListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteProductGroup,
-  invalidateProductGroups,
-  softDeleteProductGroup,
-} from '../data/product-group-api'
+import { catalogProductGroupHardDelete, catalogProductGroupSoftDelete } from '~/generated/client'
+import { catalogProductGroupListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductGroupList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface ProductGroupDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function ProductGroupDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteProductGroup(currentRow.id)
+        await catalogProductGroupHardDelete(currentRow.id)
       }
       else {
-        await softDeleteProductGroup(currentRow.id)
+        await catalogProductGroupSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function ProductGroupDeleteDialog({
           entity: t('catalog:productGroup.singular'),
         }),
       )
-      await invalidateProductGroups()
+      await queryClient.invalidateQueries({ queryKey: catalogProductGroupListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

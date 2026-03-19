@@ -10,6 +10,10 @@
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
+  input[type='password']::-ms-reveal,
+  input[type='password']::-ms-clear {
+    display: none;
+  }
   html {
     @apply overflow-x-hidden;
   }

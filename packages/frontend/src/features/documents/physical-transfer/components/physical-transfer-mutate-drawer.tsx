@@ -22,10 +22,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createPhysicalTransfer,
-  invalidatePhysicalTransfers,
-} from '../data/physical-transfer-api'
+import { physicalTransferCreate } from '~/generated/client'
+import { physicalTransferListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferList'
+import { queryClient } from '~/shared/api/query-client'
 
 const physicalTransferFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -59,7 +58,7 @@ export function PhysicalTransferMutateDrawer({
 
   const onSubmit = async (values: PhysicalTransferFormValues) => {
     try {
-      await createPhysicalTransfer({
+      await physicalTransferCreate({
         ...values,
         items: [],
       })
@@ -68,7 +67,7 @@ export function PhysicalTransferMutateDrawer({
           entity: t('documents:physicalTransfer.singular'),
         }),
       )
-      await invalidatePhysicalTransfers()
+      await queryClient.invalidateQueries({ queryKey: physicalTransferListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

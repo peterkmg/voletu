@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createBase,
-  invalidateBases,
-  updateBase,
-} from '../data/base-api'
+import { catalogBaseCreate, catalogBaseUpdate } from '~/generated/client'
+import { catalogBaseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
+import { queryClient } from '~/shared/api/query-client'
 
 const baseFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -82,7 +80,7 @@ export function BaseMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateBase(currentRow.id, payload)
+        await catalogBaseUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:base.singular'),
@@ -90,7 +88,7 @@ export function BaseMutateDrawer({
         )
       }
       else {
-        await createBase(payload)
+        await catalogBaseCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:base.singular'),
@@ -98,7 +96,7 @@ export function BaseMutateDrawer({
         )
       }
 
-      await invalidateBases()
+      await queryClient.invalidateQueries({ queryKey: catalogBaseListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

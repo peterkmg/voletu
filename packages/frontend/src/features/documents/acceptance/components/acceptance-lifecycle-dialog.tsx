@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  executeAcceptanceDocument,
-  invalidateAcceptanceDocuments,
-  revertAcceptanceDocument,
-} from '../data/acceptance-api'
+import { acceptanceDocumentExecute, acceptanceDocumentRevert } from '~/generated/client'
+import { acceptanceDocumentListQueryKey } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface AcceptanceLifecycleDialogProps {
   open: boolean
@@ -32,7 +30,7 @@ export function AcceptanceLifecycleDialog({
 
     try {
       if (action === 'execute') {
-        await executeAcceptanceDocument(currentRow.id)
+        await acceptanceDocumentExecute(currentRow.id)
         toast.success(
           t('common:toast.executeSuccess', {
             entity: t('documents:acceptance.singular'),
@@ -40,7 +38,7 @@ export function AcceptanceLifecycleDialog({
         )
       }
       else {
-        await revertAcceptanceDocument(currentRow.id)
+        await acceptanceDocumentRevert(currentRow.id)
         toast.success(
           t('common:toast.revertSuccess', {
             entity: t('documents:acceptance.singular'),
@@ -48,7 +46,7 @@ export function AcceptanceLifecycleDialog({
         )
       }
 
-      await invalidateAcceptanceDocuments()
+      await queryClient.invalidateQueries({ queryKey: acceptanceDocumentListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

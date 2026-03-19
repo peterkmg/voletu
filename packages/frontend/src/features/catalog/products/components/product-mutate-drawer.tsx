@@ -33,11 +33,9 @@ import {
 } from '~/components/ui/sheet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useCatalogProductGroupList } from '~/generated/hooks/CatalogHooks/useCatalogProductGroupList'
-import {
-  createProduct,
-  invalidateProducts,
-  updateProduct,
-} from '../data/product-api'
+import { catalogProductCreate, catalogProductUpdate } from '~/generated/client'
+import { catalogProductListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
+import { queryClient } from '~/shared/api/query-client'
 
 const productFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -106,7 +104,7 @@ export function ProductMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateProduct(currentRow.id, payload)
+        await catalogProductUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:product.singular'),
@@ -114,7 +112,7 @@ export function ProductMutateDrawer({
         )
       }
       else {
-        await createProduct(payload)
+        await catalogProductCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:product.singular'),
@@ -122,7 +120,7 @@ export function ProductMutateDrawer({
         )
       }
 
-      await invalidateProducts()
+      await queryClient.invalidateQueries({ queryKey: catalogProductListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

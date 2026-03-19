@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteProduct,
-  invalidateProducts,
-  softDeleteProduct,
-} from '../data/product-api'
+import { catalogProductHardDelete, catalogProductSoftDelete } from '~/generated/client'
+import { catalogProductListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface ProductDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function ProductDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteProduct(currentRow.id)
+        await catalogProductHardDelete(currentRow.id)
       }
       else {
-        await softDeleteProduct(currentRow.id)
+        await catalogProductSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function ProductDeleteDialog({
           entity: t('catalog:product.singular'),
         }),
       )
-      await invalidateProducts()
+      await queryClient.invalidateQueries({ queryKey: catalogProductListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

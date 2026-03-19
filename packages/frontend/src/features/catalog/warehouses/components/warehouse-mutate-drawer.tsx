@@ -32,11 +32,9 @@ import {
   SheetTitle,
 } from '~/components/ui/sheet'
 import { useCatalogBaseList } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
-import {
-  createWarehouse,
-  invalidateWarehouses,
-  updateWarehouse,
-} from '../data/warehouse-api'
+import { catalogWarehouseCreate, catalogWarehouseUpdate } from '~/generated/client'
+import { catalogWarehouseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
+import { queryClient } from '~/shared/api/query-client'
 
 const warehouseFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -88,7 +86,7 @@ export function WarehouseMutateDrawer({
   const onSubmit = async (values: WarehouseFormValues) => {
     try {
       if (isUpdate && currentRow) {
-        await updateWarehouse(currentRow.id, values)
+        await catalogWarehouseUpdate(currentRow.id, values)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:warehouse.singular'),
@@ -96,7 +94,7 @@ export function WarehouseMutateDrawer({
         )
       }
       else {
-        await createWarehouse(values)
+        await catalogWarehouseCreate(values)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:warehouse.singular'),
@@ -104,7 +102,7 @@ export function WarehouseMutateDrawer({
         )
       }
 
-      await invalidateWarehouses()
+      await queryClient.invalidateQueries({ queryKey: catalogWarehouseListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

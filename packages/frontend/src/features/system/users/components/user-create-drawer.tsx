@@ -24,7 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import { createUser, invalidateUsers } from '../data/user-api'
+import { systemUserCreate } from '~/generated/client'
+import { systemUserListQueryKey } from '~/generated/hooks/SystemUserHooks/useSystemUserList'
+import { queryClient } from '~/shared/api/query-client'
 
 const userFormSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -69,7 +71,7 @@ export function UserCreateDrawer({
 
   const onSubmit = async (values: UserFormValues) => {
     try {
-      await createUser({
+      await systemUserCreate({
         username: values.username,
         password: values.password,
         fullname: values.fullname || null,
@@ -80,7 +82,7 @@ export function UserCreateDrawer({
           entity: t('system:users.singular'),
         }),
       )
-      await invalidateUsers()
+      await queryClient.invalidateQueries({ queryKey: systemUserListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

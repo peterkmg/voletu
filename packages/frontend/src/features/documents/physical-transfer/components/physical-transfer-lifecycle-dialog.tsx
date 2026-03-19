@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  executePhysicalTransfer,
-  invalidatePhysicalTransfers,
-  revertPhysicalTransfer,
-} from '../data/physical-transfer-api'
+import { physicalTransferExecute, physicalTransferRevert } from '~/generated/client'
+import { physicalTransferListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface PhysicalTransferLifecycleDialogProps {
   open: boolean
@@ -32,7 +30,7 @@ export function PhysicalTransferLifecycleDialog({
 
     try {
       if (action === 'execute') {
-        await executePhysicalTransfer(currentRow.id)
+        await physicalTransferExecute(currentRow.id)
         toast.success(
           t('common:toast.executeSuccess', {
             entity: t('documents:physicalTransfer.singular'),
@@ -40,7 +38,7 @@ export function PhysicalTransferLifecycleDialog({
         )
       }
       else {
-        await revertPhysicalTransfer(currentRow.id)
+        await physicalTransferRevert(currentRow.id)
         toast.success(
           t('common:toast.revertSuccess', {
             entity: t('documents:physicalTransfer.singular'),
@@ -48,7 +46,7 @@ export function PhysicalTransferLifecycleDialog({
         )
       }
 
-      await invalidatePhysicalTransfers()
+      await queryClient.invalidateQueries({ queryKey: physicalTransferListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

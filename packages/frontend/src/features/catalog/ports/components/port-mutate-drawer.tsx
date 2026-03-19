@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createPort,
-  invalidatePorts,
-  updatePort,
-} from '../data/port-api'
+import { catalogPortCreate, catalogPortUpdate } from '~/generated/client'
+import { catalogPortListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogPortList'
+import { queryClient } from '~/shared/api/query-client'
 
 const portFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -82,7 +80,7 @@ export function PortMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updatePort(currentRow.id, payload)
+        await catalogPortUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:port.singular'),
@@ -90,7 +88,7 @@ export function PortMutateDrawer({
         )
       }
       else {
-        await createPort(payload)
+        await catalogPortCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:port.singular'),
@@ -98,7 +96,7 @@ export function PortMutateDrawer({
         )
       }
 
-      await invalidatePorts()
+      await queryClient.invalidateQueries({ queryKey: catalogPortListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

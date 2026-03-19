@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  executeDispatchDocument,
-  invalidateDispatchDocuments,
-  revertDispatchDocument,
-} from '../data/dispatch-api'
+import { dispatchDocumentExecute, dispatchDocumentRevert } from '~/generated/client'
+import { dispatchDocumentListQueryKey } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface DispatchLifecycleDialogProps {
   open: boolean
@@ -32,7 +30,7 @@ export function DispatchLifecycleDialog({
 
     try {
       if (variant === 'execute') {
-        await executeDispatchDocument(currentRow.id)
+        await dispatchDocumentExecute(currentRow.id)
         toast.success(
           t('common:toast.executeSuccess', {
             entity: t('documents:dispatch.singular'),
@@ -40,7 +38,7 @@ export function DispatchLifecycleDialog({
         )
       }
       else {
-        await revertDispatchDocument(currentRow.id)
+        await dispatchDocumentRevert(currentRow.id)
         toast.success(
           t('common:toast.revertSuccess', {
             entity: t('documents:dispatch.singular'),
@@ -48,7 +46,7 @@ export function DispatchLifecycleDialog({
         )
       }
 
-      await invalidateDispatchDocuments()
+      await queryClient.invalidateQueries({ queryKey: dispatchDocumentListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

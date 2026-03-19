@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteWarehouse,
-  invalidateWarehouses,
-  softDeleteWarehouse,
-} from '../data/warehouse-api'
+import { catalogWarehouseHardDelete, catalogWarehouseSoftDelete } from '~/generated/client'
+import { catalogWarehouseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface WarehouseDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function WarehouseDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteWarehouse(currentRow.id)
+        await catalogWarehouseHardDelete(currentRow.id)
       }
       else {
-        await softDeleteWarehouse(currentRow.id)
+        await catalogWarehouseSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function WarehouseDeleteDialog({
           entity: t('catalog:warehouse.singular'),
         }),
       )
-      await invalidateWarehouses()
+      await queryClient.invalidateQueries({ queryKey: catalogWarehouseListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

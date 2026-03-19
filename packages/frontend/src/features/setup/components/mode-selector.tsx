@@ -21,7 +21,7 @@ export function ModeSelector({ onSelect }: ModeSelectorProps) {
           className="cursor-pointer transition-colors hover:border-primary"
           onClick={() => onSelect('remote')}
         >
-          <CardHeader className="items-center text-center">
+          <CardHeader className="justify-items-center text-center">
             <Globe className="size-8 text-muted-foreground" />
             <CardTitle className="text-base">{t('auth:setup.remote')}</CardTitle>
             <CardDescription>{t('auth:setup.remoteDescription')}</CardDescription>
@@ -31,7 +31,7 @@ export function ModeSelector({ onSelect }: ModeSelectorProps) {
           className="cursor-pointer transition-colors hover:border-primary"
           onClick={() => onSelect('local')}
         >
-          <CardHeader className="items-center text-center">
+          <CardHeader className="justify-items-center text-center">
             <HardDrive className="size-8 text-muted-foreground" />
             <CardTitle className="text-base">{t('auth:setup.local')}</CardTitle>
             <CardDescription>{t('auth:setup.localDescription')}</CardDescription>

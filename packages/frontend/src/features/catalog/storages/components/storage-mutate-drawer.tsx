@@ -34,11 +34,9 @@ import {
 } from '~/components/ui/sheet'
 import { useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
-import {
-  createStorage,
-  invalidateStorages,
-  updateStorage,
-} from '../data/storage-api'
+import { catalogStorageCreate, catalogStorageUpdate } from '~/generated/client'
+import { catalogStorageListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
+import { queryClient } from '~/shared/api/query-client'
 
 const storageFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -111,7 +109,7 @@ export function StorageMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateStorage(currentRow.id, payload)
+        await catalogStorageUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:storage.singular'),
@@ -119,7 +117,7 @@ export function StorageMutateDrawer({
         )
       }
       else {
-        await createStorage(payload)
+        await catalogStorageCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:storage.singular'),
@@ -127,7 +125,7 @@ export function StorageMutateDrawer({
         )
       }
 
-      await invalidateStorages()
+      await queryClient.invalidateQueries({ queryKey: catalogStorageListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

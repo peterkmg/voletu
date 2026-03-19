@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createTruckWaybill,
-  invalidateTruckWaybills,
-  updateTruckWaybill,
-} from '../data/truck-waybill-api'
+import { transportTruckWaybillCreate, transportTruckWaybillUpdate } from '~/generated/client'
+import { transportTruckWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillList'
+import { queryClient } from '~/shared/api/query-client'
 
 const truckWaybillFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -81,7 +79,7 @@ export function TruckWaybillMutateDrawer({
   const onSubmit = async (values: TruckWaybillFormValues) => {
     try {
       if (isUpdate && currentRow) {
-        await updateTruckWaybill(currentRow.id, values)
+        await transportTruckWaybillUpdate(currentRow.id, values)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('transport:truck.singular'),
@@ -89,7 +87,7 @@ export function TruckWaybillMutateDrawer({
         )
       }
       else {
-        await createTruckWaybill(values)
+        await transportTruckWaybillCreate(values)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('transport:truck.singular'),
@@ -97,7 +95,7 @@ export function TruckWaybillMutateDrawer({
         )
       }
 
-      await invalidateTruckWaybills()
+      await queryClient.invalidateQueries({ queryKey: transportTruckWaybillListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

@@ -32,11 +32,9 @@ import {
   SheetTitle,
 } from '~/components/ui/sheet'
 import { useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
-import {
-  createProductGroup,
-  invalidateProductGroups,
-  updateProductGroup,
-} from '../data/product-group-api'
+import { catalogProductGroupCreate, catalogProductGroupUpdate } from '~/generated/client'
+import { catalogProductGroupListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductGroupList'
+import { queryClient } from '~/shared/api/query-client'
 
 const productGroupFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -88,7 +86,7 @@ export function ProductGroupMutateDrawer({
   const onSubmit = async (values: ProductGroupFormValues) => {
     try {
       if (isUpdate && currentRow) {
-        await updateProductGroup(currentRow.id, values)
+        await catalogProductGroupUpdate(currentRow.id, values)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:productGroup.singular'),
@@ -96,7 +94,7 @@ export function ProductGroupMutateDrawer({
         )
       }
       else {
-        await createProductGroup(values)
+        await catalogProductGroupCreate(values)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:productGroup.singular'),
@@ -104,7 +102,7 @@ export function ProductGroupMutateDrawer({
         )
       }
 
-      await invalidateProductGroups()
+      await queryClient.invalidateQueries({ queryKey: catalogProductGroupListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

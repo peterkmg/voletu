@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createProductType,
-  invalidateProductTypes,
-  updateProductType,
-} from '../data/product-type-api'
+import { catalogProductTypeCreate, catalogProductTypeUpdate } from '~/generated/client'
+import { catalogProductTypeListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
+import { queryClient } from '~/shared/api/query-client'
 
 const productTypeFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -82,7 +80,7 @@ export function ProductTypeMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateProductType(currentRow.id, payload)
+        await catalogProductTypeUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('catalog:productType.singular'),
@@ -90,7 +88,7 @@ export function ProductTypeMutateDrawer({
         )
       }
       else {
-        await createProductType(payload)
+        await catalogProductTypeCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:productType.singular'),
@@ -98,7 +96,7 @@ export function ProductTypeMutateDrawer({
         )
       }
 
-      await invalidateProductTypes()
+      await queryClient.invalidateQueries({ queryKey: catalogProductTypeListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

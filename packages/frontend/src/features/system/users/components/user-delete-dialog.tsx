@@ -3,7 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import { invalidateUsers, softDeleteUser } from '../data/user-api'
+import { systemUserDelete } from '~/generated/client'
+import { systemUserListQueryKey } from '~/generated/hooks/SystemUserHooks/useSystemUserList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface UserDeleteDialogProps {
   open: boolean
@@ -25,13 +27,13 @@ export function UserDeleteDialog({
     setLoading(true)
 
     try {
-      await softDeleteUser(currentRow.id)
+      await systemUserDelete(currentRow.id)
       toast.success(
         t('common:toast.deleteSuccess', {
           entity: t('system:users.singular'),
         }),
       )
-      await invalidateUsers()
+      await queryClient.invalidateQueries({ queryKey: systemUserListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

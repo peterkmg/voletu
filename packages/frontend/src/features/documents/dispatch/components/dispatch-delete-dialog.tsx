@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteDispatchDocument,
-  invalidateDispatchDocuments,
-  softDeleteDispatchDocument,
-} from '../data/dispatch-api'
+import { dispatchDocumentHardDelete, dispatchDocumentSoftDelete } from '~/generated/client'
+import { dispatchDocumentListQueryKey } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface DispatchDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function DispatchDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteDispatchDocument(currentRow.id)
+        await dispatchDocumentHardDelete(currentRow.id)
       }
       else {
-        await softDeleteDispatchDocument(currentRow.id)
+        await dispatchDocumentSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function DispatchDeleteDialog({
           entity: t('documents:dispatch.singular'),
         }),
       )
-      await invalidateDispatchDocuments()
+      await queryClient.invalidateQueries({ queryKey: dispatchDocumentListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteBlendingDocument,
-  invalidateBlendingDocuments,
-  softDeleteBlendingDocument,
-} from '../data/blending-api'
+import { blendingDocumentHardDelete, blendingDocumentSoftDelete } from '~/generated/client'
+import { blendingDocumentListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface BlendingDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function BlendingDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteBlendingDocument(currentRow.id)
+        await blendingDocumentHardDelete(currentRow.id)
       }
       else {
-        await softDeleteBlendingDocument(currentRow.id)
+        await blendingDocumentSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function BlendingDeleteDialog({
           entity: t('documents:blending.singular'),
         }),
       )
-      await invalidateBlendingDocuments()
+      await queryClient.invalidateQueries({ queryKey: blendingDocumentListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

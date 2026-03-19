@@ -31,11 +31,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createDispatchDocument,
-  invalidateDispatchDocuments,
-  updateDispatchDocument,
-} from '../data/dispatch-api'
+import { dispatchDocumentCreate, dispatchDocumentUpdate } from '~/generated/client'
+import { dispatchDocumentListQueryKey } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentList'
+import { queryClient } from '~/shared/api/query-client'
 
 const dispatchFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -105,7 +103,7 @@ export function DispatchMutateDrawer({
       }
 
       if (isUpdate && currentRow) {
-        await updateDispatchDocument(currentRow.id, payload)
+        await dispatchDocumentUpdate(currentRow.id, payload)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('documents:dispatch.singular'),
@@ -113,7 +111,7 @@ export function DispatchMutateDrawer({
         )
       }
       else {
-        await createDispatchDocument(payload)
+        await dispatchDocumentCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:dispatch.singular'),
@@ -121,7 +119,7 @@ export function DispatchMutateDrawer({
         )
       }
 
-      await invalidateDispatchDocuments()
+      await queryClient.invalidateQueries({ queryKey: dispatchDocumentListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

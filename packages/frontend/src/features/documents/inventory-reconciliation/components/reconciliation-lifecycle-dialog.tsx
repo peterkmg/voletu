@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  executeReconciliationDocument,
-  invalidateReconciliations,
-  revertReconciliationDocument,
-} from '../data/reconciliation-api'
+import { reconciliationExecute, reconciliationRevert } from '~/generated/client'
+import { reconciliationListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface ReconciliationLifecycleDialogProps {
   open: boolean
@@ -32,7 +30,7 @@ export function ReconciliationLifecycleDialog({
 
     try {
       if (variant === 'execute') {
-        await executeReconciliationDocument(currentRow.id)
+        await reconciliationExecute(currentRow.id)
         toast.success(
           t('common:toast.executeSuccess', {
             entity: t('documents:reconciliation.singular'),
@@ -40,7 +38,7 @@ export function ReconciliationLifecycleDialog({
         )
       }
       else {
-        await revertReconciliationDocument(currentRow.id)
+        await reconciliationRevert(currentRow.id)
         toast.success(
           t('common:toast.revertSuccess', {
             entity: t('documents:reconciliation.singular'),
@@ -48,7 +46,7 @@ export function ReconciliationLifecycleDialog({
         )
       }
 
-      await invalidateReconciliations()
+      await queryClient.invalidateQueries({ queryKey: reconciliationListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

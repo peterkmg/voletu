@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteCompany,
-  invalidateCompanies,
-  softDeleteCompany,
-} from '../data/company-api'
+import { catalogCompanyHardDelete, catalogCompanySoftDelete } from '~/generated/client'
+import { catalogCompanyListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface CompanyDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function CompanyDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteCompany(currentRow.id)
+        await catalogCompanyHardDelete(currentRow.id)
       }
       else {
-        await softDeleteCompany(currentRow.id)
+        await catalogCompanySoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function CompanyDeleteDialog({
           entity: t('catalog:company.singular'),
         }),
       )
-      await invalidateCompanies()
+      await queryClient.invalidateQueries({ queryKey: catalogCompanyListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

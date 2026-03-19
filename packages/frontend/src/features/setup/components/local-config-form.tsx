@@ -32,11 +32,9 @@ const localSchema = z.object({
   port: z.coerce.number().int().positive().optional(),
   database: z.string().optional(),
   username: z.string().optional(),
-  dbPassword: z.string(),
+  dbPassword: z.string().min(1, 'Password is required'),
   jwtExpirationSeconds: z.coerce.number().int().positive(),
   jwtRefreshExpirationSeconds: z.coerce.number().int().positive(),
-  apiHost: z.string(),
-  apiPort: z.coerce.number().int().positive(),
 })
 
 type LocalFormValues = z.infer<typeof localSchema>
@@ -54,7 +52,7 @@ export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
     resolver: zodResolver(localSchema),
     defaultValues: {
       dbType: 'sqlite',
-      sqliteFile: '',
+      sqliteFile: 'voletu.db',
       host: '127.0.0.1',
       port: 5432,
       database: '',
@@ -62,8 +60,6 @@ export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
       dbPassword: '',
       jwtExpirationSeconds: 3600,
       jwtRefreshExpirationSeconds: 86400,
-      apiHost: '127.0.0.1',
-      apiPort: 3000,
     },
   })
 
@@ -76,8 +72,6 @@ export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
       dbPassword: values.dbPassword,
       jwtExpirationSeconds: values.jwtExpirationSeconds,
       jwtRefreshExpirationSeconds: values.jwtRefreshExpirationSeconds,
-      apiHost: values.apiHost,
-      apiPort: values.apiPort,
       ...(isSqlite
         ? { sqliteFile: values.sqliteFile }
         : {
@@ -198,21 +192,22 @@ export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="dbPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('auth:setup.dbPassword')}</FormLabel>
-                      <FormControl>
-                        <PasswordInput {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </>
             )}
+
+        <FormField
+          control={form.control}
+          name="dbPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('auth:setup.dbPassword')}</FormLabel>
+              <FormControl>
+                <PasswordInput {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Separator />
 
@@ -236,35 +231,6 @@ export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('auth:setup.jwtRefreshExpiration')}</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="apiHost"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('auth:setup.apiHost')}</FormLabel>
-                <FormControl>
-                  <Input placeholder="127.0.0.1" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="apiPort"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('auth:setup.apiPort')}</FormLabel>
                 <FormControl>
                   <Input type="number" {...field} />
                 </FormControl>

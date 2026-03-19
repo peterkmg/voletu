@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteReconciliationDocument,
-  invalidateReconciliations,
-  softDeleteReconciliationDocument,
-} from '../data/reconciliation-api'
+import { reconciliationHardDelete, reconciliationSoftDelete } from '~/generated/client'
+import { reconciliationListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface ReconciliationDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function ReconciliationDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteReconciliationDocument(currentRow.id)
+        await reconciliationHardDelete(currentRow.id)
       }
       else {
-        await softDeleteReconciliationDocument(currentRow.id)
+        await reconciliationSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function ReconciliationDeleteDialog({
           entity: t('documents:reconciliation.singular'),
         }),
       )
-      await invalidateReconciliations()
+      await queryClient.invalidateQueries({ queryKey: reconciliationListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {

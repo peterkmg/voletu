@@ -24,8 +24,6 @@ export interface SaveLocalConfigPayload {
   dbPassword: string
   jwtExpirationSeconds: number
   jwtRefreshExpirationSeconds: number
-  apiHost?: string
-  apiPort?: number
   logFilter?: string
   logFile?: string
 }

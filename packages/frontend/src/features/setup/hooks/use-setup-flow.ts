@@ -74,14 +74,14 @@ export function useSetupFlow() {
       await saveLocalConfig(payload)
       const state = await startLocalApi()
 
-      const baseUrl = `http://${payload.apiHost ?? '127.0.0.1'}:${payload.apiPort ?? 3000}`
+      const baseUrl = state.apiBaseUrl!
       setApiBaseUrl(baseUrl)
 
       await waitForApiHealthy(baseUrl)
       applyStartupState(state)
     }
     catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to start local API'
+      const message = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to start local API'
       setError(message)
       throw err
     }

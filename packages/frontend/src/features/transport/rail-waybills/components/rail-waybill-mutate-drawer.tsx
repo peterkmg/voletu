@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet'
-import {
-  createRailWaybill,
-  invalidateRailWaybills,
-  updateRailWaybill,
-} from '../data/rail-waybill-api'
+import { transportRailWaybillCreate, transportRailWaybillUpdate } from '~/generated/client'
+import { transportRailWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillList'
+import { queryClient } from '~/shared/api/query-client'
 
 const railWaybillFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -81,7 +79,7 @@ export function RailWaybillMutateDrawer({
   const onSubmit = async (values: RailWaybillFormValues) => {
     try {
       if (isUpdate && currentRow) {
-        await updateRailWaybill(currentRow.id, values)
+        await transportRailWaybillUpdate(currentRow.id, values)
         toast.success(
           t('common:toast.updateSuccess', {
             entity: t('transport:rail.singular'),
@@ -89,7 +87,7 @@ export function RailWaybillMutateDrawer({
         )
       }
       else {
-        await createRailWaybill(values)
+        await transportRailWaybillCreate(values)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('transport:rail.singular'),
@@ -97,7 +95,7 @@ export function RailWaybillMutateDrawer({
         )
       }
 
-      await invalidateRailWaybills()
+      await queryClient.invalidateQueries({ queryKey: transportRailWaybillListQueryKey() })
       onOpenChange(false)
       form.reset()
     }

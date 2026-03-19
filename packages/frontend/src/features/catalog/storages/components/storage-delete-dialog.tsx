@@ -3,11 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
-import {
-  hardDeleteStorage,
-  invalidateStorages,
-  softDeleteStorage,
-} from '../data/storage-api'
+import { catalogStorageHardDelete, catalogStorageSoftDelete } from '~/generated/client'
+import { catalogStorageListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
+import { queryClient } from '~/shared/api/query-client'
 
 interface StorageDeleteDialogProps {
   open: boolean
@@ -32,10 +30,10 @@ export function StorageDeleteDialog({
 
     try {
       if (variant === 'hard') {
-        await hardDeleteStorage(currentRow.id)
+        await catalogStorageHardDelete(currentRow.id)
       }
       else {
-        await softDeleteStorage(currentRow.id)
+        await catalogStorageSoftDelete(currentRow.id)
       }
 
       toast.success(
@@ -43,7 +41,7 @@ export function StorageDeleteDialog({
           entity: t('catalog:storage.singular'),
         }),
       )
-      await invalidateStorages()
+      await queryClient.invalidateQueries({ queryKey: catalogStorageListQueryKey() })
       onOpenChange(false)
     }
     catch (err) {
