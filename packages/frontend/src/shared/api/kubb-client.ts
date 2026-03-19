@@ -39,8 +39,11 @@ interface ApiEnvelope {
  *
  * Feature code accesses the inner data via: query.data?.data ?? []
  */
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
 export async function client<TData, _TError = unknown, TVariables = unknown>(config: RequestConfig<TVariables>): Promise<ResponseConfig<TData>> {
   const token = localStorage.getItem('accessToken')
+  const isMutating = MUTATING_METHODS.has(config.method.toUpperCase())
 
   const response = await fetch(`${API_BASE_URL}${config.url}`, {
     method: config.method.toUpperCase(),
@@ -53,6 +56,7 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(con
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(isMutating ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
       ...(config.headers ?? {}),
     },
   })
