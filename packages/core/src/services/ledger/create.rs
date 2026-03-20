@@ -48,22 +48,11 @@ impl LedgerService {
 
     match existing {
       Some(model) => {
-        let next = model.current_amount + delta;
-        if next.is_sign_negative() {
-          return Err(ApiError::Conflict(
-            "Insufficient inventory balance".to_string(),
-          ));
-        }
         let mut am: inventory_ledger_entry::ActiveModel = model.into();
-        am.current_amount = Set(next);
+        am.current_amount = Set(model.current_amount + delta);
         am.update(conn).await?;
       }
       None => {
-        if delta.is_sign_negative() {
-          return Err(ApiError::Conflict(
-            "Insufficient inventory balance".to_string(),
-          ));
-        }
         inventory_ledger_entry::ActiveModel {
           id: Set(Uuid::now_v7()),
           storage_id: Set(storage_id),

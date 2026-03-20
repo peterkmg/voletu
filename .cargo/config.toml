@@ -1,3 +1,6 @@
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld"
 # rustflags = ["-Zshare-generics=n"]
+
+[build]
+target-dir = "D:/src/thesis/voletu-target"

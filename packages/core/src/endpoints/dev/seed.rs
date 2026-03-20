@@ -1,4 +1,4 @@
-use std::{ops::Range, sync::Arc};
+use std::{collections::HashMap, ops::Range, sync::Arc};
 
 use axum::extract::State;
 use chrono::{Duration, Utc};
@@ -39,6 +39,7 @@ use crate::{
     dispatch_document,
     dispatch_item,
     inventory_adjustment,
+    inventory_ledger_entry,
     inventory_reconciliation,
     local,
     ownership_transfer,
@@ -78,6 +79,7 @@ pub struct SeedResult {
   pub ownership_transfers: usize,
   pub physical_transfers: usize,
   pub reconciliations: usize,
+  pub ledger_entries: usize,
 }
 
 #[utoipa::path(
@@ -145,6 +147,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
   let dev_password_hash = hash_password("password123")
     .await
     .map_err(ApiError::Internal)?;
+
+  // (storage_id, product_id, contractor_id) → accumulated balance
+  let mut ledger_balances: HashMap<(Uuid, Uuid, Uuid), Decimal> = HashMap::new();
 
   let mut ptype_ids: Vec<Uuid> = Vec::new();
   let mut pgroup_count = 0usize;
@@ -520,6 +525,10 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       }
       .insert(db)
       .await?;
+
+      *ledger_balances
+        .entry((storage_id, product_id, contractor_id))
+        .or_default() -= Decimal::from(amount);
     }
   }
 
@@ -580,16 +589,23 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let item_count = rng.random_range(1..=4);
     for _ in 0..item_count {
       let amount = rng.random_range(100u64..=11_500u64);
+      let product_id = *pick(&mut rng, &target_product_ids);
+      let contractor_id = *pick(&mut rng, &contractor_ids);
+      let storage_id = *pick(&mut rng, &storage_ids);
       acceptance_item::ActiveModel {
         acceptance_doc_id: Set(doc.id),
-        product_id: Set(*pick(&mut rng, &target_product_ids)),
-        contractor_id: Set(*pick(&mut rng, &contractor_ids)),
-        storage_id: Set(*pick(&mut rng, &storage_ids)),
+        product_id: Set(product_id),
+        contractor_id: Set(contractor_id),
+        storage_id: Set(storage_id),
         accepted_amount: Set(Decimal::from(amount)),
         ..Default::default()
       }
       .insert(db)
       .await?;
+
+      *ledger_balances
+        .entry((storage_id, product_id, contractor_id))
+        .or_default() += Decimal::from(amount);
     }
   }
 
@@ -598,6 +614,8 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
   for idx in 0..blending_doc_count {
     let days_ago = rng.random_range(0..=730) as i64;
     let doc_date = now - Duration::days(days_ago);
+    let blend_contractor_id = *pick(&mut rng, &contractor_ids);
+    let blend_target_product_id = *pick(&mut rng, &target_product_ids);
     let doc = blending_document::ActiveModel {
       document_number: Set(fake_document_number("BLD", idx, &mut rng, now)),
       date: Set(doc_date),
@@ -609,8 +627,8 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       executed_by: Set(None),
       reverted_at: Set(None),
       reverted_by: Set(None),
-      contractor_id: Set(*pick(&mut rng, &contractor_ids)),
-      target_product_id: Set(*pick(&mut rng, &target_product_ids)),
+      contractor_id: Set(blend_contractor_id),
+      target_product_id: Set(blend_target_product_id),
       ..Default::default()
     }
     .insert(db)
@@ -620,28 +638,39 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let component_count = rng.random_range(2..=4);
     for _ in 0..component_count {
       let amount = rng.random_range(50u64..=6_000u64);
+      let storage_id = *pick(&mut rng, &storage_ids);
+      let source_product_id = *pick(&mut rng, &component_product_ids);
       blending_component::ActiveModel {
         blending_doc_id: Set(doc.id),
-        storage_id: Set(*pick(&mut rng, &storage_ids)),
-        source_product_id: Set(*pick(&mut rng, &component_product_ids)),
+        storage_id: Set(storage_id),
+        source_product_id: Set(source_product_id),
         amount_used: Set(Decimal::from(amount)),
         ..Default::default()
       }
       .insert(db)
       .await?;
+
+      *ledger_balances
+        .entry((storage_id, source_product_id, blend_contractor_id))
+        .or_default() -= Decimal::from(amount);
     }
 
     let result_count = rng.random_range(1..=2);
     for _ in 0..result_count {
       let produced = rng.random_range(80u64..=9_500u64);
+      let storage_id = *pick(&mut rng, &storage_ids);
       blending_result::ActiveModel {
         blending_doc_id: Set(doc.id),
-        storage_id: Set(*pick(&mut rng, &storage_ids)),
+        storage_id: Set(storage_id),
         produced_amount: Set(Decimal::from(produced)),
         ..Default::default()
       }
       .insert(db)
       .await?;
+
+      *ledger_balances
+        .entry((storage_id, blend_target_product_id, blend_contractor_id))
+        .or_default() += Decimal::from(produced);
     }
   }
 
@@ -777,6 +806,20 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     }
   }
 
+  let ledger_entry_count = ledger_balances.len();
+  for ((storage_id, product_id, contractor_id), balance) in ledger_balances {
+    inventory_ledger_entry::ActiveModel {
+      id: Set(Uuid::now_v7()),
+      storage_id: Set(storage_id),
+      product_id: Set(product_id),
+      contractor_id: Set(contractor_id),
+      current_amount: Set(balance),
+      ..Default::default()
+    }
+    .insert(db)
+    .await?;
+  }
+
   Ok(SeedResult {
     product_types: ptype_ids.len(),
     product_groups: pgroup_count,
@@ -795,6 +838,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     ownership_transfers: ownership_count,
     physical_transfers: physical_count,
     reconciliations: recon_count,
+    ledger_entries: ledger_entry_count,
   })
 }
 

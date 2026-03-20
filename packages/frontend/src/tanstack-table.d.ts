@@ -7,5 +7,7 @@ declare module '@tanstack/react-table' {
     tdClassName?: string
     thClassName?: string
     align?: 'left' | 'center' | 'right'
+    filterType?: 'text' | 'date' | 'number' | 'enum'
+    enableHeaderFilter?: boolean
   }
 }

@@ -2,8 +2,9 @@ import type { Table } from '@tanstack/react-table'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
+import { DebouncedInput } from './debounced-input'
 import { DensityToggle } from './density-toggle'
+import { ExportButton } from './export-button'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -39,21 +40,21 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
         {searchKey
           ? (
-              <Input
+              <DebouncedInput
                 placeholder={placeholder}
                 value={
                   (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
                 }
-                onChange={event =>
-                  table.getColumn(searchKey)?.setFilterValue(event.target.value)}
+                onChange={value =>
+                  table.getColumn(searchKey)?.setFilterValue(value)}
                 className="h-8 w-[150px] lg:w-[250px]"
               />
             )
           : (
-              <Input
+              <DebouncedInput
                 placeholder={placeholder}
                 value={table.getState().globalFilter ?? ''}
-                onChange={event => table.setGlobalFilter(event.target.value)}
+                onChange={value => table.setGlobalFilter(value)}
                 className="h-8 w-[150px] lg:w-[250px]"
               />
             )}
@@ -87,6 +88,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="flex items-center gap-2">
+        <ExportButton table={table} />
         <DensityToggle />
         <DataTableViewOptions table={table} />
       </div>

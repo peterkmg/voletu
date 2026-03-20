@@ -1,5 +1,5 @@
 import type { Column } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff, PinIcon, PinOff } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import {
   DropdownMenu,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { cn } from '~/lib/utils'
+import { ColumnFilter } from './column-filter'
 
 type DataTableColumnHeaderProps<TData, TValue>
   = React.HTMLAttributes<HTMLDivElement> & {
@@ -25,17 +26,25 @@ export function DataTableColumnHeader<TData, TValue>({
   const justifyCls = align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''
 
   if (!column.getCanSort()) {
-    return <div className={cn('flex items-center', justifyCls, className)}>{title}</div>
+    return (
+      <div className={cn('flex items-center gap-1', justifyCls, className)}>
+        {title}
+        <ColumnFilter column={column} />
+      </div>
+    )
   }
 
   return (
-    <div className={cn('flex items-center space-x-2', justifyCls, className)}>
+    <div className={cn('flex items-center', justifyCls, className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 data-[state=open]:bg-accent"
+            className={cn(
+              'h-8 data-[state=open]:bg-accent',
+              align === 'right' ? '-me-3' : '-ms-3',
+            )}
           >
             <span>{title}</span>
             {column.getIsSorted() === 'desc'
@@ -60,17 +69,41 @@ export function DataTableColumnHeader<TData, TValue>({
             <ArrowDown className="size-3.5 text-muted-foreground/70" />
             Desc
           </DropdownMenuItem>
-          {column.getCanHide() && (
+          {(column.getCanHide() || column.getCanPin()) && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-                <EyeOff className="size-3.5 text-muted-foreground/70" />
-                Hide
-              </DropdownMenuItem>
+              {column.getCanPin() && (
+                column.getIsPinned()
+                  ? (
+                      <DropdownMenuItem onClick={() => column.pin(false)}>
+                        <PinOff className="size-3.5 text-muted-foreground/70" />
+                        Unpin
+                      </DropdownMenuItem>
+                    )
+                  : (
+                      <>
+                        <DropdownMenuItem onClick={() => column.pin('left')}>
+                          <PinIcon className="size-3.5 text-muted-foreground/70" />
+                          Pin left
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => column.pin('right')}>
+                          <PinIcon className="size-3.5 rotate-90 text-muted-foreground/70" />
+                          Pin right
+                        </DropdownMenuItem>
+                      </>
+                    )
+              )}
+              {column.getCanHide() && (
+                <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
+                  <EyeOff className="size-3.5 text-muted-foreground/70" />
+                  Hide
+                </DropdownMenuItem>
+              )}
             </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+      <ColumnFilter column={column} />
     </div>
   )
 }
