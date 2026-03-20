@@ -1,3 +1,7 @@
+import { useAuthStore } from '~/stores/auth-store'
+import { isTokenExpiringSoon } from '~/shared/auth/jwt-decode'
+import { refreshLock } from '~/shared/auth/refresh'
+
 export interface RequestConfig<TData = unknown> {
   url?: string
   method: 'GET' | 'PUT' | 'PATCH' | 'POST' | 'DELETE'
@@ -41,9 +45,55 @@ interface ApiEnvelope {
  */
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
-export async function client<TData, _TError = unknown, TVariables = unknown>(config: RequestConfig<TVariables>): Promise<ResponseConfig<TData>> {
-  const token = localStorage.getItem('accessToken')
+const PROACTIVE_REFRESH_THRESHOLD_SECONDS = 300 // 5 minutes
+
+/**
+ * Get the current access token from zustand, optionally refreshing
+ * if it is expiring soon.
+ */
+async function getValidToken(): Promise<string | null> {
+  const { accessToken, refreshToken } = useAuthStore.getState().auth
+  if (!accessToken) return null
+
+  if (isTokenExpiringSoon(accessToken, PROACTIVE_REFRESH_THRESHOLD_SECONDS) && refreshToken) {
+    try {
+      const newSession = await refreshLock.acquire(refreshToken)
+      useAuthStore.getState().auth.setSession(newSession)
+      return newSession.accessToken
+    }
+    catch {
+      return accessToken
+    }
+  }
+
+  return accessToken
+}
+
+/**
+ * Attempt a silent token refresh and return the new access token.
+ * Returns null if refresh is not possible.
+ */
+async function attemptSilentRefresh(): Promise<string | null> {
+  const { refreshToken } = useAuthStore.getState().auth
+  if (!refreshToken) return null
+
+  try {
+    const newSession = await refreshLock.acquire(refreshToken)
+    useAuthStore.getState().auth.setSession(newSession)
+    return newSession.accessToken
+  }
+  catch {
+    useAuthStore.getState().auth.reset()
+    return null
+  }
+}
+
+export async function client<TData, _TError = unknown, TVariables = unknown>(
+  config: RequestConfig<TVariables>,
+  _isRetry = false,
+): Promise<ResponseConfig<TData>> {
   const isMutating = MUTATING_METHODS.has(config.method.toUpperCase())
+  const token = await getValidToken()
 
   const response = await fetch(`${API_BASE_URL}${config.url}`, {
     method: config.method.toUpperCase(),
@@ -60,6 +110,22 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(con
       ...(config.headers ?? {}),
     },
   })
+
+  // 401 Interceptor: check response.status directly (not string matching).
+  // On 401, attempt silent refresh and replay the original request once.
+  if (response.status === 401 && !_isRetry) {
+    const newToken = await attemptSilentRefresh()
+    if (newToken) {
+      // Replay the original request with the new token.
+      // For mutations: the replay generates a new auto-UUID idempotency key.
+      // This is safe because the backend's idempotency middleware removes keys
+      // from cache on non-2xx responses (the original 401 was non-2xx).
+      // If the caller provided a stable key via config.headers, it is preserved
+      // on replay since config is passed through unchanged.
+      return client<TData, _TError, TVariables>(config, true)
+    }
+    // Refresh failed — fall through to throw below.
+  }
 
   if (!response.ok) {
     const text = await response.text()

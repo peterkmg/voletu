@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { FormDialog } from '~/components/form-dialog'
@@ -41,6 +42,7 @@ export function ProductTypeMutateDialog({
 }: ProductTypeMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
+  const idempotencyKey = useIdempotencyKey()
 
   const form = useForm<ProductTypeFormValues>({
     resolver: zodResolver(productTypeFormSchema),
@@ -81,7 +83,7 @@ export function ProductTypeMutateDialog({
         )
       }
       else {
-        const result = await catalogProductTypeCreate(payload)
+        const result = await catalogProductTypeCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:productType.singular'),

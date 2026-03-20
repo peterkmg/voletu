@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -48,6 +49,7 @@ export function StorageMutateDialog({
 }: StorageMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
+  const idempotencyKey = useIdempotencyKey()
 
   const warehousesQuery = useCatalogWarehouseList()
 
@@ -102,7 +104,7 @@ export function StorageMutateDialog({
         )
       }
       else {
-        await catalogStorageCreate(payload)
+        await catalogStorageCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:storage.singular'),

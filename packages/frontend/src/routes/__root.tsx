@@ -4,18 +4,46 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { DevSeedButton } from '~/components/dev-seed-button'
 import { Titlebar } from '~/components/layout/titlebar'
+import { SplashScreen } from '~/components/splash-screen'
 import { Toaster } from '~/components/ui/sonner'
 import { GeneralError } from '~/features/errors/general-error'
 import { NotFound } from '~/features/errors/not-found'
+import { validateOrRefreshSession } from '~/shared/auth/session'
+import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
+  beforeLoad: async () => {
+    // 1. Ensure Tauri startup state is loaded.
+    const { startupState, refresh } = useStartupStore.getState()
+    if (!startupState) {
+      await refresh()
+    }
+
+    // 2. Validate or refresh the stored auth session.
+    const session = await validateOrRefreshSession()
+    const { setSession, reset, setInitialized } = useAuthStore.getState().auth
+    if (session) {
+      setSession(session)
+    }
+    else {
+      reset()
+    }
+
+    // 3. Mark initialization complete — splash screen hides.
+    setInitialized()
+  },
   component: () => {
+    const isInitializing = useAuthStore(s => s.auth.isInitializing)
     const startupState = useStartupStore(s => s.startupState)
     const isTauri = startupState !== null
     const showDebugTools = startupState?.isDebugBuild ?? false
+
+    if (isInitializing) {
+      return <SplashScreen />
+    }
 
     return (
       <div

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { FormDialog } from '~/components/form-dialog'
@@ -33,6 +34,7 @@ export function OwnershipTransferMutateDialog({
   onOpenChange,
 }: OwnershipTransferMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
+  const idempotencyKey = useIdempotencyKey()
 
   const form = useForm<OwnershipTransferFormValues>({
     resolver: zodResolver(ownershipTransferFormSchema),
@@ -46,7 +48,7 @@ export function OwnershipTransferMutateDialog({
       await ownershipTransferCreate({
         ...values,
         items: [],
-      })
+      }, { headers: { 'Idempotency-Key': idempotencyKey } })
       toast.success(
         t('common:toast.createSuccess', {
           entity: t('documents:ownershipTransfer.singular'),

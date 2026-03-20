@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { PasswordInput } from '~/components/password-input'
@@ -47,6 +48,7 @@ export function UserCreateDrawer({
   onOpenChange,
 }: UserCreateDrawerProps) {
   const { t } = useTranslation(['system', 'common'])
+  const idempotencyKey = useIdempotencyKey()
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
@@ -76,7 +78,7 @@ export function UserCreateDrawer({
         password: values.password,
         fullname: values.fullname || null,
         roleName: values.roleName,
-      })
+      }, { headers: { 'Idempotency-Key': idempotencyKey } })
       toast.success(
         t('common:toast.createSuccess', {
           entity: t('system:users.singular'),

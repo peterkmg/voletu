@@ -12,9 +12,11 @@ interface AuthState {
     user: UserResponse | null
     accessToken: string
     refreshToken: string
+    isInitializing: boolean
     setSession: (session: AuthSession) => void
     clearSession: () => void
     reset: () => void
+    setInitialized: () => void
   }
 }
 
@@ -25,10 +27,10 @@ export const useAuthStore = create<AuthState>()(set => ({
     user: stored?.user ?? null,
     accessToken: stored?.accessToken ?? '',
     refreshToken: stored?.refreshToken ?? '',
+    isInitializing: true,
 
     setSession: (session: AuthSession) => {
       persistSession(session)
-      localStorage.setItem('accessToken', session.accessToken)
       set({
         auth: {
           ...useAuthStore.getState().auth,
@@ -41,7 +43,6 @@ export const useAuthStore = create<AuthState>()(set => ({
 
     clearSession: () => {
       clearStoredSession()
-      localStorage.removeItem('accessToken')
       set({
         auth: {
           ...useAuthStore.getState().auth,
@@ -54,13 +55,21 @@ export const useAuthStore = create<AuthState>()(set => ({
 
     reset: () => {
       clearStoredSession()
-      localStorage.removeItem('accessToken')
       set({
         auth: {
           ...useAuthStore.getState().auth,
           user: null,
           accessToken: '',
           refreshToken: '',
+        },
+      })
+    },
+
+    setInitialized: () => {
+      set({
+        auth: {
+          ...useAuthStore.getState().auth,
+          isInitializing: false,
         },
       })
     },

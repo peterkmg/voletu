@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -44,6 +45,7 @@ export function ProductGroupMutateDialog({
 }: ProductGroupMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
+  const idempotencyKey = useIdempotencyKey()
 
   const productTypesQuery = useCatalogProductTypeList()
 
@@ -81,7 +83,7 @@ export function ProductGroupMutateDialog({
         )
       }
       else {
-        const result = await catalogProductGroupCreate(values)
+        const result = await catalogProductGroupCreate(values, { headers: { 'Idempotency-Key': idempotencyKey } })
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:productGroup.singular'),

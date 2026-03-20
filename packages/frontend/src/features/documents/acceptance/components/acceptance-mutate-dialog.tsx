@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { FormDialog } from '~/components/form-dialog'
@@ -50,6 +51,7 @@ export function AcceptanceMutateDialog({
 }: AcceptanceMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
   const isUpdate = !!currentRow
+  const idempotencyKey = useIdempotencyKey()
 
   const form = useForm<AcceptanceFormValues>({
     resolver: zodResolver(acceptanceFormSchema),
@@ -98,7 +100,7 @@ export function AcceptanceMutateDialog({
         )
       }
       else {
-        await acceptanceDocumentCreate(payload)
+        await acceptanceDocumentCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:acceptance.singular'),

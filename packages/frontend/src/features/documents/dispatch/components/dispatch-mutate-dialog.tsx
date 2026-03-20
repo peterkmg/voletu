@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -53,6 +54,7 @@ export function DispatchMutateDialog({
 }: DispatchMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
   const isUpdate = !!currentRow
+  const idempotencyKey = useIdempotencyKey()
 
   const companiesQuery = useCatalogCompanyList()
 
@@ -107,7 +109,7 @@ export function DispatchMutateDialog({
         )
       }
       else {
-        await dispatchDocumentCreate(payload)
+        await dispatchDocumentCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:dispatch.singular'),

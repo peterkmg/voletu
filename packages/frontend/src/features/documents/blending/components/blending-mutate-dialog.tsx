@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -45,6 +46,7 @@ export function BlendingMutateDialog({
 }: BlendingMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
   const isUpdate = !!currentRow
+  const idempotencyKey = useIdempotencyKey()
 
   const companiesQuery = useCatalogCompanyList()
   const productsQuery = useCatalogProductList()
@@ -89,7 +91,7 @@ export function BlendingMutateDialog({
         )
       }
       else {
-        await blendingDocumentCreate(values)
+        await blendingDocumentCreate(values, { headers: { 'Idempotency-Key': idempotencyKey } })
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('documents:blending.singular'),

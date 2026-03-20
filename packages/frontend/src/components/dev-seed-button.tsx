@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
 
 export function DevSeedButton() {
@@ -14,7 +15,7 @@ export function DevSeedButton() {
 
     setLoading(true)
     try {
-      const token = localStorage.getItem('accessToken')
+      const token = useAuthStore.getState().auth.accessToken
       const response = await fetch(`${apiBaseUrl}/dev/seed`, {
         method: 'POST',
         headers: {

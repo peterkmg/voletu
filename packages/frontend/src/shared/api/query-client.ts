@@ -1,30 +1,9 @@
 import { QueryCache, QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useAuthStore } from '~/stores/auth-store'
-
-function isUnauthorized(error: Error): boolean {
-  return error.message.includes('401') || error.message.includes('Unauthorized')
-}
-
-function isForbiddenOrUnauthorized(error: Error): boolean {
-  return (
-    isUnauthorized(error)
-    || error.message.includes('403')
-    || error.message.includes('Forbidden')
-  )
-}
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
-      if (isUnauthorized(error)) {
-        const { accessToken, reset } = useAuthStore.getState().auth
-        if (accessToken) {
-          reset()
-          toast.error('Session expired!')
-        }
-        return
-      }
       toast.error(error.message)
     },
   }),
@@ -35,7 +14,8 @@ export const queryClient = new QueryClient({
       retry: import.meta.env.DEV
         ? false
         : (failureCount, error) => {
-            if (isForbiddenOrUnauthorized(error as Error))
+            // Don't retry auth errors — kubb-client already attempted refresh.
+            if (error.message.includes('401') || error.message.includes('403'))
               return false
             return failureCount < 3
           },
