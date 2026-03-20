@@ -31,8 +31,8 @@ fn apply_reconciliation_update(
 
 fn adjustment_delta(adjustment_type: &enums::AdjustmentType, amount: &Decimal) -> Decimal {
   match adjustment_type {
-    enums::AdjustmentType::Surplus => amount.clone(),
-    enums::AdjustmentType::Loss => -amount.clone(),
+    enums::AdjustmentType::Surplus => *amount,
+    enums::AdjustmentType::Loss => -*amount,
   }
 }
 

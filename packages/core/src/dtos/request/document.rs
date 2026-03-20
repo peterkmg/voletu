@@ -421,7 +421,7 @@ impl CreateBlendingRequest {
   pub fn from_composite(req: &CreateBlendingCompositeRequest) -> Self {
     Self {
       document_number: req.document_number.clone(),
-      date: req.date.clone(),
+      date: req.date,
       contractor_id: req.contractor_id,
       target_product_id: req.target_product_id,
     }
@@ -553,9 +553,9 @@ impl CreateRailWagonMeasurementRequest {
   ) -> Self {
     Self {
       wagon_manifest_id,
-      measured_height: measurement.measured_height.clone(),
-      lab_density: measurement.lab_density.clone(),
-      calculated_mass: measurement.calculated_mass.clone(),
+      measured_height: measurement.measured_height,
+      lab_density: measurement.lab_density,
+      calculated_mass: measurement.calculated_mass,
     }
   }
 }
@@ -579,9 +579,9 @@ impl CreateRailWagonWeightRequest {
   pub fn from_composite(wagon_manifest_id: Uuid, weight: &RailWagonWeightCompositeRequest) -> Self {
     Self {
       wagon_manifest_id,
-      gross_weight: weight.gross_weight.clone(),
-      tare_weight: weight.tare_weight.clone(),
-      net_product_weight: weight.net_product_weight.clone(),
+      gross_weight: weight.gross_weight,
+      tare_weight: weight.tare_weight,
+      net_product_weight: weight.net_product_weight,
     }
   }
 }

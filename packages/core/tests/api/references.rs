@@ -190,12 +190,12 @@ async fn reference_create_endpoints_surface_structured_errors_for_invalid_foreig
     .await;
     let invalid_group_fk_json = assert_api_error(
       invalid_group_fk,
-      StatusCode::INTERNAL_SERVER_ERROR,
-      "DATABASE_ERROR",
-      Some("Database error"),
+      StatusCode::BAD_REQUEST,
+      "BAD_REQUEST",
+      None,
     )
     .await;
-    assert_eq!(invalid_group_fk_json["error"]["code"], "DATABASE_ERROR");
+    assert_eq!(invalid_group_fk_json["error"]["code"], "BAD_REQUEST");
 
     let invalid_warehouse_fk = post_json(
       &app,
@@ -212,12 +212,12 @@ async fn reference_create_endpoints_surface_structured_errors_for_invalid_foreig
     .await;
     let invalid_warehouse_fk_json = assert_api_error(
       invalid_warehouse_fk,
-      StatusCode::INTERNAL_SERVER_ERROR,
-      "DATABASE_ERROR",
-      Some("Database error"),
+      StatusCode::BAD_REQUEST,
+      "BAD_REQUEST",
+      None,
     )
     .await;
-    assert_eq!(invalid_warehouse_fk_json["error"]["code"], "DATABASE_ERROR");
+    assert_eq!(invalid_warehouse_fk_json["error"]["code"], "BAD_REQUEST");
   })
   .await;
 }

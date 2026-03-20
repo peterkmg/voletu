@@ -53,13 +53,15 @@ impl SystemService {
     let actor_id = current_actor_id()
       .ok_or_else(|| ApiError::Unauthorized("Missing authenticated actor context".to_string()))?;
 
-    let mut active_model: user::ActiveModel = Default::default();
-    active_model.username = Set(dto.username.clone());
-    active_model.fullname = Set(dto.fullname.clone());
-    active_model.password_hash = Set(password_hash);
-    active_model.role_id = Set(role.id);
-    active_model.created_by = Set(actor_id);
-    active_model.updated_by = Set(actor_id);
+    let active_model = user::ActiveModel {
+      username: Set(dto.username.clone()),
+      fullname: Set(dto.fullname.clone()),
+      password_hash: Set(password_hash),
+      role_id: Set(role.id),
+      created_by: Set(actor_id),
+      updated_by: Set(actor_id),
+      ..Default::default()
+    };
 
     let inserted = active_model.insert(self.db.as_ref()).await?;
 

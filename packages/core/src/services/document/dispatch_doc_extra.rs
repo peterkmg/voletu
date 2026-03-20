@@ -85,7 +85,7 @@ impl DocumentService {
     }
 
     Ok(dtos::DispatchCompositeResponse {
-      document: document.into(),
+      document,
       items,
       storage_measurements,
     })

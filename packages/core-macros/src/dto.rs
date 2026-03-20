@@ -204,17 +204,13 @@ fn option_inner_type(ty: &Type) -> Option<&Type> {
     return None;
   };
 
-  let Some(ident) = type_path_ident(type_path) else {
-    return None;
-  };
+  let ident = type_path_ident(type_path)?;
 
   if ident != "Option" {
     return None;
   }
 
-  let Some(segment) = type_path.path.segments.last() else {
-    return None;
-  };
+  let segment = type_path.path.segments.last()?;
 
   let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) =
     &segment.arguments

@@ -32,7 +32,7 @@ where
   E::Model: sea_orm::ModelTrait + serde::Serialize,
 {
   let txn = db.begin().await?;
-  let existing = E::find_by_id(id.clone())
+  let existing = E::find_by_id(id)
     .one(&txn)
     .await?
     .ok_or(ApiError::NotFound(not_found_message))?;

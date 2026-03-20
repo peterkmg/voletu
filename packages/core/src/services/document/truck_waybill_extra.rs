@@ -52,7 +52,7 @@ impl DocumentService {
     }
 
     Ok(dtos::TruckWaybillCompositeResponse {
-      waybill: waybill.into(),
+      waybill,
       items,
       weight_docs,
     })

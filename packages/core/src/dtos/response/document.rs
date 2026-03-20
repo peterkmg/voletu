@@ -122,12 +122,7 @@ impl TryFrom<acceptance_document::ModelEx> for AcceptanceCompositeResponse {
       .map(|item| AcceptanceItemResponse::from(acceptance_item::Model::from(item.clone())))
       .collect();
 
-    let doc_model = acceptance_document::Model::try_from(model).map_err(|e| {
-      ApiError::Internal(anyhow::anyhow!(
-        "Failed to convert acceptance document model: {}",
-        e
-      ))
-    })?;
+    let doc_model = acceptance_document::Model::from(model);
 
     let document = AcceptanceResponse::from(doc_model);
     Ok(Self { document, items })
@@ -332,12 +327,7 @@ impl TryFrom<dispatch_document::ModelEx> for DispatchCompositeResponse {
       })
       .collect();
 
-    let doc_model = dispatch_document::Model::try_from(model).map_err(|e| {
-      ApiError::Internal(anyhow::anyhow!(
-        "Failed to convert dispatch document model: {}",
-        e
-      ))
-    })?;
+    let doc_model = dispatch_document::Model::from(model);
 
     let document = DispatchResponse::from(doc_model);
     Ok(Self {
@@ -371,12 +361,7 @@ impl TryFrom<physical_storage_transfer::ModelEx> for PhysicalTransferResponse {
       })
       .collect();
 
-    let doc_model = physical_storage_transfer::Model::try_from(model).map_err(|e| {
-      ApiError::Internal(anyhow::anyhow!(
-        "Failed to convert physical transfer model: {}",
-        e
-      ))
-    })?;
+    let doc_model = physical_storage_transfer::Model::from(model);
 
     Ok(Self {
       items,
@@ -512,12 +497,7 @@ impl TryFrom<ownership_transfer::ModelEx> for OwnershipTransferResponse {
       })
       .collect();
 
-    let doc_model = ownership_transfer::Model::try_from(model).map_err(|e| {
-      ApiError::Internal(anyhow::anyhow!(
-        "Failed to convert ownership transfer model: {}",
-        e
-      ))
-    })?;
+    let doc_model = ownership_transfer::Model::from(model);
 
     Ok(Self {
       items,
@@ -844,12 +824,7 @@ impl TryFrom<blending_document::ModelEx> for BlendingCompositeResponse {
       .map(|item| BlendingResultResponse::from(blending_result::Model::from(item.clone())))
       .collect();
 
-    let doc_model = blending_document::Model::try_from(model).map_err(|e| {
-      ApiError::Internal(anyhow::anyhow!(
-        "Failed to convert blending document model: {}",
-        e
-      ))
-    })?;
+    let doc_model = blending_document::Model::from(model);
 
     let document = BlendingResponse::from(doc_model);
     Ok(Self {

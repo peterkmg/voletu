@@ -81,7 +81,7 @@ impl DocumentService {
     }
 
     Ok(dtos::BlendingCompositeResponse {
-      document: doc.into(),
+      document: doc,
       components,
       results,
     })

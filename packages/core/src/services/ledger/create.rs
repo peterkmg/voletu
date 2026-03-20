@@ -48,8 +48,9 @@ impl LedgerService {
 
     match existing {
       Some(model) => {
+        let new_amount = model.current_amount + delta;
         let mut am: inventory_ledger_entry::ActiveModel = model.into();
-        am.current_amount = Set(model.current_amount + delta);
+        am.current_amount = Set(new_amount);
         am.update(conn).await?;
       }
       None => {

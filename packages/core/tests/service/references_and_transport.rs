@@ -220,6 +220,8 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
           declared_volume: dec("20.0"),
           declared_density: dec("0.8"),
           declared_mass: dec("16.0"),
+          measurements: None,
+          weights: None,
         },
       })
       .await

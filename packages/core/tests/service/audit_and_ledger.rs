@@ -11,7 +11,6 @@ use sea_orm::{
 };
 use uuid::Uuid;
 use voletu_core::{
-  api::ApiError,
   context::audit::with_audit_context,
   entities::{audit_log, company},
   enums,
@@ -185,7 +184,7 @@ async fn audit_service_model_methods_capture_full_inserts_and_field_level_update
 }
 
 #[tokio::test]
-async fn ledger_service_apply_delta_enforces_non_negative_balance_rules() {
+async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let fixture = seed_inventory_fixture(&db).await;
@@ -233,8 +232,8 @@ async fn ledger_service_apply_delta_enforces_non_negative_balance_rules() {
       .unwrap();
     assert_eq!(after_update.current_amount, dec("3.0"));
 
-    // Cannot go below zero from existing entry.
-    let below_zero_existing = service
+    // Negative deltas are allowed (balance can go below zero).
+    service
       .apply_delta(
         fixture.storage_a_id,
         fixture.product_a_id,
@@ -242,11 +241,20 @@ async fn ledger_service_apply_delta_enforces_non_negative_balance_rules() {
         Decimal::new(-4, 0),
       )
       .await
-      .unwrap_err();
-    assert!(matches!(below_zero_existing, ApiError::Conflict(_)));
+      .unwrap();
+    let after_negative = service
+      .by_dimensions(
+        fixture.storage_a_id,
+        fixture.product_a_id,
+        fixture.contractor_a_id,
+      )
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(after_negative.current_amount, dec("-1.0"));
 
-    // Cannot create a missing entry with a negative delta.
-    let missing_negative = service
+    // Creating a missing entry with a negative delta is also allowed.
+    service
       .apply_delta(
         fixture.storage_b_id,
         fixture.product_b_id,
@@ -254,8 +262,17 @@ async fn ledger_service_apply_delta_enforces_non_negative_balance_rules() {
         Decimal::new(-1, 0),
       )
       .await
-      .unwrap_err();
-    assert!(matches!(missing_negative, ApiError::Conflict(_)));
+      .unwrap();
+    let negative_new = service
+      .by_dimensions(
+        fixture.storage_b_id,
+        fixture.product_b_id,
+        fixture.contractor_b_id,
+      )
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(negative_new.current_amount, dec("-1.0"));
 
     // Delta update can move an existing entry to an exact target.
     service
@@ -276,7 +293,7 @@ async fn ledger_service_apply_delta_enforces_non_negative_balance_rules() {
       .await
       .unwrap()
       .unwrap();
-    assert_eq!(after_target.current_amount, dec("11.0"));
+    assert_eq!(after_target.current_amount, dec("7.0"));
   })
   .await;
 }

@@ -131,7 +131,7 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
   Ok((
     db,
     NodeConfig::new(
-      Uuid::from(local.local_db_id),
+      local.local_db_id,
       instance.node_type.to_string(),
       local.jwt_secret,
       local

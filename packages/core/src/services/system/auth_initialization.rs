@@ -129,7 +129,7 @@ impl SystemService {
           .await?
           .ok_or_else(|| ApiError::Internal(anyhow!("Database instance row is missing")))?
           .into();
-      instance_model.node_type = Set(db_node_type.clone());
+      instance_model.node_type = Set(*db_node_type);
       instance_model.update(&txn).await?;
     }
 

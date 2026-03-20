@@ -71,7 +71,7 @@ impl DocumentService {
     }
 
     Ok(dtos::RailWaybillCompositeResponse {
-      waybill: waybill.into(),
+      waybill,
       wagon_manifests,
     })
   }
