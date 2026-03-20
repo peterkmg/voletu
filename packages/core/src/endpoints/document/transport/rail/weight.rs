@@ -13,7 +13,9 @@ use super::*;
 async fn rail_weight_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<RailWagonWeightResponse>> {
-  Ok(ApiResponse::success(state.svc.document.rail_weight_list().await?))
+  Ok(ApiResponse::success(
+    state.svc.document.rail_weight_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +52,9 @@ async fn rail_weight_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<RailWagonWeightResponse> {
-  Ok(ApiResponse::success(state.svc.document.rail_weight_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.document.rail_weight_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

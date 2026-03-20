@@ -10,10 +10,10 @@ use super::*;
   responses((status = 200, body = ApiResponse<Vec<CompanyResponse>>))
 )]
 #[axum::debug_handler]
-async fn company_list(
-  State(state): State<Arc<ApiState>>,
-) -> ApiResult<Vec<CompanyResponse>> {
-  Ok(ApiResponse::success(state.svc.catalog_service.company_list().await?))
+async fn company_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<CompanyResponse>> {
+  Ok(ApiResponse::success(
+    state.svc.catalog_service.company_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +50,9 @@ async fn company_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<CompanyResponse> {
-  Ok(ApiResponse::success(state.svc.catalog_service.company_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.catalog_service.company_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

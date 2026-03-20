@@ -746,7 +746,11 @@ async fn query_endpoints_filter_by_document_number_and_status() {
 
     let acceptance_query_doc = get(
       &app,
-      format!("{}?documentNumber={}", api_paths::acceptance::QUERY, ACCEPTANCE_QUERY_DOC_NUMBER_1),
+      format!(
+        "{}?documentNumber={}",
+        api_paths::acceptance::QUERY,
+        ACCEPTANCE_QUERY_DOC_NUMBER_1
+      ),
     )
     .await;
     let acceptance_query_doc_json = assert_api_success(acceptance_query_doc).await;
@@ -831,7 +835,10 @@ async fn query_endpoints_filter_by_document_number_and_status() {
 
     let physical_query_status = get(
       &app,
-      format!("{}?status=DRAFT", api_paths::operations::PHYSICAL_TRANSFERS_QUERY),
+      format!(
+        "{}?status=DRAFT",
+        api_paths::operations::PHYSICAL_TRANSFERS_QUERY
+      ),
     )
     .await;
     let physical_query_status_json = assert_api_success(physical_query_status).await;
@@ -1048,10 +1055,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     )
     .await;
     let reconciliation_posted_json = assert_api_success(reconciliation_posted).await;
-    assert_eq!(
-      reconciliation_posted_json["data"]["status"],
-      "POSTED"
-    );
+    assert_eq!(reconciliation_posted_json["data"]["status"], "POSTED");
 
     let reconciliation_query_doc = get(
       &app,
@@ -1172,7 +1176,11 @@ async fn blending_query_status_filter_returns_posted_only_and_rejects_invalid_st
     .await;
     let _ = assert_api_success(execute_posted).await;
 
-    let posted_query = get(&app, format!("{}?status=POSTED", api_paths::blending::QUERY)).await;
+    let posted_query = get(
+      &app,
+      format!("{}?status=POSTED", api_paths::blending::QUERY),
+    )
+    .await;
     let posted_query_json = assert_api_success(posted_query).await;
     let posted_rows = posted_query_json["data"]
       .as_array()
@@ -1194,7 +1202,11 @@ async fn blending_query_status_filter_returns_posted_only_and_rejects_invalid_st
       BLENDING_STATUS_QUERY_DOC_NUMBER_1
     );
 
-    let invalid_status_query = get(&app, format!("{}?status=INVALID", api_paths::blending::QUERY)).await;
+    let invalid_status_query = get(
+      &app,
+      format!("{}?status=INVALID", api_paths::blending::QUERY),
+    )
+    .await;
     let _ = assert_api_error(
       invalid_status_query,
       StatusCode::BAD_REQUEST,
@@ -1211,7 +1223,11 @@ async fn dispatch_and_reconciliation_query_reject_invalid_status_values() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
-    let dispatch_invalid_status = get(&app, format!("{}?status=INVALID", api_paths::dispatch::QUERY)).await;
+    let dispatch_invalid_status = get(
+      &app,
+      format!("{}?status=INVALID", api_paths::dispatch::QUERY),
+    )
+    .await;
     let _ = assert_api_error(
       dispatch_invalid_status,
       StatusCode::BAD_REQUEST,
@@ -1222,7 +1238,10 @@ async fn dispatch_and_reconciliation_query_reject_invalid_status_values() {
 
     let reconciliation_invalid_status = get(
       &app,
-      format!("{}?status=INVALID", api_paths::operations::RECONCILIATIONS_QUERY),
+      format!(
+        "{}?status=INVALID",
+        api_paths::operations::RECONCILIATIONS_QUERY
+      ),
     )
     .await;
     let _ = assert_api_error(
@@ -1328,11 +1347,7 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
       .expect("acceptance pagination query data must be array");
     assert_eq!(second_page_rows.len(), 1);
 
-    let malformed_page = get(
-      &app,
-      format!("{}?page=abc", api_paths::acceptance::QUERY),
-    )
-    .await;
+    let malformed_page = get(&app, format!("{}?page=abc", api_paths::acceptance::QUERY)).await;
     let _ = assert_api_error(
       malformed_page,
       StatusCode::BAD_REQUEST,
@@ -1802,11 +1817,8 @@ async fn blending_query_supports_pagination_params_and_rejects_malformed_values(
       .expect("blending pagination query data must be array");
     assert_eq!(second_page_rows.len(), 1);
 
-    let malformed_per_page = get(
-      &app,
-      format!("{}?per_page=bad", api_paths::blending::QUERY),
-    )
-    .await;
+    let malformed_per_page =
+      get(&app, format!("{}?per_page=bad", api_paths::blending::QUERY)).await;
     let _ = assert_api_error(
       malformed_per_page,
       StatusCode::BAD_REQUEST,

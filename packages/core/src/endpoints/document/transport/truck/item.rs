@@ -74,7 +74,11 @@ async fn truck_waybill_item_update(
   Valid(Json(req)): Valid<Json<UpdateTruckWaybillItemRequest>>,
 ) -> ApiResult<TruckWaybillItemResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.truck_waybill_item_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .truck_waybill_item_update(id, &req)
+      .await?,
   ))
 }
 
@@ -92,7 +96,11 @@ async fn truck_waybill_item_soft_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.truck_waybill_item_soft_delete(id).await?;
+  state
+    .svc
+    .document
+    .truck_waybill_item_soft_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 
@@ -110,7 +118,11 @@ async fn truck_waybill_item_hard_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.truck_waybill_item_hard_delete(id).await?;
+  state
+    .svc
+    .document
+    .truck_waybill_item_hard_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

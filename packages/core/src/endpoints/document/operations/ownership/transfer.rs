@@ -50,7 +50,11 @@ async fn ownership_transfer_composite_get(
   Path(id): Path<Uuid>,
 ) -> ApiResult<OwnershipTransferResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.ownership_transfer_composite_get(id).await?,
+    state
+      .svc
+      .document
+      .ownership_transfer_composite_get(id)
+      .await?,
   ))
 }
 

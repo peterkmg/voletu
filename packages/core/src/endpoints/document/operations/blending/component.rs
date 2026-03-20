@@ -73,7 +73,11 @@ async fn blending_component_update(
   Valid(Json(req)): Valid<Json<UpdateBlendingComponentRequest>>,
 ) -> ApiResult<BlendingComponentResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.blending_component_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .blending_component_update(id, &req)
+      .await?,
   ))
 }
 
@@ -91,7 +95,11 @@ async fn blending_component_soft_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.blending_component_soft_delete(id).await?;
+  state
+    .svc
+    .document
+    .blending_component_soft_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 
@@ -109,7 +117,11 @@ async fn blending_component_hard_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.blending_component_hard_delete(id).await?;
+  state
+    .svc
+    .document
+    .blending_component_hard_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

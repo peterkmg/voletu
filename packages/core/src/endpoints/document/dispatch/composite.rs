@@ -70,7 +70,6 @@ async fn dispatch_composite_create_and_execute(
   ))
 }
 
-
 pub(super) fn composite_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(dispatch_composite_get))

@@ -10,10 +10,10 @@ use super::*;
   responses((status = 200, body = ApiResponse<Vec<PortResponse>>))
 )]
 #[axum::debug_handler]
-async fn port_list(
-  State(state): State<Arc<ApiState>>,
-) -> ApiResult<Vec<PortResponse>> {
-  Ok(ApiResponse::success(state.svc.catalog_service.port_list().await?))
+async fn port_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<PortResponse>> {
+  Ok(ApiResponse::success(
+    state.svc.catalog_service.port_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +50,9 @@ async fn port_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<PortResponse> {
-  Ok(ApiResponse::success(state.svc.catalog_service.port_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.catalog_service.port_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

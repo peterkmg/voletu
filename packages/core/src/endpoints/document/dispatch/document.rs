@@ -1,6 +1,5 @@
 use super::*;
 
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct DispatchQueryParams {
@@ -156,7 +155,11 @@ async fn dispatch_document_update(
   Valid(Json(req)): Valid<Json<crate::dtos::UpdateDispatchRequest>>,
 ) -> ApiResult<DispatchResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.dispatch_document_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .dispatch_document_update(id, &req)
+      .await?,
   ))
 }
 

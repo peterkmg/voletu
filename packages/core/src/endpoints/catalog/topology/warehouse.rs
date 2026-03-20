@@ -10,9 +10,7 @@ use super::*;
   responses((status = 200, body = ApiResponse<Vec<WarehouseResponse>>))
 )]
 #[axum::debug_handler]
-async fn warehouse_list(
-  State(state): State<Arc<ApiState>>,
-) -> ApiResult<Vec<WarehouseResponse>> {
+async fn warehouse_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<WarehouseResponse>> {
   Ok(ApiResponse::success(
     state.svc.catalog_service.warehouse_list().await?,
   ))

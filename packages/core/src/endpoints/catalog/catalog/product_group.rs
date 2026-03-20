@@ -74,7 +74,11 @@ async fn product_group_update(
   Valid(Json(req)): Valid<Json<UpdateProductGroupRequest>>,
 ) -> ApiResult<ProductGroupResponse> {
   Ok(ApiResponse::success(
-    state.svc.catalog_service.product_group_update(id, &req).await?,
+    state
+      .svc
+      .catalog_service
+      .product_group_update(id, &req)
+      .await?,
   ))
 }
 
@@ -92,7 +96,11 @@ async fn product_group_soft_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.catalog_service.product_group_soft_delete(id).await?;
+  state
+    .svc
+    .catalog_service
+    .product_group_soft_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 
@@ -110,7 +118,11 @@ async fn product_group_hard_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.catalog_service.product_group_hard_delete(id).await?;
+  state
+    .svc
+    .catalog_service
+    .product_group_hard_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

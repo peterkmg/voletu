@@ -153,7 +153,11 @@ async fn blending_document_update(
   Valid(Json(req)): Valid<Json<UpdateBlendingRequest>>,
 ) -> ApiResult<BlendingResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.blending_document_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .blending_document_update(id, &req)
+      .await?,
   ))
 }
 
