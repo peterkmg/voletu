@@ -2,7 +2,10 @@ use anyhow::{Ok, Result};
 use uuid::Uuid;
 
 use super::SystemService;
-use crate::utils::jwt::{generate_secret, Claims};
+use crate::{
+  api::ApiError,
+  utils::jwt::{generate_secret, Claims},
+};
 
 impl SystemService {
   pub async fn access_create(&self, id: Uuid, name: &str, role: &str) -> Result<String> {
@@ -15,8 +18,9 @@ impl SystemService {
     Ok(claims.encode(&self.cfg.node.jwt_secret)?)
   }
 
-  pub async fn verify_access(&self, token: &str) -> Result<Claims> {
-    Ok(Claims::decode(token, &self.cfg.node.jwt_secret)?)
+  pub async fn verify_access(&self, token: &str) -> Result<Claims, ApiError> {
+    Claims::decode(token, &self.cfg.node.jwt_secret)
+      .map_err(|_| ApiError::Unauthorized("Invalid access token".to_string()))
   }
 
   pub fn create_refresh_secret(&self) -> String {

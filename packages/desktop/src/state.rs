@@ -13,6 +13,7 @@ pub struct StartupState {
   pub needs_setup: bool,
   pub mode: Option<AppMode>,
   pub api_base_url: Option<String>,
+  pub is_debug_build: bool,
 }
 
 pub struct AppState {
@@ -31,6 +32,7 @@ impl AppState {
         needs_setup: true,
         mode: None,
         api_base_url: None,
+        is_debug_build: cfg!(debug_assertions),
       },
       local_api_task: None,
       local_api_shutdown: None,

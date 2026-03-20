@@ -6,6 +6,7 @@ export interface StartupState {
   needsSetup: boolean
   mode: AppMode | null
   apiBaseUrl: string | null
+  isDebugBuild: boolean
 }
 
 export interface SaveRemoteConfigPayload {

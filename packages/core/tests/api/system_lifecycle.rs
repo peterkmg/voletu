@@ -2,10 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use axum::http::StatusCode;
 use tokio::sync::oneshot;
+use uuid::Uuid;
 use voletu_core::{
   api::{router::build_router, ApiState},
   db::seed_defaults,
   endpoints::paths as api_paths,
+  utils::jwt::generate_secret,
 };
 
 use crate::common::{
@@ -111,6 +113,49 @@ async fn restart_endpoint_accepts_admin_and_rejects_repeated_trigger() {
       StatusCode::CONFLICT,
       "CONFLICT",
       Some("already in progress"),
+    )
+    .await;
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn restart_endpoint_rejects_access_tokens_signed_with_a_different_secret() {
+  let db = Arc::new(setup_db().await);
+  let _ = seed_defaults(&db).await.unwrap();
+
+  let mut original_cfg = test_config_for_db(&db).await;
+  original_cfg.node.jwt_secret = generate_secret();
+
+  let original_app = build_router(Arc::new(ApiState::new(
+    db.clone(),
+    Arc::new(original_cfg.clone()),
+    Arc::new(Mutex::new(None)),
+  )));
+  let stale_token = login_admin_token(&original_app).await;
+
+  let mut other_cfg = original_cfg;
+  other_cfg.node.jwt_secret = generate_secret();
+  other_cfg.node = voletu_core::config::NodeConfig::new(
+    Uuid::now_v7(),
+    "PERIPHERAL".to_string(),
+    other_cfg.node.jwt_secret.clone(),
+    None,
+  );
+
+  let protected_app = build_router(Arc::new(ApiState::new(
+    db,
+    Arc::new(other_cfg),
+    Arc::new(Mutex::new(None)),
+  )));
+
+  with_auth_token(stale_token, async {
+    let restart = post_empty(&protected_app, api_paths::node::RESTART).await;
+    let _ = assert_api_error(
+      restart,
+      StatusCode::UNAUTHORIZED,
+      "UNAUTHORIZED",
+      Some("Invalid access token"),
     )
     .await;
   })

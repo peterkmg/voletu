@@ -1,4 +1,6 @@
 pub mod catalog;
+#[cfg(debug_assertions)]
+pub mod dev;
 pub mod document;
 pub mod ledger;
 pub mod paths;

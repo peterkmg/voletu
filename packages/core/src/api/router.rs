@@ -21,10 +21,15 @@ pub fn build_router(state: Arc<ApiState>) -> Router {
     .allow_headers(tower_http::cors::Any)
     .allow_origin(tower_http::cors::Any);
 
-  let public = OpenApiRouter::new()
+  let mut public = OpenApiRouter::new()
     .merge(endpoints::health::health_routes())
     .merge(endpoints::auth::auth_public_routes(state.clone()))
     .merge(endpoints::sync::sync_routes(state.clone()));
+
+  #[cfg(debug_assertions)]
+  {
+    public = public.merge(endpoints::dev::dev_routes(state.clone()));
+  }
 
   let protected = OpenApiRouter::new()
     .merge(endpoints::auth::auth_protected_routes(state.clone()))

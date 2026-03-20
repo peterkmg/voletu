@@ -18,8 +18,11 @@ export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
       if (isUnauthorized(error)) {
-        useAuthStore.getState().auth.reset()
-        toast.error('Session expired!')
+        const { accessToken, reset } = useAuthStore.getState().auth
+        if (accessToken) {
+          reset()
+          toast.error('Session expired!')
+        }
         return
       }
       toast.error(error.message)
