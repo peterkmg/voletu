@@ -13,11 +13,16 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   component: () => {
-    const showDebugTools = useStartupStore(s => s.startupState?.isDebugBuild ?? false)
+    const startupState = useStartupStore(s => s.startupState)
+    const isTauri = startupState !== null
+    const showDebugTools = startupState?.isDebugBuild ?? false
 
     return (
-      <div className="flex h-svh flex-col overflow-hidden">
-        <Titlebar />
+      <div
+        className="flex h-svh flex-col overflow-hidden"
+        style={{ '--titlebar-h': isTauri ? '2rem' : '0px' } as React.CSSProperties}
+      >
+        {isTauri && <Titlebar />}
         <div className="flex min-h-0 flex-1 flex-col">
           <Outlet />
         </div>

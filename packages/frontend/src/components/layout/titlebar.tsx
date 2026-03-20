@@ -133,7 +133,7 @@ export function Titlebar() {
       )}
     >
       {/* Left: app name + menu bar */}
-      <div className="flex h-full items-center" data-tauri-drag-region>
+      <div className="flex h-full items-center">
         <span
           className="px-3 text-xs font-medium text-muted-foreground"
           data-tauri-drag-region
