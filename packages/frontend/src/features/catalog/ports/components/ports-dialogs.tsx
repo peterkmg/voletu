@@ -1,5 +1,5 @@
 import { PortDeleteDialog } from './port-delete-dialog'
-import { PortMutateDrawer } from './port-mutate-drawer'
+import { PortMutateDialog } from './port-mutate-dialog'
 import { usePorts } from './ports-provider'
 
 export function PortsDialogs() {
@@ -7,7 +7,7 @@ export function PortsDialogs() {
 
   return (
     <>
-      <PortMutateDrawer
+      <PortMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

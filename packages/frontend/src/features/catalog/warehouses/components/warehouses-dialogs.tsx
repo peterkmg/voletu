@@ -1,5 +1,5 @@
 import { WarehouseDeleteDialog } from './warehouse-delete-dialog'
-import { WarehouseMutateDrawer } from './warehouse-mutate-drawer'
+import { WarehouseMutateDialog } from './warehouse-mutate-dialog'
 import { useWarehouses } from './warehouses-provider'
 
 export function WarehousesDialogs() {
@@ -7,7 +7,7 @@ export function WarehousesDialogs() {
 
   return (
     <>
-      <WarehouseMutateDrawer
+      <WarehouseMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { DispatchResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { dispatchMethodColors, dispatchPurposeColors, documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
@@ -52,14 +52,7 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
           title={t('documents:dispatch.columns.date')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('date')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'dispatchPurpose',
@@ -70,7 +63,7 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
         />
       ),
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('dispatchPurpose')}</Badge>
+        <StatusBadge value={row.getValue('dispatchPurpose')} colorMap={dispatchPurposeColors} />
       ),
     },
     {
@@ -82,9 +75,7 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('dispatchMethod')}
-        </span>
+        <StatusBadge value={row.getValue('dispatchMethod')} colorMap={dispatchMethodColors} />
       ),
     },
     {
@@ -95,16 +86,9 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
           title={t('documents:dispatch.columns.status')}
         />
       ),
-      cell: ({ row }) => {
-        const status = row.getValue<string>('status')
-        return (
-          <Badge variant={status === 'Draft' ? 'outline' : 'default'}>
-            {status === 'Draft'
-              ? t('common:status.draft')
-              : t('common:status.executed')}
-          </Badge>
-        )
-      },
+      cell: ({ row }) => (
+        <StatusBadge value={row.getValue('status')} colorMap={documentStatusColors} />
+      ),
     },
     {
       accessorKey: 'createdAt',
@@ -114,14 +98,7 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

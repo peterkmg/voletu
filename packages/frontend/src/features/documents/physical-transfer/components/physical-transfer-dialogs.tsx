@@ -1,5 +1,5 @@
 import { PhysicalTransferLifecycleDialog } from './physical-transfer-lifecycle-dialog'
-import { PhysicalTransferMutateDrawer } from './physical-transfer-mutate-drawer'
+import { PhysicalTransferMutateDialog } from './physical-transfer-mutate-dialog'
 import { usePhysicalTransfer } from './physical-transfer-provider'
 
 export function PhysicalTransferDialogs() {
@@ -7,7 +7,7 @@ export function PhysicalTransferDialogs() {
 
   return (
     <>
-      <PhysicalTransferMutateDrawer
+      <PhysicalTransferMutateDialog
         open={open === 'create'}
         onOpenChange={() => setOpen(null)}
       />

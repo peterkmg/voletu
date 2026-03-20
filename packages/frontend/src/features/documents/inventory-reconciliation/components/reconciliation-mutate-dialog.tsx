@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { EntityPickerField } from '~/components/entity-picker'
+import { FormDialog } from '~/components/form-dialog'
 import {
   Form,
   FormControl,
@@ -15,16 +16,9 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
+import { WarehouseMutateDialog } from '~/features/catalog/warehouses/components/warehouse-mutate-dialog'
 import { reconciliationCreate, reconciliationUpdate } from '~/generated/client'
+import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { reconciliationListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
 import { queryClient } from '~/shared/api/query-client'
 
@@ -36,19 +30,21 @@ const reconciliationFormSchema = z.object({
 
 type ReconciliationFormValues = z.infer<typeof reconciliationFormSchema>
 
-interface ReconciliationMutateDrawerProps {
+interface ReconciliationMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: InventoryReconciliationResponse | null
 }
 
-export function ReconciliationMutateDrawer({
+export function ReconciliationMutateDialog({
   open,
   onOpenChange,
   currentRow,
-}: ReconciliationMutateDrawerProps) {
+}: ReconciliationMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
   const isUpdate = !!currentRow
+
+  const warehousesQuery = useCatalogWarehouseList()
 
   const form = useForm<ReconciliationFormValues>({
     resolver: zodResolver(reconciliationFormSchema),
@@ -107,82 +103,58 @@ export function ReconciliationMutateDrawer({
   }
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={isUpdate ? t('common:actions.edit') : t('documents:reconciliation.create')}
+      description={isUpdate ? t('common:actions.edit') : t('documents:reconciliation.create')}
+      formId="reconciliation-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {isUpdate
-              ? t('common:actions.edit')
-              : t('documents:reconciliation.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {isUpdate
-              ? t('common:actions.edit')
-              : t('documents:reconciliation.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="reconciliation-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="documentNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('documents:reconciliation.columns.documentNumber')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('documents:reconciliation.columns.date')}</FormLabel>
-                  <FormControl>
-                    <Input type="datetime-local" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="warehouseId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('common:nav.warehouses')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="reconciliation-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="reconciliation-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="documentNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('documents:reconciliation.columns.documentNumber')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('documents:reconciliation.columns.date')}</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <EntityPickerField<ReconciliationFormValues>
+            name="warehouseId"
+            label={t('common:nav.warehouses')}
+            queryResult={warehousesQuery}
+            displayField="commonName"
+            allowCreate
+            createDialog={WarehouseMutateDialog}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

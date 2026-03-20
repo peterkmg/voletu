@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
+import { Breadcrumbs } from '~/components/layout/breadcrumbs'
 import { Separator } from '~/components/ui/separator'
 import { SidebarTrigger } from '~/components/ui/sidebar'
 import { cn } from '~/lib/utils'
 
-type HeaderProps = React.HTMLAttributes<HTMLElement> & {
+type HeaderProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {
   fixed?: boolean
   ref?: React.Ref<HTMLElement>
 }
 
-export function Header({ className, fixed, children, ...props }: HeaderProps) {
+export function Header({ className, fixed, ...props }: HeaderProps) {
   const [offset, setOffset] = useState(0)
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
       >
         <SidebarTrigger variant="outline" className="max-md:scale-125" />
         <Separator orientation="vertical" className="h-6" />
-        {children}
+        <Breadcrumbs />
       </div>
     </header>
   )

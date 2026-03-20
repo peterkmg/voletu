@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { FormDialog } from '~/components/form-dialog'
 import {
   Form,
   FormControl,
@@ -15,15 +15,6 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
 import { catalogPortCreate, catalogPortUpdate } from '~/generated/client'
 import { catalogPortListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogPortList'
 import { queryClient } from '~/shared/api/query-client'
@@ -35,17 +26,17 @@ const portFormSchema = z.object({
 
 type PortFormValues = z.infer<typeof portFormSchema>
 
-interface PortMutateDrawerProps {
+interface PortMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: PortResponse | null
 }
 
-export function PortMutateDrawer({
+export function PortMutateDialog({
   open,
   onOpenChange,
   currentRow,
-}: PortMutateDrawerProps) {
+}: PortMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
 
@@ -108,69 +99,50 @@ export function PortMutateDrawer({
   }
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={isUpdate ? t('catalog:port.edit') : t('catalog:port.create')}
+      description={isUpdate ? t('catalog:port.edit') : t('catalog:port.create')}
+      formId="port-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {isUpdate
-              ? t('catalog:port.edit')
-              : t('catalog:port.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {isUpdate
-              ? t('catalog:port.edit')
-              : t('catalog:port.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="port-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="commonName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:port.form.commonName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:port.form.country')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="port-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="port-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="commonName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:port.form.commonName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:port.form.country')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

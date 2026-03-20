@@ -6,5 +6,6 @@ declare module '@tanstack/react-table' {
     className?: string
     tdClassName?: string
     thClassName?: string
+    align?: 'left' | 'center' | 'right'
   }
 }

@@ -1,12 +1,17 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { BlendingResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, LookupCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
+interface BlendingColumnLookups {
+  companyMap: Map<string, string>
+  productMap: Map<string, string>
+}
+
+export function getBlendingColumns(t: TFunction, lookups: BlendingColumnLookups): ColumnDef<BlendingResponse>[] {
   return [
     {
       id: 'select',
@@ -52,14 +57,7 @@ export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] 
           title={t('documents:blending.columns.date')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('date')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'contractorId',
@@ -70,9 +68,7 @@ export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] 
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('contractorId')}
-        </span>
+        <LookupCell value={row.getValue('contractorId')} lookupMap={lookups.companyMap} />
       ),
     },
     {
@@ -84,22 +80,20 @@ export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] 
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('targetProductId')}
-        </span>
+        <LookupCell value={row.getValue('targetProductId')} lookupMap={lookups.productMap} />
       ),
     },
     {
       accessorKey: 'status',
-      header: t('documents:blending.columns.status'),
-      cell: ({ row }) => {
-        const status = row.getValue<string>('status')
-        return (
-          <Badge variant={status === 'Executed' ? 'default' : 'outline'}>
-            {t(`common:status.${status.toLowerCase()}`)}
-          </Badge>
-        )
-      },
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('documents:blending.columns.status')}
+        />
+      ),
+      cell: ({ row }) => (
+        <StatusBadge value={row.getValue('status')} colorMap={documentStatusColors} />
+      ),
     },
     {
       accessorKey: 'createdAt',
@@ -109,14 +103,7 @@ export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] 
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

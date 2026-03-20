@@ -1,11 +1,15 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { TruckWaybillResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export function getTruckWaybillColumns(t: TFunction): ColumnDef<TruckWaybillResponse>[] {
+interface TruckWaybillColumnLookups {
+  companyMap: Map<string, string>
+}
+
+export function getTruckWaybillColumns(t: TFunction, lookups: TruckWaybillColumnLookups): ColumnDef<TruckWaybillResponse>[] {
   return [
     {
       id: 'select',
@@ -52,14 +56,7 @@ export function getTruckWaybillColumns(t: TFunction): ColumnDef<TruckWaybillResp
           title={t('transport:truck.columns.date')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('date')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'senderId',
@@ -70,9 +67,7 @@ export function getTruckWaybillColumns(t: TFunction): ColumnDef<TruckWaybillResp
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('senderId')}
-        </span>
+        <LookupCell value={row.getValue('senderId')} lookupMap={lookups.companyMap} />
       ),
     },
     {
@@ -83,14 +78,7 @@ export function getTruckWaybillColumns(t: TFunction): ColumnDef<TruckWaybillResp
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

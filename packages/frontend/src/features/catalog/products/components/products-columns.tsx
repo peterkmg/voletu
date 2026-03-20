@@ -1,11 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { ProductResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
+interface ProductColumnLookups {
+  productGroupMap: Map<string, string>
+  companyMap: Map<string, string>
+}
+
+export function getProductColumns(t: TFunction, lookups: ProductColumnLookups): ColumnDef<ProductResponse>[] {
   return [
     {
       id: 'select',
@@ -53,9 +58,7 @@ export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('productGroupId')}
-        </span>
+        <LookupCell value={row.getValue('productGroupId')} lookupMap={lookups.productGroupMap} />
       ),
     },
     {
@@ -67,9 +70,7 @@ export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('manufacturerId') ?? '—'}
-        </span>
+        <LookupCell value={row.getValue('manufacturerId')} lookupMap={lookups.companyMap} />
       ),
     },
     {
@@ -82,7 +83,7 @@ export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
       ),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue('identification') ?? '—'}
+          {row.getValue('identification') ?? '\u2014'}
         </span>
       ),
     },
@@ -94,14 +95,7 @@ export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

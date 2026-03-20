@@ -1,6 +1,6 @@
 import { BlendingDeleteDialog } from './blending-delete-dialog'
 import { BlendingLifecycleDialog } from './blending-lifecycle-dialog'
-import { BlendingMutateDrawer } from './blending-mutate-drawer'
+import { BlendingMutateDialog } from './blending-mutate-dialog'
 import { useBlending } from './blending-provider'
 
 export function BlendingDialogs() {
@@ -8,7 +8,7 @@ export function BlendingDialogs() {
 
   return (
     <>
-      <BlendingMutateDrawer
+      <BlendingMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

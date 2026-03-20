@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { PhysicalTransferResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, DateTimeCell, NumericCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
@@ -52,14 +52,7 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
           title={t('documents:acceptance.columns.date')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('date')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'startCargoOps',
@@ -69,14 +62,7 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
           title={t('common:table.startCargoOps', { defaultValue: 'Start Cargo Ops' })}
         />
       ),
-      cell: ({ row }) => {
-        const val = row.getValue<string>('startCargoOps')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(val).toLocaleTimeString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateTimeCell value={row.getValue('startCargoOps')} />,
     },
     {
       accessorKey: 'endCargoOps',
@@ -86,14 +72,7 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
           title={t('common:table.endCargoOps', { defaultValue: 'End Cargo Ops' })}
         />
       ),
-      cell: ({ row }) => {
-        const val = row.getValue<string>('endCargoOps')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(val).toLocaleTimeString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateTimeCell value={row.getValue('endCargoOps')} />,
     },
     {
       accessorKey: 'status',
@@ -103,23 +82,17 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
           title={t('common:table.status')}
         />
       ),
-      cell: ({ row }) => {
-        const status = row.getValue<string>('status')
-        return (
-          <Badge variant={status === 'Executed' ? 'default' : 'secondary'}>
-            {status === 'Executed' ? t('common:status.executed') : t('common:status.draft')}
-          </Badge>
-        )
-      },
+      cell: ({ row }) => (
+        <StatusBadge value={row.getValue('status')} colorMap={documentStatusColors} />
+      ),
     },
     {
       id: 'itemsCount',
       header: t('documents:items.title'),
       cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">
-          {row.original.items.length}
-        </span>
+        <NumericCell value={row.original.items.length} />
       ),
+      meta: { align: 'right' as const },
     },
     {
       id: 'actions',

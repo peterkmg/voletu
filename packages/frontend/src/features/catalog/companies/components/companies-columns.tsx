@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { CompanyResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell } from '~/components/data-table'
 import { Badge } from '~/components/ui/badge'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -56,7 +56,7 @@ export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
       meta: { className: 'w-1/4' },
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue('legalName') ?? '—'}
+          {row.getValue('legalName') ?? '\u2014'}
         </span>
       ),
     },
@@ -94,14 +94,7 @@ export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

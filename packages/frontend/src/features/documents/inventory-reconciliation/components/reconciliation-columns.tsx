@@ -1,12 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { InventoryReconciliationResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, LookupCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export function getReconciliationColumns(t: TFunction): ColumnDef<InventoryReconciliationResponse>[] {
+interface ReconciliationColumnLookups {
+  warehouseMap: Map<string, string>
+}
+
+export function getReconciliationColumns(t: TFunction, lookups: ReconciliationColumnLookups): ColumnDef<InventoryReconciliationResponse>[] {
   return [
     {
       id: 'select',
@@ -52,14 +56,7 @@ export function getReconciliationColumns(t: TFunction): ColumnDef<InventoryRecon
           title={t('documents:reconciliation.columns.date')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('date')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'warehouseId',
@@ -70,9 +67,7 @@ export function getReconciliationColumns(t: TFunction): ColumnDef<InventoryRecon
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('warehouseId')}
-        </span>
+        <LookupCell value={row.getValue('warehouseId')} lookupMap={lookups.warehouseMap} />
       ),
     },
     {
@@ -83,14 +78,9 @@ export function getReconciliationColumns(t: TFunction): ColumnDef<InventoryRecon
           title={t('documents:reconciliation.columns.status')}
         />
       ),
-      cell: ({ row }) => {
-        const status = row.getValue<string>('status')
-        return (
-          <Badge variant={status === 'Executed' ? 'default' : 'secondary'}>
-            {t(`common:status.${status.toLowerCase()}`)}
-          </Badge>
-        )
-      },
+      cell: ({ row }) => (
+        <StatusBadge value={row.getValue('status')} colorMap={documentStatusColors} />
+      ),
     },
     {
       accessorKey: 'createdAt',
@@ -100,14 +90,7 @@ export function getReconciliationColumns(t: TFunction): ColumnDef<InventoryRecon
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

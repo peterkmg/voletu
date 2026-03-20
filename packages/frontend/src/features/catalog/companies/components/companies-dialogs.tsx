@@ -1,13 +1,13 @@
 import { useCompanies } from './companies-provider'
 import { CompanyDeleteDialog } from './company-delete-dialog'
-import { CompanyMutateDrawer } from './company-mutate-drawer'
+import { CompanyMutateDialog } from './company-mutate-dialog'
 
 export function CompaniesDialogs() {
   const { open, setOpen, currentRow } = useCompanies()
 
   return (
     <>
-      <CompanyMutateDrawer
+      <CompanyMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

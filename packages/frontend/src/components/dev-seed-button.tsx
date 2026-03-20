@@ -24,7 +24,7 @@ export function DevSeedButton() {
         },
       })
 
-      const body = await response.json() as { success: boolean; data?: Record<string, number>; error?: { message?: string } }
+      const body = await response.json() as { success: boolean, data?: Record<string, number>, error?: { message?: string } }
 
       if (!body.success) {
         throw new Error(body.error?.message ?? 'Seed failed')

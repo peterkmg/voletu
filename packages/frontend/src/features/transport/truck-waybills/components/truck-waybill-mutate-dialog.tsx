@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { EntityPickerField } from '~/components/entity-picker'
+import { FormDialog } from '~/components/form-dialog'
 import {
   Form,
   FormControl,
@@ -15,16 +16,9 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
+import { CompanyMutateDialog } from '~/features/catalog/companies/components/company-mutate-dialog'
 import { transportTruckWaybillCreate, transportTruckWaybillUpdate } from '~/generated/client'
+import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { transportTruckWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillList'
 import { queryClient } from '~/shared/api/query-client'
 
@@ -36,19 +30,21 @@ const truckWaybillFormSchema = z.object({
 
 type TruckWaybillFormValues = z.infer<typeof truckWaybillFormSchema>
 
-interface TruckWaybillMutateDrawerProps {
+interface TruckWaybillMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: TruckWaybillResponse | null
 }
 
-export function TruckWaybillMutateDrawer({
+export function TruckWaybillMutateDialog({
   open,
   onOpenChange,
   currentRow,
-}: TruckWaybillMutateDrawerProps) {
+}: TruckWaybillMutateDialogProps) {
   const { t } = useTranslation(['transport', 'common'])
   const isUpdate = !!currentRow
+
+  const companiesQuery = useCatalogCompanyList()
 
   const form = useForm<TruckWaybillFormValues>({
     resolver: zodResolver(truckWaybillFormSchema),
@@ -107,82 +103,58 @@ export function TruckWaybillMutateDrawer({
   }
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={isUpdate ? t('transport:truck.edit') : t('transport:truck.create')}
+      description={isUpdate ? t('transport:truck.edit') : t('transport:truck.create')}
+      formId="truck-waybill-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {isUpdate
-              ? t('transport:truck.edit')
-              : t('transport:truck.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {isUpdate
-              ? t('transport:truck.edit')
-              : t('transport:truck.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="truck-waybill-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="documentNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('transport:truck.form.documentNumber')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('transport:truck.form.date')}</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="senderId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('transport:truck.form.senderId')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="truck-waybill-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="truck-waybill-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="documentNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('transport:truck.form.documentNumber')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('transport:truck.form.date')}</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <EntityPickerField<TruckWaybillFormValues>
+            name="senderId"
+            label={t('transport:truck.form.senderId')}
+            queryResult={companiesQuery}
+            displayField="commonName"
+            allowCreate
+            createDialog={CompanyMutateDialog}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

@@ -1,5 +1,5 @@
 import { TruckWaybillDeleteDialog } from './truck-waybill-delete-dialog'
-import { TruckWaybillMutateDrawer } from './truck-waybill-mutate-drawer'
+import { TruckWaybillMutateDialog } from './truck-waybill-mutate-dialog'
 import { useTruckWaybills } from './truck-waybills-provider'
 
 export function TruckWaybillsDialogs() {
@@ -7,7 +7,7 @@ export function TruckWaybillsDialogs() {
 
   return (
     <>
-      <TruckWaybillMutateDrawer
+      <TruckWaybillMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

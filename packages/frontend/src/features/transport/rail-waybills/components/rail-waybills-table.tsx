@@ -2,7 +2,6 @@ import type { SortingState, VisibilityState } from '@tanstack/react-table'
 import type { RailWaybillResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import {
-  flexRender,
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
@@ -15,15 +14,8 @@ import {
 } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DataTablePagination, DataTableToolbar } from '~/components/data-table'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
+import { DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
+import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getRailWaybillColumns } from './rail-waybills-columns'
@@ -36,7 +28,15 @@ interface RailWaybillsTableProps {
 
 export function RailWaybillsTable({ data }: RailWaybillsTableProps) {
   const { t } = useTranslation(['transport', 'common'])
-  const columns = useMemo(() => getRailWaybillColumns(t), [t])
+
+  const { data: companiesData } = useCatalogCompanyList()
+  const companyMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of companiesData?.data ?? []) map.set(c.id, c.commonName)
+    return map
+  }, [companiesData])
+
+  const columns = useMemo(() => getRailWaybillColumns(t, { companyMap }), [t, companyMap])
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -101,69 +101,7 @@ export function RailWaybillsTable({ data }: RailWaybillsTableProps) {
         searchPlaceholder={`${t('common:actions.search')}...`}
         filters={[]}
       />
-      <div className="overflow-hidden rounded-md border">
-        <Table className="min-w-xl">
-          <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <TableHead
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    className={cn(
-                      header.column.columnDef.meta?.className,
-                      header.column.columnDef.meta?.thClassName,
-                    )}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length
-              ? (
-                  table.getRowModel().rows.map(row => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && 'selected'}
-                    >
-                      {row.getVisibleCells().map(cell => (
-                        <TableCell
-                          key={cell.id}
-                          className={cn(
-                            cell.column.columnDef.meta?.className,
-                            cell.column.columnDef.meta?.tdClassName,
-                          )}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )
-              : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      {t('common:table.noResults')}
-                    </TableCell>
-                  </TableRow>
-                )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable table={table} columns={columns} />
       <DataTablePagination table={table} className="mt-auto" />
     </div>
   )

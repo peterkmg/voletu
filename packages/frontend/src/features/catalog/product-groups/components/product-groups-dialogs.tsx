@@ -1,5 +1,5 @@
 import { ProductGroupDeleteDialog } from './product-group-delete-dialog'
-import { ProductGroupMutateDrawer } from './product-group-mutate-drawer'
+import { ProductGroupMutateDialog } from './product-group-mutate-dialog'
 import { useProductGroups } from './product-groups-provider'
 
 export function ProductGroupsDialogs() {
@@ -7,7 +7,7 @@ export function ProductGroupsDialogs() {
 
   return (
     <>
-      <ProductGroupMutateDrawer
+      <ProductGroupMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

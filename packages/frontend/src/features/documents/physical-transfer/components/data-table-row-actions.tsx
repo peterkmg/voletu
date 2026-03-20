@@ -1,14 +1,9 @@
 import type { Row } from '@tanstack/react-table'
+import type { RowAction } from '~/components/data-table'
 import type { PhysicalTransferResponse } from '~/generated/types'
-import { MoreHorizontal, Play, Undo2 } from 'lucide-react'
+import { Play, Undo2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '~/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
+import { RowActions } from '~/components/data-table'
 import { usePhysicalTransfer } from './physical-transfer-provider'
 
 interface DataTableRowActionsProps {
@@ -19,41 +14,30 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { t } = useTranslation(['common'])
   const { setOpen, setCurrentRow } = usePhysicalTransfer()
 
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-        >
-          <MoreHorizontal className="size-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[160px]">
-        {row.original.status === 'DRAFT' && (
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original)
-              setOpen('execute')
-            }}
-          >
-            <Play className="mr-2 size-4" />
-            {t('common:actions.execute')}
-          </DropdownMenuItem>
-        )}
-        {row.original.status === 'POSTED' && (
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original)
-              setOpen('revert')
-            }}
-          >
-            <Undo2 className="mr-2 size-4" />
-            {t('common:actions.revert')}
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  const actions: RowAction[] = [
+    ...(row.original.status === 'DRAFT'
+      ? [{
+          label: t('common:actions.execute'),
+          icon: Play,
+          inline: true,
+          onClick: () => {
+            setCurrentRow(row.original)
+            setOpen('execute')
+          },
+        }]
+      : []),
+    ...(row.original.status === 'POSTED'
+      ? [{
+          label: t('common:actions.revert'),
+          icon: Undo2,
+          inline: true,
+          onClick: () => {
+            setCurrentRow(row.original)
+            setOpen('revert')
+          },
+        }]
+      : []),
+  ]
+
+  return <RowActions actions={actions} />
 }

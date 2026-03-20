@@ -1,5 +1,5 @@
 import { ProductDeleteDialog } from './product-delete-dialog'
-import { ProductMutateDrawer } from './product-mutate-drawer'
+import { ProductMutateDialog } from './product-mutate-dialog'
 import { useProducts } from './products-provider'
 
 export function ProductsDialogs() {
@@ -7,7 +7,7 @@ export function ProductsDialogs() {
 
   return (
     <>
-      <ProductMutateDrawer
+      <ProductMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

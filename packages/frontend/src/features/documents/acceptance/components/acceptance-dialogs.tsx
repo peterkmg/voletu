@@ -1,6 +1,6 @@
 import { AcceptanceDeleteDialog } from './acceptance-delete-dialog'
 import { AcceptanceLifecycleDialog } from './acceptance-lifecycle-dialog'
-import { AcceptanceMutateDrawer } from './acceptance-mutate-drawer'
+import { AcceptanceMutateDialog } from './acceptance-mutate-dialog'
 import { useAcceptance } from './acceptance-provider'
 
 export function AcceptanceDialogs() {
@@ -8,7 +8,7 @@ export function AcceptanceDialogs() {
 
   return (
     <>
-      <AcceptanceMutateDrawer
+      <AcceptanceMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

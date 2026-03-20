@@ -1,6 +1,6 @@
 import { ReconciliationDeleteDialog } from './reconciliation-delete-dialog'
 import { ReconciliationLifecycleDialog } from './reconciliation-lifecycle-dialog'
-import { ReconciliationMutateDrawer } from './reconciliation-mutate-drawer'
+import { ReconciliationMutateDialog } from './reconciliation-mutate-dialog'
 import { useReconciliation } from './reconciliation-provider'
 
 export function ReconciliationDialogs() {
@@ -8,7 +8,7 @@ export function ReconciliationDialogs() {
 
   return (
     <>
-      <ReconciliationMutateDrawer
+      <ReconciliationMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

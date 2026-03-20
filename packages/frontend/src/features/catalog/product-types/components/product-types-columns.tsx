@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { ProductTypeResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
@@ -67,14 +67,7 @@ export function getProductTypeColumns(t: TFunction): ColumnDef<ProductTypeRespon
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

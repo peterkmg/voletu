@@ -1,6 +1,6 @@
 import { DispatchDeleteDialog } from './dispatch-delete-dialog'
 import { DispatchLifecycleDialog } from './dispatch-lifecycle-dialog'
-import { DispatchMutateDrawer } from './dispatch-mutate-drawer'
+import { DispatchMutateDialog } from './dispatch-mutate-dialog'
 import { useDispatch } from './dispatch-provider'
 
 export function DispatchDialogs() {
@@ -8,7 +8,7 @@ export function DispatchDialogs() {
 
   return (
     <>
-      <DispatchMutateDrawer
+      <DispatchMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

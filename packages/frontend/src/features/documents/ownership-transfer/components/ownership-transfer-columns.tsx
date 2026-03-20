@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { OwnershipTransferResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, IdCell, NumericCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getOwnershipTransferColumns(t: TFunction): ColumnDef<OwnershipTransferResponse>[] {
@@ -40,11 +40,7 @@ export function getOwnershipTransferColumns(t: TFunction): ColumnDef<OwnershipTr
           title={t('common:table.id')}
         />
       ),
-      cell: ({ row }) => (
-        <span className="font-medium font-mono">
-          {row.getValue<string>('id').slice(0, 8)}
-        </span>
-      ),
+      cell: ({ row }) => <IdCell value={row.getValue('id')} />,
     },
     {
       accessorKey: 'date',
@@ -54,14 +50,7 @@ export function getOwnershipTransferColumns(t: TFunction): ColumnDef<OwnershipTr
           title={t('documents:acceptance.columns.date')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('date')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'status',
@@ -71,23 +60,17 @@ export function getOwnershipTransferColumns(t: TFunction): ColumnDef<OwnershipTr
           title={t('common:table.status')}
         />
       ),
-      cell: ({ row }) => {
-        const status = row.getValue<string>('status')
-        return (
-          <Badge variant={status === 'Executed' ? 'default' : 'secondary'}>
-            {status === 'Executed' ? t('common:status.executed') : t('common:status.draft')}
-          </Badge>
-        )
-      },
+      cell: ({ row }) => (
+        <StatusBadge value={row.getValue('status')} colorMap={documentStatusColors} />
+      ),
     },
     {
       id: 'itemsCount',
       header: t('documents:items.title'),
       cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">
-          {row.original.items.length}
-        </span>
+        <NumericCell value={row.original.items.length} />
       ),
+      meta: { align: 'right' as const },
     },
     {
       id: 'actions',

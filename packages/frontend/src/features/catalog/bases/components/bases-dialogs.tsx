@@ -1,5 +1,5 @@
 import { BaseDeleteDialog } from './base-delete-dialog'
-import { BaseMutateDrawer } from './base-mutate-drawer'
+import { BaseMutateDialog } from './base-mutate-dialog'
 import { useBases } from './bases-provider'
 
 export function BasesDialogs() {
@@ -7,7 +7,7 @@ export function BasesDialogs() {
 
   return (
     <>
-      <BaseMutateDrawer
+      <BaseMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

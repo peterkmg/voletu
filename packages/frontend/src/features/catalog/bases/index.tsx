@@ -15,9 +15,7 @@ export function Bases() {
 
   return (
     <BasesProvider>
-      <Header fixed>
-        <h1 className="text-lg font-semibold">{t('catalog:base.title')}</h1>
-      </Header>
+      <Header fixed />
 
       <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
         <div className="flex flex-wrap items-end justify-between gap-2">

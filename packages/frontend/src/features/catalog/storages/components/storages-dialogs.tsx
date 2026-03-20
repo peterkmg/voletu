@@ -1,5 +1,5 @@
 import { StorageDeleteDialog } from './storage-delete-dialog'
-import { StorageMutateDrawer } from './storage-mutate-drawer'
+import { StorageMutateDialog } from './storage-mutate-dialog'
 import { useStorages } from './storages-provider'
 
 export function StoragesDialogs() {
@@ -7,7 +7,7 @@ export function StoragesDialogs() {
 
   return (
     <>
-      <StorageMutateDrawer
+      <StorageMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

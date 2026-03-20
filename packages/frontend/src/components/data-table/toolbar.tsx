@@ -1,7 +1,9 @@
 import type { Table } from '@tanstack/react-table'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { DensityToggle } from './density-toggle'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -22,12 +24,15 @@ interface DataTableToolbarProps<TData> {
 
 export function DataTableToolbar<TData>({
   table,
-  searchPlaceholder = 'Filter...',
+  searchPlaceholder,
   searchKey,
   filters = [],
 }: DataTableToolbarProps<TData>) {
+  const { t } = useTranslation('common')
   const isFiltered
     = table.getState().columnFilters.length > 0 || table.getState().globalFilter
+
+  const placeholder = searchPlaceholder ?? `${t('actions.search')}...`
 
   return (
     <div className="flex items-center justify-between">
@@ -35,7 +40,7 @@ export function DataTableToolbar<TData>({
         {searchKey
           ? (
               <Input
-                placeholder={searchPlaceholder}
+                placeholder={placeholder}
                 value={
                   (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
                 }
@@ -46,7 +51,7 @@ export function DataTableToolbar<TData>({
             )
           : (
               <Input
-                placeholder={searchPlaceholder}
+                placeholder={placeholder}
                 value={table.getState().globalFilter ?? ''}
                 onChange={event => table.setGlobalFilter(event.target.value)}
                 className="h-8 w-[150px] lg:w-[250px]"
@@ -76,12 +81,15 @@ export function DataTableToolbar<TData>({
             }}
             className="h-8 px-2 lg:px-3"
           >
-            Reset
+            {t('actions.reset')}
             <X className="ms-2 h-4 w-4" />
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className="flex items-center gap-2">
+        <DensityToggle />
+        <DataTableViewOptions table={table} />
+      </div>
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { FormDialog } from '~/components/form-dialog'
 import {
   Form,
   FormControl,
@@ -15,15 +15,6 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
 import { catalogProductTypeCreate, catalogProductTypeUpdate } from '~/generated/client'
 import { catalogProductTypeListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
 import { queryClient } from '~/shared/api/query-client'
@@ -35,17 +26,19 @@ const productTypeFormSchema = z.object({
 
 type ProductTypeFormValues = z.infer<typeof productTypeFormSchema>
 
-interface ProductTypeMutateDrawerProps {
+interface ProductTypeMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: ProductTypeResponse | null
+  onCreated?: (id: string) => void
 }
 
-export function ProductTypeMutateDrawer({
+export function ProductTypeMutateDialog({
   open,
   onOpenChange,
   currentRow,
-}: ProductTypeMutateDrawerProps) {
+  onCreated,
+}: ProductTypeMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
 
@@ -88,12 +81,15 @@ export function ProductTypeMutateDrawer({
         )
       }
       else {
-        await catalogProductTypeCreate(payload)
+        const result = await catalogProductTypeCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:productType.singular'),
           }),
         )
+        if (onCreated && result?.data?.id) {
+          onCreated(result.data.id)
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: catalogProductTypeListQueryKey() })
@@ -108,69 +104,50 @@ export function ProductTypeMutateDrawer({
   }
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={isUpdate ? t('catalog:productType.edit') : t('catalog:productType.create')}
+      description={isUpdate ? t('catalog:productType.edit') : t('catalog:productType.create')}
+      formId="product-type-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {isUpdate
-              ? t('catalog:productType.edit')
-              : t('catalog:productType.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {isUpdate
-              ? t('catalog:productType.edit')
-              : t('catalog:productType.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="product-type-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="commonName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:productType.form.commonName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="longName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:productType.form.longName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="product-type-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="product-type-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="commonName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:productType.form.commonName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="longName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:productType.form.longName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

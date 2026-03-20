@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { FormDialog } from '~/components/form-dialog'
 import { Checkbox } from '~/components/ui/checkbox'
 import {
   Form,
@@ -16,15 +16,6 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
 import { catalogCompanyCreate, catalogCompanyUpdate } from '~/generated/client'
 import { catalogCompanyListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { queryClient } from '~/shared/api/query-client'
@@ -40,17 +31,19 @@ const companyFormSchema = z.object({
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>
 
-interface CompanyMutateDrawerProps {
+interface CompanyMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: CompanyResponse | null
+  onCreated?: (id: string) => void
 }
 
-export function CompanyMutateDrawer({
+export function CompanyMutateDialog({
   open,
   onOpenChange,
   currentRow,
-}: CompanyMutateDrawerProps) {
+  onCreated,
+}: CompanyMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
 
@@ -105,12 +98,15 @@ export function CompanyMutateDrawer({
         )
       }
       else {
-        await catalogCompanyCreate(payload)
+        const result = await catalogCompanyCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:company.singular'),
           }),
         )
+        if (onCreated && result?.data?.id) {
+          onCreated(result.data.id)
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: catalogCompanyListQueryKey() })
@@ -132,89 +128,70 @@ export function CompanyMutateDrawer({
   ]
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={isUpdate ? t('catalog:company.edit') : t('catalog:company.create')}
+      description={isUpdate ? t('catalog:company.edit') : t('catalog:company.create')}
+      formId="company-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {isUpdate
-              ? t('catalog:company.edit')
-              : t('catalog:company.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {isUpdate
-              ? t('catalog:company.edit')
-              : t('catalog:company.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="company-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="commonName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:company.form.commonName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="legalName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:company.form.legalName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="space-y-3">
-              {booleanFields.map(({ name, label }) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name}
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="!mt-0">{label}</FormLabel>
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="company-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="company-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="commonName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:company.form.commonName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="legalName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:company.form.legalName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="space-y-3">
+            {booleanFields.map(({ name, label }) => (
+              <FormField
+                key={name}
+                control={form.control}
+                name={name}
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">{label}</FormLabel>
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

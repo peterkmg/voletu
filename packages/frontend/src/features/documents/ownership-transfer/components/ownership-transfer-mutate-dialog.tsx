@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { FormDialog } from '~/components/form-dialog'
 import {
   Form,
   FormControl,
@@ -13,15 +13,6 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
 import { ownershipTransferCreate } from '~/generated/client'
 import { ownershipTransferListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferList'
 import { queryClient } from '~/shared/api/query-client'
@@ -32,15 +23,15 @@ const ownershipTransferFormSchema = z.object({
 
 type OwnershipTransferFormValues = z.infer<typeof ownershipTransferFormSchema>
 
-interface OwnershipTransferMutateDrawerProps {
+interface OwnershipTransferMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function OwnershipTransferMutateDrawer({
+export function OwnershipTransferMutateDialog({
   open,
   onOpenChange,
-}: OwnershipTransferMutateDrawerProps) {
+}: OwnershipTransferMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
 
   const form = useForm<OwnershipTransferFormValues>({
@@ -73,52 +64,37 @@ export function OwnershipTransferMutateDrawer({
   }
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={t('documents:ownershipTransfer.create')}
+      description={t('documents:ownershipTransfer.create')}
+      formId="ownership-transfer-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {t('documents:ownershipTransfer.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {t('documents:ownershipTransfer.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="ownership-transfer-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('documents:acceptance.columns.date')}</FormLabel>
-                  <FormControl>
-                    <Input type="datetime-local" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="ownership-transfer-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="ownership-transfer-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('documents:acceptance.columns.date')}</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

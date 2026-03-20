@@ -1,5 +1,5 @@
 import { OwnershipTransferLifecycleDialog } from './ownership-transfer-lifecycle-dialog'
-import { OwnershipTransferMutateDrawer } from './ownership-transfer-mutate-drawer'
+import { OwnershipTransferMutateDialog } from './ownership-transfer-mutate-dialog'
 import { useOwnershipTransfer } from './ownership-transfer-provider'
 
 export function OwnershipTransferDialogs() {
@@ -7,7 +7,7 @@ export function OwnershipTransferDialogs() {
 
   return (
     <>
-      <OwnershipTransferMutateDrawer
+      <OwnershipTransferMutateDialog
         open={open === 'create'}
         onOpenChange={() => setOpen(null)}
       />

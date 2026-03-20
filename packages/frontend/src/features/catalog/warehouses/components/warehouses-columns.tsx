@@ -1,11 +1,15 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { WarehouseResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
+interface WarehouseColumnLookups {
+  baseMap: Map<string, string>
+}
+
+export function getWarehouseColumns(t: TFunction, lookups: WarehouseColumnLookups): ColumnDef<WarehouseResponse>[] {
   return [
     {
       id: 'select',
@@ -54,9 +58,7 @@ export function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[
       ),
       meta: { className: 'w-1/4' },
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('baseId')}
-        </span>
+        <LookupCell value={row.getValue('baseId')} lookupMap={lookups.baseMap} />
       ),
     },
     {
@@ -67,14 +69,7 @@ export function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',

@@ -1,5 +1,5 @@
 import { RailWaybillDeleteDialog } from './rail-waybill-delete-dialog'
-import { RailWaybillMutateDrawer } from './rail-waybill-mutate-drawer'
+import { RailWaybillMutateDialog } from './rail-waybill-mutate-dialog'
 import { useRailWaybills } from './rail-waybills-provider'
 
 export function RailWaybillsDialogs() {
@@ -7,7 +7,7 @@ export function RailWaybillsDialogs() {
 
   return (
     <>
-      <RailWaybillMutateDrawer
+      <RailWaybillMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

@@ -16,7 +16,7 @@ export function AppSidebar() {
   const sidebarData = getSidebarData(t)
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <AppTitle />
       </SidebarHeader>

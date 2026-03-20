@@ -1,5 +1,5 @@
 import { ProductTypeDeleteDialog } from './product-type-delete-dialog'
-import { ProductTypeMutateDrawer } from './product-type-mutate-drawer'
+import { ProductTypeMutateDialog } from './product-type-mutate-dialog'
 import { useProductTypes } from './product-types-provider'
 
 export function ProductTypesDialogs() {
@@ -7,7 +7,7 @@ export function ProductTypesDialogs() {
 
   return (
     <>
-      <ProductTypeMutateDrawer
+      <ProductTypeMutateDialog
         open={open === 'create' || open === 'update'}
         onOpenChange={() => setOpen(null)}
         currentRow={open === 'update' ? currentRow : null}

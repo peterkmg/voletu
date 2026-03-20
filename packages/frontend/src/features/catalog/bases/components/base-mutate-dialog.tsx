@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
+import { FormDialog } from '~/components/form-dialog'
 import {
   Form,
   FormControl,
@@ -15,15 +15,6 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '~/components/ui/sheet'
 import { catalogBaseCreate, catalogBaseUpdate } from '~/generated/client'
 import { catalogBaseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
 import { queryClient } from '~/shared/api/query-client'
@@ -35,17 +26,19 @@ const baseFormSchema = z.object({
 
 type BaseFormValues = z.infer<typeof baseFormSchema>
 
-interface BaseMutateDrawerProps {
+interface BaseMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: BaseResponse | null
+  onCreated?: (id: string) => void
 }
 
-export function BaseMutateDrawer({
+export function BaseMutateDialog({
   open,
   onOpenChange,
   currentRow,
-}: BaseMutateDrawerProps) {
+  onCreated,
+}: BaseMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
   const isUpdate = !!currentRow
 
@@ -88,12 +81,15 @@ export function BaseMutateDrawer({
         )
       }
       else {
-        await catalogBaseCreate(payload)
+        const result = await catalogBaseCreate(payload)
         toast.success(
           t('common:toast.createSuccess', {
             entity: t('catalog:base.singular'),
           }),
         )
+        if (onCreated && result?.data?.id) {
+          onCreated(result.data.id)
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: catalogBaseListQueryKey() })
@@ -108,69 +104,50 @@ export function BaseMutateDrawer({
   }
 
   return (
-    <Sheet
+    <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v)
         form.reset()
       }}
+      title={isUpdate ? t('catalog:base.edit') : t('catalog:base.create')}
+      description={isUpdate ? t('catalog:base.edit') : t('catalog:base.create')}
+      formId="base-form"
     >
-      <SheetContent className="flex flex-col">
-        <SheetHeader className="text-start">
-          <SheetTitle>
-            {isUpdate
-              ? t('catalog:base.edit')
-              : t('catalog:base.create')}
-          </SheetTitle>
-          <SheetDescription>
-            {isUpdate
-              ? t('catalog:base.edit')
-              : t('catalog:base.create')}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            id="base-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 space-y-5 overflow-y-auto px-4"
-          >
-            <FormField
-              control={form.control}
-              name="commonName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:base.form.commonName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="longName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('catalog:base.form.longName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <SheetFooter className="gap-2">
-          <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
-          </SheetClose>
-          <Button form="base-form" type="submit">
-            {t('common:actions.save')}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <Form {...form}>
+        <form
+          id="base-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <FormField
+            control={form.control}
+            name="commonName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:base.form.commonName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="longName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('catalog:base.form.longName')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

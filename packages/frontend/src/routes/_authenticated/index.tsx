@@ -43,9 +43,7 @@ function Dashboard() {
 
   return (
     <>
-      <Header fixed>
-        <h1 className="text-lg font-semibold">{t('nav.dashboard')}</h1>
-      </Header>
+      <Header fixed />
       <Main>
         <div className="flex flex-col gap-6">
           <div>

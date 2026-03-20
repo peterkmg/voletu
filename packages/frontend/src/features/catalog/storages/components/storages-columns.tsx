@@ -1,12 +1,17 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { StorageResponse } from '~/generated/types'
-import { DataTableColumnHeader } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, LookupCell, NumericCell } from '~/components/data-table'
 import { Badge } from '~/components/ui/badge'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
+interface StorageColumnLookups {
+  warehouseMap: Map<string, string>
+  productTypeMap: Map<string, string>
+}
+
+export function getStorageColumns(t: TFunction, lookups: StorageColumnLookups): ColumnDef<StorageResponse>[] {
   return [
     {
       id: 'select',
@@ -54,9 +59,7 @@ export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('warehouseId')}
-        </span>
+        <LookupCell value={row.getValue('warehouseId')} lookupMap={lookups.warehouseMap} />
       ),
     },
     {
@@ -67,11 +70,8 @@ export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
           title={t('catalog:storage.columns.capacity')}
         />
       ),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('capacity') ?? '\u2014'}
-        </span>
-      ),
+      meta: { align: 'right' as const },
+      cell: ({ row }) => <NumericCell value={row.getValue('capacity')} />,
     },
     {
       accessorKey: 'productTypeId',
@@ -82,9 +82,7 @@ export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
         />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('productTypeId') ?? '\u2014'}
-        </span>
+        <LookupCell value={row.getValue('productTypeId')} lookupMap={lookups.productTypeMap} />
       ),
     },
     {
@@ -107,14 +105,7 @@ export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
           title={t('common:table.createdAt')}
         />
       ),
-      cell: ({ row }) => {
-        const date = row.getValue<string>('createdAt')
-        return (
-          <span className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        )
-      },
+      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {
       id: 'actions',
