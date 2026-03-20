@@ -145,9 +145,7 @@ impl DocumentService {
         .with(physical_transfer_item::Entity)
         .one(self.db.as_ref())
         .await?
-        .ok_or_else(|| {
-          ApiError::NotFound(format!("Physical transfer '{}' not found", doc.id))
-        })?;
+        .ok_or_else(|| ApiError::NotFound(format!("Physical transfer '{}' not found", doc.id)))?;
       out.push(PhysicalTransferResponse::try_from(loaded)?);
     }
 

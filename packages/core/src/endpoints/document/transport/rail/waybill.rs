@@ -13,7 +13,9 @@ use super::*;
 async fn rail_waybill_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<RailWaybillResponse>> {
-  Ok(ApiResponse::success(state.svc.document.rail_waybill_list().await?))
+  Ok(ApiResponse::success(
+    state.svc.document.rail_waybill_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +52,9 @@ async fn rail_waybill_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<RailWaybillResponse> {
-  Ok(ApiResponse::success(state.svc.document.rail_waybill_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.document.rail_waybill_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

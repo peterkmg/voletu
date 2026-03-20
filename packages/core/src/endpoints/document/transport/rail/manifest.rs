@@ -13,7 +13,9 @@ use super::*;
 async fn rail_manifest_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<RailWagonManifestResponse>> {
-  Ok(ApiResponse::success(state.svc.document.rail_manifest_list().await?))
+  Ok(ApiResponse::success(
+    state.svc.document.rail_manifest_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +52,9 @@ async fn rail_manifest_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<RailWagonManifestResponse> {
-  Ok(ApiResponse::success(state.svc.document.rail_manifest_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.document.rail_manifest_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

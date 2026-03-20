@@ -26,9 +26,7 @@ use crate::{
   )
 )]
 #[axum::debug_handler]
-async fn user_list(
-  State(state): State<Arc<ApiState>>,
-) -> ApiResult<Vec<UserResponse>> {
+async fn user_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<UserResponse>> {
   tracing::debug!("GET /users");
   Ok(ApiResponse::success(state.svc.system.user_list().await?))
 }

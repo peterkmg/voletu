@@ -46,7 +46,9 @@ async fn physical_item_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<PhysicalTransferItemResponse> {
-  Ok(ApiResponse::success(state.svc.document.physical_item_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.document.physical_item_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

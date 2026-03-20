@@ -13,7 +13,9 @@ use super::*;
 async fn truck_waybill_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<TruckWaybillResponse>> {
-  Ok(ApiResponse::success(state.svc.document.truck_waybill_list().await?))
+  Ok(ApiResponse::success(
+    state.svc.document.truck_waybill_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +52,9 @@ async fn truck_waybill_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<TruckWaybillResponse> {
-  Ok(ApiResponse::success(state.svc.document.truck_waybill_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.document.truck_waybill_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

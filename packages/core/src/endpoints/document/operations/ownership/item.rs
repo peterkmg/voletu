@@ -46,7 +46,9 @@ async fn ownership_item_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<OwnershipTransferItemResponse> {
-  Ok(ApiResponse::success(state.svc.document.ownership_item_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.document.ownership_item_get(id).await?,
+  ))
 }
 
 #[utoipa::path(

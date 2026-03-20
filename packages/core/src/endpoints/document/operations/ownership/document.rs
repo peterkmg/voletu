@@ -67,7 +67,11 @@ async fn ownership_document_update(
   Valid(Json(req)): Valid<Json<UpdateOwnershipTransferRequest>>,
 ) -> ApiResult<OwnershipTransferResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.ownership_transfer_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .ownership_transfer_update(id, &req)
+      .await?,
   ))
 }
 
@@ -84,7 +88,11 @@ async fn ownership_document_soft_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.ownership_transfer_soft_delete(id).await?;
+  state
+    .svc
+    .document
+    .ownership_transfer_soft_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 
@@ -101,7 +109,11 @@ async fn ownership_document_hard_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.ownership_transfer_hard_delete(id).await?;
+  state
+    .svc
+    .document
+    .ownership_transfer_hard_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

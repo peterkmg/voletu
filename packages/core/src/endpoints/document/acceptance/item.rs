@@ -25,7 +25,9 @@ use crate::{
 pub(super) async fn acceptance_item_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<AcceptanceItemResponse>> {
-  Ok(ApiResponse::success(state.svc.document.acceptance_item_list().await?))
+  Ok(ApiResponse::success(
+    state.svc.document.acceptance_item_list().await?,
+  ))
 }
 
 #[utoipa::path(

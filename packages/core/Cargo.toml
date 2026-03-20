@@ -31,6 +31,7 @@ argon2.workspace = true
 jsonwebtoken.workspace = true
 libsqlite3-sys.workspace = true
 rand.workspace = true
+fake.workspace = true
 base64.workspace = true
 rust_decimal.workspace = true
 reqwest.workspace = true

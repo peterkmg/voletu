@@ -67,7 +67,11 @@ async fn physical_document_update(
   Valid(Json(req)): Valid<Json<UpdatePhysicalTransferRequest>>,
 ) -> ApiResult<PhysicalTransferResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.physical_transfer_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .physical_transfer_update(id, &req)
+      .await?,
   ))
 }
 

@@ -13,7 +13,9 @@ use super::*;
 async fn dispatch_item_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<DispatchItemResponse>> {
-  Ok(ApiResponse::success(state.svc.document.dispatch_item_list().await?))
+  Ok(ApiResponse::success(
+    state.svc.document.dispatch_item_list().await?,
+  ))
 }
 
 #[utoipa::path(

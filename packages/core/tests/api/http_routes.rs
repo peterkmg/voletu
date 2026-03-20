@@ -436,7 +436,9 @@ async fn openapi_operations_define_unique_operation_ids() {
 
   let mut operation_ids = HashSet::new();
   let mut operations_total = 0usize;
-  let methods = ["get", "post", "put", "delete", "patch", "head", "options", "trace"];
+  let methods = [
+    "get", "post", "put", "delete", "patch", "head", "options", "trace",
+  ];
 
   for (path, item) in paths {
     let Some(item_obj) = item.as_object() else {
@@ -460,7 +462,10 @@ async fn openapi_operations_define_unique_operation_ids() {
     }
   }
 
-  assert!(operations_total > 0, "OpenAPI must contain at least one operation");
+  assert!(
+    operations_total > 0,
+    "OpenAPI must contain at least one operation"
+  );
 }
 
 #[tokio::test]
@@ -521,23 +526,47 @@ async fn openapi_route_method_contract_enforces_standardized_verbs() {
     (api_paths::operations::PHYSICAL_TRANSFERS, "get"),
     (api_paths::operations::PHYSICAL_TRANSFERS_QUERY, "get"),
     (api_paths::operations::PHYSICAL_TRANSFERS_SAVE, "post"),
-    (api_paths::operations::PHYSICAL_TRANSFERS_SAVE_AND_EXECUTE, "post"),
-    (api_paths::operations::PHYSICAL_TRANSFERS_EXECUTE_BY_ID, "post"),
-    (api_paths::operations::PHYSICAL_TRANSFERS_REVERT_BY_ID, "post"),
+    (
+      api_paths::operations::PHYSICAL_TRANSFERS_SAVE_AND_EXECUTE,
+      "post",
+    ),
+    (
+      api_paths::operations::PHYSICAL_TRANSFERS_EXECUTE_BY_ID,
+      "post",
+    ),
+    (
+      api_paths::operations::PHYSICAL_TRANSFERS_REVERT_BY_ID,
+      "post",
+    ),
     (api_paths::operations::OWNERSHIP_TRANSFERS, "get"),
     (api_paths::operations::OWNERSHIP_TRANSFERS_QUERY, "get"),
     (api_paths::operations::OWNERSHIP_TRANSFERS_SAVE, "post"),
-    (api_paths::operations::OWNERSHIP_TRANSFERS_SAVE_AND_EXECUTE, "post"),
-    (api_paths::operations::OWNERSHIP_TRANSFERS_EXECUTE_BY_ID, "post"),
-    (api_paths::operations::OWNERSHIP_TRANSFERS_REVERT_BY_ID, "post"),
+    (
+      api_paths::operations::OWNERSHIP_TRANSFERS_SAVE_AND_EXECUTE,
+      "post",
+    ),
+    (
+      api_paths::operations::OWNERSHIP_TRANSFERS_EXECUTE_BY_ID,
+      "post",
+    ),
+    (
+      api_paths::operations::OWNERSHIP_TRANSFERS_REVERT_BY_ID,
+      "post",
+    ),
     (api_paths::operations::RECONCILIATIONS, "get"),
     (api_paths::operations::RECONCILIATIONS_QUERY, "get"),
     (api_paths::operations::RECONCILIATIONS_SAVE, "post"),
-    (api_paths::operations::RECONCILIATIONS_SAVE_AND_EXECUTE, "post"),
+    (
+      api_paths::operations::RECONCILIATIONS_SAVE_AND_EXECUTE,
+      "post",
+    ),
     (api_paths::operations::RECONCILIATIONS_EXECUTE_BY_ID, "post"),
     (api_paths::operations::RECONCILIATIONS_REVERT_BY_ID, "post"),
     (api_paths::operations::RECONCILIATION_ADJUSTMENTS, "get"),
-    (api_paths::operations::RECONCILIATION_ADJUSTMENTS_SAVE, "post"),
+    (
+      api_paths::operations::RECONCILIATION_ADJUSTMENTS_SAVE,
+      "post",
+    ),
   ];
 
   for (path, method) in required_method_pairs {
@@ -584,14 +613,26 @@ async fn openapi_route_method_contract_rejects_wrong_or_legacy_verbs() {
     (api_paths::acceptance::EXECUTE_BY_ID, "get"),
     (api_paths::dispatch::EXECUTE_BY_ID, "get"),
     (api_paths::blending::EXECUTE_BY_ID, "get"),
-    (api_paths::operations::PHYSICAL_TRANSFERS_EXECUTE_BY_ID, "get"),
-    (api_paths::operations::OWNERSHIP_TRANSFERS_EXECUTE_BY_ID, "get"),
+    (
+      api_paths::operations::PHYSICAL_TRANSFERS_EXECUTE_BY_ID,
+      "get",
+    ),
+    (
+      api_paths::operations::OWNERSHIP_TRANSFERS_EXECUTE_BY_ID,
+      "get",
+    ),
     (api_paths::operations::RECONCILIATIONS_EXECUTE_BY_ID, "get"),
     (api_paths::acceptance::REVERT_BY_ID, "get"),
     (api_paths::dispatch::REVERT_BY_ID, "get"),
     (api_paths::blending::REVERT_BY_ID, "get"),
-    (api_paths::operations::PHYSICAL_TRANSFERS_REVERT_BY_ID, "get"),
-    (api_paths::operations::OWNERSHIP_TRANSFERS_REVERT_BY_ID, "get"),
+    (
+      api_paths::operations::PHYSICAL_TRANSFERS_REVERT_BY_ID,
+      "get",
+    ),
+    (
+      api_paths::operations::OWNERSHIP_TRANSFERS_REVERT_BY_ID,
+      "get",
+    ),
     (api_paths::operations::RECONCILIATIONS_REVERT_BY_ID, "get"),
   ];
 
@@ -668,27 +709,42 @@ async fn openapi_query_parameter_contract_enforces_pagination_and_filter_params(
   }
 
   let query_route_contracts: [(&str, &[&str]); 6] = [
-    (api_paths::acceptance::QUERY, &["documentNumber", "status", "page", "per_page"]),
-    (
-      api_paths::dispatch::QUERY,
-      &["documentNumber", "status", "contractorId", "page", "per_page"],
-    ),
-    (
-      api_paths::blending::QUERY,
-      &["documentNumber", "status", "contractorId", "page", "per_page"],
-    ),
-    (
-      api_paths::operations::PHYSICAL_TRANSFERS_QUERY,
-      &["documentNumber", "status", "page", "per_page"],
-    ),
-    (
-      api_paths::operations::OWNERSHIP_TRANSFERS_QUERY,
-      &["status", "page", "per_page"],
-    ),
-    (
-      api_paths::operations::RECONCILIATIONS_QUERY,
-      &["documentNumber", "status", "warehouseId", "page", "per_page"],
-    ),
+    (api_paths::acceptance::QUERY, &[
+      "documentNumber",
+      "status",
+      "page",
+      "per_page",
+    ]),
+    (api_paths::dispatch::QUERY, &[
+      "documentNumber",
+      "status",
+      "contractorId",
+      "page",
+      "per_page",
+    ]),
+    (api_paths::blending::QUERY, &[
+      "documentNumber",
+      "status",
+      "contractorId",
+      "page",
+      "per_page",
+    ]),
+    (api_paths::operations::PHYSICAL_TRANSFERS_QUERY, &[
+      "documentNumber",
+      "status",
+      "page",
+      "per_page",
+    ]),
+    (api_paths::operations::OWNERSHIP_TRANSFERS_QUERY, &[
+      "status", "page", "per_page",
+    ]),
+    (api_paths::operations::RECONCILIATIONS_QUERY, &[
+      "documentNumber",
+      "status",
+      "warehouseId",
+      "page",
+      "per_page",
+    ]),
   ];
 
   for (path, expected_query_params) in query_route_contracts {

@@ -22,10 +22,7 @@ use crate::{
     DispatchMeasurementResponse,
     DispatchResponse,
   },
-  endpoints::{
-    paths,
-    query::PaginationParams,
-  },
+  endpoints::{paths, query::PaginationParams},
   enums,
   services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
   utils::jwt::Claims,

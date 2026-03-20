@@ -125,8 +125,7 @@ pub mod operations {
   pub const PHYSICAL_TRANSFERS_REVERT_BY_ID: &str = "/physical-transfers/revert/{id}";
   pub const PHYSICAL_TRANSFER_ITEMS: &str = "/physical-transfers/items";
   pub const PHYSICAL_TRANSFER_ITEMS_BY_ID: &str = "/physical-transfers/items/{id}";
-  pub const PHYSICAL_TRANSFER_ITEMS_HARD_DELETE_BY_ID: &str =
-    "/physical-transfers/items/{id}/hard";
+  pub const PHYSICAL_TRANSFER_ITEMS_HARD_DELETE_BY_ID: &str = "/physical-transfers/items/{id}/hard";
 
   pub const OWNERSHIP_TRANSFERS: &str = "/ownership-transfers";
   pub const OWNERSHIP_TRANSFER_DOCUMENTS: &str = "/ownership-transfers/documents";

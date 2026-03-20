@@ -17,5 +17,7 @@ async fn sync_status(State(state): State<Arc<ApiState>>) -> ApiResult<SyncStatus
 }
 
 pub(super) fn status_routes(state: Arc<ApiState>) -> OpenApiRouter {
-  OpenApiRouter::new().routes(routes!(sync_status)).with_state(state)
+  OpenApiRouter::new()
+    .routes(routes!(sync_status))
+    .with_state(state)
 }

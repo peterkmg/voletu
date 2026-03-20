@@ -51,7 +51,11 @@ async fn physical_transfer_composite_get(
   Path(id): Path<Uuid>,
 ) -> ApiResult<PhysicalTransferResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.physical_transfer_composite_get(id).await?,
+    state
+      .svc
+      .document
+      .physical_transfer_composite_get(id)
+      .await?,
   ))
 }
 

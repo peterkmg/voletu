@@ -12,10 +12,7 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{AcceptanceResponse, CreateAcceptanceRequest},
-  endpoints::{
-    paths,
-    query::PaginationParams,
-  },
+  endpoints::{paths, query::PaginationParams},
   enums,
   services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
   utils::jwt::Claims,
@@ -169,7 +166,11 @@ pub(super) async fn acceptance_document_update(
   Valid(Json(req)): Valid<Json<crate::dtos::UpdateAcceptanceRequest>>,
 ) -> ApiResult<AcceptanceResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.acceptance_document_update(id, &req).await?,
+    state
+      .svc
+      .document
+      .acceptance_document_update(id, &req)
+      .await?,
   ))
 }
 
@@ -187,7 +188,11 @@ pub(super) async fn acceptance_document_soft_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.acceptance_document_soft_delete(id).await?;
+  state
+    .svc
+    .document
+    .acceptance_document_soft_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 
@@ -205,7 +210,11 @@ pub(super) async fn acceptance_document_hard_delete(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.document.acceptance_document_hard_delete(id).await?;
+  state
+    .svc
+    .document
+    .acceptance_document_hard_delete(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

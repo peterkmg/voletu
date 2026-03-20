@@ -14,7 +14,11 @@ async fn dispatch_storage_measurement_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<DispatchMeasurementResponse>> {
   Ok(ApiResponse::success(
-    state.svc.document.dispatch_storage_measurement_list().await?,
+    state
+      .svc
+      .document
+      .dispatch_storage_measurement_list()
+      .await?,
   ))
 }
 
@@ -57,7 +61,11 @@ async fn dispatch_storage_measurement_get(
   Path(id): Path<Uuid>,
 ) -> ApiResult<DispatchMeasurementResponse> {
   Ok(ApiResponse::success(
-    state.svc.document.dispatch_storage_measurement_get(id).await?,
+    state
+      .svc
+      .document
+      .dispatch_storage_measurement_get(id)
+      .await?,
   ))
 }
 

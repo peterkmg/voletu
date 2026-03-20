@@ -1,11 +1,11 @@
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+
 use crate::{
   api::ApiError,
   dtos,
   entities::truck_waybill,
   services::{common::set_if_some, DocumentService},
 };
-
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 
 pub(super) async fn ensure_parent_waybill_active(
   conn: &impl ConnectionTrait,

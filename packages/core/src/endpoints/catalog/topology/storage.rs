@@ -10,10 +10,10 @@ use super::*;
   responses((status = 200, body = ApiResponse<Vec<StorageResponse>>))
 )]
 #[axum::debug_handler]
-async fn storage_list(
-  State(state): State<Arc<ApiState>>,
-) -> ApiResult<Vec<StorageResponse>> {
-  Ok(ApiResponse::success(state.svc.catalog_service.storage_list().await?))
+async fn storage_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<StorageResponse>> {
+  Ok(ApiResponse::success(
+    state.svc.catalog_service.storage_list().await?,
+  ))
 }
 
 #[utoipa::path(
@@ -50,7 +50,9 @@ async fn storage_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<StorageResponse> {
-  Ok(ApiResponse::success(state.svc.catalog_service.storage_get(id).await?))
+  Ok(ApiResponse::success(
+    state.svc.catalog_service.storage_get(id).await?,
+  ))
 }
 
 #[utoipa::path(
