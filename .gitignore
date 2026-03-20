@@ -1,7 +1,7 @@
 target
 /*.md
 .info
-frontend-example
+frontend-example/
 .dual-graph/
 
 # Logs
