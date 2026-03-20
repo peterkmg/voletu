@@ -49,8 +49,9 @@
     "submit": "Submit",
     "view": "View",
     "details": "Details",
-    "softDelete": "Archive",
-    "hardDelete": "Permanently Delete"
+    "softDelete": "Delete",
+    "hardDelete": "Permanently Delete",
+    "deselectAll": "Deselect all"
   },
   "table": {
     "id": "ID",
@@ -69,6 +70,7 @@
     "goToLastPage": "Go to last page",
     "goToPreviousPage": "Go to previous page",
     "goToNextPage": "Go to next page",
+    "selected": "{{count}} selected",
     "columns": "Columns",
     "ascending": "Ascending",
     "descending": "Descending",
@@ -82,9 +84,9 @@
   },
   "status": {
     "draft": "Draft",
-    "executed": "Executed",
+    "posted": "Posted",
     "active": "Active",
-    "deleted": "Archived"
+    "deleted": "Deleted"
   },
   "confirm": {
     "deleteTitle": "Are you sure?",
@@ -109,5 +111,17 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "titlebar": {
+    "view": "View",
+    "help": "Help",
+    "toggleSidebar": "Toggle Sidebar",
+    "density": "Density",
+    "densityCompact": "Compact",
+    "densityNormal": "Normal",
+    "densityComfortable": "Comfortable",
+    "themeMenu": "Theme",
+    "aboutVoletu": "About Voletu",
+    "keyboardShortcuts": "Keyboard Shortcuts"
   }
 }

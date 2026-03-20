@@ -1,3 +1,5 @@
+export { BulkActionsBar } from './bulk-actions-bar'
+export type { BulkAction } from './bulk-actions-bar'
 export { DateCell, DateTimeCell, IdCell, LookupCell, NumericCell } from './cell-renderers'
 export { DataTableColumnHeader } from './column-header'
 export { DataTable } from './data-table'

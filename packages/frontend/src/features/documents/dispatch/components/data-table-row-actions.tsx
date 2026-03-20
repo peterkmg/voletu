@@ -4,6 +4,7 @@ import type { DispatchResponse } from '~/generated/types'
 import { Archive, Pencil, Play, Trash2, Undo2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RowActions } from '~/components/data-table'
+import { useAuthStore } from '~/stores/auth-store'
 import { useDispatch } from './dispatch-provider'
 
 interface DataTableRowActionsProps {
@@ -13,6 +14,7 @@ interface DataTableRowActionsProps {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { t } = useTranslation(['common'])
   const { setOpen, setCurrentRow } = useDispatch()
+  const userRole = useAuthStore(s => s.auth.user?.role)
   const status = row.original.status
 
   const actions: RowAction[] = [
@@ -35,7 +37,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           },
         }]
       : []),
-    ...(status === 'POSTED'
+    ...(status === 'POSTED' && (userRole === 'ADMIN' || userRole === 'SENIOR_SUPERVISOR')
       ? [{
           label: t('common:actions.revert'),
           icon: Undo2,
@@ -53,15 +55,17 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         setOpen('delete')
       },
     },
-    {
-      label: t('common:actions.hardDelete'),
-      icon: Trash2,
-      variant: 'destructive',
-      onClick: () => {
-        setCurrentRow(row.original)
-        setOpen('hard-delete')
-      },
-    },
+    ...(userRole === 'ADMIN'
+      ? [{
+          label: t('common:actions.hardDelete'),
+          icon: Trash2,
+          variant: 'destructive' as const,
+          onClick: () => {
+            setCurrentRow(row.original)
+            setOpen('hard-delete')
+          },
+        }]
+      : []),
   ]
 
   return <RowActions actions={actions} />

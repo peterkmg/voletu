@@ -50,6 +50,7 @@ export function getOwnershipTransferColumns(t: TFunction): ColumnDef<OwnershipTr
           title={t('documents:acceptance.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {

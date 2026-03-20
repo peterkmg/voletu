@@ -15,7 +15,7 @@ export const Route = createFileRoute('/(auth)/setup')({
 
 function SetupPage() {
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
+    <div className="flex flex-1 items-center justify-center p-4">
       <Setup />
     </div>
   )

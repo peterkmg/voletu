@@ -52,6 +52,7 @@ export function getAcceptanceColumns(t: TFunction): ColumnDef<AcceptanceResponse
           title={t('documents:acceptance.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('dateAccepted')} />,
     },
     {
@@ -86,6 +87,7 @@ export function getAcceptanceColumns(t: TFunction): ColumnDef<AcceptanceResponse
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

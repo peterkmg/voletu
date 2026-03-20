@@ -31,6 +31,15 @@
     "lastSync": "Last Sync",
     "pending": "Pending Changes"
   },
+  "settings": {
+    "title": "Settings",
+    "userInfo": "User Info",
+    "username": "Username",
+    "fullname": "Full Name",
+    "role": "Role",
+    "language": "Language",
+    "theme": "Theme"
+  },
   "ledger": {
     "title": "Inventory Ledger",
     "columns": {

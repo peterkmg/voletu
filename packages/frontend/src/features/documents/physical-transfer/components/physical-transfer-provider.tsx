@@ -3,7 +3,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import useDialogState from '~/hooks/use-dialog-state'
 
-type PhysicalTransferDialogType = 'create' | 'execute' | 'revert'
+type PhysicalTransferDialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | 'revert'
 
 interface PhysicalTransferContextType {
   open: PhysicalTransferDialogType | null

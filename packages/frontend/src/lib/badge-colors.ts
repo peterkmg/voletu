@@ -8,8 +8,14 @@ export type BadgeColorMap = Record<string, string>
 
 export const documentStatusColors: BadgeColorMap = {
   DRAFT: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
-  EXECUTED: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
-  REVERTED: 'bg-amber-100/30 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+  POSTED: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+}
+
+export const companyRoleColors: BadgeColorMap = {
+  isContractor: 'bg-blue-100/30 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  isExporter: 'bg-violet-100/30 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800',
+  isManufacturer: 'bg-teal-100/30 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800',
+  isSender: 'bg-amber-100/30 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
 }
 
 export const arrivalTypeColors: BadgeColorMap = {

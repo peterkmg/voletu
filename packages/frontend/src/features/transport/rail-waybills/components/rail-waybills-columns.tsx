@@ -56,6 +56,7 @@ export function getRailWaybillColumns(t: TFunction, lookups: RailWaybillColumnLo
           title={t('transport:rail.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
@@ -78,6 +79,7 @@ export function getRailWaybillColumns(t: TFunction, lookups: RailWaybillColumnLo
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

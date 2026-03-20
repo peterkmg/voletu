@@ -1,4 +1,5 @@
 import type { SortingState, VisibilityState } from '@tanstack/react-table'
+import type { BulkAction } from '~/components/data-table'
 import type { InventoryReconciliationResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -12,9 +13,10 @@ import {
   useReactTable,
 
 } from '@tanstack/react-table'
+import { Archive, Play } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
+import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
@@ -88,6 +90,25 @@ export function ReconciliationTable({ data }: ReconciliationTableProps) {
     onColumnFiltersChange,
   })
 
+  const bulkActions: BulkAction<InventoryReconciliationResponse>[] = [
+    {
+      label: t('common:actions.execute'),
+      icon: Play,
+      onClick: (rows) => {
+        const draftRows = rows.filter(r => r.status === 'DRAFT')
+        void draftRows // TODO: wire bulk execute API
+      },
+    },
+    {
+      label: t('common:actions.softDelete'),
+      icon: Archive,
+      variant: 'destructive',
+      onClick: (rows) => {
+        void rows // TODO: wire bulk soft-delete API
+      },
+    },
+  ]
+
   const pageCount = table.getPageCount()
   useEffect(() => {
     // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
@@ -103,6 +124,7 @@ export function ReconciliationTable({ data }: ReconciliationTableProps) {
       />
       <DataTable table={table} columns={columns} />
       <DataTablePagination table={table} className="mt-auto" />
+      <BulkActionsBar table={table} actions={bulkActions} />
     </div>
   )
 }

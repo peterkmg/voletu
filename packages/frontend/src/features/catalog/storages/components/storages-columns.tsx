@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { StorageResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell, NumericCell } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, LookupCell, NumericCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { entityActiveColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 interface StorageColumnLookups {
@@ -91,9 +91,12 @@ export function getStorageColumns(t: TFunction, lookups: StorageColumnLookups): 
       cell: ({ row }) => {
         const value = row.getValue<boolean>('isTypeSpecific')
         return (
-          <Badge variant={value ? 'default' : 'outline'} className="text-xs">
-            {value ? t('common:yes') : t('common:no')}
-          </Badge>
+          <StatusBadge
+            value={value ? 'active' : 'archived'}
+            label={value ? t('common:yes') : t('common:no')}
+            colorMap={entityActiveColors}
+            className="text-xs"
+          />
         )
       },
     },
@@ -105,6 +108,7 @@ export function getStorageColumns(t: TFunction, lookups: StorageColumnLookups): 
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

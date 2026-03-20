@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authSetupRouteImport } from './routes/(auth)/setup'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedLedgerIndexRouteImport } from './routes/_authenticated/ledger/index'
 import { Route as AuthenticatedTransportTruckWaybillsIndexRouteImport } from './routes/_authenticated/transport/truck-waybills/index'
 import { Route as AuthenticatedTransportRailWaybillsIndexRouteImport } from './routes/_authenticated/transport/rail-waybills/index'
@@ -52,6 +53,12 @@ const authSetupRoute = authSetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLedgerIndexRoute =
   AuthenticatedLedgerIndexRouteImport.update({
     id: '/ledger/',
@@ -172,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof authSetupRoute
   '/sign-in': typeof authSignInRoute
   '/ledger/': typeof AuthenticatedLedgerIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/catalog/bases/': typeof AuthenticatedCatalogBasesIndexRoute
   '/catalog/companies/': typeof AuthenticatedCatalogCompaniesIndexRoute
   '/catalog/ports/': typeof AuthenticatedCatalogPortsIndexRoute
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInRoute
   '/': typeof AuthenticatedIndexRoute
   '/ledger': typeof AuthenticatedLedgerIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/catalog/bases': typeof AuthenticatedCatalogBasesIndexRoute
   '/catalog/companies': typeof AuthenticatedCatalogCompaniesIndexRoute
   '/catalog/ports': typeof AuthenticatedCatalogPortsIndexRoute
@@ -222,6 +231,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ledger/': typeof AuthenticatedLedgerIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/catalog/bases/': typeof AuthenticatedCatalogBasesIndexRoute
   '/_authenticated/catalog/companies/': typeof AuthenticatedCatalogCompaniesIndexRoute
   '/_authenticated/catalog/ports/': typeof AuthenticatedCatalogPortsIndexRoute
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/sign-in'
     | '/ledger/'
+    | '/settings/'
     | '/catalog/bases/'
     | '/catalog/companies/'
     | '/catalog/ports/'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/'
     | '/ledger'
+    | '/settings'
     | '/catalog/bases'
     | '/catalog/companies'
     | '/catalog/ports'
@@ -297,6 +309,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in'
     | '/_authenticated/'
     | '/_authenticated/ledger/'
+    | '/_authenticated/settings/'
     | '/_authenticated/catalog/bases/'
     | '/_authenticated/catalog/companies/'
     | '/_authenticated/catalog/ports/'
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/setup'
       preLoaderRoute: typeof authSetupRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ledger/': {
       id: '/_authenticated/ledger/'
@@ -492,6 +512,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedLedgerIndexRoute: typeof AuthenticatedLedgerIndexRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedCatalogBasesIndexRoute: typeof AuthenticatedCatalogBasesIndexRoute
   AuthenticatedCatalogCompaniesIndexRoute: typeof AuthenticatedCatalogCompaniesIndexRoute
   AuthenticatedCatalogPortsIndexRoute: typeof AuthenticatedCatalogPortsIndexRoute
@@ -515,6 +536,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedLedgerIndexRoute: AuthenticatedLedgerIndexRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedCatalogBasesIndexRoute: AuthenticatedCatalogBasesIndexRoute,
   AuthenticatedCatalogCompaniesIndexRoute:
     AuthenticatedCatalogCompaniesIndexRoute,

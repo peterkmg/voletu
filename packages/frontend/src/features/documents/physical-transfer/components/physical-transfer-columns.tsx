@@ -52,6 +52,7 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
           title={t('documents:acceptance.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {

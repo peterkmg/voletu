@@ -67,6 +67,7 @@ export function getBaseColumns(t: TFunction): ColumnDef<BaseResponse>[] {
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

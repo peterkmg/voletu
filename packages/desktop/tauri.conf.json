@@ -15,7 +15,8 @@
       {
         "title": "voletu",
         "width": 1280,
-        "height": 720
+        "height": 720,
+        "decorations": false
       }
     ],
     "security": {

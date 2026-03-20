@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { CompanyResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell } from '~/components/data-table'
-import { Badge } from '~/components/ui/badge'
+import { DataTableColumnHeader, DateCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { companyRoleColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
@@ -78,9 +78,7 @@ export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
         return (
           <div className="flex flex-wrap gap-1">
             {active.map(f => (
-              <Badge key={f.key} variant="outline" className="text-xs">
-                {f.label}
-              </Badge>
+              <StatusBadge key={f.key} value={f.key} label={f.label} colorMap={companyRoleColors} className="text-xs" />
             ))}
           </div>
         )
@@ -94,6 +92,7 @@ export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

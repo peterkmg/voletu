@@ -69,6 +69,7 @@ export function getWarehouseColumns(t: TFunction, lookups: WarehouseColumnLookup
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

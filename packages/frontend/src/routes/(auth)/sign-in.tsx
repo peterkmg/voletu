@@ -29,7 +29,7 @@ function SignInPage() {
   const { redirect: redirectTo } = Route.useSearch()
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
+    <div className="flex flex-1 items-center justify-center p-4">
       <LoginForm redirect={redirectTo} />
     </div>
   )

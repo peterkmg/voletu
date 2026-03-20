@@ -1,4 +1,5 @@
 import type { SortingState, VisibilityState } from '@tanstack/react-table'
+import type { BulkAction } from '~/components/data-table'
 import type { AcceptanceResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -12,9 +13,10 @@ import {
   useReactTable,
 
 } from '@tanstack/react-table'
+import { Archive, Play } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
+import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getAcceptanceColumns } from './acceptance-columns'
@@ -80,6 +82,25 @@ export function AcceptanceTable({ data }: AcceptanceTableProps) {
     onColumnFiltersChange,
   })
 
+  const bulkActions: BulkAction<AcceptanceResponse>[] = [
+    {
+      label: t('common:actions.execute'),
+      icon: Play,
+      onClick: (rows) => {
+        const draftRows = rows.filter(r => r.status === 'DRAFT')
+        void draftRows // TODO: wire bulk execute API
+      },
+    },
+    {
+      label: t('common:actions.softDelete'),
+      icon: Archive,
+      variant: 'destructive',
+      onClick: (rows) => {
+        void rows // TODO: wire bulk soft-delete API
+      },
+    },
+  ]
+
   const pageCount = table.getPageCount()
   useEffect(() => {
     // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
@@ -95,6 +116,7 @@ export function AcceptanceTable({ data }: AcceptanceTableProps) {
       />
       <DataTable table={table} columns={columns} />
       <DataTablePagination table={table} className="mt-auto" />
+      <BulkActionsBar table={table} actions={bulkActions} />
     </div>
   )
 }

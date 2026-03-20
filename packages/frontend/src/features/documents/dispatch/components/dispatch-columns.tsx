@@ -52,6 +52,7 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
           title={t('documents:dispatch.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
@@ -98,6 +99,7 @@ export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] 
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

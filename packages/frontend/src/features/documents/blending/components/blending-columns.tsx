@@ -57,6 +57,7 @@ export function getBlendingColumns(t: TFunction, lookups: BlendingColumnLookups)
           title={t('documents:blending.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
@@ -103,6 +104,7 @@ export function getBlendingColumns(t: TFunction, lookups: BlendingColumnLookups)
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

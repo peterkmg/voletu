@@ -21,12 +21,15 @@ export function DataTableColumnHeader<TData, TValue>({
   title,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
+  const align = column.columnDef.meta?.align
+  const justifyCls = align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''
+
   if (!column.getCanSort()) {
-    return <div className={cn(className)}>{title}</div>
+    return <div className={cn('flex items-center', justifyCls, className)}>{title}</div>
   }
 
   return (
-    <div className={cn('flex items-center space-x-2', className)}>
+    <div className={cn('flex items-center space-x-2', justifyCls, className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

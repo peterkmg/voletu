@@ -56,6 +56,7 @@ export function getReconciliationColumns(t: TFunction, lookups: ReconciliationCo
           title={t('documents:reconciliation.columns.date')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('date')} />,
     },
     {
@@ -90,6 +91,7 @@ export function getReconciliationColumns(t: TFunction, lookups: ReconciliationCo
           title={t('common:table.createdAt')}
         />
       ),
+      meta: { align: 'right' as const },
       cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
     },
     {

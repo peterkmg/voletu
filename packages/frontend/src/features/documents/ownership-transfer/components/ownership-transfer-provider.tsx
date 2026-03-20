@@ -3,7 +3,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import useDialogState from '~/hooks/use-dialog-state'
 
-type OwnershipTransferDialogType = 'create' | 'execute' | 'revert'
+type OwnershipTransferDialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | 'revert'
 
 interface OwnershipTransferContextType {
   open: OwnershipTransferDialogType | null

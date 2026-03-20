@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Boxes } from 'lucide-react'
+import { Fuel } from 'lucide-react'
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -22,8 +22,8 @@ export function AppTitle() {
             onClick={() => setOpenMobile(false)}
             className="flex items-center gap-2"
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Boxes className="size-4" />
+            <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Fuel className="size-[22px]" />
             </div>
             <div className="grid flex-1 text-start text-sm leading-tight">
               <span className="truncate font-bold">Voletu</span>

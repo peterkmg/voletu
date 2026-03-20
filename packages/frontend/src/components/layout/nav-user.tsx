@@ -86,7 +86,7 @@ export function NavUser() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate({ to: '/settings' })}>
                 <User />
                 {t('auth:session.profile')}
               </DropdownMenuItem>

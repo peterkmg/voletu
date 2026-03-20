@@ -4,6 +4,7 @@ import type { RailWaybillResponse } from '~/generated/types'
 import { Archive, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RowActions } from '~/components/data-table'
+import { useAuthStore } from '~/stores/auth-store'
 import { useRailWaybills } from './rail-waybills-provider'
 
 interface DataTableRowActionsProps {
@@ -13,6 +14,7 @@ interface DataTableRowActionsProps {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { t } = useTranslation(['common'])
   const { setOpen, setCurrentRow } = useRailWaybills()
+  const userRole = useAuthStore(s => s.auth.user?.role)
 
   const actions: RowAction[] = [
     {
@@ -32,15 +34,17 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         setOpen('delete')
       },
     },
-    {
-      label: t('common:actions.hardDelete'),
-      icon: Trash2,
-      variant: 'destructive',
-      onClick: () => {
-        setCurrentRow(row.original)
-        setOpen('hard-delete')
-      },
-    },
+    ...(userRole === 'ADMIN'
+      ? [{
+          label: t('common:actions.hardDelete'),
+          icon: Trash2,
+          variant: 'destructive' as const,
+          onClick: () => {
+            setCurrentRow(row.original)
+            setOpen('hard-delete')
+          },
+        }]
+      : []),
   ]
 
   return <RowActions actions={actions} />

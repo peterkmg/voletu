@@ -49,8 +49,9 @@
     "submit": "Отправить",
     "view": "Просмотр",
     "details": "Подробности",
-    "softDelete": "Архивировать",
-    "hardDelete": "Удалить навсегда"
+    "softDelete": "Удалить",
+    "hardDelete": "Удалить навсегда",
+    "deselectAll": "Снять выделение"
   },
   "table": {
     "id": "ID",
@@ -69,6 +70,7 @@
     "goToLastPage": "К последней странице",
     "goToPreviousPage": "К предыдущей странице",
     "goToNextPage": "К следующей странице",
+    "selected": "{{count}} выбрано",
     "columns": "Столбцы",
     "ascending": "По возрастанию",
     "descending": "По убыванию",
@@ -82,9 +84,9 @@
   },
   "status": {
     "draft": "Черновик",
-    "executed": "Проведён",
+    "posted": "Проведён",
     "active": "Активный",
-    "deleted": "В архиве"
+    "deleted": "Удалён"
   },
   "confirm": {
     "deleteTitle": "Вы уверены?",
@@ -109,5 +111,17 @@
     "light": "Светлая",
     "dark": "Тёмная",
     "system": "Системная"
+  },
+  "titlebar": {
+    "view": "Вид",
+    "help": "Справка",
+    "toggleSidebar": "Боковая панель",
+    "density": "Плотность",
+    "densityCompact": "Компактная",
+    "densityNormal": "Обычная",
+    "densityComfortable": "Свободная",
+    "themeMenu": "Тема",
+    "aboutVoletu": "О Voletu",
+    "keyboardShortcuts": "Горячие клавиши"
   }
 }
