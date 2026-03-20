@@ -17,7 +17,6 @@ import { Archive } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
-import { useCatalogBaseList } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getWarehouseColumns } from './warehouses-columns'
@@ -30,15 +29,7 @@ interface WarehousesTableProps {
 
 export function WarehousesTable({ data }: WarehousesTableProps) {
   const { t } = useTranslation(['catalog', 'common'])
-
-  const { data: basesData } = useCatalogBaseList()
-  const baseMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const b of basesData?.data ?? []) map.set(b.id, b.commonName)
-    return map
-  }, [basesData])
-
-  const columns = useMemo(() => getWarehouseColumns(t, { baseMap }), [t, baseMap])
+  const columns = useMemo(() => getWarehouseColumns(t), [t])
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])

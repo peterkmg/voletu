@@ -1,15 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { TruckWaybillResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, ResolvedCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-interface TruckWaybillColumnLookups {
-  companyMap: Map<string, string>
-}
-
-export function getTruckWaybillColumns(t: TFunction, lookups: TruckWaybillColumnLookups): ColumnDef<TruckWaybillResponse>[] {
+export function getTruckWaybillColumns(t: TFunction): ColumnDef<TruckWaybillResponse>[] {
   return [
     {
       id: 'select',
@@ -67,9 +63,7 @@ export function getTruckWaybillColumns(t: TFunction, lookups: TruckWaybillColumn
           title={t('transport:truck.columns.sender')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('senderId')} lookupMap={lookups.companyMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).senderIdName} />,
     },
     {
       accessorKey: 'createdAt',

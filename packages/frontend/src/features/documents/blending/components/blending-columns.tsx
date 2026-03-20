@@ -1,17 +1,12 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { BlendingResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell, StatusBadge } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, ResolvedCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
-interface BlendingColumnLookups {
-  companyMap: Map<string, string>
-  productMap: Map<string, string>
-}
-
-export function getBlendingColumns(t: TFunction, lookups: BlendingColumnLookups): ColumnDef<BlendingResponse>[] {
+export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
   return [
     {
       id: 'select',
@@ -68,9 +63,7 @@ export function getBlendingColumns(t: TFunction, lookups: BlendingColumnLookups)
           title={t('documents:items.contractor')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('contractorId')} lookupMap={lookups.companyMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).contractorIdName} />,
     },
     {
       accessorKey: 'targetProductId',
@@ -80,9 +73,7 @@ export function getBlendingColumns(t: TFunction, lookups: BlendingColumnLookups)
           title={t('documents:items.product')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('targetProductId')} lookupMap={lookups.productMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).targetProductIdName} />,
     },
     {
       accessorKey: 'status',

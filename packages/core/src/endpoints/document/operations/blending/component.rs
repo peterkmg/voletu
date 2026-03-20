@@ -13,7 +13,7 @@ use super::*;
 async fn blending_component_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<BlendingComponentResponse>> {
-  let rows = state.svc.document.blending_component_list().await?;
+  let rows = state.svc.document.blending_component_list(None).await?;
   Ok(ApiResponse::success(rows))
 }
 

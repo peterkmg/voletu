@@ -17,7 +17,6 @@ import { Archive } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getTruckWaybillColumns } from './truck-waybills-columns'
@@ -30,15 +29,7 @@ interface TruckWaybillsTableProps {
 
 export function TruckWaybillsTable({ data }: TruckWaybillsTableProps) {
   const { t } = useTranslation(['transport', 'common'])
-
-  const { data: companiesData } = useCatalogCompanyList()
-  const companyMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const c of companiesData?.data ?? []) map.set(c.id, c.commonName)
-    return map
-  }, [companiesData])
-
-  const columns = useMemo(() => getTruckWaybillColumns(t, { companyMap }), [t, companyMap])
+  const columns = useMemo(() => getTruckWaybillColumns(t), [t])
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])

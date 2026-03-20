@@ -19,7 +19,8 @@ struct ReconciliationQueryParams {
   path = paths::operations::RECONCILIATIONS,
   params(
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<InventoryReconciliationResponse>>))
 )]
@@ -27,14 +28,22 @@ struct ReconciliationQueryParams {
 async fn reconciliation_list(
   State(state): State<Arc<ApiState>>,
   Query(pagination): Query<PaginationParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<InventoryReconciliationResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .reconciliation_query_with_names(None, None, None, pagination.page, pagination.per_page)
+      .await?
+  } else {
     state
       .svc
       .document
       .reconciliation_query(None, None, None, pagination.page, pagination.per_page)
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -48,7 +57,8 @@ async fn reconciliation_list(
     ("status" = Option<enums::DocumentStatus>, Query),
     ("warehouseId" = Option<Uuid>, Query),
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<InventoryReconciliationResponse>>), (status = 400))
 )]
@@ -56,8 +66,21 @@ async fn reconciliation_list(
 async fn reconciliation_query(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<ReconciliationQueryParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<InventoryReconciliationResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .reconciliation_query_with_names(
+        query.document_number.as_deref(),
+        query.status,
+        query.warehouse_id,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
+  } else {
     state
       .svc
       .document
@@ -68,8 +91,9 @@ async fn reconciliation_query(
         query.pagination.page,
         query.pagination.per_page,
       )
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -78,17 +102,24 @@ async fn reconciliation_query(
   operation_id = "reconciliation_get",
   summary = "Get reconciliation",
   path = paths::operations::RECONCILIATIONS_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<InventoryReconciliationResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn reconciliation_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<InventoryReconciliationResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.reconciliation_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state.svc.document.reconciliation_get_with_names(id).await?
+  } else {
+    state.svc.document.reconciliation_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

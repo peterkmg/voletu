@@ -433,8 +433,8 @@ async fn reconciliation_adjustments_apply_on_execute_and_reverse_on_revert() {
       .unwrap()
       .unwrap();
     assert_eq!(reverted_entry.current_amount, dec("5.0"));
-    assert_eq!(service.reconciliation_list().await.unwrap().len(), 1);
-    assert_eq!(service.adjustment_list().await.unwrap().len(), 2);
+    assert_eq!(service.reconciliation_list(None).await.unwrap().len(), 1);
+    assert_eq!(service.adjustment_list(None).await.unwrap().len(), 2);
   })
   .await;
 }

@@ -30,7 +30,7 @@ async fn truck_waybill_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<TruckWaybillResponse>> {
-  let rows = state.svc.document.truck_waybill_list().await?;
+  let rows = state.svc.document.truck_waybill_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 
@@ -60,7 +60,7 @@ async fn truck_waybill_item_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<TruckWaybillItemResponse>> {
-  let rows = state.svc.document.truck_waybill_item_list().await?;
+  let rows = state.svc.document.truck_waybill_item_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 
@@ -90,7 +90,7 @@ async fn truck_weight_doc_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<TruckWeightDocResponse>> {
-  let rows = state.svc.document.truck_weight_doc_list().await?;
+  let rows = state.svc.document.truck_weight_doc_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 

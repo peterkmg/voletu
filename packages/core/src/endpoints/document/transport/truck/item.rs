@@ -14,7 +14,7 @@ async fn truck_waybill_item_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<TruckWaybillItemResponse>> {
   Ok(ApiResponse::success(
-    state.svc.document.truck_waybill_item_list().await?,
+    state.svc.document.truck_waybill_item_list(None).await?,
   ))
 }
 

@@ -7,17 +7,28 @@ use super::*;
   summary = "Get blending composite",
   description = "Returns a blending document with nested components and results.",
   path = paths::blending::COMPOSITE_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<BlendingCompositeResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn blending_composite_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<BlendingCompositeResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.blending_composite_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .blending_composite_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.blending_composite_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

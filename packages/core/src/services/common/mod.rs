@@ -3,7 +3,9 @@ mod crud;
 mod delete;
 mod documents;
 mod fields;
+pub mod resolve;
 mod storage;
+pub mod validate_fk;
 
 pub use auth::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher};
 pub use crud::{
@@ -16,7 +18,9 @@ pub use crud::{
 pub use delete::{hard_delete_with_audit, map_hard_delete_db_error};
 pub use documents::ensure_doc_mod_allowed;
 pub use fields::{set_if_some, set_if_some_mapped, set_soft_deleted_fields};
+pub use resolve::{resolve_names, ResolveFkNames};
 pub use storage::ensure_storage_accepts_product;
+pub use validate_fk::{validate_fk_exists, validate_optional_fk_exists};
 
 use crate::api::ApiError;
 

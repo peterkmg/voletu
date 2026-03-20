@@ -29,6 +29,7 @@ pub mod rail_weight;
 pub mod reconciliation_adjustment;
 pub mod reconciliation_doc;
 pub mod reconciliation_doc_extra;
+pub mod resolve;
 pub mod truck_waybill;
 pub mod truck_waybill_extra;
 pub mod truck_waybill_item;

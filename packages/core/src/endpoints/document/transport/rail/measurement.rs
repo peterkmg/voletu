@@ -14,7 +14,7 @@ async fn rail_measurement_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<RailWagonMeasurementResponse>> {
   Ok(ApiResponse::success(
-    state.svc.document.rail_measurement_list().await?,
+    state.svc.document.rail_measurement_list(None).await?,
   ))
 }
 

@@ -7,17 +7,28 @@ use super::*;
   summary = "Get dispatch composite",
   description = "Returns a dispatch document with nested items and storage measurements.",
   path = paths::dispatch::COMPOSITE_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<DispatchCompositeResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn dispatch_composite_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<DispatchCompositeResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.dispatch_composite_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .dispatch_composite_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.dispatch_composite_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use axum::{
-  extract::{Path, State},
-  Extension,
-  Json,
+  extract::{Path, Query, State},
+  Extension, Json,
 };
 use axum_valid::Valid;
 use uuid::Uuid;
@@ -11,7 +10,7 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{AcceptanceCompositeResponse, CreateAcceptanceCompositeRequest},
-  endpoints::paths,
+  endpoints::{paths, query::EmbedParams},
   services::common::ensure_supervisor_or_higher,
   utils::jwt::Claims,
 };
@@ -22,17 +21,28 @@ use crate::{
   operation_id = "acceptance_composite_get",
   summary = "Get acceptance composite",
   path = paths::acceptance::COMPOSITE_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<AcceptanceCompositeResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 pub(super) async fn acceptance_composite_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<AcceptanceCompositeResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.acceptance_composite_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .acceptance_composite_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.acceptance_composite_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

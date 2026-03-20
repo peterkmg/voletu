@@ -7,15 +7,22 @@ use super::*;
   summary = "List rail waybills",
   description = "Returns rail waybill headers. Supports query filtering and pagination through common entity query params.",
   path = paths::transport::rail::WAYBILLS,
+  params(
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<Vec<RailWaybillResponse>>))
 )]
 #[axum::debug_handler]
 async fn rail_waybill_list(
   State(state): State<Arc<ApiState>>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<RailWaybillResponse>> {
-  Ok(ApiResponse::success(
-    state.svc.document.rail_waybill_list().await?,
-  ))
+  let rows = if embed.wants_names() {
+    state.svc.document.rail_waybill_list_with_names().await?
+  } else {
+    state.svc.document.rail_waybill_list(None).await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -44,17 +51,24 @@ async fn rail_waybill_create(
   operation_id = "transport_rail_waybill_get",
   summary = "Get rail waybill",
   path = paths::transport::rail::WAYBILLS_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<RailWaybillResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn rail_waybill_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<RailWaybillResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.rail_waybill_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state.svc.document.rail_waybill_get_with_names(id).await?
+  } else {
+    state.svc.document.rail_waybill_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

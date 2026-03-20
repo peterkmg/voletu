@@ -233,12 +233,19 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
         .into();
       };
       methods.push(quote! {
-        pub async fn #list_name(&self) -> Result<Vec<#response>, crate::api::ApiError> {
-          let rows = crate::services::common::list_active::<#entity_mod::Entity, _>(
-            self.db.as_ref(),
-            #entity_mod::Column::DeletedAt,
-          )
-          .await?;
+        pub async fn #list_name(&self, pagination: Option<(u64, u64)>) -> Result<Vec<#response>, crate::api::ApiError> {
+          use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
+          let query = #entity_mod::Entity::find()
+            .filter(#entity_mod::Column::DeletedAt.is_null());
+          let rows = if let Some((page, per_page)) = pagination {
+            use sea_orm::PaginatorTrait;
+            query
+              .paginate(self.db.as_ref(), per_page)
+              .fetch_page(page.saturating_sub(1))
+              .await?
+          } else {
+            query.all(self.db.as_ref()).await?
+          };
           Ok(rows.into_iter().map(Into::into).collect())
         }
       });

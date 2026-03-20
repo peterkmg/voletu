@@ -7,15 +7,30 @@ use super::*;
   summary = "List product groups",
   description = "Returns product groups linked to product types.",
   path = paths::catalog::PRODUCT_GROUPS,
+  params(
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names"),
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<ProductGroupResponse>>))
 )]
 #[axum::debug_handler]
 async fn product_group_list(
   State(state): State<Arc<ApiState>>,
+  Query(embed): Query<EmbedParams>,
+  Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<ProductGroupResponse>> {
-  Ok(ApiResponse::success(
-    state.svc.catalog_service.product_group_list().await?,
-  ))
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
+  let items = if embed.wants_names() {
+    state.svc.catalog_service.product_group_list_with_names(pg).await?
+  } else {
+    state.svc.catalog_service.product_group_list(pg).await?
+  };
+  Ok(ApiResponse::success(items))
 }
 
 #[utoipa::path(
@@ -44,17 +59,21 @@ async fn product_group_create(
   operation_id = "catalog_product_group_get",
   summary = "Get product group",
   path = paths::catalog::PRODUCT_GROUPS_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(("id" = Uuid, Path), ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")),
   responses((status = 200, body = ApiResponse<ProductGroupResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn product_group_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<ProductGroupResponse> {
-  Ok(ApiResponse::success(
-    state.svc.catalog_service.product_group_get(id).await?,
-  ))
+  let item = if embed.wants_names() {
+    state.svc.catalog_service.product_group_get_with_names(id).await?
+  } else {
+    state.svc.catalog_service.product_group_get(id).await?
+  };
+  Ok(ApiResponse::success(item))
 }
 
 #[utoipa::path(
@@ -126,11 +145,34 @@ async fn product_group_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_product_group_restore",
+  summary = "Restore soft-deleted product group",
+  path = paths::catalog::PRODUCT_GROUPS_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn product_group_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state
+    .svc
+    .catalog_service
+    .product_group_soft_delete_undo(id)
+    .await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn product_group_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(product_group_list, product_group_create))
     .routes(routes!(product_group_get, product_group_update))
     .routes(routes!(product_group_soft_delete))
     .routes(routes!(product_group_hard_delete))
+    .routes(routes!(product_group_restore))
     .with_state(state)
 }

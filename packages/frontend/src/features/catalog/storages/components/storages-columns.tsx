@@ -1,17 +1,12 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { StorageResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell, NumericCell, StatusBadge } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, NumericCell, ResolvedCell, StatusBadge } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { entityActiveColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
-interface StorageColumnLookups {
-  warehouseMap: Map<string, string>
-  productTypeMap: Map<string, string>
-}
-
-export function getStorageColumns(t: TFunction, lookups: StorageColumnLookups): ColumnDef<StorageResponse>[] {
+export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
   return [
     {
       id: 'select',
@@ -58,9 +53,7 @@ export function getStorageColumns(t: TFunction, lookups: StorageColumnLookups): 
           title={t('catalog:storage.columns.warehouseId')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('warehouseId')} lookupMap={lookups.warehouseMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).warehouseIdName} />,
     },
     {
       accessorKey: 'capacity',
@@ -81,9 +74,7 @@ export function getStorageColumns(t: TFunction, lookups: StorageColumnLookups): 
           title={t('catalog:storage.columns.productTypeId')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('productTypeId')} lookupMap={lookups.productTypeMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).productTypeIdName} />,
     },
     {
       accessorKey: 'isTypeSpecific',

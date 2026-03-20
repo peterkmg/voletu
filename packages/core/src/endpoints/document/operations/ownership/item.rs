@@ -11,7 +11,7 @@ use super::*;
 async fn ownership_item_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<OwnershipTransferItemResponse>> {
-  let rows = state.svc.document.ownership_item_list().await?;
+  let rows = state.svc.document.ownership_item_list(None).await?;
   Ok(ApiResponse::success(rows))
 }
 

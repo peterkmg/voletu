@@ -31,7 +31,7 @@ async fn rail_waybill_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<RailWaybillResponse>> {
-  let rows = state.svc.document.rail_waybill_list().await?;
+  let rows = state.svc.document.rail_waybill_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 
@@ -61,7 +61,7 @@ async fn rail_manifest_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<RailWagonManifestResponse>> {
-  let rows = state.svc.document.rail_manifest_list().await?;
+  let rows = state.svc.document.rail_manifest_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 
@@ -91,7 +91,7 @@ async fn rail_measurement_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<RailWagonMeasurementResponse>> {
-  let rows = state.svc.document.rail_measurement_list().await?;
+  let rows = state.svc.document.rail_measurement_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 
@@ -121,7 +121,7 @@ async fn rail_weight_list(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<EntityQueryParams>,
 ) -> ApiResult<Vec<RailWagonWeightResponse>> {
-  let rows = state.svc.document.rail_weight_list().await?;
+  let rows = state.svc.document.rail_weight_list(None).await?;
   Ok(ApiResponse::success(apply_entity_query(rows, &query)?))
 }
 

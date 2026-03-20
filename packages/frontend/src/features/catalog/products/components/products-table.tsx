@@ -17,8 +17,6 @@ import { Archive } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductGroupList } from '~/generated/hooks/CatalogHooks/useCatalogProductGroupList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getProductColumns } from './products-columns'
@@ -31,22 +29,7 @@ interface ProductsTableProps {
 
 export function ProductsTable({ data }: ProductsTableProps) {
   const { t } = useTranslation(['catalog', 'common'])
-
-  const { data: productGroupsData } = useCatalogProductGroupList()
-  const productGroupMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const pg of productGroupsData?.data ?? []) map.set(pg.id, pg.commonName)
-    return map
-  }, [productGroupsData])
-
-  const { data: companiesData } = useCatalogCompanyList()
-  const companyMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const c of companiesData?.data ?? []) map.set(c.id, c.commonName)
-    return map
-  }, [companiesData])
-
-  const columns = useMemo(() => getProductColumns(t, { productGroupMap, companyMap }), [t, productGroupMap, companyMap])
+  const columns = useMemo(() => getProductColumns(t), [t])
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])

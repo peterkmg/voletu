@@ -127,14 +127,14 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
       .await
       .unwrap();
 
-    assert_eq!(catalog.company_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.product_type_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.product_group_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.product_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.base_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.warehouse_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.storage_list().await.unwrap().len(), 1);
-    assert_eq!(catalog.port_list().await.unwrap().len(), 1);
+    assert_eq!(catalog.company_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.product_type_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.product_group_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.product_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.base_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.warehouse_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.storage_list(None).await.unwrap().len(), 1);
+    assert_eq!(catalog.port_list(None).await.unwrap().len(), 1);
     assert_eq!(storage.product_type_id, Some(ptype.id));
     assert_eq!(product.product_group_id, pgroup.id);
     assert_eq!(port.common_name, "Port A");
@@ -243,16 +243,16 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
       .await
       .unwrap();
 
-    assert_eq!(doc_service.truck_waybill_list().await.unwrap().len(), 1);
+    assert_eq!(doc_service.truck_waybill_list(None).await.unwrap().len(), 1);
     assert_eq!(
-      doc_service.truck_waybill_item_list().await.unwrap().len(),
+      doc_service.truck_waybill_item_list(None).await.unwrap().len(),
       1
     );
-    assert_eq!(doc_service.truck_weight_doc_list().await.unwrap().len(), 1);
-    assert_eq!(doc_service.rail_waybill_list().await.unwrap().len(), 1);
-    assert_eq!(doc_service.rail_manifest_list().await.unwrap().len(), 1);
-    assert_eq!(doc_service.rail_measurement_list().await.unwrap().len(), 1);
-    assert_eq!(doc_service.rail_weight_list().await.unwrap().len(), 1);
+    assert_eq!(doc_service.truck_weight_doc_list(None).await.unwrap().len(), 1);
+    assert_eq!(doc_service.rail_waybill_list(None).await.unwrap().len(), 1);
+    assert_eq!(doc_service.rail_manifest_list(None).await.unwrap().len(), 1);
+    assert_eq!(doc_service.rail_measurement_list(None).await.unwrap().len(), 1);
+    assert_eq!(doc_service.rail_weight_list(None).await.unwrap().len(), 1);
 
     // Ensure helper data is actually reused by checking records are linked to seeded IDs.
     let saved_truck_waybill = truck_waybill::Entity::find()

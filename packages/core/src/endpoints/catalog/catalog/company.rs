@@ -7,12 +7,24 @@ use super::*;
   summary = "List companies",
   description = "Returns catalog companies. Supports optional in-memory query filtering via q, field filters, and pagination query params.",
   path = paths::catalog::COMPANIES,
+  params(
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<CompanyResponse>>))
 )]
 #[axum::debug_handler]
-async fn company_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<CompanyResponse>> {
+async fn company_list(
+  State(state): State<Arc<ApiState>>,
+  Query(pagination): Query<PaginationParams>,
+) -> ApiResult<Vec<CompanyResponse>> {
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
   Ok(ApiResponse::success(
-    state.svc.catalog_service.company_list().await?,
+    state.svc.catalog_service.company_list(pg).await?,
   ))
 }
 
@@ -112,11 +124,30 @@ async fn company_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_company_restore",
+  summary = "Restore soft-deleted company",
+  path = paths::catalog::COMPANIES_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn company_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state.svc.catalog_service.company_soft_delete_undo(id).await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn company_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(company_list, company_create))
     .routes(routes!(company_get, company_update))
     .routes(routes!(company_soft_delete))
     .routes(routes!(company_hard_delete))
+    .routes(routes!(company_restore))
     .with_state(state)
 }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-  extract::{Path, State},
+  extract::{Path, Query, State},
   Json,
 };
 use axum_valid::Valid;
@@ -11,19 +11,12 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
-    CreateTruckWaybillItemRequest,
-    CreateTruckWaybillRequest,
-    CreateTruckWeightDocRequest,
-    TruckWaybillCompositeRequest,
-    TruckWaybillCompositeResponse,
-    TruckWaybillItemResponse,
-    TruckWaybillResponse,
-    TruckWeightDocResponse,
-    UpdateTruckWaybillItemRequest,
-    UpdateTruckWaybillRequest,
-    UpdateTruckWeightDocRequest,
+    CreateTruckWaybillItemRequest, CreateTruckWaybillRequest, CreateTruckWeightDocRequest,
+    TruckWaybillCompositeRequest, TruckWaybillCompositeResponse, TruckWaybillItemResponse,
+    TruckWaybillResponse, TruckWeightDocResponse, UpdateTruckWaybillItemRequest,
+    UpdateTruckWaybillRequest, UpdateTruckWeightDocRequest,
   },
-  endpoints::paths,
+  endpoints::{paths, query::EmbedParams},
 };
 
 mod composite;

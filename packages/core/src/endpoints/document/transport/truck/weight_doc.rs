@@ -14,7 +14,7 @@ async fn truck_weight_doc_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<TruckWeightDocResponse>> {
   Ok(ApiResponse::success(
-    state.svc.document.truck_weight_doc_list().await?,
+    state.svc.document.truck_weight_doc_list(None).await?,
   ))
 }
 

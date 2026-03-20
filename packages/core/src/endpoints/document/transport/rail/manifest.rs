@@ -14,7 +14,7 @@ async fn rail_manifest_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<RailWagonManifestResponse>> {
   Ok(ApiResponse::success(
-    state.svc.document.rail_manifest_list().await?,
+    state.svc.document.rail_manifest_list(None).await?,
   ))
 }
 

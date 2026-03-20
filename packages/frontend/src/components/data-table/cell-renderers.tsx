@@ -59,6 +59,12 @@ export function IdCell({ value }: { value: string | null | undefined }) {
   )
 }
 
+export function ResolvedCell({ value }: { value: string | null | undefined }) {
+  if (!value)
+    return <span className="text-muted-foreground">&mdash;</span>
+  return <span>{value}</span>
+}
+
 export function LookupCell({
   value,
   lookupMap,

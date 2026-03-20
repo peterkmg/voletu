@@ -1,15 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { RailWaybillResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, ResolvedCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-interface RailWaybillColumnLookups {
-  companyMap: Map<string, string>
-}
-
-export function getRailWaybillColumns(t: TFunction, lookups: RailWaybillColumnLookups): ColumnDef<RailWaybillResponse>[] {
+export function getRailWaybillColumns(t: TFunction): ColumnDef<RailWaybillResponse>[] {
   return [
     {
       id: 'select',
@@ -67,9 +63,7 @@ export function getRailWaybillColumns(t: TFunction, lookups: RailWaybillColumnLo
           title={t('transport:rail.columns.sender')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('senderId')} lookupMap={lookups.companyMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).senderIdName} />,
     },
     {
       accessorKey: 'createdAt',

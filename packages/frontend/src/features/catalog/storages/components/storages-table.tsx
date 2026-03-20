@@ -17,8 +17,6 @@ import { Archive } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
-import { useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
-import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getStorageColumns } from './storages-columns'
@@ -31,22 +29,7 @@ interface StoragesTableProps {
 
 export function StoragesTable({ data }: StoragesTableProps) {
   const { t } = useTranslation(['catalog', 'common'])
-
-  const { data: warehousesData } = useCatalogWarehouseList()
-  const warehouseMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const w of warehousesData?.data ?? []) map.set(w.id, w.commonName)
-    return map
-  }, [warehousesData])
-
-  const { data: productTypesData } = useCatalogProductTypeList()
-  const productTypeMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const pt of productTypesData?.data ?? []) map.set(pt.id, pt.commonName)
-    return map
-  }, [productTypesData])
-
-  const columns = useMemo(() => getStorageColumns(t, { warehouseMap, productTypeMap }), [t, warehouseMap, productTypeMap])
+  const columns = useMemo(() => getStorageColumns(t), [t])
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])

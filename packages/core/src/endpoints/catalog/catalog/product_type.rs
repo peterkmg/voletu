@@ -7,14 +7,24 @@ use super::*;
   summary = "List product types",
   description = "Returns product type references used for catalog validation and storage compatibility checks.",
   path = paths::catalog::PRODUCT_TYPES,
+  params(
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<ProductTypeResponse>>))
 )]
 #[axum::debug_handler]
 async fn product_type_list(
   State(state): State<Arc<ApiState>>,
+  Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<ProductTypeResponse>> {
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
   Ok(ApiResponse::success(
-    state.svc.catalog_service.product_type_list().await?,
+    state.svc.catalog_service.product_type_list(pg).await?,
   ))
 }
 
@@ -126,11 +136,34 @@ async fn product_type_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_product_type_restore",
+  summary = "Restore soft-deleted product type",
+  path = paths::catalog::PRODUCT_TYPES_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn product_type_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state
+    .svc
+    .catalog_service
+    .product_type_soft_delete_undo(id)
+    .await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn product_type_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(product_type_list, product_type_create))
     .routes(routes!(product_type_get, product_type_update))
     .routes(routes!(product_type_soft_delete))
     .routes(routes!(product_type_hard_delete))
+    .routes(routes!(product_type_restore))
     .with_state(state)
 }

@@ -22,27 +22,35 @@ pub mod catalog {
   pub const COMPANIES: &str = "/catalog/companies";
   pub const COMPANIES_BY_ID: &str = "/catalog/companies/{id}";
   pub const COMPANIES_HARD_DELETE_BY_ID: &str = "/catalog/companies/{id}/hard";
+  pub const COMPANIES_RESTORE_BY_ID: &str = "/catalog/companies/{id}/restore";
   pub const PRODUCT_TYPES: &str = "/catalog/product-types";
   pub const PRODUCT_TYPES_BY_ID: &str = "/catalog/product-types/{id}";
   pub const PRODUCT_TYPES_HARD_DELETE_BY_ID: &str = "/catalog/product-types/{id}/hard";
+  pub const PRODUCT_TYPES_RESTORE_BY_ID: &str = "/catalog/product-types/{id}/restore";
   pub const PRODUCT_GROUPS: &str = "/catalog/product-groups";
   pub const PRODUCT_GROUPS_BY_ID: &str = "/catalog/product-groups/{id}";
   pub const PRODUCT_GROUPS_HARD_DELETE_BY_ID: &str = "/catalog/product-groups/{id}/hard";
+  pub const PRODUCT_GROUPS_RESTORE_BY_ID: &str = "/catalog/product-groups/{id}/restore";
   pub const PRODUCTS: &str = "/catalog/products";
   pub const PRODUCTS_BY_ID: &str = "/catalog/products/{id}";
   pub const PRODUCTS_HARD_DELETE_BY_ID: &str = "/catalog/products/{id}/hard";
+  pub const PRODUCTS_RESTORE_BY_ID: &str = "/catalog/products/{id}/restore";
   pub const BASES: &str = "/catalog/bases";
   pub const BASES_BY_ID: &str = "/catalog/bases/{id}";
   pub const BASES_HARD_DELETE_BY_ID: &str = "/catalog/bases/{id}/hard";
+  pub const BASES_RESTORE_BY_ID: &str = "/catalog/bases/{id}/restore";
   pub const WAREHOUSES: &str = "/catalog/warehouses";
   pub const WAREHOUSES_BY_ID: &str = "/catalog/warehouses/{id}";
   pub const WAREHOUSES_HARD_DELETE_BY_ID: &str = "/catalog/warehouses/{id}/hard";
+  pub const WAREHOUSES_RESTORE_BY_ID: &str = "/catalog/warehouses/{id}/restore";
   pub const STORAGES: &str = "/catalog/storages";
   pub const STORAGES_BY_ID: &str = "/catalog/storages/{id}";
   pub const STORAGES_HARD_DELETE_BY_ID: &str = "/catalog/storages/{id}/hard";
+  pub const STORAGES_RESTORE_BY_ID: &str = "/catalog/storages/{id}/restore";
   pub const PORTS: &str = "/catalog/ports";
   pub const PORTS_BY_ID: &str = "/catalog/ports/{id}";
   pub const PORTS_HARD_DELETE_BY_ID: &str = "/catalog/ports/{id}/hard";
+  pub const PORTS_RESTORE_BY_ID: &str = "/catalog/ports/{id}/restore";
 }
 
 pub mod acceptance {

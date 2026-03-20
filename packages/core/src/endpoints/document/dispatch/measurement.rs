@@ -17,7 +17,7 @@ async fn dispatch_storage_measurement_list(
     state
       .svc
       .document
-      .dispatch_storage_measurement_list()
+      .dispatch_storage_measurement_list(None)
       .await?,
   ))
 }

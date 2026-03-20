@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-  extract::{Path, State},
+  extract::{Path, Query, State},
   Json,
 };
 use axum_valid::Valid;
@@ -24,7 +24,7 @@ use crate::{
     UpdateProductRequest,
     UpdateProductTypeRequest,
   },
-  endpoints::paths,
+  endpoints::{paths, query::{EmbedParams, PaginationParams}},
 };
 
 mod company;

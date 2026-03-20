@@ -7,15 +7,22 @@ use super::*;
   summary = "List truck waybills",
   description = "Returns truck waybill headers. Supports query filtering and pagination through common entity query params.",
   path = paths::transport::truck::WAYBILLS,
+  params(
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<Vec<TruckWaybillResponse>>))
 )]
 #[axum::debug_handler]
 async fn truck_waybill_list(
   State(state): State<Arc<ApiState>>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<TruckWaybillResponse>> {
-  Ok(ApiResponse::success(
-    state.svc.document.truck_waybill_list().await?,
-  ))
+  let rows = if embed.wants_names() {
+    state.svc.document.truck_waybill_list_with_names().await?
+  } else {
+    state.svc.document.truck_waybill_list(None).await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -44,17 +51,24 @@ async fn truck_waybill_create(
   operation_id = "transport_truck_waybill_get",
   summary = "Get truck waybill",
   path = paths::transport::truck::WAYBILLS_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<TruckWaybillResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn truck_waybill_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<TruckWaybillResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.truck_waybill_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state.svc.document.truck_waybill_get_with_names(id).await?
+  } else {
+    state.svc.document.truck_waybill_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

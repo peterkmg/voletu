@@ -19,7 +19,8 @@ struct DispatchQueryParams {
   path = paths::dispatch::ROOT,
   params(
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<DispatchResponse>>))
 )]
@@ -27,14 +28,22 @@ struct DispatchQueryParams {
 async fn dispatch_document_list(
   State(state): State<Arc<ApiState>>,
   Query(pagination): Query<PaginationParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<DispatchResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .dispatch_document_query_with_names(None, None, None, pagination.page, pagination.per_page)
+      .await?
+  } else {
     state
       .svc
       .document
       .dispatch_document_query(None, None, None, pagination.page, pagination.per_page)
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -95,7 +104,8 @@ async fn dispatch_document_create_and_execute(
     ("status" = Option<enums::DocumentStatus>, Query),
     ("contractorId" = Option<Uuid>, Query),
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<DispatchResponse>>), (status = 400))
 )]
@@ -103,8 +113,21 @@ async fn dispatch_document_create_and_execute(
 async fn dispatch_document_query(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<DispatchQueryParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<DispatchResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .dispatch_document_query_with_names(
+        query.document_number.as_deref(),
+        query.status,
+        query.contractor_id,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
+  } else {
     state
       .svc
       .document
@@ -115,8 +138,9 @@ async fn dispatch_document_query(
         query.pagination.page,
         query.pagination.per_page,
       )
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -125,17 +149,28 @@ async fn dispatch_document_query(
   operation_id = "dispatch_document_get",
   summary = "Get dispatch document",
   path = paths::dispatch::BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<DispatchResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn dispatch_document_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<DispatchResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.dispatch_document_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .dispatch_document_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.dispatch_document_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

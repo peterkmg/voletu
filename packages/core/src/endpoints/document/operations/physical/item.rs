@@ -11,7 +11,7 @@ use super::*;
 async fn physical_item_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<PhysicalTransferItemResponse>> {
-  let rows = state.svc.document.physical_item_list().await?;
+  let rows = state.svc.document.physical_item_list(None).await?;
   Ok(ApiResponse::success(rows))
 }
 

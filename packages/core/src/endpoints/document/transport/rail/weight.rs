@@ -14,7 +14,7 @@ async fn rail_weight_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<RailWagonWeightResponse>> {
   Ok(ApiResponse::success(
-    state.svc.document.rail_weight_list().await?,
+    state.svc.document.rail_weight_list(None).await?,
   ))
 }
 

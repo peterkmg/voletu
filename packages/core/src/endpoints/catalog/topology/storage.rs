@@ -7,13 +7,30 @@ use super::*;
   summary = "List storages",
   description = "Returns storages used by acceptance, dispatch, transfer, and blending operations.",
   path = paths::catalog::STORAGES,
+  params(
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names"),
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<StorageResponse>>))
 )]
 #[axum::debug_handler]
-async fn storage_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<StorageResponse>> {
-  Ok(ApiResponse::success(
-    state.svc.catalog_service.storage_list().await?,
-  ))
+async fn storage_list(
+  State(state): State<Arc<ApiState>>,
+  Query(embed): Query<EmbedParams>,
+  Query(pagination): Query<PaginationParams>,
+) -> ApiResult<Vec<StorageResponse>> {
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
+  let items = if embed.wants_names() {
+    state.svc.catalog_service.storage_list_with_names(pg).await?
+  } else {
+    state.svc.catalog_service.storage_list(pg).await?
+  };
+  Ok(ApiResponse::success(items))
 }
 
 #[utoipa::path(
@@ -42,17 +59,21 @@ async fn storage_create(
   operation_id = "catalog_storage_get",
   summary = "Get storage",
   path = paths::catalog::STORAGES_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(("id" = Uuid, Path), ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")),
   responses((status = 200, body = ApiResponse<StorageResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn storage_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<StorageResponse> {
-  Ok(ApiResponse::success(
-    state.svc.catalog_service.storage_get(id).await?,
-  ))
+  let item = if embed.wants_names() {
+    state.svc.catalog_service.storage_get_with_names(id).await?
+  } else {
+    state.svc.catalog_service.storage_get(id).await?
+  };
+  Ok(ApiResponse::success(item))
 }
 
 #[utoipa::path(
@@ -112,11 +133,30 @@ async fn storage_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_storage_restore",
+  summary = "Restore soft-deleted storage",
+  path = paths::catalog::STORAGES_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn storage_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state.svc.catalog_service.storage_soft_delete_undo(id).await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn storage_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(storage_list, storage_create))
     .routes(routes!(storage_get, storage_update))
     .routes(routes!(storage_soft_delete))
     .routes(routes!(storage_hard_delete))
+    .routes(routes!(storage_restore))
     .with_state(state)
 }

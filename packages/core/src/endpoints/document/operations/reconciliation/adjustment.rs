@@ -13,7 +13,7 @@ use super::*;
 async fn adjustment_list(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<InventoryAdjustmentResponse>> {
-  let rows = state.svc.document.adjustment_list().await?;
+  let rows = state.svc.document.adjustment_list(None).await?;
   Ok(ApiResponse::success(rows))
 }
 

@@ -7,12 +7,24 @@ use super::*;
   summary = "List ports",
   description = "Returns port references used by dispatch and export-oriented flows.",
   path = paths::catalog::PORTS,
+  params(
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<PortResponse>>))
 )]
 #[axum::debug_handler]
-async fn port_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<PortResponse>> {
+async fn port_list(
+  State(state): State<Arc<ApiState>>,
+  Query(pagination): Query<PaginationParams>,
+) -> ApiResult<Vec<PortResponse>> {
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
   Ok(ApiResponse::success(
-    state.svc.catalog_service.port_list().await?,
+    state.svc.catalog_service.port_list(pg).await?,
   ))
 }
 
@@ -112,11 +124,30 @@ async fn port_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_port_restore",
+  summary = "Restore soft-deleted port",
+  path = paths::catalog::PORTS_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn port_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state.svc.catalog_service.port_soft_delete_undo(id).await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn port_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(port_list, port_create))
     .routes(routes!(port_get, port_update))
     .routes(routes!(port_soft_delete))
     .routes(routes!(port_hard_delete))
+    .routes(routes!(port_restore))
     .with_state(state)
 }

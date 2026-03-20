@@ -5,13 +5,25 @@ use super::*;
   tag = "Document - Operations",
   operation_id = "physical_document_list",
   path = paths::operations::PHYSICAL_TRANSFER_DOCUMENTS,
+  params(
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<Vec<PhysicalTransferResponse>>))
 )]
 #[axum::debug_handler]
 async fn physical_document_list(
   State(state): State<Arc<ApiState>>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<PhysicalTransferResponse>> {
-  let rows = state.svc.document.physical_transfer_list().await?;
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .physical_transfer_list_with_names()
+      .await?
+  } else {
+    state.svc.document.physical_transfer_list(None).await?
+  };
   Ok(ApiResponse::success(rows))
 }
 
@@ -38,17 +50,28 @@ async fn physical_document_create(
   tag = "Document - Operations",
   operation_id = "physical_document_get",
   path = paths::operations::PHYSICAL_TRANSFER_DOCUMENTS_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<PhysicalTransferResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn physical_document_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<PhysicalTransferResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.physical_transfer_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .physical_transfer_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.physical_transfer_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

@@ -1,15 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { WarehouseResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, ResolvedCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-interface WarehouseColumnLookups {
-  baseMap: Map<string, string>
-}
-
-export function getWarehouseColumns(t: TFunction, lookups: WarehouseColumnLookups): ColumnDef<WarehouseResponse>[] {
+export function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
   return [
     {
       id: 'select',
@@ -57,9 +53,7 @@ export function getWarehouseColumns(t: TFunction, lookups: WarehouseColumnLookup
         />
       ),
       meta: { className: 'w-1/4' },
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('baseId')} lookupMap={lookups.baseMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).baseIdName} />,
     },
     {
       accessorKey: 'createdAt',

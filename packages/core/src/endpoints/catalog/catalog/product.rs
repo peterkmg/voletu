@@ -7,13 +7,30 @@ use super::*;
   summary = "List products",
   description = "Returns product references used in transport and operations documents.",
   path = paths::catalog::PRODUCTS,
+  params(
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names"),
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<ProductResponse>>))
 )]
 #[axum::debug_handler]
-async fn product_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<ProductResponse>> {
-  Ok(ApiResponse::success(
-    state.svc.catalog_service.product_list().await?,
-  ))
+async fn product_list(
+  State(state): State<Arc<ApiState>>,
+  Query(embed): Query<EmbedParams>,
+  Query(pagination): Query<PaginationParams>,
+) -> ApiResult<Vec<ProductResponse>> {
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
+  let items = if embed.wants_names() {
+    state.svc.catalog_service.product_list_with_names(pg).await?
+  } else {
+    state.svc.catalog_service.product_list(pg).await?
+  };
+  Ok(ApiResponse::success(items))
 }
 
 #[utoipa::path(
@@ -42,17 +59,21 @@ async fn product_create(
   operation_id = "catalog_product_get",
   summary = "Get product",
   path = paths::catalog::PRODUCTS_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(("id" = Uuid, Path), ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")),
   responses((status = 200, body = ApiResponse<ProductResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn product_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<ProductResponse> {
-  Ok(ApiResponse::success(
-    state.svc.catalog_service.product_get(id).await?,
-  ))
+  let item = if embed.wants_names() {
+    state.svc.catalog_service.product_get_with_names(id).await?
+  } else {
+    state.svc.catalog_service.product_get(id).await?
+  };
+  Ok(ApiResponse::success(item))
 }
 
 #[utoipa::path(
@@ -112,11 +133,30 @@ async fn product_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_product_restore",
+  summary = "Restore soft-deleted product",
+  path = paths::catalog::PRODUCTS_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn product_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state.svc.catalog_service.product_soft_delete_undo(id).await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn product_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(product_list, product_create))
     .routes(routes!(product_get, product_update))
     .routes(routes!(product_soft_delete))
     .routes(routes!(product_hard_delete))
+    .routes(routes!(product_restore))
     .with_state(state)
 }

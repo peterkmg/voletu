@@ -2,6 +2,8 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
+use crate::services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames};
+
 use crate::{
   api::ApiError,
   entities::{
@@ -41,6 +43,15 @@ pub struct AcceptanceResponse {
   pub truck_waybill_id: Option<Uuid>,
   pub rail_waybill_id: Option<Uuid>,
   pub transit_dispatch_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub truck_waybill_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub rail_waybill_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub transit_dispatch_id_name: Option<String>,
 }
 
 impl From<acceptance_document::Model> for AcceptanceResponse {
@@ -54,6 +65,9 @@ impl From<acceptance_document::Model> for AcceptanceResponse {
       truck_waybill_id: model.truck_waybill_id,
       rail_waybill_id: model.rail_waybill_id,
       transit_dispatch_id: model.transit_dispatch_id,
+      truck_waybill_id_name: None,
+      rail_waybill_id_name: None,
+      transit_dispatch_id_name: None,
       created_at: model.created_at.to_rfc3339(),
       updated_at: model.updated_at.to_rfc3339(),
       deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
@@ -79,6 +93,15 @@ pub struct AcceptanceItemResponse {
   pub contractor_id: Uuid,
   pub storage_id: Uuid,
   pub accepted_amount: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
 }
 
 /// Composite response DTO used by acceptance aggregate endpoints.
@@ -127,6 +150,18 @@ pub struct DispatchResponse {
   pub bunker_type: Option<BunkerType>,
   pub exporter_id: Option<Uuid>,
   pub port_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub destination_base_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub exporter_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub port_id_name: Option<String>,
 }
 
 impl From<dispatch_document::Model> for DispatchResponse {
@@ -145,6 +180,10 @@ impl From<dispatch_document::Model> for DispatchResponse {
       bunker_type: model.bunker_type,
       exporter_id: model.exporter_id,
       port_id: model.port_id,
+      contractor_id_name: None,
+      destination_base_id_name: None,
+      exporter_id_name: None,
+      port_id_name: None,
       created_at: model.created_at.to_rfc3339(),
       updated_at: model.updated_at.to_rfc3339(),
       deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
@@ -169,6 +208,12 @@ pub struct DispatchItemResponse {
   pub product_id: Uuid,
   pub storage_id: Uuid,
   pub dispatched_amount: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
 }
 
 impl From<dispatch_item::Model> for DispatchItemResponse {
@@ -179,6 +224,8 @@ impl From<dispatch_item::Model> for DispatchItemResponse {
       product_id: item.product_id,
       storage_id: item.storage_id,
       dispatched_amount: item.dispatched_amount,
+      product_id_name: None,
+      storage_id_name: None,
       created_at: item.created_at.to_rfc3339(),
       updated_at: item.updated_at.to_rfc3339(),
       deleted_at: item.deleted_at.map(|v| v.to_rfc3339()),
@@ -199,6 +246,9 @@ impl From<acceptance_item::Model> for AcceptanceItemResponse {
       contractor_id: model.contractor_id,
       storage_id: model.storage_id,
       accepted_amount: model.accepted_amount,
+      contractor_id_name: None,
+      product_id_name: None,
+      storage_id_name: None,
       created_at: model.created_at.to_rfc3339(),
       updated_at: model.updated_at.to_rfc3339(),
       deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
@@ -224,6 +274,9 @@ pub struct DispatchMeasurementResponse {
   pub after_volume: Option<Decimal>,
   pub after_density: Option<Decimal>,
   pub after_mass: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
 }
 
 impl From<dispatch_storage_measurement::Model> for DispatchMeasurementResponse {
@@ -240,6 +293,7 @@ impl From<dispatch_storage_measurement::Model> for DispatchMeasurementResponse {
       after_volume: measurement.after_volume,
       after_density: measurement.after_density,
       after_mass: measurement.after_mass,
+      storage_id_name: None,
       created_at: measurement.created_at.to_rfc3339(),
       updated_at: measurement.updated_at.to_rfc3339(),
       deleted_at: measurement.deleted_at.map(|v| v.to_rfc3339()),
@@ -400,6 +454,18 @@ pub struct PhysicalTransferItemResponse {
   pub from_storage_id: Uuid,
   pub to_storage_id: Uuid,
   pub amount: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub from_storage_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub to_storage_id_name: Option<String>,
 }
 
 impl From<physical_transfer_item::Model> for PhysicalTransferItemResponse {
@@ -411,6 +477,10 @@ impl From<physical_transfer_item::Model> for PhysicalTransferItemResponse {
       from_storage_id: row.from_storage_id,
       to_storage_id: row.to_storage_id,
       amount: row.amount,
+      contractor_id_name: None,
+      product_id_name: None,
+      from_storage_id_name: None,
+      to_storage_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -519,6 +589,18 @@ pub struct OwnershipTransferItemResponse {
   pub from_contractor_id: Uuid,
   pub to_contractor_id: Uuid,
   pub amount: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub from_contractor_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub to_contractor_id_name: Option<String>,
 }
 
 impl From<ownership_transfer_item::Model> for OwnershipTransferItemResponse {
@@ -530,6 +612,10 @@ impl From<ownership_transfer_item::Model> for OwnershipTransferItemResponse {
       from_contractor_id: row.from_contractor_id,
       to_contractor_id: row.to_contractor_id,
       amount: row.amount,
+      storage_id_name: None,
+      product_id_name: None,
+      from_contractor_id_name: None,
+      to_contractor_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -549,6 +635,12 @@ pub struct BlendingResponse {
   pub date: String,
   pub contractor_id: Uuid,
   pub target_product_id: Uuid,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub target_product_id_name: Option<String>,
 }
 
 impl From<blending_document::Model> for BlendingResponse {
@@ -559,6 +651,8 @@ impl From<blending_document::Model> for BlendingResponse {
       date: row.date.to_rfc3339(),
       contractor_id: row.contractor_id,
       target_product_id: row.target_product_id,
+      contractor_id_name: None,
+      target_product_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -583,6 +677,12 @@ pub struct BlendingComponentResponse {
   pub storage_id: Uuid,
   pub source_product_id: Uuid,
   pub amount_used: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub source_product_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
 }
 
 impl From<blending_component::Model> for BlendingComponentResponse {
@@ -593,6 +693,8 @@ impl From<blending_component::Model> for BlendingComponentResponse {
       storage_id: row.storage_id,
       source_product_id: row.source_product_id,
       amount_used: row.amount_used,
+      source_product_id_name: None,
+      storage_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -611,6 +713,9 @@ pub struct BlendingResultResponse {
   pub blending_doc_id: Uuid,
   pub storage_id: Uuid,
   pub produced_amount: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
 }
 
 impl From<blending_result::Model> for BlendingResultResponse {
@@ -620,6 +725,7 @@ impl From<blending_result::Model> for BlendingResultResponse {
       blending_doc_id: row.blending_doc_id,
       storage_id: row.storage_id,
       produced_amount: row.produced_amount,
+      storage_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -638,6 +744,9 @@ pub struct InventoryReconciliationResponse {
   pub document_number: String,
   pub date: String,
   pub warehouse_id: Uuid,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub warehouse_id_name: Option<String>,
 }
 
 impl From<inventory_reconciliation::Model> for InventoryReconciliationResponse {
@@ -647,6 +756,7 @@ impl From<inventory_reconciliation::Model> for InventoryReconciliationResponse {
       document_number: row.document_number,
       date: row.date.to_rfc3339(),
       warehouse_id: row.warehouse_id,
+      warehouse_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -674,6 +784,15 @@ pub struct InventoryAdjustmentResponse {
   pub adjustment_type: AdjustmentType,
   pub amount: Decimal,
   pub reason: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub storage_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
 }
 
 impl From<inventory_adjustment::Model> for InventoryAdjustmentResponse {
@@ -687,6 +806,9 @@ impl From<inventory_adjustment::Model> for InventoryAdjustmentResponse {
       adjustment_type: row.adjustment_type,
       amount: row.amount,
       reason: row.reason,
+      storage_id_name: None,
+      product_id_name: None,
+      contractor_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -745,6 +867,9 @@ pub struct TruckWaybillResponse {
   pub document_number: String,
   pub date: String,
   pub sender_id: Uuid,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub sender_id_name: Option<String>,
 }
 
 impl From<truck_waybill::Model> for TruckWaybillResponse {
@@ -754,6 +879,7 @@ impl From<truck_waybill::Model> for TruckWaybillResponse {
       document_number: row.document_number,
       date: row.date.to_string(),
       sender_id: row.sender_id,
+      sender_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -772,6 +898,9 @@ pub struct TruckWaybillItemResponse {
   pub truck_waybill_id: Uuid,
   pub product_id: Uuid,
   pub declared_amount: Decimal,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
 }
 
 impl From<truck_waybill_item::Model> for TruckWaybillItemResponse {
@@ -781,6 +910,7 @@ impl From<truck_waybill_item::Model> for TruckWaybillItemResponse {
       truck_waybill_id: row.truck_waybill_id,
       product_id: row.product_id,
       declared_amount: row.declared_amount,
+      product_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -824,6 +954,9 @@ pub struct RailWaybillResponse {
   pub document_number: String,
   pub date: String,
   pub sender_id: Uuid,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub sender_id_name: Option<String>,
 }
 
 impl From<rail_waybill::Model> for RailWaybillResponse {
@@ -833,6 +966,7 @@ impl From<rail_waybill::Model> for RailWaybillResponse {
       document_number: row.document_number,
       date: row.date.to_string(),
       sender_id: row.sender_id,
+      sender_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -856,6 +990,9 @@ pub struct RailWagonManifestResponse {
   pub declared_mass: Decimal,
   pub measurements: Option<Vec<RailWagonMeasurementResponse>>,
   pub weights: Option<Vec<RailWagonWeightResponse>>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_id_name: Option<String>,
 }
 
 impl From<rail_wagon_manifest::Model> for RailWagonManifestResponse {
@@ -870,6 +1007,7 @@ impl From<rail_wagon_manifest::Model> for RailWagonManifestResponse {
       declared_mass: row.declared_mass,
       measurements: None,
       weights: None,
+      product_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -952,4 +1090,184 @@ pub struct TruckWaybillCompositeResponse {
 pub struct RailWaybillCompositeResponse {
   pub waybill: RailWaybillResponse,
   pub wagon_manifests: Option<Vec<RailWagonManifestResponse>>,
+}
+
+impl ResolveFkNames for AcceptanceResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    if let Some(id) = self.truck_waybill_id { c.truck_waybill_ids.insert(id); }
+    if let Some(id) = self.rail_waybill_id { c.rail_waybill_ids.insert(id); }
+    if let Some(id) = self.transit_dispatch_id { c.dispatch_document_ids.insert(id); }
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.truck_waybill_id_name = self.truck_waybill_id.and_then(|id| r.truck_waybills.get(&id).cloned());
+    self.rail_waybill_id_name = self.rail_waybill_id.and_then(|id| r.rail_waybills.get(&id).cloned());
+    self.transit_dispatch_id_name = self.transit_dispatch_id.and_then(|id| r.dispatch_documents.get(&id).cloned());
+  }
+}
+
+impl ResolveFkNames for AcceptanceItemResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.company_ids.insert(self.contractor_id);
+    c.product_ids.insert(self.product_id);
+    c.storage_ids.insert(self.storage_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+  }
+}
+
+impl ResolveFkNames for DispatchResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.company_ids.insert(self.contractor_id);
+    if let Some(id) = self.destination_base_id { c.base_ids.insert(id); }
+    if let Some(id) = self.exporter_id { c.company_ids.insert(id); }
+    if let Some(id) = self.port_id { c.port_ids.insert(id); }
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
+    self.destination_base_id_name = self.destination_base_id.and_then(|id| r.bases.get(&id).cloned());
+    self.exporter_id_name = self.exporter_id.and_then(|id| r.companies.get(&id).cloned());
+    self.port_id_name = self.port_id.and_then(|id| r.ports.get(&id).cloned());
+  }
+}
+
+impl ResolveFkNames for DispatchItemResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.product_ids.insert(self.product_id);
+    c.storage_ids.insert(self.storage_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+  }
+}
+
+impl ResolveFkNames for DispatchMeasurementResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.storage_ids.insert(self.storage_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+  }
+}
+
+impl ResolveFkNames for PhysicalTransferItemResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.company_ids.insert(self.contractor_id);
+    c.product_ids.insert(self.product_id);
+    c.storage_ids.insert(self.from_storage_id);
+    c.storage_ids.insert(self.to_storage_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+    self.from_storage_id_name = r.storages.get(&self.from_storage_id).cloned();
+    self.to_storage_id_name = r.storages.get(&self.to_storage_id).cloned();
+  }
+}
+
+impl ResolveFkNames for OwnershipTransferItemResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.storage_ids.insert(self.storage_id);
+    c.product_ids.insert(self.product_id);
+    c.company_ids.insert(self.from_contractor_id);
+    c.company_ids.insert(self.to_contractor_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+    self.from_contractor_id_name = r.companies.get(&self.from_contractor_id).cloned();
+    self.to_contractor_id_name = r.companies.get(&self.to_contractor_id).cloned();
+  }
+}
+
+impl ResolveFkNames for BlendingResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.company_ids.insert(self.contractor_id);
+    c.product_ids.insert(self.target_product_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
+    self.target_product_id_name = r.products.get(&self.target_product_id).cloned();
+  }
+}
+
+impl ResolveFkNames for BlendingComponentResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.product_ids.insert(self.source_product_id);
+    c.storage_ids.insert(self.storage_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.source_product_id_name = r.products.get(&self.source_product_id).cloned();
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+  }
+}
+
+impl ResolveFkNames for BlendingResultResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.storage_ids.insert(self.storage_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+  }
+}
+
+impl ResolveFkNames for InventoryReconciliationResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.warehouse_ids.insert(self.warehouse_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
+  }
+}
+
+impl ResolveFkNames for InventoryAdjustmentResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.storage_ids.insert(self.storage_id);
+    c.product_ids.insert(self.product_id);
+    c.company_ids.insert(self.contractor_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
+  }
+}
+
+impl ResolveFkNames for TruckWaybillResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.company_ids.insert(self.sender_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.sender_id_name = r.companies.get(&self.sender_id).cloned();
+  }
+}
+
+impl ResolveFkNames for TruckWaybillItemResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.product_ids.insert(self.product_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+  }
+}
+
+impl ResolveFkNames for RailWaybillResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.company_ids.insert(self.sender_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.sender_id_name = r.companies.get(&self.sender_id).cloned();
+  }
+}
+
+impl ResolveFkNames for RailWagonManifestResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    c.product_ids.insert(self.product_id);
+  }
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.product_id_name = r.products.get(&self.product_id).cloned();
+  }
 }

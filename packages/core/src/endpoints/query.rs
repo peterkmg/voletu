@@ -28,3 +28,14 @@ pub struct PaginationParams {
   #[serde(default, deserialize_with = "deserialize_optional_u64_from_string")]
   pub per_page: Option<u64>,
 }
+
+#[derive(Debug, Default, Deserialize)]
+pub struct EmbedParams {
+  pub embed: Option<String>,
+}
+
+impl EmbedParams {
+  pub fn wants_names(&self) -> bool {
+    self.embed.as_deref() == Some("names")
+  }
+}

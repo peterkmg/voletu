@@ -17,8 +17,6 @@ import { Archive, Play } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BulkActionsBar, DataTable, DataTablePagination, DataTableToolbar } from '~/components/data-table'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
 import { getBlendingColumns } from './blending-columns'
@@ -31,22 +29,7 @@ interface BlendingTableProps {
 
 export function BlendingTable({ data }: BlendingTableProps) {
   const { t } = useTranslation(['documents', 'common'])
-
-  const { data: companiesData } = useCatalogCompanyList()
-  const companyMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const c of companiesData?.data ?? []) map.set(c.id, c.commonName)
-    return map
-  }, [companiesData])
-
-  const { data: productsData } = useCatalogProductList()
-  const productMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const p of productsData?.data ?? []) map.set(p.id, p.commonName)
-    return map
-  }, [productsData])
-
-  const columns = useMemo(() => getBlendingColumns(t, { companyMap, productMap }), [t, companyMap, productMap])
+  const columns = useMemo(() => getBlendingColumns(t), [t])
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])

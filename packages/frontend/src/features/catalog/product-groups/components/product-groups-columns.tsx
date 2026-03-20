@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { ProductGroupResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, ResolvedCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
@@ -53,9 +53,7 @@ export function getProductGroupColumns(t: TFunction): ColumnDef<ProductGroupResp
         />
       ),
       meta: { className: 'w-1/4' },
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.getValue('productTypeId')}</span>
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).productTypeIdName} />,
     },
     {
       accessorKey: 'createdAt',

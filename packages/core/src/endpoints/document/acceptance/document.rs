@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use axum::{
   extract::{Path, Query, State},
-  Extension,
-  Json,
+  Extension, Json,
 };
 use axum_valid::Valid;
 use serde::Deserialize;
@@ -12,7 +11,10 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{AcceptanceResponse, CreateAcceptanceRequest},
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{
+    paths,
+    query::{EmbedParams, PaginationParams},
+  },
   enums,
   services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
   utils::jwt::Claims,
@@ -35,7 +37,8 @@ pub(super) struct AcceptanceQueryParams {
   path = paths::acceptance::ROOT,
   params(
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<AcceptanceResponse>>))
 )]
@@ -43,14 +46,22 @@ pub(super) struct AcceptanceQueryParams {
 pub(super) async fn acceptance_document_list(
   State(state): State<Arc<ApiState>>,
   Query(pagination): Query<PaginationParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<AcceptanceResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .acceptance_document_query_with_names(None, None, pagination.page, pagination.per_page)
+      .await?
+  } else {
     state
       .svc
       .document
       .acceptance_document_query(None, None, pagination.page, pagination.per_page)
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -107,7 +118,8 @@ pub(super) async fn acceptance_document_create_and_execute(
     ("documentNumber" = Option<String>, Query),
     ("status" = Option<enums::DocumentStatus>, Query),
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<AcceptanceResponse>>), (status = 400))
 )]
@@ -115,8 +127,20 @@ pub(super) async fn acceptance_document_create_and_execute(
 pub(super) async fn acceptance_document_query(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<AcceptanceQueryParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<AcceptanceResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .acceptance_document_query_with_names(
+        query.document_number.as_deref(),
+        query.status,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
+  } else {
     state
       .svc
       .document
@@ -126,8 +150,9 @@ pub(super) async fn acceptance_document_query(
         query.pagination.page,
         query.pagination.per_page,
       )
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -136,17 +161,28 @@ pub(super) async fn acceptance_document_query(
   operation_id = "acceptance_document_get",
   summary = "Get acceptance document",
   path = paths::acceptance::BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<AcceptanceResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 pub(super) async fn acceptance_document_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<AcceptanceResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.acceptance_document_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .acceptance_document_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.acceptance_document_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

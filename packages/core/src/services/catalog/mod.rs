@@ -10,6 +10,7 @@ pub mod product_group;
 pub mod product_type;
 pub mod storage;
 pub mod warehouse;
+mod resolve;
 
 pub struct CatalogService {
   pub(super) db: std::sync::Arc<DatabaseConnection>,

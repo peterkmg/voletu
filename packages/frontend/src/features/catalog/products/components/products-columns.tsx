@@ -1,16 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { ProductResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, LookupCell } from '~/components/data-table'
+import { DataTableColumnHeader, DateCell, ResolvedCell } from '~/components/data-table'
 import { Checkbox } from '~/components/ui/checkbox'
 import { DataTableRowActions } from './data-table-row-actions'
 
-interface ProductColumnLookups {
-  productGroupMap: Map<string, string>
-  companyMap: Map<string, string>
-}
-
-export function getProductColumns(t: TFunction, lookups: ProductColumnLookups): ColumnDef<ProductResponse>[] {
+export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
   return [
     {
       id: 'select',
@@ -57,9 +52,7 @@ export function getProductColumns(t: TFunction, lookups: ProductColumnLookups): 
           title={t('catalog:product.columns.productGroupId')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('productGroupId')} lookupMap={lookups.productGroupMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).productGroupIdName} />,
     },
     {
       accessorKey: 'manufacturerId',
@@ -69,9 +62,7 @@ export function getProductColumns(t: TFunction, lookups: ProductColumnLookups): 
           title={t('catalog:product.columns.manufacturerId')}
         />
       ),
-      cell: ({ row }) => (
-        <LookupCell value={row.getValue('manufacturerId')} lookupMap={lookups.companyMap} />
-      ),
+      cell: ({ row }) => <ResolvedCell value={(row.original as any).manufacturerIdName} />,
     },
     {
       accessorKey: 'identification',

@@ -19,7 +19,8 @@ struct BlendingQueryParams {
   path = paths::blending::ROOT,
   params(
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<BlendingResponse>>))
 )]
@@ -27,14 +28,22 @@ struct BlendingQueryParams {
 async fn blending_document_list(
   State(state): State<Arc<ApiState>>,
   Query(pagination): Query<PaginationParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<BlendingResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .blending_document_query_with_names(None, None, None, pagination.page, pagination.per_page)
+      .await?
+  } else {
     state
       .svc
       .document
       .blending_document_query(None, None, None, pagination.page, pagination.per_page)
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -93,7 +102,8 @@ async fn blending_document_create_and_execute(
     ("status" = Option<enums::DocumentStatus>, Query),
     ("contractorId" = Option<Uuid>, Query),
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<BlendingResponse>>), (status = 400))
 )]
@@ -101,8 +111,21 @@ async fn blending_document_create_and_execute(
 async fn blending_document_query(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<BlendingQueryParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<BlendingResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .blending_document_query_with_names(
+        query.document_number.as_deref(),
+        query.status,
+        query.contractor_id,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
+  } else {
     state
       .svc
       .document
@@ -113,8 +136,9 @@ async fn blending_document_query(
         query.pagination.page,
         query.pagination.per_page,
       )
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -123,17 +147,28 @@ async fn blending_document_query(
   operation_id = "blending_document_get",
   summary = "Get blending document",
   path = paths::blending::BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<BlendingResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn blending_document_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<BlendingResponse> {
-  Ok(ApiResponse::success(
-    state.svc.document.blending_document_get(id).await?,
-  ))
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .blending_document_get_with_names(id)
+      .await?
+  } else {
+    state.svc.document.blending_document_get(id).await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(

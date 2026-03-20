@@ -7,12 +7,24 @@ use super::*;
   summary = "List bases",
   description = "Returns operational bases used by topology and sync targeting logic.",
   path = paths::catalog::BASES,
+  params(
+    ("page" = Option<u64>, Query, description = "Page number (1-based)"),
+    ("per_page" = Option<u64>, Query, description = "Items per page"),
+  ),
   responses((status = 200, body = ApiResponse<Vec<BaseResponse>>))
 )]
 #[axum::debug_handler]
-async fn base_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<BaseResponse>> {
+async fn base_list(
+  State(state): State<Arc<ApiState>>,
+  Query(pagination): Query<PaginationParams>,
+) -> ApiResult<Vec<BaseResponse>> {
+  let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
+    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+  } else {
+    None
+  };
   Ok(ApiResponse::success(
-    state.svc.catalog_service.base_list().await?,
+    state.svc.catalog_service.base_list(pg).await?,
   ))
 }
 
@@ -112,11 +124,30 @@ async fn base_hard_delete(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  post,
+  tag = "Catalog",
+  operation_id = "catalog_base_restore",
+  summary = "Restore soft-deleted base",
+  path = paths::catalog::BASES_RESTORE_BY_ID,
+  params(("id" = Uuid, Path)),
+  responses((status = 200), (status = 404))
+)]
+#[axum::debug_handler]
+async fn base_restore(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+) -> ApiResult<()> {
+  state.svc.catalog_service.base_soft_delete_undo(id).await?;
+  Ok(ApiResponse::success(()))
+}
+
 pub(super) fn base_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(base_list, base_create))
     .routes(routes!(base_get, base_update))
     .routes(routes!(base_soft_delete))
     .routes(routes!(base_hard_delete))
+    .routes(routes!(base_restore))
     .with_state(state)
 }

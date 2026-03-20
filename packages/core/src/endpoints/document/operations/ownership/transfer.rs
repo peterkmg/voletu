@@ -17,7 +17,8 @@ struct OwnershipTransferQueryParams {
   path = paths::operations::OWNERSHIP_TRANSFERS,
   params(
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<OwnershipTransferResponse>>))
 )]
@@ -25,14 +26,22 @@ struct OwnershipTransferQueryParams {
 async fn ownership_transfer_list(
   State(state): State<Arc<ApiState>>,
   Query(pagination): Query<PaginationParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<OwnershipTransferResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .ownership_transfer_composite_query_with_names(None, pagination.page, pagination.per_page)
+      .await?
+  } else {
     state
       .svc
       .document
       .ownership_transfer_composite_query(None, pagination.page, pagination.per_page)
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
@@ -41,21 +50,32 @@ async fn ownership_transfer_list(
   operation_id = "ownership_transfer_composite_get",
   summary = "Get ownership transfer composite",
   path = paths::operations::OWNERSHIP_TRANSFERS_COMPOSITE_BY_ID,
-  params(("id" = Uuid, Path)),
+  params(
+    ("id" = Uuid, Path),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
   responses((status = 200, body = ApiResponse<OwnershipTransferResponse>), (status = 404))
 )]
 #[axum::debug_handler]
 async fn ownership_transfer_composite_get(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<OwnershipTransferResponse> {
-  Ok(ApiResponse::success(
+  let row = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .ownership_transfer_composite_get_with_names(id)
+      .await?
+  } else {
     state
       .svc
       .document
       .ownership_transfer_composite_get(id)
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(row))
 }
 
 #[utoipa::path(
@@ -67,7 +87,8 @@ async fn ownership_transfer_composite_get(
   params(
     ("status" = Option<enums::DocumentStatus>, Query),
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query)
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<OwnershipTransferResponse>>), (status = 400))
 )]
@@ -75,8 +96,19 @@ async fn ownership_transfer_composite_get(
 async fn ownership_transfer_query(
   State(state): State<Arc<ApiState>>,
   Query(query): Query<OwnershipTransferQueryParams>,
+  Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<OwnershipTransferResponse>> {
-  Ok(ApiResponse::success(
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .ownership_transfer_composite_query_with_names(
+        query.status,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
+  } else {
     state
       .svc
       .document
@@ -85,8 +117,9 @@ async fn ownership_transfer_query(
         query.pagination.page,
         query.pagination.per_page,
       )
-      .await?,
-  ))
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
 }
 
 #[utoipa::path(
