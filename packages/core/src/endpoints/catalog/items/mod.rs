@@ -24,7 +24,10 @@ use crate::{
     UpdateProductRequest,
     UpdateProductTypeRequest,
   },
-  endpoints::{paths, query::{EmbedParams, PaginationParams}},
+  endpoints::{
+    paths,
+    query::{EmbedParams, PaginationParams},
+  },
 };
 
 mod company;

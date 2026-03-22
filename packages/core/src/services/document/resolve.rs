@@ -1,10 +1,11 @@
 use uuid::Uuid;
 
-use crate::api::ApiError;
-use crate::dtos;
-use crate::enums;
-use crate::services::common::resolve_names;
-use crate::services::DocumentService;
+use crate::{
+  api::ApiError,
+  dtos,
+  enums,
+  services::{common::resolve_names, DocumentService},
+};
 
 impl DocumentService {
   // ── Dispatch ──────────────────────────────
@@ -205,7 +206,6 @@ impl DocumentService {
     Ok(item)
   }
 
-
   // ── Rail waybill ──────────────────────────
 
   pub async fn rail_waybill_list_with_names(
@@ -224,7 +224,6 @@ impl DocumentService {
     resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
     Ok(item)
   }
-
 
   // ── Physical transfer ─────────────────────
 

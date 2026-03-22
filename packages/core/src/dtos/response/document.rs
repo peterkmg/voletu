@@ -2,8 +2,6 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames};
-
 use crate::{
   api::ApiError,
   entities::{
@@ -30,6 +28,7 @@ use crate::{
     truck_weight_doc,
   },
   enums::{AdjustmentType, ArrivalType, BunkerType, DispatchMethod, DispatchPurpose},
+  services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames},
 };
 
 /// Response DTO for the `acceptance_document` entity.
@@ -1069,14 +1068,27 @@ pub struct RailWaybillCompositeResponse {
 
 impl ResolveFkNames for AcceptanceResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    if let Some(id) = self.truck_waybill_id { c.truck_waybill_ids.insert(id); }
-    if let Some(id) = self.rail_waybill_id { c.rail_waybill_ids.insert(id); }
-    if let Some(id) = self.transit_dispatch_id { c.dispatch_document_ids.insert(id); }
+    if let Some(id) = self.truck_waybill_id {
+      c.truck_waybill_ids.insert(id);
+    }
+    if let Some(id) = self.rail_waybill_id {
+      c.rail_waybill_ids.insert(id);
+    }
+    if let Some(id) = self.transit_dispatch_id {
+      c.dispatch_document_ids.insert(id);
+    }
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.truck_waybill_id_name = self.truck_waybill_id.and_then(|id| r.truck_waybills.get(&id).cloned());
-    self.rail_waybill_id_name = self.rail_waybill_id.and_then(|id| r.rail_waybills.get(&id).cloned());
-    self.transit_dispatch_id_name = self.transit_dispatch_id.and_then(|id| r.dispatch_documents.get(&id).cloned());
+    self.truck_waybill_id_name = self
+      .truck_waybill_id
+      .and_then(|id| r.truck_waybills.get(&id).cloned());
+    self.rail_waybill_id_name = self
+      .rail_waybill_id
+      .and_then(|id| r.rail_waybills.get(&id).cloned());
+    self.transit_dispatch_id_name = self
+      .transit_dispatch_id
+      .and_then(|id| r.dispatch_documents.get(&id).cloned());
   }
 }
 
@@ -1086,6 +1098,7 @@ impl ResolveFkNames for AcceptanceItemResponse {
     c.product_ids.insert(self.product_id);
     c.storage_ids.insert(self.storage_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
@@ -1096,14 +1109,25 @@ impl ResolveFkNames for AcceptanceItemResponse {
 impl ResolveFkNames for DispatchResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.company_ids.insert(self.contractor_id);
-    if let Some(id) = self.destination_base_id { c.base_ids.insert(id); }
-    if let Some(id) = self.exporter_id { c.company_ids.insert(id); }
-    if let Some(id) = self.port_id { c.port_ids.insert(id); }
+    if let Some(id) = self.destination_base_id {
+      c.base_ids.insert(id);
+    }
+    if let Some(id) = self.exporter_id {
+      c.company_ids.insert(id);
+    }
+    if let Some(id) = self.port_id {
+      c.port_ids.insert(id);
+    }
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
-    self.destination_base_id_name = self.destination_base_id.and_then(|id| r.bases.get(&id).cloned());
-    self.exporter_id_name = self.exporter_id.and_then(|id| r.companies.get(&id).cloned());
+    self.destination_base_id_name = self
+      .destination_base_id
+      .and_then(|id| r.bases.get(&id).cloned());
+    self.exporter_id_name = self
+      .exporter_id
+      .and_then(|id| r.companies.get(&id).cloned());
     self.port_id_name = self.port_id.and_then(|id| r.ports.get(&id).cloned());
   }
 }
@@ -1113,6 +1137,7 @@ impl ResolveFkNames for DispatchItemResponse {
     c.product_ids.insert(self.product_id);
     c.storage_ids.insert(self.storage_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.product_id_name = r.products.get(&self.product_id).cloned();
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
@@ -1123,6 +1148,7 @@ impl ResolveFkNames for DispatchMeasurementResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.storage_ids.insert(self.storage_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
   }
@@ -1135,6 +1161,7 @@ impl ResolveFkNames for PhysicalTransferItemResponse {
     c.storage_ids.insert(self.from_storage_id);
     c.storage_ids.insert(self.to_storage_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
@@ -1150,6 +1177,7 @@ impl ResolveFkNames for OwnershipTransferItemResponse {
     c.company_ids.insert(self.from_contractor_id);
     c.company_ids.insert(self.to_contractor_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
@@ -1163,6 +1191,7 @@ impl ResolveFkNames for BlendingResponse {
     c.company_ids.insert(self.contractor_id);
     c.product_ids.insert(self.target_product_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.target_product_id_name = r.products.get(&self.target_product_id).cloned();
@@ -1174,6 +1203,7 @@ impl ResolveFkNames for BlendingComponentResponse {
     c.product_ids.insert(self.source_product_id);
     c.storage_ids.insert(self.storage_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.source_product_id_name = r.products.get(&self.source_product_id).cloned();
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
@@ -1184,6 +1214,7 @@ impl ResolveFkNames for BlendingResultResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.storage_ids.insert(self.storage_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
   }
@@ -1193,6 +1224,7 @@ impl ResolveFkNames for InventoryReconciliationResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.warehouse_ids.insert(self.warehouse_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
   }
@@ -1204,6 +1236,7 @@ impl ResolveFkNames for InventoryAdjustmentResponse {
     c.product_ids.insert(self.product_id);
     c.company_ids.insert(self.contractor_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
@@ -1215,6 +1248,7 @@ impl ResolveFkNames for TruckWaybillResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.company_ids.insert(self.sender_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.sender_id_name = r.companies.get(&self.sender_id).cloned();
   }
@@ -1224,6 +1258,7 @@ impl ResolveFkNames for TruckWaybillItemResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.product_ids.insert(self.product_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.product_id_name = r.products.get(&self.product_id).cloned();
   }
@@ -1233,6 +1268,7 @@ impl ResolveFkNames for RailWaybillResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.company_ids.insert(self.sender_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.sender_id_name = r.companies.get(&self.sender_id).cloned();
   }
@@ -1242,6 +1278,7 @@ impl ResolveFkNames for RailWagonManifestResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.product_ids.insert(self.product_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.product_id_name = r.products.get(&self.product_id).cloned();
   }

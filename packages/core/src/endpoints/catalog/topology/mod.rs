@@ -24,7 +24,10 @@ use crate::{
     UpdateWarehouseRequest,
     WarehouseResponse,
   },
-  endpoints::{paths, query::{EmbedParams, PaginationParams}},
+  endpoints::{
+    paths,
+    query::{EmbedParams, PaginationParams},
+  },
 };
 
 mod base;

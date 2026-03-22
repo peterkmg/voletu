@@ -21,12 +21,19 @@ async fn product_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<ProductResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+    Some(crate::services::common::normalize_pagination(
+      pagination.page,
+      pagination.per_page,
+    )?)
   } else {
     None
   };
   let items = if embed.wants_names() {
-    state.svc.catalog_service.product_list_with_names(pg).await?
+    state
+      .svc
+      .catalog_service
+      .product_list_with_names(pg)
+      .await?
   } else {
     state.svc.catalog_service.product_list(pg).await?
   };
@@ -147,7 +154,11 @@ async fn product_restore(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.catalog_service.product_soft_delete_undo(id).await?;
+  state
+    .svc
+    .catalog_service
+    .product_soft_delete_undo(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

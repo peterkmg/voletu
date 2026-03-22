@@ -19,7 +19,10 @@ async fn port_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<PortResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+    Some(crate::services::common::normalize_pagination(
+      pagination.page,
+      pagination.per_page,
+    )?)
   } else {
     None
   };
@@ -134,10 +137,7 @@ async fn port_hard_delete(
   responses((status = 200), (status = 404))
 )]
 #[axum::debug_handler]
-async fn port_restore(
-  State(state): State<Arc<ApiState>>,
-  Path(id): Path<Uuid>,
-) -> ApiResult<()> {
+async fn port_restore(State(state): State<Arc<ApiState>>, Path(id): Path<Uuid>) -> ApiResult<()> {
   state.svc.catalog_service.port_soft_delete_undo(id).await?;
   Ok(ApiResponse::success(()))
 }

@@ -21,12 +21,19 @@ async fn product_group_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<ProductGroupResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+    Some(crate::services::common::normalize_pagination(
+      pagination.page,
+      pagination.per_page,
+    )?)
   } else {
     None
   };
   let items = if embed.wants_names() {
-    state.svc.catalog_service.product_group_list_with_names(pg).await?
+    state
+      .svc
+      .catalog_service
+      .product_group_list_with_names(pg)
+      .await?
   } else {
     state.svc.catalog_service.product_group_list(pg).await?
   };
@@ -69,7 +76,11 @@ async fn product_group_get(
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<ProductGroupResponse> {
   let item = if embed.wants_names() {
-    state.svc.catalog_service.product_group_get_with_names(id).await?
+    state
+      .svc
+      .catalog_service
+      .product_group_get_with_names(id)
+      .await?
   } else {
     state.svc.catalog_service.product_group_get(id).await?
   };

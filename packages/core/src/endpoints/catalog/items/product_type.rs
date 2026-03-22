@@ -19,7 +19,10 @@ async fn product_type_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<ProductTypeResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+    Some(crate::services::common::normalize_pagination(
+      pagination.page,
+      pagination.per_page,
+    )?)
   } else {
     None
   };

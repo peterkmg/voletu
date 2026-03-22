@@ -19,7 +19,10 @@ async fn company_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<CompanyResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(pagination.page, pagination.per_page)?)
+    Some(crate::services::common::normalize_pagination(
+      pagination.page,
+      pagination.per_page,
+    )?)
   } else {
     None
   };
@@ -138,7 +141,11 @@ async fn company_restore(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
 ) -> ApiResult<()> {
-  state.svc.catalog_service.company_soft_delete_undo(id).await?;
+  state
+    .svc
+    .catalog_service
+    .company_soft_delete_undo(id)
+    .await?;
   Ok(ApiResponse::success(()))
 }
 

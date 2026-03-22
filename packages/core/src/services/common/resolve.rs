@@ -3,10 +3,21 @@ use std::collections::{HashMap, HashSet};
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
-use crate::api::ApiError;
-use crate::entities::{
-  base, company, dispatch_document, port, product, product_group, product_type, rail_waybill,
-  storage, truck_waybill, warehouse,
+use crate::{
+  api::ApiError,
+  entities::{
+    base,
+    company,
+    dispatch_document,
+    port,
+    product,
+    product_group,
+    product_type,
+    rail_waybill,
+    storage,
+    truck_waybill,
+    warehouse,
+  },
 };
 
 /// Collects FK UUIDs by target entity type.
@@ -151,15 +162,12 @@ impl ResolvedNames {
     if !collector.dispatch_document_ids.is_empty() {
       let rows = dispatch_document::Entity::find()
         .filter(
-          dispatch_document::Column::Id
-            .is_in(collector.dispatch_document_ids.iter().copied()),
+          dispatch_document::Column::Id.is_in(collector.dispatch_document_ids.iter().copied()),
         )
         .all(db)
         .await?;
       for r in rows {
-        resolved
-          .dispatch_documents
-          .insert(r.id, r.document_number);
+        resolved.dispatch_documents.insert(r.id, r.document_number);
       }
     }
 

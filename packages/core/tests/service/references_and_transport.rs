@@ -247,13 +247,23 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
 
     assert_eq!(doc_service.truck_waybill_list(None).await.unwrap().len(), 1);
     assert_eq!(
-      doc_service.truck_waybill_item_list(None).await.unwrap().len(),
+      doc_service
+        .truck_waybill_item_list(None)
+        .await
+        .unwrap()
+        .len(),
       1
     );
-    assert_eq!(doc_service.truck_weight_doc_list(None).await.unwrap().len(), 1);
+    assert_eq!(
+      doc_service.truck_weight_doc_list(None).await.unwrap().len(),
+      1
+    );
     assert_eq!(doc_service.rail_waybill_list(None).await.unwrap().len(), 1);
     assert_eq!(doc_service.rail_manifest_list(None).await.unwrap().len(), 1);
-    assert_eq!(doc_service.rail_measurement_list(None).await.unwrap().len(), 1);
+    assert_eq!(
+      doc_service.rail_measurement_list(None).await.unwrap().len(),
+      1
+    );
     assert_eq!(doc_service.rail_weight_list(None).await.unwrap().len(), 1);
 
     // Ensure helper data is actually reused by checking records are linked to seeded IDs.

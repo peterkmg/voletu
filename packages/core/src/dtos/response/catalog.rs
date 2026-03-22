@@ -2,17 +2,10 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::entities::{
-  base,
-  company,
-  port,
-  product,
-  product_group,
-  product_type,
-  storage,
-  warehouse,
+use crate::{
+  entities::{base, company, port, product, product_group, product_type, storage, warehouse},
+  services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames},
 };
-use crate::services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames};
 
 /// Response DTO for the `company` entity.
 #[response_dto(service_fields(common))]
@@ -274,6 +267,7 @@ impl ResolveFkNames for ProductGroupResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.product_type_ids.insert(self.product_type_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.product_type_id_name = r.product_types.get(&self.product_type_id).cloned();
   }
@@ -286,6 +280,7 @@ impl ResolveFkNames for ProductResponse {
       c.company_ids.insert(id);
     }
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.product_group_id_name = r.product_groups.get(&self.product_group_id).cloned();
     self.manufacturer_id_name = self
@@ -298,6 +293,7 @@ impl ResolveFkNames for WarehouseResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.base_ids.insert(self.base_id);
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.base_id_name = r.bases.get(&self.base_id).cloned();
   }
@@ -310,6 +306,7 @@ impl ResolveFkNames for StorageResponse {
       c.product_type_ids.insert(id);
     }
   }
+
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
     self.product_type_id_name = self
