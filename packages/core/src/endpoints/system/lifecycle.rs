@@ -77,9 +77,7 @@ async fn restart_api(
   )
 )]
 #[axum::debug_handler]
-async fn node_status(
-  State(state): State<Arc<ApiState>>,
-) -> ApiResult<NodeStatusResponse> {
+async fn node_status(State(state): State<Arc<ApiState>>) -> ApiResult<NodeStatusResponse> {
   let node_name = database_instance::Entity::find_by_id(state.cfg.node.db_id)
     .one(state.db.as_ref())
     .await

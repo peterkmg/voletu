@@ -88,8 +88,7 @@ pub fn validate_complete_initialization_request(
 ) -> Result<(), ValidationError> {
   if matches!(value.node_type, Some(NodeType::Peripheral)) && value.central_api_url.is_none() {
     let mut error = ValidationError::new("initialization_peripheral_central_url_required");
-    error.message =
-      Some("centralApiUrl is required when nodeType is PERIPHERAL".into());
+    error.message = Some("centralApiUrl is required when nodeType is PERIPHERAL".into());
     return Err(error);
   }
 

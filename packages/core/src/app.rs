@@ -5,13 +5,12 @@ use std::{
 };
 
 use anyhow::Result;
+use sea_orm::EntityTrait;
 use tokio::{
   net::TcpListener,
   sync::{oneshot, watch},
 };
 use tracing::info;
-
-use sea_orm::EntityTrait;
 
 use crate::{
   api::{router::build_router, ApiState},

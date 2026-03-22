@@ -1,9 +1,6 @@
 use std::{
   collections::HashMap,
-  sync::{
-    atomic::AtomicBool,
-    Arc, Mutex,
-  },
+  sync::{atomic::AtomicBool, Arc, Mutex},
   time::Instant,
 };
 

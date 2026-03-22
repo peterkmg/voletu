@@ -6,12 +6,12 @@ use axum::{
   response::Response,
 };
 
-use crate::{api::{ApiError, ApiState}, endpoints::paths};
+use crate::{
+  api::{ApiError, ApiState},
+  endpoints::paths,
+};
 
-const INIT_EXEMPT_PATHS: &[&str] = &[
-  paths::node::INITIALIZE,
-  paths::auth::CHANGE_PASSWORD,
-];
+const INIT_EXEMPT_PATHS: &[&str] = &[paths::node::INITIALIZE, paths::auth::CHANGE_PASSWORD];
 
 pub async fn init_guard_middleware(
   State(state): State<Arc<ApiState>>,

@@ -123,8 +123,7 @@ impl SystemService {
     let local_db_id = local.local_db_id;
     let mut local_model: local::ActiveModel = local.into();
 
-    let needs_instance_update =
-      requested_node_type.is_some() || dto.node_name.is_some();
+    let needs_instance_update = requested_node_type.is_some() || dto.node_name.is_some();
     if needs_instance_update {
       let mut instance_model: database_instance::ActiveModel =
         database_instance::Entity::find_by_id(local_db_id)
