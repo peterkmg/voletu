@@ -1,12 +1,23 @@
-use axum::Json;
+use std::sync::{atomic::Ordering, Arc};
+
+use axum::{extract::State, Json};
+use sea_orm::EntityTrait;
 use serde::Serialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-use crate::{api::ApiResponse, endpoints::paths};
+use crate::{
+  api::{ApiResponse, ApiState},
+  endpoints::paths,
+  entities::database_instance,
+};
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct HealthData {
   pub status: String,
+  pub is_initialized: bool,
+  pub node_type: String,
+  pub node_name: String,
 }
 
 #[utoipa::path(
@@ -14,17 +25,30 @@ pub struct HealthData {
   tag = "System - Health",
   operation_id = "system_health",
   summary = "Health check",
-  description = "Returns basic API liveness status used by orchestration and readiness probes.",
+  description = "Returns API liveness status and node identity information.",
   path = paths::health::ROOT,
   responses((status = 200, description = "Health check", body = ApiResponse<HealthData>))
 )]
 #[axum::debug_handler]
-async fn health() -> Json<ApiResponse<HealthData>> {
+async fn health(State(state): State<Arc<ApiState>>) -> Json<ApiResponse<HealthData>> {
+  let node_name = database_instance::Entity::find_by_id(state.cfg.node.db_id)
+    .one(state.db.as_ref())
+    .await
+    .ok()
+    .flatten()
+    .map(|row| row.common_name)
+    .unwrap_or_default();
+
   Json(ApiResponse::success(HealthData {
     status: "ok".to_string(),
+    is_initialized: state.is_initialized.load(Ordering::Relaxed),
+    node_type: state.cfg.node.node_type.clone(),
+    node_name,
   }))
 }
 
-pub fn health_routes() -> OpenApiRouter {
-  OpenApiRouter::new().routes(routes!(health))
+pub fn health_routes(state: Arc<ApiState>) -> OpenApiRouter {
+  OpenApiRouter::new()
+    .routes(routes!(health))
+    .with_state(state)
 }

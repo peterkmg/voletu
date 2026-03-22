@@ -2,10 +2,13 @@ import { Outlet } from '@tanstack/react-router'
 import { useState } from 'react'
 import { DensityProvider } from '~/components/data-table'
 import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar'
+import { useHealthCheck } from '~/shared/api/hooks/use-node-status'
 import { cn } from '~/lib/utils'
 import { AppSidebar } from './app-sidebar'
+import { NodeInitBanner } from './node-init-banner'
 
 export function AuthenticatedLayout() {
+  useHealthCheck()
   const [sidebarOpen, setSidebarOpen] = useState(
     () => localStorage.getItem('voletu.sidebar') !== 'false',
   )
@@ -26,6 +29,7 @@ export function AuthenticatedLayout() {
             'peer-data-[variant=inset]:has-data-[layout=fixed]:h-full',
           )}
         >
+          <NodeInitBanner />
           <Outlet />
         </SidebarInset>
       </SidebarProvider>

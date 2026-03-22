@@ -19,6 +19,7 @@ import { Route as AuthenticatedTransportTruckWaybillsIndexRouteImport } from './
 import { Route as AuthenticatedTransportRailWaybillsIndexRouteImport } from './routes/_authenticated/transport/rail-waybills/index'
 import { Route as AuthenticatedSystemUsersIndexRouteImport } from './routes/_authenticated/system/users/index'
 import { Route as AuthenticatedSystemSyncIndexRouteImport } from './routes/_authenticated/system/sync/index'
+import { Route as AuthenticatedSystemInitIndexRouteImport } from './routes/_authenticated/system/init/index'
 import { Route as AuthenticatedDocumentsPhysicalTransferIndexRouteImport } from './routes/_authenticated/documents/physical-transfer/index'
 import { Route as AuthenticatedDocumentsOwnershipTransferIndexRouteImport } from './routes/_authenticated/documents/ownership-transfer/index'
 import { Route as AuthenticatedDocumentsInventoryReconciliationIndexRouteImport } from './routes/_authenticated/documents/inventory-reconciliation/index'
@@ -87,6 +88,12 @@ const AuthenticatedSystemSyncIndexRoute =
   AuthenticatedSystemSyncIndexRouteImport.update({
     id: '/system/sync/',
     path: '/system/sync/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSystemInitIndexRoute =
+  AuthenticatedSystemInitIndexRouteImport.update({
+    id: '/system/init/',
+    path: '/system/init/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDocumentsPhysicalTransferIndexRoute =
@@ -194,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/documents/inventory-reconciliation/': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/documents/ownership-transfer/': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/documents/physical-transfer/': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  '/system/init/': typeof AuthenticatedSystemInitIndexRoute
   '/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users/': typeof AuthenticatedSystemUsersIndexRoute
   '/transport/rail-waybills/': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -219,6 +227,7 @@ export interface FileRoutesByTo {
   '/documents/inventory-reconciliation': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/documents/ownership-transfer': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/documents/physical-transfer': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  '/system/init': typeof AuthenticatedSystemInitIndexRoute
   '/system/sync': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users': typeof AuthenticatedSystemUsersIndexRoute
   '/transport/rail-waybills': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -246,6 +255,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/inventory-reconciliation/': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/_authenticated/documents/ownership-transfer/': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/_authenticated/documents/physical-transfer/': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  '/_authenticated/system/init/': typeof AuthenticatedSystemInitIndexRoute
   '/_authenticated/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/_authenticated/system/users/': typeof AuthenticatedSystemUsersIndexRoute
   '/_authenticated/transport/rail-waybills/': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/documents/inventory-reconciliation/'
     | '/documents/ownership-transfer/'
     | '/documents/physical-transfer/'
+    | '/system/init/'
     | '/system/sync/'
     | '/system/users/'
     | '/transport/rail-waybills/'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/documents/inventory-reconciliation'
     | '/documents/ownership-transfer'
     | '/documents/physical-transfer'
+    | '/system/init'
     | '/system/sync'
     | '/system/users'
     | '/transport/rail-waybills'
@@ -324,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/inventory-reconciliation/'
     | '/_authenticated/documents/ownership-transfer/'
     | '/_authenticated/documents/physical-transfer/'
+    | '/_authenticated/system/init/'
     | '/_authenticated/system/sync/'
     | '/_authenticated/system/users/'
     | '/_authenticated/transport/rail-waybills/'
@@ -406,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/system/sync'
       fullPath: '/system/sync/'
       preLoaderRoute: typeof AuthenticatedSystemSyncIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/system/init/': {
+      id: '/_authenticated/system/init/'
+      path: '/system/init'
+      fullPath: '/system/init/'
+      preLoaderRoute: typeof AuthenticatedSystemInitIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/documents/physical-transfer/': {
@@ -527,6 +547,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsInventoryReconciliationIndexRoute: typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   AuthenticatedDocumentsOwnershipTransferIndexRoute: typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   AuthenticatedDocumentsPhysicalTransferIndexRoute: typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  AuthenticatedSystemInitIndexRoute: typeof AuthenticatedSystemInitIndexRoute
   AuthenticatedSystemSyncIndexRoute: typeof AuthenticatedSystemSyncIndexRoute
   AuthenticatedSystemUsersIndexRoute: typeof AuthenticatedSystemUsersIndexRoute
   AuthenticatedTransportRailWaybillsIndexRoute: typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -563,6 +584,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDocumentsOwnershipTransferIndexRoute,
   AuthenticatedDocumentsPhysicalTransferIndexRoute:
     AuthenticatedDocumentsPhysicalTransferIndexRoute,
+  AuthenticatedSystemInitIndexRoute: AuthenticatedSystemInitIndexRoute,
   AuthenticatedSystemSyncIndexRoute: AuthenticatedSystemSyncIndexRoute,
   AuthenticatedSystemUsersIndexRoute: AuthenticatedSystemUsersIndexRoute,
   AuthenticatedTransportRailWaybillsIndexRoute:

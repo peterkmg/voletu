@@ -181,6 +181,7 @@ pub async fn prepare_node_db(
     .await
     .unwrap()
     .unwrap();
+  let local_db_id = local_row.local_db_id;
 
   if let Some(base_id) = base_id {
     with_audit_context(Uuid::now_v7(), node_cfg.db_id, || async {
@@ -205,7 +206,7 @@ pub async fn prepare_node_db(
   }
 
   with_audit_context(Uuid::now_v7(), node_cfg.db_id, || async {
-    let model = database_instance::Entity::find_by_id(local_row.local_db_id)
+    let model = database_instance::Entity::find_by_id(local_db_id)
       .one(&db)
       .await
       .unwrap()
@@ -215,10 +216,14 @@ pub async fn prepare_node_db(
     am.node_type = Set(node_type);
     am.base_id = Set(base_id);
     am.update(&db).await.unwrap();
+
+    let mut local_am = local_row.into_active_model();
+    local_am.is_initialized = Set(true);
+    local_am.update(&db).await.unwrap();
   })
   .await;
 
-  local_row.local_db_id
+  local_db_id
 }
 
 pub async fn register_remote_node_on_central(

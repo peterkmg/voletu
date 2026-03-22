@@ -11,11 +11,14 @@ use tokio::{
 };
 use tracing::info;
 
+use sea_orm::EntityTrait;
+
 use crate::{
   api::{router::build_router, ApiState},
   config::ApiConfig,
   db::init_database,
-  worker::spawn_sync_worker,
+  entities::local,
+  worker::{spawn_sync_worker, WorkerStatus},
   DbConfig,
   JwtConfig,
 };
@@ -48,8 +51,22 @@ pub async fn serve_api(
     let (restart_tx, restart_rx) = oneshot::channel();
     let restart_tx = Arc::new(Mutex::new(Some(restart_tx)));
 
+    let is_initialized = local::Entity::find_by_id(1)
+      .one(db.as_ref())
+      .await?
+      .map(|row| row.is_initialized)
+      .unwrap_or(false);
+
+    let worker_status = Arc::new(tokio::sync::RwLock::new(WorkerStatus::default()));
+
     info!("Initializing API state...");
-    let state = Arc::new(ApiState::new(db.clone(), cfg.clone(), restart_tx.clone()));
+    let state = Arc::new(ApiState::new(
+      db.clone(),
+      cfg.clone(),
+      restart_tx.clone(),
+      worker_status.clone(),
+      is_initialized,
+    ));
 
     let mut worker_shutdown_tx = None;
     let mut worker_task = None;
@@ -62,7 +79,7 @@ pub async fn serve_api(
     if has_central_api_url {
       let (tx, rx) = oneshot::channel();
       worker_shutdown_tx = Some(tx);
-      worker_task = Some(spawn_sync_worker(db, cfg.clone(), rx));
+      worker_task = Some(spawn_sync_worker(db, cfg.clone(), rx, worker_status));
     }
 
     info!("Building API routes...");

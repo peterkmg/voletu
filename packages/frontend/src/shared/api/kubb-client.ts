@@ -1,4 +1,5 @@
 import { useAuthStore } from '~/stores/auth-store'
+import { useNodeStore } from '~/stores/node-store'
 import { isTokenExpiringSoon } from '~/shared/auth/jwt-decode'
 import { refreshLock } from '~/shared/auth/refresh'
 
@@ -125,6 +126,19 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
       return client<TData, _TError, TVariables>(config, true)
     }
     // Refresh failed — fall through to throw below.
+  }
+
+  // 403 NODE_NOT_INITIALIZED interceptor: update the node store so the
+  // banner/UI reflects the uninitialized state immediately.
+  if (response.status === 403) {
+    const cloned = response.clone()
+    try {
+      const body = await cloned.json() as { error?: { code?: string } }
+      if (body?.error?.code === 'NODE_NOT_INITIALIZED') {
+        useNodeStore.getState().setStatus({ isInitialized: false })
+      }
+    }
+    catch { /* ignore parse failures, fall through to generic error */ }
   }
 
   if (!response.ok) {

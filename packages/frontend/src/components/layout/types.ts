@@ -4,6 +4,7 @@ interface BaseNavItem {
   title: string
   badge?: string
   icon?: LucideIcon
+  roles?: string[]
 }
 
 type NavLink = BaseNavItem & {
@@ -21,6 +22,7 @@ type NavItem = NavLink | NavCollapsible
 interface NavGroup {
   title: string
   items: NavItem[]
+  roles?: string[]
 }
 
 interface SidebarData {

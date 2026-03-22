@@ -17,12 +17,15 @@ mod cycle;
 mod state;
 mod topology;
 
+pub use state::{WorkerState, WorkerStatus};
+
 pub fn spawn_sync_worker(
   db: Arc<DatabaseConnection>,
   cfg: Arc<ApiConfig>,
   shutdown_rx: oneshot::Receiver<()>,
+  shared_status: Arc<tokio::sync::RwLock<WorkerStatus>>,
 ) -> tokio::task::JoinHandle<()> {
-  spawn_sync_worker_with_config(db, cfg, shutdown_rx, SyncConfig::default())
+  spawn_sync_worker_with_config(db, cfg, shutdown_rx, SyncConfig::default(), shared_status)
 }
 
 pub fn spawn_sync_worker_with_config(
@@ -30,6 +33,7 @@ pub fn spawn_sync_worker_with_config(
   cfg: Arc<ApiConfig>,
   mut shutdown_rx: oneshot::Receiver<()>,
   config: SyncConfig,
+  shared_status: Arc<tokio::sync::RwLock<WorkerStatus>>,
 ) -> tokio::task::JoinHandle<()> {
   tokio::spawn(async move {
     let client = Client::new();
@@ -37,7 +41,7 @@ pub fn spawn_sync_worker_with_config(
     let mut tick = time::interval(config.tick_interval);
     tick.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
 
-    let mut state = state::WorkerState::Sleeping;
+    let mut worker_state = state::WorkerState::Sleeping;
     let mut is_online = false;
     let mut has_updates = false;
     let mut last_local_highest = Uuid::nil();
@@ -55,18 +59,21 @@ pub fn spawn_sync_worker_with_config(
             Ok(config) => config,
             Err(error) => {
               warn!(%error, "sync worker could not load local topology");
-              state::transition(&mut state, state::WorkerState::Backoff);
+              state::transition(&mut worker_state, state::WorkerState::Backoff);
+              shared_status.write().await.state = worker_state;
               continue;
             }
           };
 
           if !node_type.eq_ignore_ascii_case("PERIPHERAL") {
-            state::transition(&mut state, state::WorkerState::Sleeping);
+            state::transition(&mut worker_state, state::WorkerState::Sleeping);
+            shared_status.write().await.state = worker_state;
             continue;
           }
 
           let Some(central_api_url) = central_api_url.map(|value| normalize_base_url(&value)) else {
-            state::transition(&mut state, state::WorkerState::Sleeping);
+            state::transition(&mut worker_state, state::WorkerState::Sleeping);
+            shared_status.write().await.state = worker_state;
             continue;
           };
 
@@ -74,7 +81,8 @@ pub fn spawn_sync_worker_with_config(
             Ok(status) => status,
             Err(error) => {
               warn!(%error, "sync worker could not fetch local status");
-              state::transition(&mut state, state::WorkerState::Backoff);
+              state::transition(&mut worker_state, state::WorkerState::Backoff);
+              shared_status.write().await.state = worker_state;
               continue;
             }
           };
@@ -98,25 +106,34 @@ pub fn spawn_sync_worker_with_config(
           }
 
           if !is_online {
-            state::transition(&mut state, state::WorkerState::Offline);
+            state::transition(&mut worker_state, state::WorkerState::Offline);
+            shared_status.write().await.state = worker_state;
             continue;
           }
 
           if !has_updates {
-            state::transition(&mut state, state::WorkerState::OnlineIdle);
+            state::transition(&mut worker_state, state::WorkerState::OnlineIdle);
+            shared_status.write().await.state = worker_state;
             continue;
           }
 
-          state::transition(&mut state, state::WorkerState::Syncing);
+          state::transition(&mut worker_state, state::WorkerState::Syncing);
+          shared_status.write().await.state = worker_state;
           match cycle::sync_once(&client, &sync_service, &central_api_url, local_node_id, &config).await {
             Ok(changed) => {
               has_updates = false;
-              state::transition(&mut state, state::WorkerState::OnlineIdle);
+              state::transition(&mut worker_state, state::WorkerState::OnlineIdle);
+              {
+                let mut status = shared_status.write().await;
+                status.state = worker_state;
+                status.last_sync_at = Some(chrono::Utc::now());
+              }
               debug!(changed, "sync worker cycle completed");
             }
             Err(error) => {
               warn!(%error, "sync worker cycle failed");
-              state::transition(&mut state, state::WorkerState::Backoff);
+              state::transition(&mut worker_state, state::WorkerState::Backoff);
+              shared_status.write().await.state = worker_state;
             }
           }
         }

@@ -122,15 +122,27 @@ impl SystemService {
 
     let local_db_id = local.local_db_id;
     let mut local_model: local::ActiveModel = local.into();
-    if let Some(db_node_type) = &requested_node_type {
+
+    let needs_instance_update =
+      requested_node_type.is_some() || dto.node_name.is_some();
+    if needs_instance_update {
       let mut instance_model: database_instance::ActiveModel =
         database_instance::Entity::find_by_id(local_db_id)
           .one(&txn)
           .await?
           .ok_or_else(|| ApiError::Internal(anyhow!("Database instance row is missing")))?
           .into();
-      instance_model.node_type = Set(*db_node_type);
+      if let Some(db_node_type) = &requested_node_type {
+        instance_model.node_type = Set(*db_node_type);
+      }
+      if let Some(node_name) = &dto.node_name {
+        instance_model.common_name = Set(node_name.clone());
+      }
       instance_model.update(&txn).await?;
+    }
+
+    if let Some(central_api_url) = &dto.central_api_url {
+      local_model.central_api_url = Set(Some(central_api_url.clone()));
     }
 
     local_model.is_initialized = Set(true);

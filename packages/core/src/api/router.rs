@@ -12,6 +12,7 @@ use crate::{
     auth::auth_middleware,
     error::error_middleware,
     idempotency::idempotency_middleware,
+    init_guard::init_guard_middleware,
   },
 };
 
@@ -22,7 +23,7 @@ pub fn build_router(state: Arc<ApiState>) -> Router {
     .allow_origin(tower_http::cors::Any);
 
   let mut public = OpenApiRouter::new()
-    .merge(endpoints::health::health_routes())
+    .merge(endpoints::health::health_routes(state.clone()))
     .merge(endpoints::auth::auth_public_routes(state.clone()))
     .merge(endpoints::sync::sync_routes(state.clone()));
 
@@ -41,10 +42,17 @@ pub fn build_router(state: Arc<ApiState>) -> Router {
 
   let (router, api) = OpenApiRouter::new()
     .merge(public)
-    .merge(protected.layer(middleware::from_fn_with_state(
-      state.clone(),
-      auth_middleware,
-    )))
+    .merge(
+      protected
+        .layer(middleware::from_fn_with_state(
+          state.clone(),
+          init_guard_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+          state.clone(),
+          auth_middleware,
+        )),
+    )
     .layer(middleware::from_fn_with_state(
       state.clone(),
       idempotency_middleware,

@@ -11,6 +11,7 @@ pub mod auth {
 pub mod node {
   pub const INITIALIZE: &str = "/node/initialize";
   pub const RESTART: &str = "/node/restart";
+  pub const STATUS: &str = "/node/status";
 }
 
 pub mod users {

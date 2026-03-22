@@ -4,8 +4,10 @@ import { Main } from '~/components/layout/main'
 import { useSyncAuditLogList } from '~/generated/hooks/SyncHooks/useSyncAuditLogList'
 import { useSyncStatus } from '~/generated/hooks/SyncHooks/useSyncStatus'
 import { useSyncWatermarkList } from '~/generated/hooks/SyncHooks/useSyncWatermarkList'
+import { useNodeStatus } from '~/shared/api/hooks/use-node-status'
 import { AuditLogTable } from './components/audit-log-table'
 import { SyncStatusCard } from './components/sync-status-card'
+import { WorkerStatusCard } from './components/worker-status-card'
 import { WatermarksTable } from './components/watermarks-table'
 
 export function SyncDashboard() {
@@ -13,6 +15,9 @@ export function SyncDashboard() {
 
   const { data: statusData, isLoading: statusLoading } = useSyncStatus()
   const status = statusData?.data
+
+  const { data: nodeStatusData, isLoading: nodeStatusLoading } = useNodeStatus()
+  const nodeStatus = nodeStatusData?.data
 
   const { data: watermarksData, isLoading: watermarksLoading } = useSyncWatermarkList()
   const watermarks = watermarksData?.data ?? []
@@ -33,6 +38,7 @@ export function SyncDashboard() {
           </div>
         </div>
 
+        <WorkerStatusCard data={nodeStatus} isLoading={nodeStatusLoading} />
         <SyncStatusCard data={status} isLoading={statusLoading} />
         <WatermarksTable data={watermarks} isLoading={watermarksLoading} />
         <AuditLogTable data={auditLogs} isLoading={auditLogsLoading} />

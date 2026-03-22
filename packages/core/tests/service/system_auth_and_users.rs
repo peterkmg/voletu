@@ -211,6 +211,8 @@ async fn complete_initialization_replace_rotates_bootstrap_admin_and_marks_local
       .complete_initialization(&CompleteInitializationRequest {
         action: InitializeAdminAction::Replace,
         node_type: None,
+        node_name: None,
+        central_api_url: None,
         new_username: Some("root".to_string()),
         new_password: Some("root-password".to_string()),
         fullname: Some("Root User".to_string()),
@@ -271,6 +273,8 @@ async fn complete_initialization_delete_removes_bootstrap_admin_when_another_loc
       .complete_initialization(&CompleteInitializationRequest {
         action: InitializeAdminAction::Delete,
         node_type: None,
+        node_name: None,
+        central_api_url: None,
         new_username: None,
         new_password: None,
         fullname: None,
@@ -321,6 +325,8 @@ async fn complete_initialization_updates_node_type_in_db() {
       .complete_initialization(&CompleteInitializationRequest {
         action: InitializeAdminAction::Replace,
         node_type: Some(NodeType::Central),
+        node_name: None,
+        central_api_url: None,
         new_username: Some("root".to_string()),
         new_password: Some("root-password".to_string()),
         fullname: Some("Root User".to_string()),

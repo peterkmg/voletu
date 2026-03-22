@@ -6,7 +6,7 @@ use crate::{
     document::{CreateDispatchRequest, CreatePhysicalTransferRequest},
     system::CompleteInitializationRequest,
   },
-  enums::{DispatchMethod, DispatchPurpose, InitializeAdminAction},
+  enums::{DispatchMethod, DispatchPurpose, InitializeAdminAction, NodeType},
 };
 
 pub fn validate_non_negative_decimal(value: &Decimal) -> Result<(), ValidationError> {
@@ -86,6 +86,13 @@ pub fn validate_physical_transfer_request(
 pub fn validate_complete_initialization_request(
   value: &CompleteInitializationRequest,
 ) -> Result<(), ValidationError> {
+  if matches!(value.node_type, Some(NodeType::Peripheral)) && value.central_api_url.is_none() {
+    let mut error = ValidationError::new("initialization_peripheral_central_url_required");
+    error.message =
+      Some("centralApiUrl is required when nodeType is PERIPHERAL".into());
+    return Err(error);
+  }
+
   match value.action {
     InitializeAdminAction::Replace => {
       if value.new_username.is_none() || value.new_password.is_none() || value.fullname.is_none() {

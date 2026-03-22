@@ -122,6 +122,9 @@ async fn complete_initialization(
   Valid(Json(req)): Valid<Json<CompleteInitializationRequest>>,
 ) -> ApiResult<CompleteInitializationResponse> {
   state.svc.system.complete_initialization(&req).await?;
+  state
+    .is_initialized
+    .store(true, std::sync::atomic::Ordering::Relaxed);
   request_restart(&state.restart_tx)?;
   Ok(ApiResponse::success(CompleteInitializationResponse {
     message: "Initialization completed".to_string(),

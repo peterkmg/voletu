@@ -25,6 +25,10 @@ pub struct ChangePasswordRequest {
 pub struct CompleteInitializationRequest {
   pub action: InitializeAdminAction,
   pub node_type: Option<NodeType>,
+  #[validate(length(min = 2, max = 100))]
+  pub node_name: Option<String>,
+  #[validate(url)]
+  pub central_api_url: Option<String>,
   #[validate(length(min = 3, max = 50))]
   pub new_username: Option<String>,
   #[validate(length(min = 8))]

@@ -9,6 +9,7 @@ use voletu_core::{
   api::ApiState,
   config::{ApiConfig, DbConfig, DbParams, JwtConfig, NodeConfig},
   entities::local,
+  worker::WorkerStatus,
 };
 
 pub mod fixtures;
@@ -69,5 +70,6 @@ pub fn test_api_state_with_default_restart_controls(
   let (restart_tx, restart_rx) = oneshot::channel();
   drop(restart_rx);
   let restart_tx = Arc::new(Mutex::new(Some(restart_tx)));
-  ApiState::new(db, cfg, restart_tx)
+  let worker_status = Arc::new(tokio::sync::RwLock::new(WorkerStatus::default()));
+  ApiState::new(db, cfg, restart_tx, worker_status, true)
 }

@@ -38,6 +38,10 @@ async fn restart_endpoint_requires_admin_role() {
     db.clone(),
     Arc::new(test_config_for_db(&db).await),
     Arc::new(Mutex::new(Some(restart_tx))),
+    Arc::new(tokio::sync::RwLock::new(
+      voletu_core::worker::WorkerStatus::default(),
+    )),
+    true,
   )));
 
   let admin_token = login_admin_token(&app).await;
@@ -96,6 +100,10 @@ async fn restart_endpoint_accepts_admin_and_rejects_repeated_trigger() {
     db.clone(),
     Arc::new(test_config_for_db(&db).await),
     Arc::new(Mutex::new(Some(restart_tx))),
+    Arc::new(tokio::sync::RwLock::new(
+      voletu_core::worker::WorkerStatus::default(),
+    )),
+    true,
   )));
 
   let admin_token = login_admin_token(&app).await;
@@ -131,6 +139,10 @@ async fn restart_endpoint_rejects_access_tokens_signed_with_a_different_secret()
     db.clone(),
     Arc::new(original_cfg.clone()),
     Arc::new(Mutex::new(None)),
+    Arc::new(tokio::sync::RwLock::new(
+      voletu_core::worker::WorkerStatus::default(),
+    )),
+    true,
   )));
   let stale_token = login_admin_token(&original_app).await;
 
@@ -147,6 +159,10 @@ async fn restart_endpoint_rejects_access_tokens_signed_with_a_different_secret()
     db,
     Arc::new(other_cfg),
     Arc::new(Mutex::new(None)),
+    Arc::new(tokio::sync::RwLock::new(
+      voletu_core::worker::WorkerStatus::default(),
+    )),
+    true,
   )));
 
   with_auth_token(stale_token, async {
