@@ -113,15 +113,25 @@
     "system": "System"
   },
   "titlebar": {
+    "file": "File",
     "view": "View",
+    "go": "Go",
     "help": "Help",
+    "settings": "Settings",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "signOutConfirm": "You will be signed out of your account.",
+    "quit": "Quit",
     "toggleSidebar": "Toggle Sidebar",
+    "fullscreen": "Toggle Fullscreen",
     "density": "Density",
     "densityCompact": "Compact",
     "densityNormal": "Normal",
     "densityComfortable": "Comfortable",
     "themeMenu": "Theme",
     "aboutVoletu": "About Voletu",
+    "aboutDescription": "Inventory management system",
+    "aboutVersion": "Version {{version}}",
     "keyboardShortcuts": "Keyboard Shortcuts"
   }
 }

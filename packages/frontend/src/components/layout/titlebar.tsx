@@ -1,17 +1,32 @@
 import { useCallback, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
+import { useDragWindow } from '~/shared/tauri/drag-window'
 import { TitlebarMenu } from './titlebar-menu'
 
-// Dynamically import Tauri window API only in Tauri context
+// Lazily resolved + cached Tauri window handle
+let cachedWindow: Awaited<
+  ReturnType<typeof import('@tauri-apps/api/window').getCurrentWindow>
+> | null = null
+
 async function getTauriWindow() {
+  if (cachedWindow) return cachedWindow
   try {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
-    return getCurrentWindow()
-  }
-  catch {
+    cachedWindow = getCurrentWindow()
+    return cachedWindow
+  } catch {
     return null
   }
 }
+
+// Eagerly kick off resolution
+getTauriWindow()
+
+const controlBase = cn(
+  'inline-flex h-full w-12 items-center justify-center',
+  'text-foreground/60 transition-colors duration-150',
+  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+)
 
 function WindowControls() {
   const [isTauri, setIsTauri] = useState(false)
@@ -22,15 +37,12 @@ function WindowControls() {
     let unlistenFn: (() => void) | undefined
 
     getTauriWindow().then(async (w) => {
-      if (cancelled || !w)
-        return
+      if (cancelled || !w) return
       setIsTauri(true)
       setIsMaximized(await w.isMaximized())
 
-      // Listen for resize events to track maximize state
       unlistenFn = await w.onResized(async () => {
-        if (cancelled)
-          return
+        if (cancelled) return
         setIsMaximized(await w.isMaximized())
       })
     })
@@ -41,39 +53,31 @@ function WindowControls() {
     }
   }, [])
 
-  const handleMinimize = useCallback(async () => {
-    const w = await getTauriWindow()
-    w?.minimize()
+  const handleMinimize = useCallback(() => {
+    cachedWindow?.minimize()
   }, [])
 
-  const handleMaximize = useCallback(async () => {
-    const w = await getTauriWindow()
-    w?.toggleMaximize()
+  const handleMaximize = useCallback(() => {
+    cachedWindow?.toggleMaximize()
   }, [])
 
-  const handleClose = useCallback(async () => {
-    const w = await getTauriWindow()
-    w?.close()
+  const handleClose = useCallback(() => {
+    cachedWindow?.close()
   }, [])
 
-  if (!isTauri)
-    return null
+  if (!isTauri) return null
 
   return (
-    <div className="flex items-center">
+    <div className="flex h-full items-center">
       {/* Minimize */}
       <button
         type="button"
         onClick={handleMinimize}
-        className={cn(
-          'inline-flex h-8 w-[46px] items-center justify-center',
-          'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-          'transition-colors focus-visible:outline-none',
-        )}
+        className={cn(controlBase, 'hover:bg-foreground/8')}
         aria-label="Minimize"
       >
-        <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
-          <rect width="10" height="1" />
+        <svg width="10" height="1" viewBox="0 0 10 1" className="fill-current">
+          <rect width="10" height="1" rx="0.5" />
         </svg>
       </button>
 
@@ -81,27 +85,31 @@ function WindowControls() {
       <button
         type="button"
         onClick={handleMaximize}
-        className={cn(
-          'inline-flex h-8 w-[46px] items-center justify-center',
-          'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-          'transition-colors focus-visible:outline-none',
-        )}
+        className={cn(controlBase, 'hover:bg-foreground/8')}
         aria-label={isMaximized ? 'Restore' : 'Maximize'}
       >
-        {isMaximized
-          ? (
-              // Restore icon (two overlapping rectangles)
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
-                <rect x="2" y="3" width="7" height="7" rx="0.5" />
-                <path d="M3 3V1.5C3 1.22 3.22 1 3.5 1H8.5C8.78 1 9 1.22 9 1.5V6.5C9 6.78 8.78 7 8.5 7H7" />
-              </svg>
-            )
-          : (
-              // Maximize icon (single rectangle)
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
-                <rect x="1" y="1" width="8" height="8" rx="0.5" />
-              </svg>
-            )}
+        {isMaximized ? (
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            className="fill-none stroke-current"
+            strokeWidth="1.1"
+          >
+            <rect x="0.5" y="2.5" width="7" height="7" rx="1" />
+            <path d="M2.5 2.5V1.25C2.5 0.84 2.84 0.5 3.25 0.5h5.5C9.16 0.5 9.5 0.84 9.5 1.25v5.5c0 .41-.34.75-.75.75H7.5" />
+          </svg>
+        ) : (
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            className="fill-none stroke-current"
+            strokeWidth="1.1"
+          >
+            <rect x="0.5" y="0.5" width="9" height="9" rx="1" />
+          </svg>
+        )}
       </button>
 
       {/* Close */}
@@ -109,14 +117,20 @@ function WindowControls() {
         type="button"
         onClick={handleClose}
         className={cn(
-          'inline-flex h-8 w-[46px] items-center justify-center',
-          'text-muted-foreground hover:bg-destructive hover:text-white',
-          'transition-colors focus-visible:outline-none',
+          controlBase,
+          'hover:bg-red-500 hover:text-white',
         )}
         aria-label="Close"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
-          <path d="M1 1L9 9M9 1L1 9" />
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          className="fill-none stroke-current"
+          strokeWidth="1.3"
+          strokeLinecap="round"
+        >
+          <path d="M1 1l8 8M9 1l-8 8" />
         </svg>
       </button>
     </div>
@@ -124,9 +138,11 @@ function WindowControls() {
 }
 
 export function Titlebar() {
+  const dragProps = useDragWindow()
+
   return (
     <div
-      data-tauri-drag-region
+      {...dragProps}
       className={cn(
         'flex h-8 shrink-0 select-none items-center justify-between',
         'border-b bg-sidebar',
@@ -134,10 +150,7 @@ export function Titlebar() {
     >
       {/* Left: app name + menu bar */}
       <div className="flex h-full items-center">
-        <span
-          className="px-3 text-xs font-medium text-muted-foreground"
-          data-tauri-drag-region
-        >
+        <span className="px-3 text-xs font-medium tracking-wide text-muted-foreground">
           voletu
         </span>
         <TitlebarMenu />

@@ -113,15 +113,25 @@
     "system": "Системная"
   },
   "titlebar": {
+    "file": "Файл",
     "view": "Вид",
+    "go": "Перейти",
     "help": "Справка",
+    "settings": "Настройки",
+    "language": "Язык",
+    "signOut": "Выйти",
+    "signOutConfirm": "Вы будете разлогинены из учётной записи.",
+    "quit": "Закрыть",
     "toggleSidebar": "Боковая панель",
+    "fullscreen": "Полноэкранный режим",
     "density": "Плотность",
     "densityCompact": "Компактная",
     "densityNormal": "Обычная",
     "densityComfortable": "Свободная",
     "themeMenu": "Тема",
     "aboutVoletu": "О Voletu",
+    "aboutDescription": "Система управления запасами",
+    "aboutVersion": "Версия {{version}}",
     "keyboardShortcuts": "Горячие клавиши"
   }
 }

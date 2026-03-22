@@ -12,6 +12,14 @@
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
+  *[data-tauri-drag-region] {
+    app-region: drag;
+  }
+  *[data-tauri-drag-region] button,
+  *[data-tauri-drag-region] a,
+  *[data-tauri-drag-region] [role='button'] {
+    app-region: no-drag;
+  }
   input[type='password']::-ms-reveal,
   input[type='password']::-ms-clear {
     display: none;
