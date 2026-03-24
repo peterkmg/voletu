@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Header } from '~/components/layout/header'
-import { Main } from '~/components/layout/main'
+import { EntityPage } from '~/components/entity-page'
 import { useCatalogPortList } from '~/generated/hooks/CatalogHooks/useCatalogPortList'
 import { PortsDialogs } from './components/ports-dialogs'
 import { PortsPrimaryButtons } from './components/ports-primary-buttons'
@@ -9,35 +8,16 @@ import { PortsTable } from './components/ports-table'
 
 export function Ports() {
   const { t } = useTranslation(['catalog'])
-
-  const { data: listData, isLoading } = useCatalogPortList()
-  const ports = listData?.data ?? []
+  const queryResult = useCatalogPortList()
 
   return (
-    <PortsProvider>
-      <Header fixed />
-
-      <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {t('catalog:port.title')}
-            </h2>
-          </div>
-          <PortsPrimaryButtons />
-        </div>
-        {isLoading
-          ? (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
-              </div>
-            )
-          : (
-              <PortsTable data={ports} />
-            )}
-      </Main>
-
-      <PortsDialogs />
-    </PortsProvider>
+    <EntityPage
+      provider={PortsProvider}
+      title={t('catalog:port.title')}
+      queryResult={queryResult}
+      primaryButtons={PortsPrimaryButtons}
+      table={PortsTable}
+      dialogs={PortsDialogs}
+    />
   )
 }

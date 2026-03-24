@@ -1,65 +1,15 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { CompanyResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, StatusBadge } from '~/components/data-table'
-import { Checkbox } from '~/components/ui/checkbox'
+import { actionsColumn, dateColumn, selectColumn, StatusBadge, textColumn } from '~/components/data-table'
 import { companyRoleColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
   return [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected()
-            || (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={value => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'commonName',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('catalog:company.columns.commonName')}
-        />
-      ),
-      meta: { className: 'w-1/3' },
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue('commonName')}</span>
-      ),
-    },
-    {
-      accessorKey: 'legalName',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('catalog:company.columns.legalName')}
-        />
-      ),
-      meta: { className: 'w-1/4' },
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.getValue('legalName') ?? '\u2014'}
-        </span>
-      ),
-    },
+    selectColumn<CompanyResponse>(),
+    textColumn<CompanyResponse>('commonName', t('catalog:company.columns.commonName'), { className: 'w-1/3' }),
+    textColumn<CompanyResponse>('legalName', t('catalog:company.columns.legalName'), { primary: false, className: 'w-1/4' }),
     {
       id: 'roles',
       header: t('common:table.status'),
@@ -84,20 +34,7 @@ export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
         )
       },
     },
-    {
-      accessorKey: 'createdAt',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('common:table.createdAt')}
-        />
-      ),
-      meta: { align: 'right' as const },
-      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => <DataTableRowActions row={row} />,
-    },
+    dateColumn<CompanyResponse>('createdAt', t('common:table.createdAt')),
+    actionsColumn<CompanyResponse>(DataTableRowActions),
   ]
 }

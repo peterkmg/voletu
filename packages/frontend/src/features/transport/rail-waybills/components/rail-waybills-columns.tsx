@@ -1,84 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { RailWaybillResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, ResolvedCell } from '~/components/data-table'
-import { Checkbox } from '~/components/ui/checkbox'
+import { actionsColumn, dateColumn, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getRailWaybillColumns(t: TFunction): ColumnDef<RailWaybillResponse>[] {
   return [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected()
-            || (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={value => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'documentNumber',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('transport:rail.columns.waybillNumber')}
-        />
-      ),
-      meta: { className: 'w-1/4' },
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue('documentNumber')}</span>
-      ),
-    },
-    {
-      accessorKey: 'date',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('transport:rail.columns.date')}
-        />
-      ),
-      meta: { align: 'right' as const },
-      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
-    },
-    {
-      accessorKey: 'senderId',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('transport:rail.columns.sender')}
-        />
-      ),
-      cell: ({ row }) => <ResolvedCell value={(row.original as any).senderIdName} />,
-    },
-    {
-      accessorKey: 'createdAt',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('common:table.createdAt')}
-        />
-      ),
-      meta: { align: 'right' as const },
-      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => <DataTableRowActions row={row} />,
-    },
+    selectColumn<RailWaybillResponse>(),
+    textColumn<RailWaybillResponse>('documentNumber', t('transport:rail.columns.waybillNumber')),
+    dateColumn<RailWaybillResponse>('date', t('transport:rail.columns.date')),
+    resolvedColumn<RailWaybillResponse>('senderId', t('transport:rail.columns.sender'), 'senderIdName'),
+    dateColumn<RailWaybillResponse>('createdAt', t('common:table.createdAt')),
+    actionsColumn<RailWaybillResponse>(DataTableRowActions),
   ]
 }

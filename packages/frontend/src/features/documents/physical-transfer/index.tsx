@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Header } from '~/components/layout/header'
-import { Main } from '~/components/layout/main'
+import { EntityPage } from '~/components/entity-page'
 import { usePhysicalTransferList } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferList'
 import { PhysicalTransferDialogs } from './components/physical-transfer-dialogs'
 import { PhysicalTransferPrimaryButtons } from './components/physical-transfer-primary-buttons'
@@ -9,35 +8,16 @@ import { PhysicalTransferTable } from './components/physical-transfer-table'
 
 export function PhysicalTransfers() {
   const { t } = useTranslation(['documents'])
-
-  const { data: listData, isLoading } = usePhysicalTransferList()
-  const physicalTransfers = listData?.data ?? []
+  const queryResult = usePhysicalTransferList()
 
   return (
-    <PhysicalTransferProvider>
-      <Header fixed />
-
-      <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {t('documents:physicalTransfer.title')}
-            </h2>
-          </div>
-          <PhysicalTransferPrimaryButtons />
-        </div>
-        {isLoading
-          ? (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
-              </div>
-            )
-          : (
-              <PhysicalTransferTable data={physicalTransfers} />
-            )}
-      </Main>
-
-      <PhysicalTransferDialogs />
-    </PhysicalTransferProvider>
+    <EntityPage
+      provider={PhysicalTransferProvider}
+      title={t('documents:physicalTransfer.title')}
+      queryResult={queryResult}
+      primaryButtons={PhysicalTransferPrimaryButtons}
+      table={PhysicalTransferTable}
+      dialogs={PhysicalTransferDialogs}
+    />
   )
 }

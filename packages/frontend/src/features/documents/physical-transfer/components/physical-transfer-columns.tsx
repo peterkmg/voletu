@@ -1,60 +1,15 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { PhysicalTransferResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, DateTimeCell, NumericCell, StatusBadge } from '~/components/data-table'
-import { Checkbox } from '~/components/ui/checkbox'
+import { actionsColumn, DataTableColumnHeader, dateColumn, DateTimeCell, NumericCell, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { documentStatusColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
   return [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected()
-            || (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={value => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'documentNumber',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('documents:acceptance.columns.documentNumber')}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue('documentNumber')}</span>
-      ),
-    },
-    {
-      accessorKey: 'date',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('documents:acceptance.columns.date')}
-        />
-      ),
-      meta: { align: 'right' as const },
-      cell: ({ row }) => <DateCell value={row.getValue('date')} />,
-    },
+    selectColumn<PhysicalTransferResponse>(),
+    textColumn<PhysicalTransferResponse>('documentNumber', t('documents:acceptance.columns.documentNumber')),
+    dateColumn<PhysicalTransferResponse>('date', t('documents:acceptance.columns.date')),
     {
       accessorKey: 'startCargoOps',
       header: ({ column }) => (
@@ -75,18 +30,7 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
       ),
       cell: ({ row }) => <DateTimeCell value={row.getValue('endCargoOps')} />,
     },
-    {
-      accessorKey: 'status',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('common:table.status')}
-        />
-      ),
-      cell: ({ row }) => (
-        <StatusBadge value={row.getValue('status')} colorMap={documentStatusColors} />
-      ),
-    },
+    statusColumn<PhysicalTransferResponse>('status', t('common:table.status'), documentStatusColors),
     {
       id: 'itemsCount',
       header: t('documents:items.title'),
@@ -95,9 +39,6 @@ export function getPhysicalTransferColumns(t: TFunction): ColumnDef<PhysicalTran
       ),
       meta: { align: 'right' as const },
     },
-    {
-      id: 'actions',
-      cell: ({ row }) => <DataTableRowActions row={row} />,
-    },
+    actionsColumn<PhysicalTransferResponse>(DataTableRowActions),
   ]
 }

@@ -1,81 +1,17 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { StorageResponse } from '~/generated/types'
-import { DataTableColumnHeader, DateCell, NumericCell, ResolvedCell, StatusBadge } from '~/components/data-table'
-import { Checkbox } from '~/components/ui/checkbox'
+import { actionsColumn, dateColumn, numericColumn, resolvedColumn, selectColumn, StatusBadge, textColumn } from '~/components/data-table'
 import { entityActiveColors } from '~/lib/badge-colors'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
   return [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected()
-            || (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={value => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'commonName',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('catalog:storage.columns.commonName')}
-        />
-      ),
-      meta: { className: 'w-1/4' },
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue('commonName')}</span>
-      ),
-    },
-    {
-      accessorKey: 'warehouseId',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('catalog:storage.columns.warehouseId')}
-        />
-      ),
-      cell: ({ row }) => <ResolvedCell value={(row.original as any).warehouseIdName} />,
-    },
-    {
-      accessorKey: 'capacity',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('catalog:storage.columns.capacity')}
-        />
-      ),
-      meta: { align: 'right' as const },
-      cell: ({ row }) => <NumericCell value={row.getValue('capacity')} />,
-    },
-    {
-      accessorKey: 'productTypeId',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('catalog:storage.columns.productTypeId')}
-        />
-      ),
-      cell: ({ row }) => <ResolvedCell value={(row.original as any).productTypeIdName} />,
-    },
+    selectColumn<StorageResponse>(),
+    textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName'), { className: 'w-1/4' }),
+    resolvedColumn<StorageResponse>('warehouseId', t('catalog:storage.columns.warehouseId'), 'warehouseIdName'),
+    numericColumn<StorageResponse>('capacity', t('catalog:storage.columns.capacity')),
+    resolvedColumn<StorageResponse>('productTypeId', t('catalog:storage.columns.productTypeId'), 'productTypeIdName'),
     {
       accessorKey: 'isTypeSpecific',
       header: t('catalog:storage.columns.isTypeSpecific'),
@@ -91,20 +27,7 @@ export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
         )
       },
     },
-    {
-      accessorKey: 'createdAt',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('common:table.createdAt')}
-        />
-      ),
-      meta: { align: 'right' as const },
-      cell: ({ row }) => <DateCell value={row.getValue('createdAt')} />,
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => <DataTableRowActions row={row} />,
-    },
+    dateColumn<StorageResponse>('createdAt', t('common:table.createdAt')),
+    actionsColumn<StorageResponse>(DataTableRowActions),
   ]
 }

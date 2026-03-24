@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Header } from '~/components/layout/header'
-import { Main } from '~/components/layout/main'
+import { EntityPage } from '~/components/entity-page'
 import { useTransportRailWaybillList } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillList'
 import { RailWaybillsDialogs } from './components/rail-waybills-dialogs'
 import { RailWaybillsPrimaryButtons } from './components/rail-waybills-primary-buttons'
@@ -9,35 +8,16 @@ import { RailWaybillsTable } from './components/rail-waybills-table'
 
 export function RailWaybills() {
   const { t } = useTranslation(['transport'])
-
-  const { data: listData, isLoading } = useTransportRailWaybillList()
-  const railWaybills = listData?.data ?? []
+  const queryResult = useTransportRailWaybillList()
 
   return (
-    <RailWaybillsProvider>
-      <Header fixed />
-
-      <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {t('transport:rail.title')}
-            </h2>
-          </div>
-          <RailWaybillsPrimaryButtons />
-        </div>
-        {isLoading
-          ? (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
-              </div>
-            )
-          : (
-              <RailWaybillsTable data={railWaybills} />
-            )}
-      </Main>
-
-      <RailWaybillsDialogs />
-    </RailWaybillsProvider>
+    <EntityPage
+      provider={RailWaybillsProvider}
+      title={t('transport:rail.title')}
+      queryResult={queryResult}
+      primaryButtons={RailWaybillsPrimaryButtons}
+      table={RailWaybillsTable}
+      dialogs={RailWaybillsDialogs}
+    />
   )
 }

@@ -5,9 +5,13 @@ import {
 } from '~/components/ui/tooltip'
 import { formatDate, formatDateTime, truncateId } from '~/lib/formatters'
 
+export function NullCell() {
+  return <span className="text-muted-foreground">&mdash;</span>
+}
+
 export function DateCell({ value }: { value: string | null | undefined }) {
   if (!value)
-    return <span className="text-muted-foreground">&mdash;</span>
+    return <NullCell />
   return (
     <span className="text-sm tabular-nums text-muted-foreground">
       {formatDate(value)}
@@ -17,7 +21,7 @@ export function DateCell({ value }: { value: string | null | undefined }) {
 
 export function DateTimeCell({ value }: { value: string | null | undefined }) {
   if (!value)
-    return <span className="text-muted-foreground">&mdash;</span>
+    return <NullCell />
   return (
     <span className="text-sm tabular-nums text-muted-foreground">
       {formatDateTime(value)}
@@ -33,7 +37,7 @@ export function NumericCell({
   padWidth?: number
 }) {
   if (value == null)
-    return <span className="text-muted-foreground">&mdash;</span>
+    return <NullCell />
   const display = padWidth
     ? String(value).padStart(padWidth, '0')
     : String(value)
@@ -44,7 +48,7 @@ export function NumericCell({
 
 export function IdCell({ value }: { value: string | null | undefined }) {
   if (!value)
-    return <span className="text-muted-foreground">&mdash;</span>
+    return <NullCell />
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -61,7 +65,7 @@ export function IdCell({ value }: { value: string | null | undefined }) {
 
 export function ResolvedCell({ value }: { value: string | null | undefined }) {
   if (!value)
-    return <span className="text-muted-foreground">&mdash;</span>
+    return <NullCell />
   return <span>{value}</span>
 }
 
@@ -73,7 +77,7 @@ export function LookupCell({
   lookupMap: Map<string, string>
 }) {
   if (!value)
-    return <span className="text-muted-foreground">&mdash;</span>
+    return <NullCell />
   const resolved = lookupMap.get(value)
   if (resolved) {
     return <span>{resolved}</span>

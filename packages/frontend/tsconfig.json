@@ -3,7 +3,6 @@
   "compilerOptions": {
     // Compiler options for TypeScript
     // See https://aka.ms/tsconfig for details
-
     /* Projects */
     // "incremental": true,                              // Enable incremental compilation
     // "composite": true,                                // Enable constraints for project references
@@ -11,11 +10,14 @@
     // "disableSourceOfProjectReferenceRedirect": true,  // Disable source file preference for project references
     // "disableSolutionSearching": true,                 // Opt out of multi-project reference checking
     // "disableReferencedProjectLoad": true,             // Reduce automatic project loading
-
     /* Language and Environment */
     "target": "ES2020", // Set JavaScript language version
     "jsx": "react-jsx", // Specify JSX code generation
-    "lib": ["DOM", "DOM.Iterable", "ES2020"], // Specify library files to include
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2020"
+    ], // Specify library files to include
     "moduleDetection": "auto", // Control module detection method
     // "experimentalDecorators": true,                   // Enable experimental decorator support
     // "emitDecoratorMetadata": true,                    // Emit decorator metadata
@@ -27,21 +29,25 @@
     "useDefineForClassFields": true, // Use define semantics for class fields
     "baseUrl": ".", // Base directory for non-relative module names
     "rootDir": ".", // Specify root folder for source files
-
     /* Modules */
     "module": "ESNext", // Specify module code generation
     "moduleResolution": "Bundler", // Specify module resolution strategy
-
     // Absolute paths that re-map imports to additional lookup locations.
     "paths": {
-      "~/*": ["src/*"],
-      "#/*": ["public/*"]
+      "~/*": [
+        "src/*"
+      ],
+      "#/*": [
+        "public/*"
+      ]
     },
     // "resolvePackageJsonExports": true,                // Use package.json 'exports' for resolution
     // "resolvePackageJsonImports": true,                // Use package.json 'imports' for resolution
     // "customConditions": [],                           // Custom conditions for resolving imports
     "resolveJsonModule": true, // Enable importing .json files
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     // "rootDirs": [],                                   // Allow multiple folders as one for module resolution
     // "typeRoots": [],                                  // Specify multiple folders for type definitions
     // "types": ["node", "vite/client"],                 // Type declaration files to include
@@ -50,10 +56,8 @@
     "allowImportingTsExtensions": true, // Allow imports with TypeScript file extensions
     // "allowArbitraryExtensions": true,                 // Allow importing files with any extension
     // "noResolve": true,                                // Disallow expanding the number of input files
-
     /* JavaScript Support */
     "allowJs": true, // Allow JavaScript files in the project
-
     /* Type Checking */
     "strict": true, // Enable all strict type-checking options
     // "exactOptionalPropertyTypes": true,               // Enable strict checking of optional property types
@@ -72,7 +76,6 @@
     "noUnusedParameters": true, // Report errors on unused parameters
     // "checkJs": true,                                  // Enable error reporting in JavaScript files
     // "maxNodeModuleJsDepth": 1,                        // Maximum depth for checking JavaScript files in node_modules
-
     /* Emit */
     "declaration": false, // Generate .d.ts files
     "disableSizeLimit": false, // Disable size limit for incremental compilation
@@ -102,19 +105,30 @@
     // "noEmitOnError": true,                            // Do not emit outputs if errors were reported
     // "preserveConstEnums": true,                       // Do not erase const enum declarations
     // "declarationDir": "./",                           // Output directory for generated declarations
-
     /* Interop Constraints */
     "verbatimModuleSyntax": true, // Do not transform imports/exports, enforced 'type-only' imports
     // "noImplicitOverride": true,                       // Ensure overriding members are marked with override
     // "noPropertyAccessFromIndexSignature": true,       // Require explicit indexing when accessing properties
     // "allowUnusedLabels": true,                        // Do not report errors on unused labels
     // "allowUnreachableCode": true,                     // Do not report errors on unreachable code
-
     /* Completeness */
     // "skipDefaultLibCheck": true,                      // Skip type checking of default library declaration files
     "skipLibCheck": true // Skip type checking of all declaration files
   },
-  "references": [{ "path": "./tsconfig.node.json" }],
-  "include": ["src", "tests", "vite-config.ts"],
-  "exclude": ["dist"]
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "include": [
+    "src",
+    "tests",
+    "vite-config.ts",
+    "vitest.config.ts",
+    "kubb.config.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
 }
