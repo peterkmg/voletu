@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use uuid::Uuid;
+use uuid::{uuid, Uuid};
 use voletu_core_macros::enum_type;
 
 mod audit_table;
@@ -81,10 +79,10 @@ pub enum RoleType {
 impl RoleType {
   pub fn uuid(&self) -> Uuid {
     match self {
-      RoleType::Admin => Uuid::from_str("019c8cc2-8913-774a-a432-4dee8eb3f194").unwrap(),
-      RoleType::SeniorSupervisor => Uuid::from_str("019c8cc4-3538-7b66-8ce5-6faad856b217").unwrap(),
-      RoleType::Supervisor => Uuid::from_str("019c8cc4-9048-7b61-9443-52858a953a17").unwrap(),
-      RoleType::Operator => Uuid::from_str("019c8cc4-d965-7f4a-9f9d-c8d299180c6e").unwrap(),
+      RoleType::Admin => uuid!("019c8cc2-8913-774a-a432-4dee8eb3f194"),
+      RoleType::SeniorSupervisor => uuid!("019c8cc4-3538-7b66-8ce5-6faad856b217"),
+      RoleType::Supervisor => uuid!("019c8cc4-9048-7b61-9443-52858a953a17"),
+      RoleType::Operator => uuid!("019c8cc4-d965-7f4a-9f9d-c8d299180c6e"),
     }
   }
 }

@@ -34,6 +34,8 @@ pub enum ApiError {
   Unauthorized(String),
   #[error("Forbidden: {0}")]
   Forbidden(String),
+  #[error("Too many requests: {0}")]
+  TooManyRequests(String),
   #[error("Node not initialized")]
   NodeNotInitialized,
   #[error("Internal error")]
@@ -50,6 +52,7 @@ impl ApiError {
       Self::Conflict(_) => StatusCode::CONFLICT,
       Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
       Self::Forbidden(_) => StatusCode::FORBIDDEN,
+      Self::TooManyRequests(_) => StatusCode::TOO_MANY_REQUESTS,
       Self::NodeNotInitialized => StatusCode::FORBIDDEN,
       Self::Internal(_) | Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
     }
@@ -63,6 +66,7 @@ impl ApiError {
       Self::Conflict(_) => "CONFLICT",
       Self::Unauthorized(_) => "UNAUTHORIZED",
       Self::Forbidden(_) => "FORBIDDEN",
+      Self::TooManyRequests(_) => "TOO_MANY_REQUESTS",
       Self::NodeNotInitialized => "NODE_NOT_INITIALIZED",
       Self::Internal(_) => "INTERNAL_ERROR",
       Self::Database(_) => "DATABASE_ERROR",
@@ -81,6 +85,7 @@ impl IntoResponse for ApiError {
       Self::Conflict(msg) => tracing::warn!("Conflict: {msg}"),
       Self::Unauthorized(msg) => tracing::warn!("Unauthorized: {msg}"),
       Self::Forbidden(msg) => tracing::warn!("Forbidden: {msg}"),
+      Self::TooManyRequests(msg) => tracing::warn!("Too many requests: {msg}"),
       Self::NodeNotInitialized => tracing::warn!("Node not initialized"),
     }
 
