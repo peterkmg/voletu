@@ -41,10 +41,9 @@ type LocalFormValues = z.infer<typeof localSchema>
 
 interface LocalConfigFormProps {
   onBack: () => void
-  onComplete: () => void
 }
 
-export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
+export function LocalConfigForm({ onBack }: LocalConfigFormProps) {
   const { t } = useTranslation(['auth', 'common'])
   const { isSubmitting, error, submitLocalConfig } = useSetupFlow()
 
@@ -84,7 +83,6 @@ export function LocalConfigForm({ onBack, onComplete }: LocalConfigFormProps) {
 
     try {
       await submitLocalConfig(payload)
-      onComplete()
     }
     catch {
       // error handled by hook

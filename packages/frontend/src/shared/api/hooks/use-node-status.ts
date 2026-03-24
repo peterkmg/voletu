@@ -1,14 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { getBaseUrl } from '~/shared/api/base-url'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
-
-function getBaseUrl(): string {
-  return (
-    (globalThis as { __VOLETU_API_BASE_URL__?: string }).__VOLETU_API_BASE_URL__
-    ?? 'http://127.0.0.1:3000'
-  ).replace(/\/+$/, '')
-}
 
 interface HealthData {
   status: string
@@ -47,7 +41,7 @@ export function useHealthCheck() {
       }
       return res.json() as Promise<HealthResponse>
     },
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     enabled: !!accessToken,
   })
 
@@ -83,7 +77,7 @@ export function useNodeStatus() {
       }
       return res.json() as Promise<NodeStatusResponse>
     },
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
     enabled: isInitialized && !!accessToken,
   })
 

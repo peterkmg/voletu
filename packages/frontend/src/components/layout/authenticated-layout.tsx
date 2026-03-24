@@ -5,7 +5,6 @@ import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar'
 import { cn } from '~/lib/utils'
 import { useHealthCheck } from '~/shared/api/hooks/use-node-status'
 import { AppSidebar } from './app-sidebar'
-import { NodeInitBanner } from './node-init-banner'
 
 export function AuthenticatedLayout() {
   useHealthCheck()
@@ -29,7 +28,6 @@ export function AuthenticatedLayout() {
             'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100%-1rem)]',
           )}
         >
-          <NodeInitBanner />
           <Outlet />
         </SidebarInset>
       </SidebarProvider>

@@ -10,7 +10,8 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 10_000,
-      refetchOnWindowFocus: import.meta.env.PROD,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
       retry: import.meta.env.DEV
         ? false
         : (failureCount, error) => {

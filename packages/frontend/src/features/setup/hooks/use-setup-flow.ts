@@ -56,14 +56,13 @@ export function useSetupFlow() {
 
       const state = await saveRemoteConfig({ remoteApiUrl })
       applyStartupState(state)
+      // Keep isSubmitting=true — page will navigate away
     }
     catch (err) {
+      setIsSubmitting(false)
       const message = extractErrorMessage(err, 'Failed to save remote config')
       setError(message)
       throw err
-    }
-    finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -80,14 +79,13 @@ export function useSetupFlow() {
 
       await waitForApiHealthy(baseUrl)
       applyStartupState(state)
+      // Keep isSubmitting=true — page will navigate away
     }
     catch (err) {
+      setIsSubmitting(false)
       const message = extractErrorMessage(err, 'Failed to start local API')
       setError(message)
       throw err
-    }
-    finally {
-      setIsSubmitting(false)
     }
   }
 

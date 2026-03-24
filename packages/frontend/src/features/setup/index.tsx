@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Card,
@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
+import { useStartupStore } from '~/stores/startup-store'
 import { LocalConfigForm } from '~/features/setup/components/local-config-form'
 import { ModeSelector } from '~/features/setup/components/mode-selector'
 import { RemoteConfigForm } from '~/features/setup/components/remote-config-form'
@@ -18,12 +19,18 @@ export function Setup() {
   const { t } = useTranslation(['auth'])
   const navigate = useNavigate()
   const [step, setStep] = useState<SetupStep>('selecting')
+  const needsSetup = useStartupStore(s => s.startupState?.needsSetup)
+
+  // Navigate to sign-in reactively when setup completes.
+  // This fires after applyStartupState sets needsSetup=false
+  // from either local or remote config flows.
+  useEffect(() => {
+    if (needsSetup === false) {
+      void navigate({ to: '/sign-in' })
+    }
+  }, [needsSetup, navigate])
 
   const handleBack = () => setStep('selecting')
-
-  const handleLocalComplete = () => {
-    navigate({ to: '/sign-in' })
-  }
 
   return (
     <Card className="w-full max-w-lg">
@@ -39,7 +46,7 @@ export function Setup() {
           <RemoteConfigForm onBack={handleBack} />
         )}
         {step === 'local' && (
-          <LocalConfigForm onBack={handleBack} onComplete={handleLocalComplete} />
+          <LocalConfigForm onBack={handleBack} />
         )}
       </CardContent>
     </Card>

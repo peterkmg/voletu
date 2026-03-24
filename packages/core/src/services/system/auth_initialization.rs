@@ -15,8 +15,8 @@ use crate::{
   context::audit::current_actor_id,
   db::ops::load_local_bootstrap,
   dtos::CompleteInitializationRequest,
-  entities::{database_instance, local, refresh_token, user},
-  enums::{InitializeAdminAction, RoleType},
+  entities::{database_instance, local, user},
+  enums::RoleType,
   utils::password::{hash_password, verify_password},
 };
 
@@ -53,68 +53,32 @@ impl SystemService {
           .map_err(ApiError::Internal)?;
 
       if has_default_password {
-        match dto.action {
-          InitializeAdminAction::Replace => {
-            let new_username = dto.new_username.as_ref().ok_or_else(|| {
-              ApiError::BadRequest("newUsername is required when action=replace".to_string())
-            })?;
-            let new_password = dto.new_password.as_ref().ok_or_else(|| {
-              ApiError::BadRequest("newPassword is required when action=replace".to_string())
-            })?;
+        let duplicate_user = user::Entity::find()
+          .filter(user::Column::Username.eq(&dto.new_username))
+          .filter(user::Column::OriginDbId.eq(local.local_db_id))
+          .filter(user::Column::DeletedAt.is_null())
+          .one(&txn)
+          .await?;
 
-            let duplicate_user = user::Entity::find()
-              .filter(user::Column::Username.eq(new_username))
-              .filter(user::Column::OriginDbId.eq(local.local_db_id))
-              .filter(user::Column::DeletedAt.is_null())
-              .one(&txn)
-              .await?;
-
-            if let Some(duplicate_user) = duplicate_user {
-              if duplicate_user.id != bootstrap_admin.id {
-                return Err(ApiError::Conflict(format!(
-                  "Username '{}' is already taken",
-                  new_username
-                )));
-              }
-            }
-
-            let mut bootstrap_admin_model: user::ActiveModel = bootstrap_admin.into();
-            bootstrap_admin_model.username = Set(new_username.clone());
-            bootstrap_admin_model.password_hash = Set(
-              hash_password(new_password)
-                .await
-                .map_err(ApiError::Internal)?,
-            );
-            bootstrap_admin_model.fullname = Set(dto.fullname.clone());
-            bootstrap_admin_model.updated_by = Set(actor_id);
-            bootstrap_admin_model.update(&txn).await?;
-          }
-          InitializeAdminAction::Delete => {
-            let has_other_local_admin = user::Entity::find()
-              .filter(user::Column::OriginDbId.eq(local.local_db_id))
-              .filter(user::Column::RoleId.eq(RoleType::Admin.uuid()))
-              .filter(user::Column::DeletedAt.is_null())
-              .filter(user::Column::Id.ne(bootstrap_admin.id))
-              .one(&txn)
-              .await?
-              .is_some();
-
-            if !has_other_local_admin {
-              return Err(ApiError::Conflict(
-                "Cannot delete default admin without another active local admin".to_string(),
-              ));
-            }
-
-            refresh_token::Entity::delete_many()
-              .filter(refresh_token::Column::UserId.eq(bootstrap_admin.id))
-              .exec(&txn)
-              .await?;
-
-            user::Entity::delete_by_id(bootstrap_admin.id)
-              .exec(&txn)
-              .await?;
+        if let Some(duplicate_user) = duplicate_user {
+          if duplicate_user.id != bootstrap_admin.id {
+            return Err(ApiError::Conflict(format!(
+              "Username '{}' is already taken",
+              dto.new_username
+            )));
           }
         }
+
+        let mut bootstrap_admin_model: user::ActiveModel = bootstrap_admin.into();
+        bootstrap_admin_model.username = Set(dto.new_username.clone());
+        bootstrap_admin_model.password_hash = Set(
+          hash_password(&dto.new_password)
+            .await
+            .map_err(ApiError::Internal)?,
+        );
+        bootstrap_admin_model.fullname = Set(dto.fullname.clone());
+        bootstrap_admin_model.updated_by = Set(actor_id);
+        bootstrap_admin_model.update(&txn).await?;
       }
     }
 

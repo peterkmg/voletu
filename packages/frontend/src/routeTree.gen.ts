@@ -13,13 +13,13 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authSetupRouteImport } from './routes/(auth)/setup'
+import { Route as authInitRouteImport } from './routes/(auth)/init'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedLedgerIndexRouteImport } from './routes/_authenticated/ledger/index'
 import { Route as AuthenticatedTransportTruckWaybillsIndexRouteImport } from './routes/_authenticated/transport/truck-waybills/index'
 import { Route as AuthenticatedTransportRailWaybillsIndexRouteImport } from './routes/_authenticated/transport/rail-waybills/index'
 import { Route as AuthenticatedSystemUsersIndexRouteImport } from './routes/_authenticated/system/users/index'
 import { Route as AuthenticatedSystemSyncIndexRouteImport } from './routes/_authenticated/system/sync/index'
-import { Route as AuthenticatedSystemInitIndexRouteImport } from './routes/_authenticated/system/init/index'
 import { Route as AuthenticatedDocumentsPhysicalTransferIndexRouteImport } from './routes/_authenticated/documents/physical-transfer/index'
 import { Route as AuthenticatedDocumentsOwnershipTransferIndexRouteImport } from './routes/_authenticated/documents/ownership-transfer/index'
 import { Route as AuthenticatedDocumentsInventoryReconciliationIndexRouteImport } from './routes/_authenticated/documents/inventory-reconciliation/index'
@@ -52,6 +52,11 @@ const authSignInRoute = authSignInRouteImport.update({
 const authSetupRoute = authSetupRouteImport.update({
   id: '/(auth)/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authInitRoute = authInitRouteImport.update({
+  id: '/(auth)/init',
+  path: '/init',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsIndexRoute =
@@ -88,12 +93,6 @@ const AuthenticatedSystemSyncIndexRoute =
   AuthenticatedSystemSyncIndexRouteImport.update({
     id: '/system/sync/',
     path: '/system/sync/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSystemInitIndexRoute =
-  AuthenticatedSystemInitIndexRouteImport.update({
-    id: '/system/init/',
-    path: '/system/init/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDocumentsPhysicalTransferIndexRoute =
@@ -183,6 +182,7 @@ const AuthenticatedCatalogBasesIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/init': typeof authInitRoute
   '/setup': typeof authSetupRoute
   '/sign-in': typeof authSignInRoute
   '/ledger/': typeof AuthenticatedLedgerIndexRoute
@@ -201,13 +201,13 @@ export interface FileRoutesByFullPath {
   '/documents/inventory-reconciliation/': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/documents/ownership-transfer/': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/documents/physical-transfer/': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
-  '/system/init/': typeof AuthenticatedSystemInitIndexRoute
   '/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users/': typeof AuthenticatedSystemUsersIndexRoute
   '/transport/rail-waybills/': typeof AuthenticatedTransportRailWaybillsIndexRoute
   '/transport/truck-waybills/': typeof AuthenticatedTransportTruckWaybillsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/init': typeof authInitRoute
   '/setup': typeof authSetupRoute
   '/sign-in': typeof authSignInRoute
   '/': typeof AuthenticatedIndexRoute
@@ -227,7 +227,6 @@ export interface FileRoutesByTo {
   '/documents/inventory-reconciliation': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/documents/ownership-transfer': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/documents/physical-transfer': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
-  '/system/init': typeof AuthenticatedSystemInitIndexRoute
   '/system/sync': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users': typeof AuthenticatedSystemUsersIndexRoute
   '/transport/rail-waybills': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -236,6 +235,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/(auth)/init': typeof authInitRoute
   '/(auth)/setup': typeof authSetupRoute
   '/(auth)/sign-in': typeof authSignInRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -255,7 +255,6 @@ export interface FileRoutesById {
   '/_authenticated/documents/inventory-reconciliation/': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/_authenticated/documents/ownership-transfer/': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/_authenticated/documents/physical-transfer/': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
-  '/_authenticated/system/init/': typeof AuthenticatedSystemInitIndexRoute
   '/_authenticated/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/_authenticated/system/users/': typeof AuthenticatedSystemUsersIndexRoute
   '/_authenticated/transport/rail-waybills/': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -265,6 +264,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/init'
     | '/setup'
     | '/sign-in'
     | '/ledger/'
@@ -283,13 +283,13 @@ export interface FileRouteTypes {
     | '/documents/inventory-reconciliation/'
     | '/documents/ownership-transfer/'
     | '/documents/physical-transfer/'
-    | '/system/init/'
     | '/system/sync/'
     | '/system/users/'
     | '/transport/rail-waybills/'
     | '/transport/truck-waybills/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/init'
     | '/setup'
     | '/sign-in'
     | '/'
@@ -309,7 +309,6 @@ export interface FileRouteTypes {
     | '/documents/inventory-reconciliation'
     | '/documents/ownership-transfer'
     | '/documents/physical-transfer'
-    | '/system/init'
     | '/system/sync'
     | '/system/users'
     | '/transport/rail-waybills'
@@ -317,6 +316,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/(auth)/init'
     | '/(auth)/setup'
     | '/(auth)/sign-in'
     | '/_authenticated/'
@@ -336,7 +336,6 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/inventory-reconciliation/'
     | '/_authenticated/documents/ownership-transfer/'
     | '/_authenticated/documents/physical-transfer/'
-    | '/_authenticated/system/init/'
     | '/_authenticated/system/sync/'
     | '/_authenticated/system/users/'
     | '/_authenticated/transport/rail-waybills/'
@@ -345,6 +344,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  authInitRoute: typeof authInitRoute
   authSetupRoute: typeof authSetupRoute
   authSignInRoute: typeof authSignInRoute
 }
@@ -377,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof authSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/init': {
+      id: '/(auth)/init'
+      path: '/init'
+      fullPath: '/init'
+      preLoaderRoute: typeof authInitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings/': {
@@ -419,13 +426,6 @@ declare module '@tanstack/react-router' {
       path: '/system/sync'
       fullPath: '/system/sync/'
       preLoaderRoute: typeof AuthenticatedSystemSyncIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/system/init/': {
-      id: '/_authenticated/system/init/'
-      path: '/system/init'
-      fullPath: '/system/init/'
-      preLoaderRoute: typeof AuthenticatedSystemInitIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/documents/physical-transfer/': {
@@ -547,7 +547,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsInventoryReconciliationIndexRoute: typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   AuthenticatedDocumentsOwnershipTransferIndexRoute: typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   AuthenticatedDocumentsPhysicalTransferIndexRoute: typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
-  AuthenticatedSystemInitIndexRoute: typeof AuthenticatedSystemInitIndexRoute
   AuthenticatedSystemSyncIndexRoute: typeof AuthenticatedSystemSyncIndexRoute
   AuthenticatedSystemUsersIndexRoute: typeof AuthenticatedSystemUsersIndexRoute
   AuthenticatedTransportRailWaybillsIndexRoute: typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -584,7 +583,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDocumentsOwnershipTransferIndexRoute,
   AuthenticatedDocumentsPhysicalTransferIndexRoute:
     AuthenticatedDocumentsPhysicalTransferIndexRoute,
-  AuthenticatedSystemInitIndexRoute: AuthenticatedSystemInitIndexRoute,
   AuthenticatedSystemSyncIndexRoute: AuthenticatedSystemSyncIndexRoute,
   AuthenticatedSystemUsersIndexRoute: AuthenticatedSystemUsersIndexRoute,
   AuthenticatedTransportRailWaybillsIndexRoute:
@@ -598,6 +596,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  authInitRoute: authInitRoute,
   authSetupRoute: authSetupRoute,
   authSignInRoute: authSignInRoute,
 }

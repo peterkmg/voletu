@@ -22,7 +22,7 @@ export function SyncDashboard() {
   const { data: watermarksData, isLoading: watermarksLoading } = useSyncWatermarkList()
   const watermarks = watermarksData?.data ?? []
 
-  const { data: auditLogsData, isLoading: auditLogsLoading } = useSyncAuditLogList({ query: { refetchInterval: 10_000 } })
+  const { data: auditLogsData, isLoading: auditLogsLoading } = useSyncAuditLogList({ query: { refetchInterval: 30_000 } })
   const auditLogs = auditLogsData?.data ?? []
 
   return (

@@ -51,12 +51,6 @@ pub enum AuditAction {
 }
 
 #[enum_type]
-pub enum InitializeAdminAction {
-  Replace,
-  Delete,
-}
-
-#[enum_type]
 pub enum NodeType {
   Central,
   Peripheral,

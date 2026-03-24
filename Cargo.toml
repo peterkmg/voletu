@@ -80,7 +80,7 @@ dotenvy = "0.15"
 
 keyring = { version = "3", features = ["windows-native"] }
 rand = "0.10"
-fake = "4"
+fake = "5.1"
 base64 = "0.22"
 rust_decimal = { version = "1", features = ["serde-with-str"] }
 reqwest = { version = "0.13.2", default-features = false, features = [

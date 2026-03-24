@@ -6,7 +6,7 @@ use crate::{
     document::{CreateDispatchRequest, CreatePhysicalTransferRequest},
     system::CompleteInitializationRequest,
   },
-  enums::{DispatchMethod, DispatchPurpose, InitializeAdminAction, NodeType},
+  enums::{DispatchMethod, DispatchPurpose, NodeType},
 };
 
 pub fn validate_non_negative_decimal(value: &Decimal) -> Result<(), ValidationError> {
@@ -90,26 +90,6 @@ pub fn validate_complete_initialization_request(
     let mut error = ValidationError::new("initialization_peripheral_central_url_required");
     error.message = Some("centralApiUrl is required when nodeType is PERIPHERAL".into());
     return Err(error);
-  }
-
-  match value.action {
-    InitializeAdminAction::Replace => {
-      if value.new_username.is_none() || value.new_password.is_none() || value.fullname.is_none() {
-        let mut error = ValidationError::new("initialization_replace_fields_required");
-        error.message =
-          Some("newUsername, newPassword and fullname are required when action is REPLACE".into());
-        return Err(error);
-      }
-    }
-    InitializeAdminAction::Delete => {
-      if value.new_username.is_some() || value.new_password.is_some() || value.fullname.is_some() {
-        let mut error = ValidationError::new("initialization_delete_fields_forbidden");
-        error.message = Some(
-          "newUsername, newPassword and fullname must be omitted when action is DELETE".into(),
-        );
-        return Err(error);
-      }
-    }
   }
 
   Ok(())

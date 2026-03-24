@@ -1,6 +1,6 @@
 use voletu_core_macros::request_dto;
 
-use crate::enums::{InitializeAdminAction, NodeType};
+use crate::enums::NodeType;
 
 #[request_dto]
 pub struct LoginRequest {
@@ -23,16 +23,15 @@ pub struct ChangePasswordRequest {
 #[request_dto]
 #[validate(schema(function = "crate::dtos::validators::validate_complete_initialization_request"))]
 pub struct CompleteInitializationRequest {
-  pub action: InitializeAdminAction,
   pub node_type: Option<NodeType>,
   #[validate(length(min = 2, max = 100))]
   pub node_name: Option<String>,
   #[validate(url)]
   pub central_api_url: Option<String>,
   #[validate(length(min = 3, max = 50))]
-  pub new_username: Option<String>,
-  #[validate(length(min = 8))]
-  pub new_password: Option<String>,
+  pub new_username: String,
+  #[validate(length(min = 5))]
+  pub new_password: String,
   #[validate(length(min = 2, max = 100))]
   pub fullname: Option<String>,
 }
