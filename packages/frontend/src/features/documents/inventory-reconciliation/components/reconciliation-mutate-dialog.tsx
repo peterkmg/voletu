@@ -1,27 +1,15 @@
 import type { InventoryReconciliationResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { WarehouseMutateDialog } from '~/features/catalog/warehouses/components/warehouse-mutate-dialog'
 import { reconciliationCreate, reconciliationUpdate } from '~/generated/client'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { reconciliationListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const reconciliationFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -43,77 +31,39 @@ export function ReconciliationMutateDialog({
   currentRow,
 }: ReconciliationMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
   const warehousesQuery = useCatalogWarehouseList()
 
-  const form = useForm<ReconciliationFormValues>({
-    resolver: zodResolver(reconciliationFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: reconciliationFormSchema,
     defaultValues: {
       documentNumber: '',
       date: '',
       warehouseId: '',
     },
+    mapRowToForm: (row: InventoryReconciliationResponse) => ({
+      documentNumber: row.documentNumber,
+      date: row.date ? row.date.slice(0, 16) : '',
+      warehouseId: row.warehouseId,
+    }),
+    createFn: reconciliationCreate,
+    updateFn: reconciliationUpdate,
+    queryKey: reconciliationListQueryKey(),
+    entityLabel: t('documents:reconciliation.singular'),
+    formId: 'reconciliation-form',
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        documentNumber: currentRow.documentNumber,
-        date: currentRow.date ? currentRow.date.slice(0, 16) : '',
-        warehouseId: currentRow.warehouseId,
-      })
-    }
-    else {
-      form.reset({
-        documentNumber: '',
-        date: '',
-        warehouseId: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: ReconciliationFormValues) => {
-    try {
-      if (isUpdate && currentRow) {
-        await reconciliationUpdate(currentRow.id, values)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('documents:reconciliation.singular'),
-          }),
-        )
-      }
-      else {
-        await reconciliationCreate(values, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('documents:reconciliation.singular'),
-          }),
-        )
-      }
-
-      await queryClient.invalidateQueries({ queryKey: reconciliationListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('common:actions.edit') : t('documents:reconciliation.create')}
       description={isUpdate ? t('common:actions.edit') : t('documents:reconciliation.create')}
       formId="reconciliation-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -121,32 +71,8 @@ export function ReconciliationMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="documentNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:reconciliation.columns.documentNumber')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:reconciliation.columns.date')}</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<ReconciliationFormValues> name="documentNumber" label={t('documents:reconciliation.columns.documentNumber')} />
+          <TextField<ReconciliationFormValues> name="date" label={t('documents:reconciliation.columns.date')} type="datetime-local" />
           <EntityPickerField<ReconciliationFormValues>
             name="warehouseId"
             label={t('common:nav.warehouses')}

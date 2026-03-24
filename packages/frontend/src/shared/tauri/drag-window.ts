@@ -1,4 +1,4 @@
-import type React from 'react'
+import type * as React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
 interface TauriWindowHandle {
@@ -10,11 +10,13 @@ interface TauriWindowHandle {
 let win: TauriWindowHandle | null | undefined // undefined = pending
 
 async function resolve(): Promise<TauriWindowHandle | null> {
-  if (win !== undefined) return win
+  if (win !== undefined)
+    return win
   try {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     win = getCurrentWindow()
-  } catch {
+  }
+  catch {
     win = null
   }
   return win
@@ -39,8 +41,9 @@ export function useDragWindow() {
 
   useEffect(() => {
     if (win === undefined) {
-      resolve().then(w => {
-        if (w) setReady(true)
+      resolve().then((w) => {
+        if (w)
+          setReady(true)
       })
     }
   }, [])
@@ -48,16 +51,20 @@ export function useDragWindow() {
   // Single mousedown handler — uses e.detail to distinguish
   // single-click (drag) from double-click (toggle maximise).
   const onMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!win || e.buttons !== 1) return
-    if ((e.target as HTMLElement).closest(NO_DRAG)) return
+    if (!win || e.buttons !== 1)
+      return
+    if ((e.target as HTMLElement).closest(NO_DRAG))
+      return
     if (e.detail === 2) {
       win.toggleMaximize()
-    } else {
+    }
+    else {
       win.startDragging()
     }
   }, [])
 
-  if (!ready) return {}
+  if (!ready)
+    return {}
 
   return {
     onMouseDown,

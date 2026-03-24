@@ -1,5 +1,5 @@
-import type { TableDensity } from '~/components/data-table/density-context'
 import type { NavItem } from './types'
+import type { TableDensity } from '~/components/data-table/density-context'
 import { useNavigate } from '@tanstack/react-router'
 import { Check } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -69,7 +69,8 @@ let tauriWin: Awaited<
   try {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     tauriWin = getCurrentWindow()
-  } catch { /* not in Tauri */ }
+  }
+  catch { /* not in Tauri */ }
 })()
 
 function MenuTriggerButton({ children }: { children: React.ReactNode }) {
@@ -213,7 +214,8 @@ function ViewMenu() {
   }, [])
 
   const handleFullscreen = useCallback(async () => {
-    if (!tauriWin) return
+    if (!tauriWin)
+      return
     const isFull = await tauriWin.isFullscreen()
     await tauriWin.setFullscreen(!isFull)
   }, [])

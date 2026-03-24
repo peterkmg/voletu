@@ -1,26 +1,15 @@
 import type { RailWaybillResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { CompanyMutateDialog } from '~/features/catalog/companies/components/company-mutate-dialog'
 import { transportRailWaybillCreate, transportRailWaybillUpdate } from '~/generated/client'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { transportRailWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const railWaybillFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -42,76 +31,39 @@ export function RailWaybillMutateDialog({
   currentRow,
 }: RailWaybillMutateDialogProps) {
   const { t } = useTranslation(['transport', 'common'])
-  const isUpdate = !!currentRow
 
   const companiesQuery = useCatalogCompanyList()
 
-  const form = useForm<RailWaybillFormValues>({
-    resolver: zodResolver(railWaybillFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: railWaybillFormSchema,
     defaultValues: {
       documentNumber: '',
       date: '',
       senderId: '',
     },
+    mapRowToForm: (row: RailWaybillResponse) => ({
+      documentNumber: row.documentNumber,
+      date: row.date,
+      senderId: row.senderId,
+    }),
+    createFn: transportRailWaybillCreate,
+    updateFn: transportRailWaybillUpdate,
+    queryKey: transportRailWaybillListQueryKey(),
+    entityLabel: t('transport:rail.singular'),
+    formId: 'rail-waybill-form',
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        documentNumber: currentRow.documentNumber,
-        date: currentRow.date,
-        senderId: currentRow.senderId,
-      })
-    }
-    else {
-      form.reset({
-        documentNumber: '',
-        date: '',
-        senderId: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: RailWaybillFormValues) => {
-    try {
-      if (isUpdate && currentRow) {
-        await transportRailWaybillUpdate(currentRow.id, values)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('transport:rail.singular'),
-          }),
-        )
-      }
-      else {
-        await transportRailWaybillCreate(values)
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('transport:rail.singular'),
-          }),
-        )
-      }
-
-      await queryClient.invalidateQueries({ queryKey: transportRailWaybillListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('transport:rail.edit') : t('transport:rail.create')}
       description={isUpdate ? t('transport:rail.edit') : t('transport:rail.create')}
       formId="rail-waybill-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -119,32 +71,8 @@ export function RailWaybillMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="documentNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('transport:rail.form.documentNumber')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('transport:rail.form.date')}</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<RailWaybillFormValues> name="documentNumber" label={t('transport:rail.form.documentNumber')} />
+          <TextField<RailWaybillFormValues> name="date" label={t('transport:rail.form.date')} type="date" />
           <EntityPickerField<RailWaybillFormValues>
             name="senderId"
             label={t('transport:rail.form.senderId')}

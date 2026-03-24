@@ -9,12 +9,14 @@ let cachedWindow: Awaited<
 > | null = null
 
 async function getTauriWindow() {
-  if (cachedWindow) return cachedWindow
+  if (cachedWindow)
+    return cachedWindow
   try {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     cachedWindow = getCurrentWindow()
     return cachedWindow
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -37,12 +39,14 @@ function WindowControls() {
     let unlistenFn: (() => void) | undefined
 
     getTauriWindow().then(async (w) => {
-      if (cancelled || !w) return
+      if (cancelled || !w)
+        return
       setIsTauri(true)
       setIsMaximized(await w.isMaximized())
 
       unlistenFn = await w.onResized(async () => {
-        if (cancelled) return
+        if (cancelled)
+          return
         setIsMaximized(await w.isMaximized())
       })
     })
@@ -65,7 +69,8 @@ function WindowControls() {
     cachedWindow?.close()
   }, [])
 
-  if (!isTauri) return null
+  if (!isTauri)
+    return null
 
   return (
     <div className="flex h-full items-center">
@@ -88,28 +93,30 @@ function WindowControls() {
         className={cn(controlBase, 'hover:bg-foreground/8')}
         aria-label={isMaximized ? 'Restore' : 'Maximize'}
       >
-        {isMaximized ? (
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            className="fill-none stroke-current"
-            strokeWidth="1.1"
-          >
-            <rect x="0.5" y="2.5" width="7" height="7" rx="1" />
-            <path d="M2.5 2.5V1.25C2.5 0.84 2.84 0.5 3.25 0.5h5.5C9.16 0.5 9.5 0.84 9.5 1.25v5.5c0 .41-.34.75-.75.75H7.5" />
-          </svg>
-        ) : (
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            className="fill-none stroke-current"
-            strokeWidth="1.1"
-          >
-            <rect x="0.5" y="0.5" width="9" height="9" rx="1" />
-          </svg>
-        )}
+        {isMaximized
+          ? (
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                className="fill-none stroke-current"
+                strokeWidth="1.1"
+              >
+                <rect x="0.5" y="2.5" width="7" height="7" rx="1" />
+                <path d="M2.5 2.5V1.25C2.5 0.84 2.84 0.5 3.25 0.5h5.5C9.16 0.5 9.5 0.84 9.5 1.25v5.5c0 .41-.34.75-.75.75H7.5" />
+              </svg>
+            )
+          : (
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                className="fill-none stroke-current"
+                strokeWidth="1.1"
+              >
+                <rect x="0.5" y="0.5" width="9" height="9" rx="1" />
+              </svg>
+            )}
       </button>
 
       {/* Close */}

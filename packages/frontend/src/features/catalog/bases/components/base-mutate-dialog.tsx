@@ -1,24 +1,12 @@
 import type { BaseResponse } from '~/generated/types/BaseResponse'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { catalogBaseCreate, catalogBaseUpdate } from '~/generated/client'
 import { catalogBaseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const baseFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -41,80 +29,40 @@ export function BaseMutateDialog({
   onCreated,
 }: BaseMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
-  const form = useForm<BaseFormValues>({
-    resolver: zodResolver(baseFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: baseFormSchema,
     defaultValues: {
       commonName: '',
       longName: '',
     },
+    mapRowToForm: row => ({
+      commonName: row.commonName,
+      longName: row.longName ?? '',
+    }),
+    transformPayload: values => ({
+      ...values,
+      longName: values.longName || null,
+    }),
+    createFn: catalogBaseCreate,
+    updateFn: catalogBaseUpdate,
+    queryKey: catalogBaseListQueryKey(),
+    entityLabel: t('catalog:base.singular'),
+    formId: 'base-form',
+    onCreated,
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        commonName: currentRow.commonName,
-        longName: currentRow.longName ?? '',
-      })
-    }
-    else {
-      form.reset({
-        commonName: '',
-        longName: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: BaseFormValues) => {
-    try {
-      const payload = {
-        ...values,
-        longName: values.longName || null,
-      }
-
-      if (isUpdate && currentRow) {
-        await catalogBaseUpdate(currentRow.id, payload)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('catalog:base.singular'),
-          }),
-        )
-      }
-      else {
-        const result = await catalogBaseCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('catalog:base.singular'),
-          }),
-        )
-        if (onCreated && result?.data?.id) {
-          onCreated(result.data.id)
-        }
-      }
-
-      await queryClient.invalidateQueries({ queryKey: catalogBaseListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('catalog:base.edit') : t('catalog:base.create')}
       description={isUpdate ? t('catalog:base.edit') : t('catalog:base.create')}
       formId="base-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -122,32 +70,8 @@ export function BaseMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="commonName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:base.form.commonName')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="longName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:base.form.longName')}</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<BaseFormValues> name="commonName" label={t('catalog:base.form.commonName')} />
+          <TextField<BaseFormValues> name="longName" label={t('catalog:base.form.longName')} nullable />
         </form>
       </Form>
     </FormDialog>

@@ -7,8 +7,8 @@ import { useSyncWatermarkList } from '~/generated/hooks/SyncHooks/useSyncWaterma
 import { useNodeStatus } from '~/shared/api/hooks/use-node-status'
 import { AuditLogTable } from './components/audit-log-table'
 import { SyncStatusCard } from './components/sync-status-card'
-import { WorkerStatusCard } from './components/worker-status-card'
 import { WatermarksTable } from './components/watermarks-table'
+import { WorkerStatusCard } from './components/worker-status-card'
 
 export function SyncDashboard() {
   const { t } = useTranslation(['system'])

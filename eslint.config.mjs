@@ -2,7 +2,7 @@ import antfu from '@antfu/eslint-config'
 
 export default antfu(
   {
-    ignores: ['packages/frontend/src/routeTree.gen.ts'],
+    ignores: ['packages/frontend/src/routeTree.gen.ts', 'packages/frontend/src/generated/**'],
 
     formatters: true,
 

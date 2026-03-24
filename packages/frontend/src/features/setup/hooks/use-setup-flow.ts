@@ -1,5 +1,6 @@
 import type { SaveLocalConfigPayload } from '~/shared/tauri/commands'
 import { useState } from 'react'
+import { extractErrorMessage } from '~/lib/error'
 import { setApiBaseUrl } from '~/shared/api/base-url'
 import {
   saveLocalConfig,
@@ -57,7 +58,7 @@ export function useSetupFlow() {
       applyStartupState(state)
     }
     catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save remote config'
+      const message = extractErrorMessage(err, 'Failed to save remote config')
       setError(message)
       throw err
     }
@@ -81,7 +82,7 @@ export function useSetupFlow() {
       applyStartupState(state)
     }
     catch (err) {
-      const message = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to start local API'
+      const message = extractErrorMessage(err, 'Failed to start local API')
       setError(message)
       throw err
     }

@@ -1,5 +1,6 @@
 import type { StartupState as TauriStartupState } from '~/shared/tauri/commands'
 import { create } from 'zustand'
+import { extractErrorMessage } from '~/lib/error'
 import { getStartupState } from '~/shared/tauri/commands'
 
 interface StartupStoreState {
@@ -24,7 +25,7 @@ export const useStartupStore = create<StartupStoreState>()(set => ({
     catch (err) {
       set({
         isLoading: false,
-        error: err instanceof Error ? err.message : 'Failed to get startup state',
+        error: extractErrorMessage(err, 'Failed to get startup state'),
       })
     }
   },

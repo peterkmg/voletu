@@ -1,30 +1,17 @@
 import type { StorageResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/form-dialog'
-import { Checkbox } from '~/components/ui/checkbox'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { CheckboxField, TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { ProductTypeMutateDialog } from '~/features/catalog/product-types/components/product-type-mutate-dialog'
 import { WarehouseMutateDialog } from '~/features/catalog/warehouses/components/warehouse-mutate-dialog'
 import { catalogStorageCreate, catalogStorageUpdate } from '~/generated/client'
 import { useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
 import { catalogStorageListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const storageFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -48,15 +35,15 @@ export function StorageMutateDialog({
   currentRow,
 }: StorageMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
   const warehousesQuery = useCatalogWarehouseList()
-
   const productTypesQuery = useCatalogProductTypeList()
 
-  const form = useForm<StorageFormValues>({
-    resolver: zodResolver(storageFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: storageFormSchema,
     defaultValues: {
       commonName: '',
       warehouseId: '',
@@ -64,75 +51,33 @@ export function StorageMutateDialog({
       productTypeId: '',
       isTypeSpecific: false,
     },
+    mapRowToForm: row => ({
+      commonName: row.commonName,
+      warehouseId: row.warehouseId,
+      capacity: row.capacity ?? '',
+      productTypeId: row.productTypeId ?? '',
+      isTypeSpecific: row.isTypeSpecific,
+    }),
+    transformPayload: values => ({
+      ...values,
+      capacity: values.capacity || null,
+      productTypeId: values.productTypeId || null,
+    }),
+    createFn: catalogStorageCreate,
+    updateFn: catalogStorageUpdate,
+    queryKey: catalogStorageListQueryKey(),
+    entityLabel: t('catalog:storage.singular'),
+    formId: 'storage-form',
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        commonName: currentRow.commonName,
-        warehouseId: currentRow.warehouseId,
-        capacity: currentRow.capacity ?? '',
-        productTypeId: currentRow.productTypeId ?? '',
-        isTypeSpecific: currentRow.isTypeSpecific,
-      })
-    }
-    else {
-      form.reset({
-        commonName: '',
-        warehouseId: '',
-        capacity: '',
-        productTypeId: '',
-        isTypeSpecific: false,
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: StorageFormValues) => {
-    try {
-      const payload = {
-        ...values,
-        capacity: values.capacity || null,
-        productTypeId: values.productTypeId || null,
-      }
-
-      if (isUpdate && currentRow) {
-        await catalogStorageUpdate(currentRow.id, payload)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('catalog:storage.singular'),
-          }),
-        )
-      }
-      else {
-        await catalogStorageCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('catalog:storage.singular'),
-          }),
-        )
-      }
-
-      await queryClient.invalidateQueries({ queryKey: catalogStorageListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('catalog:storage.edit') : t('catalog:storage.create')}
       description={isUpdate ? t('catalog:storage.edit') : t('catalog:storage.create')}
       formId="storage-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -140,19 +85,7 @@ export function StorageMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="commonName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:storage.form.commonName')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<StorageFormValues> name="commonName" label={t('catalog:storage.form.commonName')} />
           <EntityPickerField<StorageFormValues>
             name="warehouseId"
             label={t('catalog:storage.form.warehouseId')}
@@ -162,19 +95,7 @@ export function StorageMutateDialog({
             allowCreate
             createDialog={WarehouseMutateDialog}
           />
-          <FormField
-            control={form.control}
-            name="capacity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:storage.form.capacity')}</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<StorageFormValues> name="capacity" label={t('catalog:storage.form.capacity')} nullable />
           <EntityPickerField<StorageFormValues>
             name="productTypeId"
             label={t('catalog:storage.form.productTypeId')}
@@ -185,23 +106,7 @@ export function StorageMutateDialog({
             allowCreate
             createDialog={ProductTypeMutateDialog}
           />
-          <FormField
-            control={form.control}
-            name="isTypeSpecific"
-            render={({ field }) => (
-              <FormItem className="flex items-center gap-2">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="!mt-0">
-                  {t('catalog:storage.form.isTypeSpecific')}
-                </FormLabel>
-              </FormItem>
-            )}
-          />
+          <CheckboxField<StorageFormValues> name="isTypeSpecific" label={t('catalog:storage.form.isTypeSpecific')} />
         </form>
       </Form>
     </FormDialog>

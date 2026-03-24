@@ -57,7 +57,8 @@ export function clearStoredSession(): void {
  */
 export async function validateOrRefreshSession(): Promise<AuthSession | null> {
   const session = loadStoredSession()
-  if (!session) return null
+  if (!session)
+    return null
 
   // Access token still valid — no refresh needed.
   // Use threshold=0 here: at startup we only care about actual expiry,

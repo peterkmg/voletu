@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
+import { extractErrorMessage } from '~/lib/error'
 import { useAuthStore } from '~/stores/auth-store'
 
 const initFormSchema = z
@@ -120,7 +121,7 @@ export function InitializePage() {
       navigate({ to: '/' })
     }
     catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common:toast.error'))
+      toast.error(extractErrorMessage(err, t('common:toast.error')))
     }
   }
 

@@ -1,7 +1,7 @@
-import { useAuthStore } from '~/stores/auth-store'
-import { useNodeStore } from '~/stores/node-store'
 import { isTokenExpiringSoon } from '~/shared/auth/jwt-decode'
 import { refreshLock } from '~/shared/auth/refresh'
+import { useAuthStore } from '~/stores/auth-store'
+import { useNodeStore } from '~/stores/node-store'
 
 export interface RequestConfig<TData = unknown> {
   url?: string
@@ -54,7 +54,8 @@ const PROACTIVE_REFRESH_THRESHOLD_SECONDS = 300 // 5 minutes
  */
 async function getValidToken(): Promise<string | null> {
   const { accessToken, refreshToken } = useAuthStore.getState().auth
-  if (!accessToken) return null
+  if (!accessToken)
+    return null
 
   if (isTokenExpiringSoon(accessToken, PROACTIVE_REFRESH_THRESHOLD_SECONDS) && refreshToken) {
     try {
@@ -76,7 +77,8 @@ async function getValidToken(): Promise<string | null> {
  */
 async function attemptSilentRefresh(): Promise<string | null> {
   const { refreshToken } = useAuthStore.getState().auth
-  if (!refreshToken) return null
+  if (!refreshToken)
+    return null
 
   try {
     const newSession = await refreshLock.acquire(refreshToken)

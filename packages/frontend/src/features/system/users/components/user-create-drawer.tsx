@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { PasswordInput } from '~/components/password-input'
@@ -27,6 +26,8 @@ import {
 } from '~/components/ui/sheet'
 import { systemUserCreate } from '~/generated/client'
 import { systemUserListQueryKey } from '~/generated/hooks/SystemUserHooks/useSystemUserList'
+import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
+import { extractErrorMessage } from '~/lib/error'
 import { queryClient } from '~/shared/api/query-client'
 
 const userFormSchema = z.object({
@@ -90,7 +91,7 @@ export function UserCreateDrawer({
     }
     catch (err) {
       toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
+        extractErrorMessage(err, t('common:toast.error')),
       )
     }
   }

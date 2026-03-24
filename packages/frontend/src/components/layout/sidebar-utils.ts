@@ -1,7 +1,8 @@
 import type { NavGroup } from './types'
 
 export function filterNavByRole(groups: NavGroup[], userRole: string | undefined): NavGroup[] {
-  if (!userRole) return []
+  if (!userRole)
+    return []
 
   return groups
     .filter(group => !group.roles || group.roles.includes(userRole))
@@ -9,7 +10,7 @@ export function filterNavByRole(groups: NavGroup[], userRole: string | undefined
       ...group,
       items: group.items
         .filter(item => !item.roles || item.roles.includes(userRole))
-        .map(item => {
+        .map((item) => {
           if ('items' in item && item.items) {
             return {
               ...item,

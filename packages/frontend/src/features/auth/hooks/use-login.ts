@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { authLogin } from '~/generated/client'
+import { extractErrorMessage } from '~/lib/error'
 import { toAuthSession } from '~/shared/auth/session'
 import { useAuthStore } from '~/stores/auth-store'
 
@@ -27,7 +28,7 @@ export function useLogin(): UseLoginResult {
       useAuthStore.getState().auth.setSession(session)
     }
     catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed'
+      const message = extractErrorMessage(err, 'Login failed')
       setError(message)
       throw err
     }

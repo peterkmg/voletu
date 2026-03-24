@@ -1,31 +1,12 @@
 import type { AcceptanceResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select'
+import { SelectField, TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { acceptanceDocumentCreate, acceptanceDocumentUpdate } from '~/generated/client'
 import { acceptanceDocumentListQueryKey } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const arrivalTypes = ['TRUCK', 'RAIL', 'EXTERNAL', 'INITIAL_BALANCE'] as const
 
@@ -50,85 +31,52 @@ export function AcceptanceMutateDialog({
   currentRow,
 }: AcceptanceMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
-  const form = useForm<AcceptanceFormValues>({
-    resolver: zodResolver(acceptanceFormSchema),
+  const arrivalTypeOptions = arrivalTypes.map(type => ({
+    value: type,
+    label: t(`documents:acceptance.arrivalTypes.${type}`),
+  }))
+
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog<
+    AcceptanceFormValues,
+    AcceptanceResponse,
+    AcceptanceFormValues & { sourceEntity: string | null }
+  >({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: acceptanceFormSchema,
     defaultValues: {
       documentNumber: '',
       dateAccepted: '',
       arrivalType: 'TRUCK',
       sourceEntity: '',
     },
+    mapRowToForm: row => ({
+      documentNumber: row.documentNumber,
+      dateAccepted: row.dateAccepted ? row.dateAccepted.slice(0, 16) : '',
+      arrivalType: row.arrivalType,
+      sourceEntity: row.sourceEntity ?? '',
+    }),
+    transformPayload: values => ({
+      ...values,
+      sourceEntity: values.sourceEntity || null,
+    }),
+    createFn: acceptanceDocumentCreate,
+    updateFn: acceptanceDocumentUpdate,
+    queryKey: acceptanceDocumentListQueryKey(),
+    entityLabel: t('documents:acceptance.singular'),
+    formId: 'acceptance-form',
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        documentNumber: currentRow.documentNumber,
-        dateAccepted: currentRow.dateAccepted
-          ? currentRow.dateAccepted.slice(0, 16)
-          : '',
-        arrivalType: currentRow.arrivalType,
-        sourceEntity: currentRow.sourceEntity ?? '',
-      })
-    }
-    else {
-      form.reset({
-        documentNumber: '',
-        dateAccepted: '',
-        arrivalType: 'TRUCK',
-        sourceEntity: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: AcceptanceFormValues) => {
-    try {
-      const payload = {
-        ...values,
-        sourceEntity: values.sourceEntity || null,
-      }
-
-      if (isUpdate && currentRow) {
-        await acceptanceDocumentUpdate(currentRow.id, payload)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('documents:acceptance.singular'),
-          }),
-        )
-      }
-      else {
-        await acceptanceDocumentCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('documents:acceptance.singular'),
-          }),
-        )
-      }
-
-      await queryClient.invalidateQueries({ queryKey: acceptanceDocumentListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('documents:acceptance.edit') : t('documents:acceptance.create')}
       description={isUpdate ? t('documents:acceptance.edit') : t('documents:acceptance.create')}
       formId="acceptance-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -136,72 +84,10 @@ export function AcceptanceMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="documentNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:acceptance.form.documentNumber')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="dateAccepted"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:acceptance.form.dateAccepted')}</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="arrivalType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:acceptance.form.arrivalType')}</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {arrivalTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        {t(`documents:acceptance.arrivalTypes.${type}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="sourceEntity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:acceptance.form.sourceEntity')}</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<AcceptanceFormValues> name="documentNumber" label={t('documents:acceptance.form.documentNumber')} />
+          <TextField<AcceptanceFormValues> name="dateAccepted" label={t('documents:acceptance.form.dateAccepted')} type="datetime-local" />
+          <SelectField<AcceptanceFormValues> name="arrivalType" label={t('documents:acceptance.form.arrivalType')} options={arrivalTypeOptions} />
+          <TextField<AcceptanceFormValues> name="sourceEntity" label={t('documents:acceptance.form.sourceEntity')} nullable />
         </form>
       </Form>
     </FormDialog>

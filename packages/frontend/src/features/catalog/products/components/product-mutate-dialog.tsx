@@ -1,29 +1,17 @@
 import type { ProductResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { CompanyMutateDialog } from '~/features/catalog/companies/components/company-mutate-dialog'
 import { ProductGroupMutateDialog } from '~/features/catalog/product-groups/components/product-group-mutate-dialog'
 import { catalogProductCreate, catalogProductUpdate } from '~/generated/client'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useCatalogProductGroupList } from '~/generated/hooks/CatalogHooks/useCatalogProductGroupList'
 import { catalogProductListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const productFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -46,88 +34,47 @@ export function ProductMutateDialog({
   currentRow,
 }: ProductMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
   const productGroupsQuery = useCatalogProductGroupList()
-
   const companiesQuery = useCatalogCompanyList()
 
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: productFormSchema,
     defaultValues: {
       commonName: '',
       productGroupId: '',
       manufacturerId: '',
       addIdentification: '',
     },
+    mapRowToForm: row => ({
+      commonName: row.commonName,
+      productGroupId: row.productGroupId,
+      manufacturerId: row.manufacturerId ?? '',
+      addIdentification: row.addIdentification ?? '',
+    }),
+    transformPayload: values => ({
+      ...values,
+      manufacturerId: values.manufacturerId || null,
+      addIdentification: values.addIdentification || null,
+    }),
+    createFn: catalogProductCreate,
+    updateFn: catalogProductUpdate,
+    queryKey: catalogProductListQueryKey(),
+    entityLabel: t('catalog:product.singular'),
+    formId: 'product-form',
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        commonName: currentRow.commonName,
-        productGroupId: currentRow.productGroupId,
-        manufacturerId: currentRow.manufacturerId ?? '',
-        addIdentification: currentRow.addIdentification ?? '',
-      })
-    }
-    else {
-      form.reset({
-        commonName: '',
-        productGroupId: '',
-        manufacturerId: '',
-        addIdentification: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: ProductFormValues) => {
-    try {
-      const payload = {
-        ...values,
-        manufacturerId: values.manufacturerId || null,
-        addIdentification: values.addIdentification || null,
-      }
-
-      if (isUpdate && currentRow) {
-        await catalogProductUpdate(currentRow.id, payload)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('catalog:product.singular'),
-          }),
-        )
-      }
-      else {
-        await catalogProductCreate(payload, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('catalog:product.singular'),
-          }),
-        )
-      }
-
-      await queryClient.invalidateQueries({ queryKey: catalogProductListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('catalog:product.edit') : t('catalog:product.create')}
       description={isUpdate ? t('catalog:product.edit') : t('catalog:product.create')}
       formId="product-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -135,19 +82,7 @@ export function ProductMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="commonName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:product.form.commonName')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<ProductFormValues> name="commonName" label={t('catalog:product.form.commonName')} />
           <EntityPickerField<ProductFormValues>
             name="productGroupId"
             label={t('catalog:product.form.productGroupId')}
@@ -167,19 +102,7 @@ export function ProductMutateDialog({
             allowCreate
             createDialog={CompanyMutateDialog}
           />
-          <FormField
-            control={form.control}
-            name="addIdentification"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:product.form.identification')}</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<ProductFormValues> name="addIdentification" label={t('catalog:product.form.identification')} nullable />
         </form>
       </Form>
     </FormDialog>

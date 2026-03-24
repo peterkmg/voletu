@@ -7,8 +7,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '~/components/ui/sidebar'
-import { useNodeStore } from '~/stores/node-store'
 import { cn } from '~/lib/utils'
+import { useNodeStore } from '~/stores/node-store'
 
 export function AppTitle() {
   const { t } = useTranslation('system')

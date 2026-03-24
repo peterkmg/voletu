@@ -25,7 +25,8 @@ function SidebarInitAction() {
   const user = useAuthStore(s => s.auth.user)
   const navigate = useNavigate()
 
-  if (status.isInitialized || user?.role !== 'ADMIN') return null
+  if (status.isInitialized || user?.role !== 'ADMIN')
+    return null
 
   return (
     <SidebarMenu className="px-2 py-1">

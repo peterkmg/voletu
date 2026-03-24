@@ -10,7 +10,8 @@
 export function decodeJwtExp(token: string): number | null {
   try {
     const parts = token.split('.')
-    if (parts.length !== 3) return null
+    if (parts.length !== 3)
+      return null
 
     // JWT payload is base64url-encoded. Replace URL-safe chars and decode.
     const payload = parts[1]!
@@ -32,6 +33,7 @@ export function decodeJwtExp(token: string): number | null {
  */
 export function isTokenExpiringSoon(token: string, thresholdSeconds = 300): boolean {
   const exp = decodeJwtExp(token)
-  if (exp === null) return true // treat unreadable tokens as expired
+  if (exp === null)
+    return true // treat unreadable tokens as expired
   return exp - Math.floor(Date.now() / 1000) < thresholdSeconds
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { extractErrorMessage } from '~/lib/error'
 import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
 
@@ -38,7 +39,7 @@ export function DevSeedButton() {
       toast.success(`Seeded — ${summary}`)
     }
     catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Seed failed')
+      toast.error(extractErrorMessage(err, 'Seed failed'))
     }
     finally {
       setLoading(false)

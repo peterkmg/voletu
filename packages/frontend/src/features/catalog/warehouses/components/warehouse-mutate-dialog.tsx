@@ -1,27 +1,15 @@
 import type { WarehouseResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { BaseMutateDialog } from '~/features/catalog/bases/components/base-mutate-dialog'
 import { catalogWarehouseCreate, catalogWarehouseUpdate } from '~/generated/client'
 import { useCatalogBaseList } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
 import { catalogWarehouseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const warehouseFormSchema = z.object({
   commonName: z.string().min(1, 'Common name is required'),
@@ -44,77 +32,38 @@ export function WarehouseMutateDialog({
   onCreated,
 }: WarehouseMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
   const basesQuery = useCatalogBaseList()
 
-  const form = useForm<WarehouseFormValues>({
-    resolver: zodResolver(warehouseFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: warehouseFormSchema,
     defaultValues: {
       commonName: '',
       baseId: '',
     },
+    mapRowToForm: row => ({
+      commonName: row.commonName,
+      baseId: row.baseId,
+    }),
+    createFn: catalogWarehouseCreate,
+    updateFn: catalogWarehouseUpdate,
+    queryKey: catalogWarehouseListQueryKey(),
+    entityLabel: t('catalog:warehouse.singular'),
+    formId: 'warehouse-form',
+    onCreated,
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        commonName: currentRow.commonName,
-        baseId: currentRow.baseId,
-      })
-    }
-    else {
-      form.reset({
-        commonName: '',
-        baseId: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: WarehouseFormValues) => {
-    try {
-      if (isUpdate && currentRow) {
-        await catalogWarehouseUpdate(currentRow.id, values)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('catalog:warehouse.singular'),
-          }),
-        )
-      }
-      else {
-        const result = await catalogWarehouseCreate(values, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('catalog:warehouse.singular'),
-          }),
-        )
-        if (onCreated && result?.data?.id) {
-          onCreated(result.data.id)
-        }
-      }
-
-      await queryClient.invalidateQueries({ queryKey: catalogWarehouseListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('catalog:warehouse.edit') : t('catalog:warehouse.create')}
       description={isUpdate ? t('catalog:warehouse.edit') : t('catalog:warehouse.create')}
       formId="warehouse-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -122,19 +71,7 @@ export function WarehouseMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="commonName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('catalog:warehouse.form.commonName')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<WarehouseFormValues> name="commonName" label={t('catalog:warehouse.form.commonName')} />
           <EntityPickerField<WarehouseFormValues>
             name="baseId"
             label={t('catalog:warehouse.form.baseId')}

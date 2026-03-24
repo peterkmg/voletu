@@ -1,28 +1,16 @@
 import type { BlendingResponse } from '~/generated/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { CompanyMutateDialog } from '~/features/catalog/companies/components/company-mutate-dialog'
 import { blendingDocumentCreate, blendingDocumentUpdate } from '~/generated/client'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
 import { blendingDocumentListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const blendingFormSchema = z.object({
   documentNumber: z.string().min(1, 'Document number is required'),
@@ -45,81 +33,42 @@ export function BlendingMutateDialog({
   currentRow,
 }: BlendingMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
-  const isUpdate = !!currentRow
-  const idempotencyKey = useIdempotencyKey()
 
   const companiesQuery = useCatalogCompanyList()
   const productsQuery = useCatalogProductList()
 
-  const form = useForm<BlendingFormValues>({
-    resolver: zodResolver(blendingFormSchema),
+  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: blendingFormSchema,
     defaultValues: {
       documentNumber: '',
       date: '',
       contractorId: '',
       targetProductId: '',
     },
+    mapRowToForm: (row: BlendingResponse) => ({
+      documentNumber: row.documentNumber,
+      date: row.date ? row.date.slice(0, 16) : '',
+      contractorId: row.contractorId,
+      targetProductId: row.targetProductId,
+    }),
+    createFn: blendingDocumentCreate,
+    updateFn: blendingDocumentUpdate,
+    queryKey: blendingDocumentListQueryKey(),
+    entityLabel: t('documents:blending.singular'),
+    formId: 'blending-form',
   })
-
-  useEffect(() => {
-    if (currentRow) {
-      form.reset({
-        documentNumber: currentRow.documentNumber,
-        date: currentRow.date ? currentRow.date.slice(0, 16) : '',
-        contractorId: currentRow.contractorId,
-        targetProductId: currentRow.targetProductId,
-      })
-    }
-    else {
-      form.reset({
-        documentNumber: '',
-        date: '',
-        contractorId: '',
-        targetProductId: '',
-      })
-    }
-  }, [currentRow, form])
-
-  const onSubmit = async (values: BlendingFormValues) => {
-    try {
-      if (isUpdate && currentRow) {
-        await blendingDocumentUpdate(currentRow.id, values)
-        toast.success(
-          t('common:toast.updateSuccess', {
-            entity: t('documents:blending.singular'),
-          }),
-        )
-      }
-      else {
-        await blendingDocumentCreate(values, { headers: { 'Idempotency-Key': idempotencyKey } })
-        toast.success(
-          t('common:toast.createSuccess', {
-            entity: t('documents:blending.singular'),
-          }),
-        )
-      }
-
-      await queryClient.invalidateQueries({ queryKey: blendingDocumentListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={isUpdate ? t('common:actions.edit') : t('documents:blending.create')}
       description={isUpdate ? t('common:actions.edit') : t('documents:blending.create')}
       formId="blending-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -127,32 +76,8 @@ export function BlendingMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="documentNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:blending.columns.documentNumber')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:blending.columns.date')}</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<BlendingFormValues> name="documentNumber" label={t('documents:blending.columns.documentNumber')} />
+          <TextField<BlendingFormValues> name="date" label={t('documents:blending.columns.date')} type="datetime-local" />
           <EntityPickerField<BlendingFormValues>
             name="contractorId"
             label={t('documents:items.contractor')}

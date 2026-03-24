@@ -4,9 +4,13 @@ import { decodeJwtExp, isTokenExpiringSoon } from './jwt-decode'
 // Helper: build a minimal JWT with a given exp claim
 function makeJwt(payload: Record<string, unknown>): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
   const body = btoa(JSON.stringify(payload))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
   return `${header}.${body}.fake-signature`
 }
 

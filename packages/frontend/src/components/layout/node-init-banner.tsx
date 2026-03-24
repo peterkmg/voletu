@@ -8,7 +8,8 @@ export function NodeInitBanner() {
   const status = useNodeStore(s => s.status)
   const user = useAuthStore(s => s.auth.user)
 
-  if (status.isInitialized) return null
+  if (status.isInitialized)
+    return null
 
   const isAdmin = user?.role === 'ADMIN'
 

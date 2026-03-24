@@ -1,22 +1,11 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
-import { toast } from 'sonner'
 import { z } from 'zod'
 import { FormDialog } from '~/components/form-dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
+import { TextField } from '~/components/form-fields'
+import { Form } from '~/components/ui/form'
 import { ownershipTransferCreate } from '~/generated/client'
 import { ownershipTransferListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferList'
-import { queryClient } from '~/shared/api/query-client'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 
 const ownershipTransferFormSchema = z.object({
   date: z.string().min(1, 'Date is required'),
@@ -34,47 +23,36 @@ export function OwnershipTransferMutateDialog({
   onOpenChange,
 }: OwnershipTransferMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
-  const idempotencyKey = useIdempotencyKey()
 
-  const form = useForm<OwnershipTransferFormValues>({
-    resolver: zodResolver(ownershipTransferFormSchema),
+  const { form, onSubmit, handleOpenChange } = useMutateDialog<
+    OwnershipTransferFormValues,
+    { id: string },
+    OwnershipTransferFormValues & { items: never[] }
+  >({
+    open,
+    onOpenChange,
+    schema: ownershipTransferFormSchema,
     defaultValues: {
       date: '',
     },
+    transformPayload: values => ({
+      ...values,
+      items: [],
+    }),
+    createFn: ownershipTransferCreate,
+    queryKey: ownershipTransferListQueryKey(),
+    entityLabel: t('documents:ownershipTransfer.singular'),
+    formId: 'ownership-transfer-form',
   })
-
-  const onSubmit = async (values: OwnershipTransferFormValues) => {
-    try {
-      await ownershipTransferCreate({
-        ...values,
-        items: [],
-      }, { headers: { 'Idempotency-Key': idempotencyKey } })
-      toast.success(
-        t('common:toast.createSuccess', {
-          entity: t('documents:ownershipTransfer.singular'),
-        }),
-      )
-      await queryClient.invalidateQueries({ queryKey: ownershipTransferListQueryKey() })
-      onOpenChange(false)
-      form.reset()
-    }
-    catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t('common:toast.error'),
-      )
-    }
-  }
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        form.reset()
-      }}
+      onOpenChange={handleOpenChange}
       title={t('documents:ownershipTransfer.create')}
       description={t('documents:ownershipTransfer.create')}
       formId="ownership-transfer-form"
+      isSubmitting={form.formState.isSubmitting}
     >
       <Form {...form}>
         <form
@@ -82,19 +60,7 @@ export function OwnershipTransferMutateDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('documents:acceptance.columns.date')}</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField<OwnershipTransferFormValues> name="date" label={t('documents:acceptance.columns.date')} type="datetime-local" />
         </form>
       </Form>
     </FormDialog>

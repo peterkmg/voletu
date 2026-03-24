@@ -1,5 +1,8 @@
 import type { AuthSession } from './session'
 
+import type { LoginResponse } from '~/generated/types/LoginResponse'
+import { toAuthSession } from './session'
+
 type RefreshFn = (refreshToken: string) => Promise<AuthSession>
 
 export interface RefreshLock {
@@ -20,9 +23,6 @@ export function createRefreshLock(refreshFn: RefreshFn): RefreshLock {
     },
   }
 }
-
-import type { LoginResponse } from '~/generated/types/LoginResponse'
-import { toAuthSession } from './session'
 
 /** Resolve the API base URL from the same global as kubb-client, without importing kubb-client. */
 function getApiBaseUrl(): string {
