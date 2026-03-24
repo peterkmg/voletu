@@ -8,7 +8,7 @@ import { DataTableRowActions } from './data-table-row-actions'
 export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
   return [
     selectColumn<StorageResponse>(),
-    textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName'), { className: 'w-1/4' }),
+    textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName')),
     resolvedColumn<StorageResponse>('warehouseId', t('catalog:storage.columns.warehouseId'), 'warehouseIdName'),
     numericColumn<StorageResponse>('capacity', t('catalog:storage.columns.capacity')),
     resolvedColumn<StorageResponse>('productTypeId', t('catalog:storage.columns.productTypeId'), 'productTypeIdName'),

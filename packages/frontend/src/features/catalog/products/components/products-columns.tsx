@@ -7,7 +7,7 @@ import { DataTableRowActions } from './data-table-row-actions'
 export function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
   return [
     selectColumn<ProductResponse>(),
-    textColumn<ProductResponse>('commonName', t('catalog:product.columns.commonName'), { className: 'w-1/4' }),
+    textColumn<ProductResponse>('commonName', t('catalog:product.columns.commonName')),
     resolvedColumn<ProductResponse>('productGroupId', t('catalog:product.columns.productGroupId'), 'productGroupIdName'),
     resolvedColumn<ProductResponse>('manufacturerId', t('catalog:product.columns.manufacturerId'), 'manufacturerIdName'),
     textColumn<ProductResponse>('addIdentification', t('catalog:product.columns.identification'), { primary: false }),

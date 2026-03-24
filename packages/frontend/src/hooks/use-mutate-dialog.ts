@@ -1,6 +1,6 @@
 import type { DefaultValues, FieldValues, UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -68,14 +68,19 @@ export function useMutateDialog<
     defaultValues,
   })
 
+  const defaultValuesRef = useRef(defaultValues)
+  const mapRowToFormRef = useRef(mapRowToForm)
+  defaultValuesRef.current = defaultValues
+  mapRowToFormRef.current = mapRowToForm
+
   useEffect(() => {
-    if (currentRow && mapRowToForm) {
-      form.reset(mapRowToForm(currentRow))
+    if (currentRow && mapRowToFormRef.current) {
+      form.reset(mapRowToFormRef.current(currentRow))
     }
     else {
-      form.reset(defaultValues)
+      form.reset(defaultValuesRef.current)
     }
-  }, [currentRow, form, defaultValues, mapRowToForm])
+  }, [currentRow, form])
 
   const onSubmit = async (values: TForm) => {
     try {

@@ -14,6 +14,7 @@ interface OwnershipTransferTableProps {
 export function OwnershipTransferTable({ data }: OwnershipTransferTableProps) {
   return (
     <EntityTable
+      tableId="ownership-transfer"
       data={data}
       getColumns={getOwnershipTransferColumns}
       routeApi={route}

@@ -61,11 +61,11 @@ export function DataTableColumnHeader<TData, TValue>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+          <DropdownMenuItem onSelect={() => column.toggleSorting(false)}>
             <ArrowUp className="size-3.5 text-muted-foreground/70" />
             Asc
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+          <DropdownMenuItem onSelect={() => column.toggleSorting(true)}>
             <ArrowDown className="size-3.5 text-muted-foreground/70" />
             Desc
           </DropdownMenuItem>
@@ -75,18 +75,18 @@ export function DataTableColumnHeader<TData, TValue>({
               {column.getCanPin() && (
                 column.getIsPinned()
                   ? (
-                      <DropdownMenuItem onClick={() => column.pin(false)}>
+                      <DropdownMenuItem onSelect={() => column.pin(false)}>
                         <PinOff className="size-3.5 text-muted-foreground/70" />
                         Unpin
                       </DropdownMenuItem>
                     )
                   : (
                       <>
-                        <DropdownMenuItem onClick={() => column.pin('left')}>
+                        <DropdownMenuItem onSelect={() => column.pin('left')}>
                           <PinIcon className="size-3.5 text-muted-foreground/70" />
                           Pin left
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => column.pin('right')}>
+                        <DropdownMenuItem onSelect={() => column.pin('right')}>
                           <PinIcon className="size-3.5 rotate-90 text-muted-foreground/70" />
                           Pin right
                         </DropdownMenuItem>
@@ -94,7 +94,7 @@ export function DataTableColumnHeader<TData, TValue>({
                     )
               )}
               {column.getCanHide() && (
-                <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
+                <DropdownMenuItem onSelect={() => column.toggleVisibility(false)}>
                   <EyeOff className="size-3.5 text-muted-foreground/70" />
                   Hide
                 </DropdownMenuItem>

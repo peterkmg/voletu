@@ -1,4 +1,5 @@
 import type { Table } from '@tanstack/react-table'
+import type { TableMode } from './table-mode-toggle'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
@@ -6,6 +7,7 @@ import { DebouncedInput } from './debounced-input'
 import { DensityToggle } from './density-toggle'
 import { ExportButton } from './export-button'
 import { DataTableFacetedFilter } from './faceted-filter'
+import { TableModeToggle } from './table-mode-toggle'
 import { DataTableViewOptions } from './view-options'
 
 interface DataTableToolbarProps<TData> {
@@ -21,6 +23,8 @@ interface DataTableToolbarProps<TData> {
       icon?: React.ComponentType<{ className?: string }>
     }[]
   }[]
+  tableMode?: TableMode
+  onTableModeChange?: (mode: TableMode) => void
 }
 
 export function DataTableToolbar<TData>({
@@ -28,6 +32,8 @@ export function DataTableToolbar<TData>({
   searchPlaceholder,
   searchKey,
   filters = [],
+  tableMode,
+  onTableModeChange,
 }: DataTableToolbarProps<TData>) {
   const { t } = useTranslation('common')
   const isFiltered
@@ -89,6 +95,9 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex items-center gap-2">
         <ExportButton table={table} />
+        {tableMode && onTableModeChange && (
+          <TableModeToggle mode={tableMode} onModeChange={onTableModeChange} />
+        )}
         <DensityToggle />
         <DataTableViewOptions table={table} />
       </div>

@@ -14,6 +14,7 @@ interface AcceptanceTableProps {
 export function AcceptanceTable({ data }: AcceptanceTableProps) {
   return (
     <EntityTable
+      tableId="acceptance"
       data={data}
       getColumns={getAcceptanceColumns}
       routeApi={route}

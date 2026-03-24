@@ -14,6 +14,7 @@ interface BlendingTableProps {
 export function BlendingTable({ data }: BlendingTableProps) {
   return (
     <EntityTable
+      tableId="blending"
       data={data}
       getColumns={getBlendingColumns}
       routeApi={route}

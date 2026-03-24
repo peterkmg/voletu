@@ -86,14 +86,14 @@ export function NavUser() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate({ to: '/settings' })}>
+              <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
                 <User />
                 {t('auth:session.profile')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => setSignOutOpen(true)}
+                onSelect={() => setSignOutOpen(true)}
               >
                 <LogOut />
                 {t('auth:session.logout')}
@@ -106,8 +106,8 @@ export function NavUser() {
       <ConfirmDialog
         open={signOutOpen}
         onOpenChange={setSignOutOpen}
-        title={t('common:confirm.deleteTitle')}
-        description={t('common:confirm.deleteDescription')}
+        title={t('common:titlebar.signOut')}
+        description={t('common:titlebar.signOutConfirm')}
         confirmLabel={t('common:actions.confirm')}
         cancelLabel={t('common:actions.cancel')}
         variant="destructive"

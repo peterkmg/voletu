@@ -25,7 +25,7 @@ export function EntityPage<TRow>({
     <Provider>
       <Header fixed />
 
-      <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
+      <Main fixed className="flex flex-1 flex-col gap-4 sm:gap-6">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
@@ -51,7 +51,9 @@ export function EntityPage<TRow>({
               </div>
             )
           : (
-              <Table data={data} />
+              <div className="flex flex-1 flex-col min-h-0">
+                <Table data={data} />
+              </div>
             )}
       </Main>
 

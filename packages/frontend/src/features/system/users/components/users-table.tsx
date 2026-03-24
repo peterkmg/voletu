@@ -13,6 +13,7 @@ interface UsersTableProps {
 export function UsersTable({ data }: UsersTableProps) {
   return (
     <EntityTable
+      tableId="users"
       data={data}
       getColumns={getUserColumns}
       routeApi={route}

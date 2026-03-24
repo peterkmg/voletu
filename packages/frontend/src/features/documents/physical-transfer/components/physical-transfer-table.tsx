@@ -14,6 +14,7 @@ interface PhysicalTransferTableProps {
 export function PhysicalTransferTable({ data }: PhysicalTransferTableProps) {
   return (
     <EntityTable
+      tableId="physical-transfer"
       data={data}
       getColumns={getPhysicalTransferColumns}
       routeApi={route}

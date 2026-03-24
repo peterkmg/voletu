@@ -7,8 +7,8 @@ import { DataTableRowActions } from './data-table-row-actions'
 export function getPortColumns(t: TFunction): ColumnDef<PortResponse>[] {
   return [
     selectColumn<PortResponse>(),
-    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName'), { className: 'w-1/3' }),
-    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false, className: 'w-1/4' }),
+    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName')),
+    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false }),
     dateColumn<PortResponse>('createdAt', t('common:table.createdAt')),
     actionsColumn<PortResponse>(DataTableRowActions),
   ]

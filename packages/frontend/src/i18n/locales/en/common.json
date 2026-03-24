@@ -74,7 +74,14 @@
     "columns": "Columns",
     "ascending": "Ascending",
     "descending": "Descending",
-    "hide": "Hide"
+    "hide": "Hide",
+    "toggleColumns": "Toggle columns"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred. Please try again later.",
+    "goBack": "Go Back",
+    "dashboard": "Dashboard"
   },
   "form": {
     "required": "This field is required",

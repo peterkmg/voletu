@@ -8,8 +8,8 @@ import { DataTableRowActions } from './data-table-row-actions'
 export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
   return [
     selectColumn<CompanyResponse>(),
-    textColumn<CompanyResponse>('commonName', t('catalog:company.columns.commonName'), { className: 'w-1/3' }),
-    textColumn<CompanyResponse>('legalName', t('catalog:company.columns.legalName'), { primary: false, className: 'w-1/4' }),
+    textColumn<CompanyResponse>('commonName', t('catalog:company.columns.commonName')),
+    textColumn<CompanyResponse>('legalName', t('catalog:company.columns.legalName'), { primary: false }),
     {
       id: 'roles',
       header: t('common:table.status'),

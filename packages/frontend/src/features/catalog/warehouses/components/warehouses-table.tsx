@@ -14,6 +14,7 @@ interface WarehousesTableProps {
 export function WarehousesTable({ data }: WarehousesTableProps) {
   return (
     <EntityTable
+      tableId="warehouses"
       data={data}
       getColumns={getWarehouseColumns}
       routeApi={route}

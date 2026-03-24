@@ -28,6 +28,7 @@ export function ReconciliationTable({ data }: ReconciliationTableProps) {
 
   return (
     <EntityTable
+      tableId="reconciliation"
       data={data}
       getColumns={getColumns}
       routeApi={route}

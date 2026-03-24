@@ -14,6 +14,7 @@ interface PortsTableProps {
 export function PortsTable({ data }: PortsTableProps) {
   return (
     <EntityTable
+      tableId="ports"
       data={data}
       getColumns={getPortColumns}
       routeApi={route}

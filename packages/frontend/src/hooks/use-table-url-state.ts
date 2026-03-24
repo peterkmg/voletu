@@ -3,7 +3,7 @@ import type {
   OnChangeFn,
   PaginationState,
 } from '@tanstack/react-table'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 type SearchRecord = Record<string, unknown>
 
@@ -107,7 +107,7 @@ export function useTableUrlState(
     return { pageIndex: Math.max(0, pageNum - 1), pageSize: pageSizeNum }
   }, [search, pageKey, pageSizeKey, defaultPage, defaultPageSize])
 
-  const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
+  const onPaginationChange: OnChangeFn<PaginationState> = useCallback((updater) => {
     const next = typeof updater === 'function' ? updater(pagination) : updater
     const nextPage = next.pageIndex + 1
     const nextPageSize = next.pageSize
@@ -119,7 +119,7 @@ export function useTableUrlState(
           nextPageSize === defaultPageSize ? undefined : nextPageSize,
       }),
     })
-  }
+  }, [pagination, navigate, pageKey, pageSizeKey, defaultPage, defaultPageSize])
 
   const [globalFilter, setGlobalFilter] = useState<string | undefined>(() => {
     if (!globalFilterEnabled)
@@ -128,26 +128,26 @@ export function useTableUrlState(
     return typeof raw === 'string' ? raw : ''
   })
 
-  const onGlobalFilterChange: OnChangeFn<string> | undefined
-    = globalFilterEnabled
-      ? (updater) => {
-          const next
-            = typeof updater === 'function'
-              ? updater(globalFilter ?? '')
-              : updater
-          const value = trimGlobal ? next.trim() : next
-          setGlobalFilter(value)
-          navigate({
-            search: (prev: SearchRecord) => ({
-              ...(prev as SearchRecord),
-              [pageKey]: undefined,
-              [globalFilterKey]: value || undefined,
-            }),
-          })
-        }
-      : undefined
+  const onGlobalFilterChangeImpl: OnChangeFn<string> = useCallback((updater) => {
+    const next
+      = typeof updater === 'function'
+        ? updater(globalFilter ?? '')
+        : updater
+    const value = trimGlobal ? next.trim() : next
+    setGlobalFilter(value)
+    navigate({
+      search: (prev: SearchRecord) => ({
+        ...(prev as SearchRecord),
+        [pageKey]: undefined,
+        [globalFilterKey]: value || undefined,
+      }),
+    })
+  }, [globalFilter, trimGlobal, navigate, pageKey, globalFilterKey])
 
-  const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {
+  const onGlobalFilterChange: OnChangeFn<string> | undefined
+    = globalFilterEnabled ? onGlobalFilterChangeImpl : undefined
+
+  const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = useCallback((updater) => {
     const next
       = typeof updater === 'function' ? updater(columnFilters) : updater
     setColumnFilters(next)
@@ -178,9 +178,9 @@ export function useTableUrlState(
         ...patch,
       }),
     })
-  }
+  }, [columnFilters, columnFiltersCfg, navigate, pageKey])
 
-  const ensurePageInRange = (
+  const ensurePageInRange = useCallback((
     pageCount: number,
     opts: { resetTo?: 'first' | 'last' } = { resetTo: 'first' },
   ) => {
@@ -195,7 +195,7 @@ export function useTableUrlState(
         }),
       })
     }
-  }
+  }, [search, pageKey, defaultPage, navigate])
 
   return {
     globalFilter: globalFilterEnabled ? (globalFilter ?? '') : undefined,

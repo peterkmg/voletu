@@ -60,17 +60,18 @@ export function UserCreateDrawer({
       roleName: '',
     },
   })
+  const { reset } = form
 
   useEffect(() => {
     if (!open) {
-      form.reset({
+      reset({
         username: '',
         password: '',
         fullname: '',
         roleName: '',
       })
     }
-  }, [open, form])
+  }, [open, reset])
 
   const onSubmit = async (values: UserFormValues) => {
     try {

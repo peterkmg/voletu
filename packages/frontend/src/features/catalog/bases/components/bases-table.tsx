@@ -14,6 +14,7 @@ interface BasesTableProps {
 export function BasesTable({ data }: BasesTableProps) {
   return (
     <EntityTable
+      tableId="bases"
       data={data}
       getColumns={getBaseColumns}
       routeApi={route}

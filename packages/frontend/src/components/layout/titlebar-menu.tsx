@@ -131,7 +131,7 @@ function FileMenu() {
           <MenuTriggerButton>{t('titlebar.file')}</MenuTriggerButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-48">
-          <DropdownMenuItem onClick={() => navigate({ to: '/settings' })}>
+          <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
             {t('titlebar.settings')}
             <DropdownMenuShortcut>Ctrl+,</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -144,7 +144,7 @@ function FileMenu() {
               {languages.map(lang => (
                 <DropdownMenuItem
                   key={lang.code}
-                  onClick={() => switchLanguage(lang.code)}
+                  onSelect={() => switchLanguage(lang.code)}
                 >
                   {lang.label}
                   <Check
@@ -160,7 +160,7 @@ function FileMenu() {
 
           <DropdownMenuItem
             variant="destructive"
-            onClick={() => setSignOutOpen(true)}
+            onSelect={() => setSignOutOpen(true)}
           >
             {t('titlebar.signOut')}
           </DropdownMenuItem>
@@ -168,7 +168,7 @@ function FileMenu() {
           {isTauri && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleQuit}>
+              <DropdownMenuItem onSelect={handleQuit}>
                 {t('titlebar.quit')}
                 <DropdownMenuShortcut>Ctrl+Q</DropdownMenuShortcut>
               </DropdownMenuItem>
@@ -226,13 +226,13 @@ function ViewMenu() {
         <MenuTriggerButton>{t('titlebar.view')}</MenuTriggerButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-48">
-        <DropdownMenuItem onClick={handleToggleSidebar}>
+        <DropdownMenuItem onSelect={handleToggleSidebar}>
           {t('titlebar.toggleSidebar')}
           <DropdownMenuShortcut>Ctrl+B</DropdownMenuShortcut>
         </DropdownMenuItem>
 
         {isTauri && (
-          <DropdownMenuItem onClick={handleFullscreen}>
+          <DropdownMenuItem onSelect={handleFullscreen}>
             {t('titlebar.fullscreen')}
             <DropdownMenuShortcut>F11</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -267,21 +267,21 @@ function ViewMenu() {
             {t('titlebar.themeMenu')}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => setTheme('light')}>
+            <DropdownMenuItem onSelect={() => setTheme('light')}>
               {t('theme.light')}
               <Check
                 size={14}
                 className={cn('ms-auto', theme !== 'light' && 'hidden')}
               />
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('dark')}>
+            <DropdownMenuItem onSelect={() => setTheme('dark')}>
               {t('theme.dark')}
               <Check
                 size={14}
                 className={cn('ms-auto', theme !== 'dark' && 'hidden')}
               />
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('system')}>
+            <DropdownMenuItem onSelect={() => setTheme('system')}>
               {t('theme.system')}
               <Check
                 size={14}
@@ -323,7 +323,7 @@ function GoMenu() {
                 return (
                   <DropdownMenuItem
                     key={item.url}
-                    onClick={() => go(item.url)}
+                    onSelect={() => go(item.url)}
                   >
                     {item.title}
                   </DropdownMenuItem>
@@ -339,7 +339,7 @@ function GoMenu() {
                       {item.items.map(sub => (
                         <DropdownMenuItem
                           key={sub.url}
-                          onClick={() => go(sub.url)}
+                          onSelect={() => go(sub.url)}
                         >
                           {sub.title}
                         </DropdownMenuItem>
@@ -373,11 +373,11 @@ function HelpMenu() {
           <MenuTriggerButton>{t('titlebar.help')}</MenuTriggerButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-48">
-          <DropdownMenuItem onClick={() => setShortcutsOpen(true)}>
+          <DropdownMenuItem onSelect={() => setShortcutsOpen(true)}>
             {t('titlebar.keyboardShortcuts')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setAboutOpen(true)}>
+          <DropdownMenuItem onSelect={() => setAboutOpen(true)}>
             {t('titlebar.aboutVoletu')}
           </DropdownMenuItem>
         </DropdownMenuContent>

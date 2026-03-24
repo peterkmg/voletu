@@ -7,6 +7,12 @@ import { StatusBadge } from './status-badge'
 export function selectColumn<T>(): ColumnDef<T> {
   return {
     id: 'select',
+    size: 36,
+    minSize: 36,
+    maxSize: 36,
+    enableResizing: false,
+    enableSorting: false,
+    enableHiding: false,
     header: ({ table }) => (
       <Checkbox
         checked={
@@ -26,8 +32,6 @@ export function selectColumn<T>(): ColumnDef<T> {
         className="translate-y-[2px]"
       />
     ),
-    enableSorting: false,
-    enableHiding: false,
   }
 }
 
@@ -36,6 +40,11 @@ export function actionsColumn<T>(
 ): ColumnDef<T> {
   return {
     id: 'actions',
+    size: 72,
+    minSize: 72,
+    maxSize: 72,
+    enableResizing: false,
+    enableHiding: false,
     cell: ({ row }) => <Actions row={row} />,
   }
 }
@@ -51,7 +60,8 @@ export function dateColumn<T>(
       <DataTableColumnHeader column={column} title={title} />
     ),
     meta: {
-      align: opts?.align ?? 'right' as const,
+      label: title,
+      align: opts?.align ?? 'left' as const,
       ...(opts?.className ? { className: opts.className } : {}),
     },
     cell: ({ row }) => <DateCell value={row.getValue(accessorKey)} />,
@@ -69,7 +79,10 @@ export function textColumn<T>(
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    ...(opts?.className ? { meta: { className: opts.className } } : {}),
+    meta: {
+      label: title,
+      ...(opts?.className ? { className: opts.className } : {}),
+    },
     cell: ({ row }) =>
       primary
         ? (
@@ -93,6 +106,7 @@ export function resolvedColumn<T>(
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
+    meta: { label: title },
     cell: ({ row }) => (
       <ResolvedCell value={(row.original as Record<string, unknown>)[resolvedKey] as string} />
     ),
@@ -109,6 +123,7 @@ export function statusColumn<T>(
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
+    meta: { label: title },
     cell: ({ row }) => (
       <StatusBadge value={row.getValue(accessorKey)} colorMap={colorMap} />
     ),
@@ -125,7 +140,7 @@ export function numericColumn<T>(
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    meta: { align: opts?.align ?? 'right' as const },
+    meta: { label: title, align: opts?.align ?? 'left' as const },
     cell: ({ row }) => (
       <NumericCell value={row.getValue(accessorKey)} padWidth={opts?.padWidth} />
     ),

@@ -14,6 +14,7 @@ interface ProductGroupsTableProps {
 export function ProductGroupsTable({ data }: ProductGroupsTableProps) {
   return (
     <EntityTable
+      tableId="product-groups"
       data={data}
       getColumns={getProductGroupColumns}
       routeApi={route}

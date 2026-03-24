@@ -1,4 +1,5 @@
 import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 
 interface GeneralErrorProps {
@@ -9,9 +10,10 @@ interface GeneralErrorProps {
 
 export function GeneralError({
   statusCode = 500,
-  title = 'Something went wrong',
-  message = 'An unexpected error occurred. Please try again later.',
+  title,
+  message,
 }: GeneralErrorProps) {
+  const { t } = useTranslation('common')
   const navigate = useNavigate()
   const router = useRouter()
 
@@ -20,13 +22,13 @@ export function GeneralError({
       <h1 className="text-7xl font-bold text-muted-foreground">
         {statusCode}
       </h1>
-      <p className="text-lg font-semibold">{title}</p>
-      <p className="text-muted-foreground">{message}</p>
+      <p className="text-lg font-semibold">{title ?? t('error.title')}</p>
+      <p className="text-muted-foreground">{message ?? t('error.message')}</p>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => router.history.back()}>
-          Go Back
+          {t('error.goBack')}
         </Button>
-        <Button onClick={() => navigate({ to: '/' })}>Dashboard</Button>
+        <Button onClick={() => navigate({ to: '/' })}>{t('error.dashboard')}</Button>
       </div>
     </div>
   )

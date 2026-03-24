@@ -14,6 +14,7 @@ interface StoragesTableProps {
 export function StoragesTable({ data }: StoragesTableProps) {
   return (
     <EntityTable
+      tableId="storages"
       data={data}
       getColumns={getStorageColumns}
       routeApi={route}

@@ -14,6 +14,7 @@ interface CompaniesTableProps {
 export function CompaniesTable({ data }: CompaniesTableProps) {
   return (
     <EntityTable
+      tableId="companies"
       data={data}
       getColumns={getCompanyColumns}
       routeApi={route}

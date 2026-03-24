@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Input } from '~/components/ui/input'
 
 interface DebouncedInputProps
@@ -15,6 +15,8 @@ export function DebouncedInput({
   ...props
 }: DebouncedInputProps) {
   const [value, setValue] = useState(externalValue)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
@@ -24,11 +26,11 @@ export function DebouncedInput({
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (value !== externalValue) {
-        onChange(value)
+        onChangeRef.current(value)
       }
     }, debounce)
     return () => clearTimeout(timeout)
-  }, [value, debounce]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [value, debounce, externalValue])
 
   return (
     <Input

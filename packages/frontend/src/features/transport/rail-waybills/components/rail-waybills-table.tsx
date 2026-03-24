@@ -14,6 +14,7 @@ interface RailWaybillsTableProps {
 export function RailWaybillsTable({ data }: RailWaybillsTableProps) {
   return (
     <EntityTable
+      tableId="rail-waybills"
       data={data}
       getColumns={getRailWaybillColumns}
       routeApi={route}

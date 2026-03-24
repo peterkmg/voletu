@@ -14,6 +14,7 @@ interface TruckWaybillsTableProps {
 export function TruckWaybillsTable({ data }: TruckWaybillsTableProps) {
   return (
     <EntityTable
+      tableId="truck-waybills"
       data={data}
       getColumns={getTruckWaybillColumns}
       routeApi={route}

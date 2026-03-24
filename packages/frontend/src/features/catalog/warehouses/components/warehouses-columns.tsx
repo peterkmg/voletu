@@ -7,7 +7,7 @@ import { DataTableRowActions } from './data-table-row-actions'
 export function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
   return [
     selectColumn<WarehouseResponse>(),
-    textColumn<WarehouseResponse>('commonName', t('catalog:warehouse.columns.commonName'), { className: 'w-1/3' }),
+    textColumn<WarehouseResponse>('commonName', t('catalog:warehouse.columns.commonName')),
     resolvedColumn<WarehouseResponse>('baseId', t('catalog:warehouse.columns.baseId'), 'baseIdName'),
     dateColumn<WarehouseResponse>('createdAt', t('common:table.createdAt')),
     actionsColumn<WarehouseResponse>(DataTableRowActions),

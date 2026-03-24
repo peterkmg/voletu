@@ -14,6 +14,7 @@ interface DispatchTableProps {
 export function DispatchTable({ data }: DispatchTableProps) {
   return (
     <EntityTable
+      tableId="dispatch"
       data={data}
       getColumns={getDispatchColumns}
       routeApi={route}

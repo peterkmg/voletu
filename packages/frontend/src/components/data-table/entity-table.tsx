@@ -1,6 +1,7 @@
 import type { ColumnDef, Row, SortingState, VisibilityState } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { BulkAction } from './bulk-actions-bar'
+import type { TableMode } from './table-mode-toggle'
 import {
   getCoreRowModel,
   getFacetedRowModel,
@@ -10,14 +11,26 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
-import { cn } from '~/lib/utils'
 import { BulkActionsBar } from './bulk-actions-bar'
 import { DataTable } from './data-table'
 import { DataTablePagination } from './pagination'
 import { DataTableToolbar } from './toolbar'
+import { VirtualizedDataTable } from './virtualized-data-table'
+
+function getStoredTableMode(tableId: string | undefined): TableMode {
+  if (!tableId)
+    return 'virtual'
+  try {
+    const stored = localStorage.getItem(`table-mode-${tableId}`)
+    if (stored === 'paginated' || stored === 'virtual')
+      return stored
+  }
+  catch { /* ignore */ }
+  return 'virtual'
+}
 
 interface EntityTableProps<T> {
   data: T[]
@@ -27,6 +40,8 @@ interface EntityTableProps<T> {
   i18nNamespaces: string[]
   isLoading?: boolean
   bulkActions?: (t: TFunction) => BulkAction<T>[]
+  /** Unique ID for persisting table preferences (e.g. 'companies'). */
+  tableId?: string
 }
 
 export function EntityTable<T>({
@@ -37,13 +52,25 @@ export function EntityTable<T>({
   i18nNamespaces,
   isLoading,
   bulkActions,
+  tableId,
 }: EntityTableProps<T>) {
   const { t } = useTranslation(i18nNamespaces)
   const columns = useMemo(() => getColumns(t), [t, getColumns])
 
+  const [tableMode, setTableMode] = useState<TableMode>(() => getStoredTableMode(tableId))
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+
+  const handleModeChange = useCallback((mode: TableMode) => {
+    setTableMode(mode)
+    if (tableId) {
+      try {
+        localStorage.setItem(`table-mode-${tableId}`, mode)
+      }
+      catch { /* ignore */ }
+    }
+  }, [tableId])
 
   const {
     globalFilter,
@@ -56,7 +83,7 @@ export function EntityTable<T>({
   } = useTableUrlState({
     search: routeApi.useSearch(),
     navigate: routeApi.useNavigate(),
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
+    pagination: { defaultPage: 1, defaultPageSize: tableMode === 'virtual' ? 9999 : 10 },
     globalFilter: { enabled: true, key: 'filter' },
   })
 
@@ -99,14 +126,26 @@ export function EntityTable<T>({
   }, [pageCount, ensurePageInRange])
 
   return (
-    <div className={cn('flex flex-1 flex-col gap-4')}>
+    <div className="flex flex-1 flex-col gap-4 min-h-0">
       <DataTableToolbar
         table={table}
         searchPlaceholder={`${t('common:actions.search')}...`}
         filters={[]}
+        tableMode={tableMode}
+        onTableModeChange={handleModeChange}
       />
-      <DataTable table={table} columns={columns} isLoading={isLoading} />
-      <DataTablePagination table={table} className="mt-auto" />
+      {tableMode === 'virtual'
+        ? (
+            <div className="flex-1 min-h-0">
+              <VirtualizedDataTable table={table} columns={columns} isLoading={isLoading} height="100%" />
+            </div>
+          )
+        : (
+            <>
+              <DataTable table={table} columns={columns} isLoading={isLoading} />
+              <DataTablePagination table={table} className="mt-auto" />
+            </>
+          )}
       {resolvedBulkActions.length > 0 && (
         <BulkActionsBar table={table} actions={resolvedBulkActions} />
       )}

@@ -167,7 +167,7 @@ export function VirtualizedDataTable<TData>({
                     aria-label={pinnedSide ? `Pinned ${pinnedSide} column` : undefined}
                     style={{
                       ...pinStyle,
-                      width: header.column.getCanResize() ? header.getSize() : undefined,
+                      width: header.getSize(),
                     }}
                   >
                     {header.isPlaceholder
@@ -216,7 +216,7 @@ export function VirtualizedDataTable<TData>({
                               className={cn(meta?.className, meta?.tdClassName, alignCls, densityCls, pinBg)}
                               style={{
                                 ...pinStyle,
-                                width: cell.column.getCanResize() ? cell.column.getSize() : undefined,
+                                width: cell.column.getSize(),
                               }}
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}

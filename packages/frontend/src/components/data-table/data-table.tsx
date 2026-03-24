@@ -133,7 +133,7 @@ export function DataTable<TData>({
                     aria-label={pinnedSide ? `Pinned ${pinnedSide} column` : undefined}
                     style={{
                       ...pinStyle,
-                      width: header.column.getCanResize() ? header.getSize() : undefined,
+                      width: header.getSize(),
                     }}
                   >
                     <div className="flex items-center">
@@ -190,7 +190,7 @@ export function DataTable<TData>({
                             className={cn(meta?.className, meta?.tdClassName, alignCls, densityCls, pinBg)}
                             style={{
                               ...pinStyle,
-                              width: cell.column.getCanResize() ? cell.column.getSize() : undefined,
+                              width: cell.column.getSize(),
                             }}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
