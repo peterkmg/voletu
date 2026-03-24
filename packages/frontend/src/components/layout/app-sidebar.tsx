@@ -54,7 +54,7 @@ export function AppSidebar() {
   const filteredGroups = filterNavByRole(sidebarData.navGroups, user?.role)
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <AppTitle />
       </SidebarHeader>

@@ -26,7 +26,7 @@ export function AuthenticatedLayout() {
           className={cn(
             '@container/content',
             'has-data-[layout=fixed]:h-full',
-            'peer-data-[variant=inset]:has-data-[layout=fixed]:h-full',
+            'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100%-1rem)]',
           )}
         >
           <NodeInitBanner />
