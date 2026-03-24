@@ -30,7 +30,7 @@ export function ProductTypeMutateDialog({
 }: ProductTypeMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -67,7 +67,7 @@ export function ProductTypeMutateDialog({
       <Form {...form}>
         <form
           id="product-type-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<ProductTypeFormValues> name="commonName" label={t('catalog:productType.form.commonName')} />

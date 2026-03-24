@@ -1,16 +1,7 @@
 import type { Column } from '@tanstack/react-table'
-import { Check, Filter } from 'lucide-react'
+import { Filter } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '~/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '~/components/ui/command'
 import {
   Popover,
   PopoverContent,
@@ -18,6 +9,7 @@ import {
 } from '~/components/ui/popover'
 import { cn } from '~/lib/utils'
 import { DebouncedInput } from './debounced-input'
+import { FilterPopover } from './filter-popover'
 
 type FilterType = 'text' | 'date' | 'number' | 'enum'
 
@@ -76,9 +68,7 @@ function TextEnumFilter<TData, TValue>({
   column: Column<TData, TValue>
   facets: Map<unknown, number>
 }) {
-  const [open, setOpen] = useState(false)
   const selectedValues = new Set(column.getFilterValue() as string[] | undefined)
-  const hasFilter = selectedValues.size > 0
 
   const sortedOptions = useMemo(() => {
     const entries: { label: string, value: string, count: number }[] = []
@@ -91,73 +81,22 @@ function TextEnumFilter<TData, TValue>({
   }, [facets])
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'h-6 w-6 p-0',
-            hasFilter && 'text-primary',
-          )}
-        >
-          <Filter className="size-3" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search..." />
-          <CommandList>
-            <CommandEmpty>No values found.</CommandEmpty>
-            <CommandGroup>
-              {sortedOptions.map(option => (
-                <CommandItem
-                  key={option.value}
-                  onSelect={() => {
-                    if (selectedValues.has(option.value)) {
-                      selectedValues.delete(option.value)
-                    }
-                    else {
-                      selectedValues.add(option.value)
-                    }
-                    const values = Array.from(selectedValues)
-                    column.setFilterValue(values.length ? values : undefined)
-                  }}
-                >
-                  <div
-                    className={cn(
-                      'flex size-4 items-center justify-center rounded-sm border border-primary',
-                      selectedValues.has(option.value)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'opacity-50 [&_svg]:invisible',
-                    )}
-                  >
-                    <Check className="size-3 text-background" />
-                  </div>
-                  <span className="truncate">{option.label}</span>
-                  <span className="ms-auto font-mono text-xs text-muted-foreground">
-                    {option.count}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            {hasFilter && (
-              <>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => column.setFilterValue(undefined)}
-                    className="justify-center text-center"
-                  >
-                    Clear filter
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <FilterPopover
+      hasFilter={selectedValues.size > 0}
+      options={sortedOptions}
+      selectedValues={selectedValues}
+      onSelect={(value) => {
+        if (selectedValues.has(value)) {
+          selectedValues.delete(value)
+        }
+        else {
+          selectedValues.add(value)
+        }
+        const values = Array.from(selectedValues)
+        column.setFilterValue(values.length ? values : undefined)
+      }}
+      onClear={() => column.setFilterValue(undefined)}
+    />
   )
 }
 
@@ -169,9 +108,7 @@ function DateGroupFilter<TData, TValue>({
   column: Column<TData, TValue>
   facets: Map<unknown, number>
 }) {
-  const [open, setOpen] = useState(false)
   const selectedValues = new Set(column.getFilterValue() as string[] | undefined)
-  const hasFilter = selectedValues.size > 0
 
   const monthOptions = useMemo(() => {
     const groups = new Map<string, number>()
@@ -192,73 +129,25 @@ function DateGroupFilter<TData, TValue>({
   // Custom filter function that matches by month/year
   // We store selected month labels and filter in the column's filterFn
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'h-6 w-6 p-0',
-            hasFilter && 'text-primary',
-          )}
-        >
-          <Filter className="size-3" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search month..." />
-          <CommandList>
-            <CommandEmpty>No dates found.</CommandEmpty>
-            <CommandGroup>
-              {monthOptions.map(option => (
-                <CommandItem
-                  key={option.value}
-                  onSelect={() => {
-                    if (selectedValues.has(option.value)) {
-                      selectedValues.delete(option.value)
-                    }
-                    else {
-                      selectedValues.add(option.value)
-                    }
-                    const values = Array.from(selectedValues)
-                    column.setFilterValue(values.length ? values : undefined)
-                  }}
-                >
-                  <div
-                    className={cn(
-                      'flex size-4 items-center justify-center rounded-sm border border-primary',
-                      selectedValues.has(option.value)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'opacity-50 [&_svg]:invisible',
-                    )}
-                  >
-                    <Check className="size-3 text-background" />
-                  </div>
-                  <span>{option.label}</span>
-                  <span className="ms-auto font-mono text-xs text-muted-foreground">
-                    {option.count}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            {hasFilter && (
-              <>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => column.setFilterValue(undefined)}
-                    className="justify-center text-center"
-                  >
-                    Clear filter
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <FilterPopover
+      hasFilter={selectedValues.size > 0}
+      searchPlaceholder="Search month..."
+      emptyMessage="No dates found."
+      width="w-[200px]"
+      options={monthOptions}
+      selectedValues={selectedValues}
+      onSelect={(value) => {
+        if (selectedValues.has(value)) {
+          selectedValues.delete(value)
+        }
+        else {
+          selectedValues.add(value)
+        }
+        const values = Array.from(selectedValues)
+        column.setFilterValue(values.length ? values : undefined)
+      }}
+      onClear={() => column.setFilterValue(undefined)}
+    />
   )
 }
 

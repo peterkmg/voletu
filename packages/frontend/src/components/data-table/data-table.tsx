@@ -1,8 +1,6 @@
-import type { Column, ColumnDef, Table as TanstackTable } from '@tanstack/react-table'
-import type { CSSProperties } from 'react'
+import type { ColumnDef, Table as TanstackTable } from '@tanstack/react-table'
 import { flexRender } from '@tanstack/react-table'
 import { useCallback, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Table,
   TableBody,
@@ -14,6 +12,9 @@ import {
 } from '~/components/ui/table'
 import { cn } from '~/lib/utils'
 import { densityClasses, useDensity } from './density-context'
+import { EmptyState } from './empty-state'
+import { TableSkeleton } from './table-skeleton'
+import { alignClasses, getPinningStyles, hasAnyFooter, hasAnyPinning } from './table-utils'
 
 interface DataTableProps<TData> {
   table: TanstackTable<TData>
@@ -23,38 +24,14 @@ interface DataTableProps<TData> {
   stickyHeader?: boolean
   /** Max height for scrollable table container. Enables vertical scrolling. */
   maxHeight?: string
+  /** Show skeleton loading state. */
+  isLoading?: boolean
+  /** Custom empty state message. */
+  emptyMessage?: string
+  /** Custom empty state icon. */
+  emptyIcon?: React.ReactNode
   /** Called when a row receives Enter key or is double-clicked. */
   onRowAction?: (row: TData) => void
-}
-
-const alignClasses = {
-  left: 'text-left',
-  center: 'text-center',
-  right: 'text-right',
-}
-
-/** Compute sticky positioning styles for pinned columns */
-function getPinningStyles<TData>(column: Column<TData, unknown>): CSSProperties {
-  const isPinned = column.getIsPinned()
-  if (!isPinned)
-    return {}
-
-  return {
-    position: 'sticky',
-    left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
-    right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
-    zIndex: 1,
-  }
-}
-
-function hasAnyPinning<TData>(table: TanstackTable<TData>): boolean {
-  return table.getLeftLeafColumns().length > 0 || table.getRightLeafColumns().length > 0
-}
-
-function hasAnyFooter<TData>(table: TanstackTable<TData>): boolean {
-  return table.getFooterGroups().some(group =>
-    group.headers.some(header => header.column.columnDef.footer),
-  )
 }
 
 export function DataTable<TData>({
@@ -63,9 +40,11 @@ export function DataTable<TData>({
   className,
   stickyHeader = true,
   maxHeight,
+  isLoading,
+  emptyMessage,
+  emptyIcon,
   onRowAction,
 }: DataTableProps<TData>) {
-  const { t } = useTranslation('common')
   const { density } = useDensity()
   const densityCls = densityClasses[density]
   const tableRef = useRef<HTMLDivElement>(null)
@@ -74,6 +53,14 @@ export function DataTable<TData>({
   const showFooter = hasAnyFooter(table)
   const isResizing = table.getState().columnSizingInfo.isResizingColumn
 
+  // Focus a row without scrolling the document (prevents layout break in fixed layout)
+  const focusRow = useCallback((el: HTMLElement | null | undefined) => {
+    if (!el)
+      return
+    el.focus({ preventScroll: true })
+    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [])
+
   // Keyboard navigation handler
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTableRowElement>, rowData: TData, rowIndex: number) => {
@@ -81,30 +68,22 @@ export function DataTable<TData>({
       switch (e.key) {
         case 'ArrowDown': {
           e.preventDefault()
-          const next = tableRef.current?.querySelector<HTMLElement>(
-            `[data-row-index="${rowIndex + 1}"]`,
-          )
-          next?.focus()
+          focusRow(tableRef.current?.querySelector(`[data-row-index="${rowIndex + 1}"]`))
           break
         }
         case 'ArrowUp': {
           e.preventDefault()
-          const prev = tableRef.current?.querySelector<HTMLElement>(
-            `[data-row-index="${rowIndex - 1}"]`,
-          )
-          prev?.focus()
+          focusRow(tableRef.current?.querySelector(`[data-row-index="${rowIndex - 1}"]`))
           break
         }
         case 'Home': {
           e.preventDefault()
-          tableRef.current?.querySelector<HTMLElement>('[data-row-index="0"]')?.focus()
+          focusRow(tableRef.current?.querySelector('[data-row-index="0"]'))
           break
         }
         case 'End': {
           e.preventDefault()
-          tableRef.current
-            ?.querySelector<HTMLElement>(`[data-row-index="${rows.length - 1}"]`)
-            ?.focus()
+          focusRow(tableRef.current?.querySelector(`[data-row-index="${rows.length - 1}"]`))
           break
         }
         case 'Enter': {
@@ -120,7 +99,7 @@ export function DataTable<TData>({
         }
       }
     },
-    [table, onRowAction],
+    [table, onRowAction, focusRow],
   )
 
   return (
@@ -145,11 +124,13 @@ export function DataTable<TData>({
                 const pinStyle = isPinning ? getPinningStyles(header.column) : {}
                 const pinBg = header.column.getIsPinned() ? 'bg-background' : ''
 
+                const pinnedSide = header.column.getIsPinned()
                 return (
                   <TableHead
                     key={header.id}
                     colSpan={header.colSpan}
                     className={cn(meta?.className, meta?.thClassName, alignCls, pinBg)}
+                    aria-label={pinnedSide ? `Pinned ${pinnedSide} column` : undefined}
                     style={{
                       ...pinStyle,
                       width: header.column.getCanResize() ? header.getSize() : undefined,
@@ -183,45 +164,41 @@ export function DataTable<TData>({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows?.length
-            ? table.getRowModel().rows.map((row, rowIndex) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  data-row-index={rowIndex}
-                  tabIndex={0}
-                  onKeyDown={e => handleKeyDown(e, row.original, rowIndex)}
-                  onDoubleClick={() => onRowAction?.(row.original)}
-                  className="focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const meta = cell.column.columnDef.meta
-                    const alignCls = meta?.align ? alignClasses[meta.align] : ''
-                    const pinStyle = isPinning ? getPinningStyles(cell.column) : {}
-                    const pinBg = cell.column.getIsPinned() ? 'bg-background' : ''
+          {isLoading && !table.getRowModel().rows?.length
+            ? <TableSkeleton columns={columns.length} densityCls={densityCls} />
+            : !table.getRowModel().rows?.length
+                ? <EmptyState colSpan={columns.length} message={emptyMessage} icon={emptyIcon} />
+                : table.getRowModel().rows.map((row, rowIndex) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                      data-row-index={rowIndex}
+                      tabIndex={0}
+                      onKeyDown={e => handleKeyDown(e, row.original, rowIndex)}
+                      onDoubleClick={() => onRowAction?.(row.original)}
+                      className="focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const meta = cell.column.columnDef.meta
+                        const alignCls = meta?.align ? alignClasses[meta.align] : ''
+                        const pinStyle = isPinning ? getPinningStyles(cell.column) : {}
+                        const pinBg = cell.column.getIsPinned() ? 'bg-background' : ''
 
-                    return (
-                      <TableCell
-                        key={cell.id}
-                        className={cn(meta?.className, meta?.tdClassName, alignCls, densityCls, pinBg)}
-                        style={{
-                          ...pinStyle,
-                          width: cell.column.getCanResize() ? cell.column.getSize() : undefined,
-                        }}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    )
-                  })}
-                </TableRow>
-              ))
-            : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    {t('table.noResults')}
-                  </TableCell>
-                </TableRow>
-              )}
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            className={cn(meta?.className, meta?.tdClassName, alignCls, densityCls, pinBg)}
+                            style={{
+                              ...pinStyle,
+                              width: cell.column.getCanResize() ? cell.column.getSize() : undefined,
+                            }}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        )
+                      })}
+                    </TableRow>
+                  ))}
         </TableBody>
         {showFooter && (
           <TableFooter className={stickyHeader ? 'sticky bottom-0 z-10' : undefined}>

@@ -37,7 +37,7 @@ export function BlendingMutateDialog({
   const companiesQuery = useCatalogCompanyList()
   const productsQuery = useCatalogProductList()
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -73,7 +73,7 @@ export function BlendingMutateDialog({
       <Form {...form}>
         <form
           id="blending-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<BlendingFormValues> name="documentNumber" label={t('documents:blending.columns.documentNumber')} />

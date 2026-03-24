@@ -35,7 +35,7 @@ export function WarehouseMutateDialog({
 
   const basesQuery = useCatalogBaseList()
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -68,7 +68,7 @@ export function WarehouseMutateDialog({
       <Form {...form}>
         <form
           id="warehouse-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<WarehouseFormValues> name="commonName" label={t('catalog:warehouse.form.commonName')} />

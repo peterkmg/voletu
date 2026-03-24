@@ -25,6 +25,7 @@ interface EntityTableProps<T> {
   routeApi: { useSearch: () => Record<string, unknown>, useNavigate: () => any }
   globalFilterFn: (row: Row<T>, columnId: string, filterValue: string) => boolean
   i18nNamespaces: string[]
+  isLoading?: boolean
   bulkActions?: (t: TFunction) => BulkAction<T>[]
 }
 
@@ -34,6 +35,7 @@ export function EntityTable<T>({
   routeApi,
   globalFilterFn,
   i18nNamespaces,
+  isLoading,
   bulkActions,
 }: EntityTableProps<T>) {
   const { t } = useTranslation(i18nNamespaces)
@@ -103,7 +105,7 @@ export function EntityTable<T>({
         searchPlaceholder={`${t('common:actions.search')}...`}
         filters={[]}
       />
-      <DataTable table={table} columns={columns} />
+      <DataTable table={table} columns={columns} isLoading={isLoading} />
       <DataTablePagination table={table} className="mt-auto" />
       {resolvedBulkActions.length > 0 && (
         <BulkActionsBar table={table} actions={resolvedBulkActions} />

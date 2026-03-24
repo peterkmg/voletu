@@ -39,7 +39,7 @@ export function StorageMutateDialog({
   const warehousesQuery = useCatalogWarehouseList()
   const productTypesQuery = useCatalogProductTypeList()
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -82,7 +82,7 @@ export function StorageMutateDialog({
       <Form {...form}>
         <form
           id="storage-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<StorageFormValues> name="commonName" label={t('catalog:storage.form.commonName')} />

@@ -37,7 +37,7 @@ export function AcceptanceMutateDialog({
     label: t(`documents:acceptance.arrivalTypes.${type}`),
   }))
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog<
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog<
     AcceptanceFormValues,
     AcceptanceResponse,
     AcceptanceFormValues & { sourceEntity: string | null }
@@ -81,7 +81,7 @@ export function AcceptanceMutateDialog({
       <Form {...form}>
         <form
           id="acceptance-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<AcceptanceFormValues> name="documentNumber" label={t('documents:acceptance.form.documentNumber')} />

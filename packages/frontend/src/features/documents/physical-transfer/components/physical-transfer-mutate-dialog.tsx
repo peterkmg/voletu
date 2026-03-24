@@ -27,7 +27,7 @@ export function PhysicalTransferMutateDialog({
 }: PhysicalTransferMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
 
-  const { form, onSubmit, handleOpenChange } = useMutateDialog<
+  const { form, handleSubmit, handleOpenChange } = useMutateDialog<
     PhysicalTransferFormValues,
     { id: string },
     PhysicalTransferFormValues & { items: never[] }
@@ -63,7 +63,7 @@ export function PhysicalTransferMutateDialog({
       <Form {...form}>
         <form
           id="physical-transfer-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<PhysicalTransferFormValues> name="documentNumber" label={t('documents:acceptance.columns.documentNumber')} />

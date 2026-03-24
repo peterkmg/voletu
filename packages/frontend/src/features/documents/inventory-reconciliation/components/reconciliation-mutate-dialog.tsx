@@ -34,7 +34,7 @@ export function ReconciliationMutateDialog({
 
   const warehousesQuery = useCatalogWarehouseList()
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -68,7 +68,7 @@ export function ReconciliationMutateDialog({
       <Form {...form}>
         <form
           id="reconciliation-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<ReconciliationFormValues> name="documentNumber" label={t('documents:reconciliation.columns.documentNumber')} />

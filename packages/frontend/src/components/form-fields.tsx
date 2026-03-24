@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
+import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import { Textarea } from '~/components/ui/textarea'
 
 interface BaseFieldProps<
   TFieldValues extends FieldValues,
@@ -158,6 +160,207 @@ export function CheckboxField<
           </FormControl>
           <FormLabel className="!mt-0">{label}</FormLabel>
           {description && <FormDescription>{description}</FormDescription>}
+        </FormItem>
+      )}
+    />
+  )
+}
+
+// ── TextAreaField ─────────────────────────────
+
+interface TextAreaFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends BaseFieldProps<TFieldValues, TName> {
+  placeholder?: string
+  rows?: number
+  disabled?: boolean
+}
+
+export function TextAreaField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  name,
+  label,
+  placeholder,
+  rows,
+  disabled,
+  description,
+  className,
+}: TextAreaFieldProps<TFieldValues, TName>) {
+  const { control } = useFormContext<TFieldValues>()
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Textarea
+              placeholder={placeholder}
+              rows={rows}
+              disabled={disabled}
+              {...field}
+            />
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+// ── NumberField ───────────────────────────────
+
+interface NumberFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends BaseFieldProps<TFieldValues, TName> {
+  placeholder?: string
+  min?: number
+  max?: number
+  step?: number
+  disabled?: boolean
+}
+
+export function NumberField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  name,
+  label,
+  placeholder,
+  min,
+  max,
+  step,
+  disabled,
+  description,
+  className,
+}: NumberFieldProps<TFieldValues, TName>) {
+  const { control } = useFormContext<TFieldValues>()
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              placeholder={placeholder}
+              min={min}
+              max={max}
+              step={step}
+              disabled={disabled}
+              {...field}
+            />
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+// ── DatePickerField ──────────────────────────
+
+interface DatePickerFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends BaseFieldProps<TFieldValues, TName> {
+  includeTime?: boolean
+  disabled?: boolean
+}
+
+export function DatePickerField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  name,
+  label,
+  includeTime = false,
+  disabled,
+  description,
+  className,
+}: DatePickerFieldProps<TFieldValues, TName>) {
+  const { control } = useFormContext<TFieldValues>()
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              type={includeTime ? 'datetime-local' : 'date'}
+              disabled={disabled}
+              {...field}
+            />
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+// ── RadioField ───────────────────────────────
+
+interface RadioFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends BaseFieldProps<TFieldValues, TName> {
+  options: { label: string, value: string }[]
+  disabled?: boolean
+}
+
+export function RadioField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  name,
+  label,
+  options,
+  disabled,
+  description,
+  className,
+}: RadioFieldProps<TFieldValues, TName>) {
+  const { control } = useFormContext<TFieldValues>()
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <RadioGroup
+              onValueChange={field.onChange}
+              value={field.value}
+              disabled={disabled}
+            >
+              {options.map(opt => (
+                <FormItem
+                  key={opt.value}
+                  className="flex items-center gap-2"
+                >
+                  <FormControl>
+                    <RadioGroupItem value={opt.value} />
+                  </FormControl>
+                  <FormLabel className="!mt-0">{opt.label}</FormLabel>
+                </FormItem>
+              ))}
+            </RadioGroup>
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
         </FormItem>
       )}
     />

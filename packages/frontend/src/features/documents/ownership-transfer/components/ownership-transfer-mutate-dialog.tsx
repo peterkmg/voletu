@@ -24,7 +24,7 @@ export function OwnershipTransferMutateDialog({
 }: OwnershipTransferMutateDialogProps) {
   const { t } = useTranslation(['documents', 'common'])
 
-  const { form, onSubmit, handleOpenChange } = useMutateDialog<
+  const { form, handleSubmit, handleOpenChange } = useMutateDialog<
     OwnershipTransferFormValues,
     { id: string },
     OwnershipTransferFormValues & { items: never[] }
@@ -57,7 +57,7 @@ export function OwnershipTransferMutateDialog({
       <Form {...form}>
         <form
           id="ownership-transfer-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<OwnershipTransferFormValues> name="date" label={t('documents:acceptance.columns.date')} type="datetime-local" />

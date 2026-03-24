@@ -28,7 +28,7 @@ export function PortMutateDialog({
 }: PortMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -64,7 +64,7 @@ export function PortMutateDialog({
       <Form {...form}>
         <form
           id="port-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<PortFormValues> name="commonName" label={t('catalog:port.form.commonName')} />

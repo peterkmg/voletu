@@ -48,7 +48,7 @@ export function DispatchMutateDialog({
 
   const companiesQuery = useCatalogCompanyList()
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog<
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog<
     DispatchFormValues,
     DispatchResponse,
     DispatchFormValues & { receiverEntity: string | null }
@@ -96,7 +96,7 @@ export function DispatchMutateDialog({
       <Form {...form}>
         <form
           id="dispatch-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<DispatchFormValues> name="documentNumber" label={t('documents:dispatch.columns.documentNumber')} />

@@ -34,7 +34,7 @@ export function RailWaybillMutateDialog({
 
   const companiesQuery = useCatalogCompanyList()
 
-  const { form, isUpdate, onSubmit, handleOpenChange } = useMutateDialog({
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
     onOpenChange,
     currentRow,
@@ -68,7 +68,7 @@ export function RailWaybillMutateDialog({
       <Form {...form}>
         <form
           id="rail-waybill-form"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <TextField<RailWaybillFormValues> name="documentNumber" label={t('transport:rail.form.documentNumber')} />

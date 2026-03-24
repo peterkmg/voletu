@@ -8,10 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
-import { useStartupStore } from '~/stores/startup-store'
 import { LocalConfigForm } from '~/features/setup/components/local-config-form'
 import { ModeSelector } from '~/features/setup/components/mode-selector'
 import { RemoteConfigForm } from '~/features/setup/components/remote-config-form'
+import { useStartupStore } from '~/stores/startup-store'
 
 type SetupStep = 'selecting' | 'remote' | 'local'
 

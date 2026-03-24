@@ -36,6 +36,8 @@ interface UseMutateDialogReturn<TForm extends FieldValues> {
   form: UseFormReturn<TForm>
   isUpdate: boolean
   onSubmit: (values: TForm) => Promise<void>
+  /** form.handleSubmit wrapped with scroll-to-first-error on validation failure */
+  handleSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>
   handleOpenChange: (open: boolean) => void
 }
 
@@ -111,10 +113,19 @@ export function useMutateDialog<
     }
   }
 
+  const handleSubmit = form.handleSubmit(onSubmit, (errors) => {
+    const firstKey = Object.keys(errors)[0]
+    if (firstKey) {
+      const el = document.querySelector<HTMLElement>(`[name="${firstKey}"]`)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el?.focus({ preventScroll: true })
+    }
+  })
+
   const handleOpenChange = (v: boolean) => {
     onOpenChange(v)
     form.reset()
   }
 
-  return { form, isUpdate, onSubmit, handleOpenChange }
+  return { form, isUpdate, onSubmit, handleSubmit, handleOpenChange }
 }
