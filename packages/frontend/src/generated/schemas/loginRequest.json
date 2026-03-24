@@ -1,9 +1,0 @@
-{
-  "type": "object",
-  "required": ["username", "password"],
-  "properties": {
-    "password": { "type": "string", "example": "example" },
-    "username": { "type": "string", "example": "example" }
-  },
-  "x-readme-ref-name": "LoginRequest"
-}

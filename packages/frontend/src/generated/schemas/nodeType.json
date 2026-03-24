@@ -1,5 +1,0 @@
-{
-  "type": "string",
-  "enum": ["CENTRAL", "PERIPHERAL"],
-  "x-readme-ref-name": "NodeType"
-}

@@ -1,5 +1,0 @@
-{
-  "type": "string",
-  "enum": ["TRUCK", "VESSEL_TERMINAL", "BUNKERING"],
-  "x-readme-ref-name": "DispatchMethod"
-}

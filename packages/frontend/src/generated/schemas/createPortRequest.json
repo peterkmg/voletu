@@ -1,9 +1,0 @@
-{
-  "type": "object",
-  "required": ["commonName"],
-  "properties": {
-    "commonName": { "type": "string", "example": "example" },
-    "country": { "type": ["string", "null"], "example": "example" }
-  },
-  "x-readme-ref-name": "CreatePortRequest"
-}

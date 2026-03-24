@@ -1,5 +1,0 @@
-{
-  "type": "string",
-  "enum": ["REPLACE", "DELETE"],
-  "x-readme-ref-name": "InitializeAdminAction"
-}

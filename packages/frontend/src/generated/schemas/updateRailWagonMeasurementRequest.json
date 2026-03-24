@@ -1,9 +1,0 @@
-{
-  "type": "object",
-  "properties": {
-    "calculatedMass": { "type": ["string", "null"], "example": "100.00" },
-    "labDensity": { "type": ["string", "null"], "example": "100.00" },
-    "measuredHeight": { "type": ["string", "null"], "example": "100.00" }
-  },
-  "x-readme-ref-name": "UpdateRailWagonMeasurementRequest"
-}

@@ -1,5 +1,0 @@
-{
-  "type": "string",
-  "enum": ["INSERT", "UPDATE", "HARD_DELETE"],
-  "x-readme-ref-name": "AuditAction"
-}

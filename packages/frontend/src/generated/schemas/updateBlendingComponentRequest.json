@@ -1,9 +1,0 @@
-{
-  "type": "object",
-  "properties": {
-    "amountUsed": { "type": ["string", "null"], "example": "100.00" },
-    "sourceProductId": { "type": ["string", "null"], "format": "uuid" },
-    "storageId": { "type": ["string", "null"], "format": "uuid" }
-  },
-  "x-readme-ref-name": "UpdateBlendingComponentRequest"
-}
