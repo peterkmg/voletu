@@ -4,6 +4,9 @@ target
 frontend-example/
 .dual-graph/
 
+# Generated files
+packages/frontend/src/generated/
+
 # Logs
 logs
 *.log
