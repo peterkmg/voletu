@@ -29,7 +29,7 @@ export function SyncDashboard() {
     <>
       <Header fixed />
 
-      <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
+      <Main fixed className="flex flex-1 flex-col gap-4 sm:gap-6">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
@@ -38,10 +38,12 @@ export function SyncDashboard() {
           </div>
         </div>
 
-        <WorkerStatusCard data={nodeStatus} isLoading={nodeStatusLoading} />
-        <SyncStatusCard data={status} isLoading={statusLoading} />
-        <WatermarksTable data={watermarks} isLoading={watermarksLoading} />
-        <AuditLogTable data={auditLogs} isLoading={auditLogsLoading} />
+        <div className="flex-1 overflow-y-auto -mx-4 px-4 space-y-4 sm:space-y-6">
+          <WorkerStatusCard data={nodeStatus} isLoading={nodeStatusLoading} />
+          <SyncStatusCard data={status} isLoading={statusLoading} />
+          <WatermarksTable data={watermarks} isLoading={watermarksLoading} />
+          <AuditLogTable data={auditLogs} isLoading={auditLogsLoading} />
+        </div>
       </Main>
     </>
   )

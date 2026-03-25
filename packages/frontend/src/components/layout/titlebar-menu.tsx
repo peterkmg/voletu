@@ -73,7 +73,7 @@ let tauriWin: Awaited<
   catch { /* not in Tauri */ }
 })()
 
-function MenuTriggerButton({ children }: { children: React.ReactNode }) {
+function MenuTriggerButton({ children, className, ...props }: React.ComponentProps<'button'>) {
   return (
     <button
       type="button"
@@ -82,7 +82,9 @@ function MenuTriggerButton({ children }: { children: React.ReactNode }) {
         'hover:bg-accent hover:text-accent-foreground',
         'rounded-sm transition-colors',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        className,
       )}
+      {...props}
     >
       {children}
     </button>

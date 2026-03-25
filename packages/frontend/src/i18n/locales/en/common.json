@@ -75,7 +75,12 @@
     "ascending": "Ascending",
     "descending": "Descending",
     "hide": "Hide",
-    "toggleColumns": "Toggle columns"
+    "toggleColumns": "Toggle columns",
+    "modeVirtual": "Scroll view",
+    "modePaginated": "Paginated view",
+    "densityCompact": "Compact",
+    "densityNormal": "Normal",
+    "densityComfortable": "Comfortable"
   },
   "error": {
     "title": "Something went wrong",

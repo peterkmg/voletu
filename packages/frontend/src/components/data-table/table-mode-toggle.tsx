@@ -1,4 +1,5 @@
-import { List, ScrollText } from 'lucide-react'
+import { LayoutList, ScrollText } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import {
   Tooltip,
@@ -9,9 +10,9 @@ import { cn } from '~/lib/utils'
 
 export type TableMode = 'virtual' | 'paginated'
 
-const modeOptions: { value: TableMode, icon: typeof List }[] = [
-  { value: 'virtual', icon: ScrollText },
-  { value: 'paginated', icon: List },
+const modeOptions: { value: TableMode, icon: typeof ScrollText, label: string }[] = [
+  { value: 'virtual', icon: ScrollText, label: 'table.modeVirtual' },
+  { value: 'paginated', icon: LayoutList, label: 'table.modePaginated' },
 ]
 
 interface TableModeToggleProps {
@@ -20,9 +21,11 @@ interface TableModeToggleProps {
 }
 
 export function TableModeToggle({ mode, onModeChange }: TableModeToggleProps) {
+  const { t } = useTranslation('common')
+
   return (
     <div className="flex items-center rounded-md border">
-      {modeOptions.map(({ value, icon: Icon }) => (
+      {modeOptions.map(({ value, icon: Icon, label }) => (
         <Tooltip key={value}>
           <TooltipTrigger asChild>
             <Button
@@ -35,10 +38,10 @@ export function TableModeToggle({ mode, onModeChange }: TableModeToggleProps) {
               onClick={() => onModeChange(value)}
             >
               <Icon className="h-4 w-4" />
-              <span className="sr-only">{value}</span>
+              <span className="sr-only">{t(label)}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{value}</TooltipContent>
+          <TooltipContent>{t(label)}</TooltipContent>
         </Tooltip>
       ))}
     </div>

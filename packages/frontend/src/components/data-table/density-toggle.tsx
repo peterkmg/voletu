@@ -1,5 +1,6 @@
 import type { TableDensity } from './density-context'
-import { AlignJustify, List, StretchHorizontal } from 'lucide-react'
+import { Rows2, Rows3, Rows4 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import {
   Tooltip,
@@ -9,18 +10,19 @@ import {
 import { cn } from '~/lib/utils'
 import { useDensity } from './density-context'
 
-const densityOptions: { value: TableDensity, icon: typeof List }[] = [
-  { value: 'compact', icon: AlignJustify },
-  { value: 'normal', icon: List },
-  { value: 'comfortable', icon: StretchHorizontal },
+const densityOptions: { value: TableDensity, icon: typeof Rows3, label: string }[] = [
+  { value: 'compact', icon: Rows4, label: 'table.densityCompact' },
+  { value: 'normal', icon: Rows3, label: 'table.densityNormal' },
+  { value: 'comfortable', icon: Rows2, label: 'table.densityComfortable' },
 ]
 
 export function DensityToggle() {
   const { density, setDensity } = useDensity()
+  const { t } = useTranslation('common')
 
   return (
     <div className="flex items-center rounded-md border">
-      {densityOptions.map(({ value, icon: Icon }) => (
+      {densityOptions.map(({ value, icon: Icon, label }) => (
         <Tooltip key={value}>
           <TooltipTrigger asChild>
             <Button
@@ -33,10 +35,10 @@ export function DensityToggle() {
               onClick={() => setDensity(value)}
             >
               <Icon className="h-4 w-4" />
-              <span className="sr-only">{value}</span>
+              <span className="sr-only">{t(label)}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{value}</TooltipContent>
+          <TooltipContent>{t(label)}</TooltipContent>
         </Tooltip>
       ))}
     </div>

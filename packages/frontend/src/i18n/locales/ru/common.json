@@ -75,7 +75,12 @@
     "ascending": "По возрастанию",
     "descending": "По убыванию",
     "hide": "Скрыть",
-    "toggleColumns": "Показать/скрыть столбцы"
+    "toggleColumns": "Показать/скрыть столбцы",
+    "modeVirtual": "Прокрутка",
+    "modePaginated": "Постраничный",
+    "densityCompact": "Компактный",
+    "densityNormal": "Обычный",
+    "densityComfortable": "Свободный"
   },
   "error": {
     "title": "Что-то пошло не так",

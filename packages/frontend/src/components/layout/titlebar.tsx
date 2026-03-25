@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
-import { useDragWindow } from '~/shared/tauri/drag-window'
 import { TitlebarMenu } from './titlebar-menu'
 
 // Lazily resolved + cached Tauri window handle
@@ -145,13 +144,10 @@ function WindowControls() {
 }
 
 export function Titlebar() {
-  const dragProps = useDragWindow()
-
   return (
     <div
-      {...dragProps}
       className={cn(
-        'flex h-8 shrink-0 select-none items-center justify-between',
+        'flex h-8 shrink-0 select-none items-center',
         'border-b bg-sidebar',
       )}
     >
@@ -162,6 +158,9 @@ export function Titlebar() {
         </span>
         <TitlebarMenu />
       </div>
+
+      {/* Drag zone: empty space between menus and window controls */}
+      <div className="flex-1 self-stretch" data-tauri-drag-region />
 
       {/* Right: window controls */}
       <WindowControls />

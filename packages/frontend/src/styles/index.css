@@ -33,7 +33,7 @@
     @apply overflow-x-hidden;
   }
   body {
-    @apply min-h-svh w-full bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar;
+    @apply min-h-svh w-full select-none bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar;
   }
 
   body[data-scroll-locked] {

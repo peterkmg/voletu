@@ -147,7 +147,7 @@ export function VirtualizedDataTable<TData>({
     <div
       ref={containerRef}
       className={cn('overflow-auto rounded-md border', className)}
-      style={{ height }}
+      style={{ maxHeight: height }}
     >
       <Table className="min-w-xl">
         <TableHeader className="sticky top-0 z-10 bg-background">

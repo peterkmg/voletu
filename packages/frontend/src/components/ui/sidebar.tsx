@@ -22,7 +22,6 @@ import {
   TooltipTrigger,
 } from '~/components/ui/tooltip'
 import { useIsMobile } from '~/hooks/use-mobile'
-import { useDragWindow } from '~/shared/tauri/drag-window'
 import { cn } from '~/utils'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
@@ -166,7 +165,6 @@ function Sidebar({
   collapsible?: 'offcanvas' | 'icon' | 'none'
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  const dragProps = useDragWindow()
 
   if (collapsible === 'none') {
     return (
@@ -247,7 +245,6 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          {...dragProps}
           className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
         >
           {children}
@@ -377,7 +374,6 @@ function SidebarContent({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sidebar-content"
       data-sidebar="content"
-      data-no-drag
       className={cn(
         'flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden',
         className,
