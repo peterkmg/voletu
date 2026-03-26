@@ -1,1 +1,18 @@
 * text=auto eol=lf
+
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.bmp  binary
+*.ico  binary
+*.eps  binary
+*.synctex.gz binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.db   binary
+*.db-shm binary
+*.db-wal binary
