@@ -145,5 +145,12 @@
     "aboutDescription": "Система управления запасами",
     "aboutVersion": "Версия {{version}}",
     "keyboardShortcuts": "Горячие клавиши"
+  },
+  "debug": {
+    "seedDatabase": "Заполнить базу данных",
+    "seeding": "Заполнение\u2026",
+    "toggleDevTools": "Инструменты разработчика",
+    "devToolsEnabled": "Инструменты разработчика включены",
+    "devToolsDisabled": "Инструменты разработчика отключены"
   }
 }

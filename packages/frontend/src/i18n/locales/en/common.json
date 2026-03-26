@@ -145,5 +145,12 @@
     "aboutDescription": "Inventory management system",
     "aboutVersion": "Version {{version}}",
     "keyboardShortcuts": "Keyboard Shortcuts"
+  },
+  "debug": {
+    "seedDatabase": "Seed Database",
+    "seeding": "Seeding\u2026",
+    "toggleDevTools": "Toggle DevTools",
+    "devToolsEnabled": "DevTools enabled",
+    "devToolsDisabled": "DevTools disabled"
   }
 }

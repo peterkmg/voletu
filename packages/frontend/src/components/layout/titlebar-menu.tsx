@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Check } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { ConfirmDialog } from '~/components/confirm-dialog'
 import {
   Dialog,
@@ -26,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { useTheme } from '~/context/theme-provider'
+import { toggleDevTools } from '~/lib/devtools'
 import { cn } from '~/lib/utils'
 import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
@@ -100,6 +102,10 @@ const shortcutEntries = [
   { key: 'Ctrl+,', action: 'titlebar.settings' },
   { key: 'F11', action: 'titlebar.fullscreen' },
   { key: 'Ctrl+Q', action: 'titlebar.quit' },
+] as const
+
+const debugShortcutEntries = [
+  { key: 'Ctrl+Shift+D', action: 'debug.toggleDevTools' },
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -365,6 +371,7 @@ function GoMenu() {
 
 function HelpMenu() {
   const { t } = useTranslation()
+  const isDebugBuild = useStartupStore(s => s.startupState?.isDebugBuild ?? false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
@@ -406,6 +413,17 @@ function HelpMenu() {
                 </kbd>
               </div>
             ))}
+            {isDebugBuild && debugShortcutEntries.map(s => (
+              <div
+                key={s.key}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="text-muted-foreground">{t(s.action)}</span>
+                <kbd className="rounded border bg-muted px-2 py-0.5 font-mono text-xs">
+                  {s.key}
+                </kbd>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -433,8 +451,10 @@ function HelpMenu() {
 // ---------------------------------------------------------------------------
 
 function useGlobalShortcuts() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const isTauri = useStartupStore(s => s.startupState !== null)
+  const isDebugBuild = useStartupStore(s => s.startupState?.isDebugBuild ?? false)
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -456,12 +476,20 @@ function useGlobalShortcuts() {
       if (e.key === 'F11' && isTauri) {
         e.preventDefault()
         tauriWin?.isFullscreen().then(isFull => tauriWin?.setFullscreen(!isFull))
+        return
+      }
+
+      // Ctrl+Shift+D → Toggle DevTools (debug builds only)
+      if (e.key === 'D' && e.shiftKey && (e.ctrlKey || e.metaKey) && isDebugBuild) {
+        e.preventDefault()
+        const next = toggleDevTools()
+        toast.info(next ? t('debug.devToolsEnabled') : t('debug.devToolsDisabled'))
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isTauri, navigate])
+  }, [isDebugBuild, isTauri, navigate, t])
 }
 
 // ---------------------------------------------------------------------------
