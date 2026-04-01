@@ -80,8 +80,8 @@ describe('getPageNumbers()', () => {
     const result = getPageNumbers(19, 20)
     const lastEllipsisIdx = result.lastIndexOf('...')
     // The trailing ellipsis should not appear because current (19) >= totalPages - 2 (18)
-    const afterLastEllipsis = lastEllipsisIdx === -1 ? [] : result.slice(lastEllipsisIdx + 1)
     // If there is an ellipsis, it should be the leading one, not trailing
+    expect(lastEllipsisIdx).toBeLessThanOrEqual(1)
     expect(result[result.length - 1]).toBe(20)
   })
 

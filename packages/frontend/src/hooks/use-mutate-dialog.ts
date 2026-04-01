@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useIdempotencyKey } from '~/hooks/use-idempotency-key'
 import { extractErrorMessage } from '~/lib/error'
-import { queryClient } from '~/shared/api/query-client'
+import { queryClient } from '~/api/query-client'
 
 interface UseMutateDialogConfig<
   TForm extends FieldValues,

@@ -1,7 +1,7 @@
-import type { StartupState as TauriStartupState } from '~/shared/tauri/commands'
+import type { StartupState as TauriStartupState } from '~/tauri/commands'
 import { create } from 'zustand'
 import { extractErrorMessage } from '~/lib/error'
-import { getStartupState } from '~/shared/tauri/commands'
+import { getStartupState } from '~/tauri/commands'
 
 interface StartupStoreState {
   startupState: TauriStartupState | null

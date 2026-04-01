@@ -1,9 +1,8 @@
 import type { ColumnDef, Table as TanstackTable } from '@tanstack/react-table'
 import { useCallback, useRef } from 'react'
 import { TableBody } from '~/components/ui/table'
-import { EmptyState } from './empty-state'
 import { DataRow } from './table-data-row'
-import { TableSkeleton } from './table-skeleton'
+import { EmptyState, TableSkeleton } from './table-states'
 
 interface PaginatedTableBodyProps<TData> {
   table: TanstackTable<TData>

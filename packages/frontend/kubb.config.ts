@@ -26,7 +26,7 @@ export default defineConfig({
     pluginClient({
       output: { path: './client' },
       group: { type: 'tag', name: ({ group }) => tagName(group, 'Client') },
-      importPath: '~/shared/api/kubb-client',
+      importPath: '~/api/client',
     }),
     pluginZod({
       output: { path: './zod' },
@@ -38,7 +38,7 @@ export default defineConfig({
       group: { type: 'tag', name: ({ group }) => tagName(group, 'Hooks') },
       client: {
         dataReturnType: 'data',
-        importPath: '~/shared/api/kubb-client',
+        importPath: '~/api/client',
       },
       query: { methods: ['get'] },
       mutation: { methods: ['post', 'put', 'patch', 'delete'] },

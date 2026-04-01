@@ -2,9 +2,8 @@ import type { ColumnDef, Table as TanstackTable } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useRef } from 'react'
 import { TableBody } from '~/components/ui/table'
-import { EmptyState } from './empty-state'
 import { DataRow } from './table-data-row'
-import { TableSkeleton } from './table-skeleton'
+import { EmptyState, TableSkeleton } from './table-states'
 
 interface VirtualTableBodyProps<TData> {
   table: TanstackTable<TData>

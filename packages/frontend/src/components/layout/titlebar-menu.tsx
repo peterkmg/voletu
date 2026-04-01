@@ -1,11 +1,11 @@
 import type { NavItem } from './types'
-import type { TableDensity } from '~/components/data-table/density-context'
+import type { TableDensity } from '~/components/data-table/density'
 import { useNavigate } from '@tanstack/react-router'
 import { Check } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { ConfirmDialog } from '~/components/confirm-dialog'
+import { ConfirmDialog } from '~/components/dialogs/confirm-dialog'
 import {
   Dialog,
   DialogContent,

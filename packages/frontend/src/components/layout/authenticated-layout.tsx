@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { DensityProvider } from '~/components/data-table'
 import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar'
 import { cn } from '~/lib/utils'
-import { useHealthCheck } from '~/shared/api/hooks/use-node-status'
+import { useHealthCheck } from '~/hooks/use-node-status'
 import { AppSidebar } from './app-sidebar'
 
 export function AuthenticatedLayout() {

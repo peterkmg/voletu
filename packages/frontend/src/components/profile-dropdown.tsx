@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { LogOut, User } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ConfirmDialog } from '~/components/confirm-dialog'
+import { ConfirmDialog } from '~/components/dialogs/confirm-dialog'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import {

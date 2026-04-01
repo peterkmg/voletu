@@ -1,11 +1,11 @@
 import type { UserResponse } from '~/generated/types'
-import type { AuthSession } from '~/shared/auth/session'
+import type { AuthSession } from '~/auth/session'
 import { create } from 'zustand'
 import {
   clearStoredSession,
   loadStoredSession,
   persistSession,
-} from '~/shared/auth/session'
+} from '~/auth/session'
 
 interface AuthState {
   auth: {

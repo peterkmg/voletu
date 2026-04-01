@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { PasswordInput } from '~/components/password-input'
+import { PasswordInput } from '~/components/forms/password-input'
 import { Button } from '~/components/ui/button'
 import {
   Card,

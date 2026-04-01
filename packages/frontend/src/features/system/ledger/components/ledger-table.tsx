@@ -1,4 +1,5 @@
-import type { SortingState, VisibilityState } from '@tanstack/react-table'
+import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/react-table'
+import type { TFunction } from 'i18next'
 import type { LedgerEntryResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -15,7 +16,7 @@ import {
 } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DataTablePagination, DataTableToolbar, getGridTemplate } from '~/components/data-table'
+import { DataTableColumnHeader, DataTablePagination, DataTableToolbar, getGridTemplate } from '~/components/data-table'
 import {
   Table,
   TableBody,
@@ -26,7 +27,84 @@ import {
 } from '~/components/ui/table'
 import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { cn } from '~/lib/utils'
-import { getLedgerColumns } from './ledger-columns'
+
+// --- Columns ---
+
+function getLedgerColumns(t: TFunction): ColumnDef<LedgerEntryResponse>[] {
+  return [
+    {
+      accessorKey: 'storageId',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('system:ledger.columns.storage')}
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.getValue('storageId')}</span>
+      ),
+    },
+    {
+      accessorKey: 'productId',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('system:ledger.columns.product')}
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.getValue('productId')}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'contractorId',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('system:ledger.columns.contractor')}
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.getValue('contractorId')}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'currentAmount',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('system:ledger.columns.quantity')}
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.getValue('currentAmount')}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('common:table.createdAt')}
+        />
+      ),
+      cell: ({ row }) => {
+        const date = row.getValue<string>('createdAt')
+        return (
+          <span className="text-muted-foreground text-sm">
+            {new Date(date).toLocaleDateString()}
+          </span>
+        )
+      },
+    },
+  ]
+}
 
 const route = getRouteApi('/_authenticated/ledger/')
 

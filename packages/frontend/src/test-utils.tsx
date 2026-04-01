@@ -9,7 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { render } from '@testing-library/react'
-import { DensityProvider } from '~/components/data-table/density-context'
+import { DensityProvider } from '~/components/data-table/density'
 
 function TestProviders({ children }: { children: React.ReactNode }) {
   return (

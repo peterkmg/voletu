@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { cn } from '~/lib/utils'
-import { DebouncedInput } from './debounced-input'
+import { DebouncedInput } from '~/components/ui/debounced-input'
 import { FilterPopover } from './filter-popover'
 
 type FilterType = 'text' | 'date' | 'number' | 'enum'

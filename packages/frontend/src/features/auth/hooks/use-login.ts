@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { authLogin } from '~/generated/client'
 import { extractErrorMessage } from '~/lib/error'
-import { toAuthSession } from '~/shared/auth/session'
+import { toAuthSession } from '~/auth/session'
 import { useAuthStore } from '~/stores/auth-store'
 
 export interface UseLoginResult {

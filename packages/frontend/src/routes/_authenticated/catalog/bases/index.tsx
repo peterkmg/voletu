@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { Bases } from '~/features/catalog/bases'
+import { Bases } from '~/features/catalog/bases.tsx'
 
 const searchSchema = z.object({
   page: z.number().optional(),

@@ -6,7 +6,7 @@ import {
   TableHeader,
 } from '~/components/ui/table'
 import { cn } from '~/lib/utils'
-import { densityClasses, useDensity } from './density-context'
+import { densityClasses, useDensity } from './density'
 import { PaginatedTableBody } from './paginated-table-body'
 import { TableFooterRow } from './table-footer-row'
 import { TableHeaderRow } from './table-header-row'

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { EntityDeleteDialog } from '~/components/entity-delete-dialog'
+import { EntityDeleteDialog } from '~/components/dialogs/entity-delete-dialog'
 
 interface EntityHook<TRow> {
   open: string | null

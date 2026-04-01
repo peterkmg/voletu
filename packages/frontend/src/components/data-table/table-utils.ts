@@ -1,4 +1,4 @@
-import type { Column, Table as TanstackTable } from '@tanstack/react-table'
+import type { Column, Row, Table as TanstackTable } from '@tanstack/react-table'
 import type { CSSProperties } from 'react'
 
 export const alignClasses = {
@@ -29,6 +29,17 @@ export function hasAnyFooter<TData>(table: TanstackTable<TData>): boolean {
   return table.getFooterGroups().some(group =>
     group.headers.some(header => header.column.columnDef.footer),
   )
+}
+
+/** Create a global filter function that searches across specified fields */
+export function createGlobalFilter<T>(...fields: (keyof T & string)[]) {
+  return (row: Row<T>, _columnId: string, filterValue: string) => {
+    const search = String(filterValue).toLowerCase()
+    return fields.some((field) => {
+      const value = (row.original as Record<string, unknown>)[field]
+      return String(value ?? '').toLowerCase().includes(search)
+    })
+  }
 }
 
 /** Compute CSS Grid column template from visible columns */

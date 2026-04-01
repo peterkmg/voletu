@@ -1,6 +1,6 @@
-import type { AuthSession } from '~/shared/auth/session'
+import type { AuthSession } from '~/auth/session'
 
-vi.mock('~/shared/auth/session', () => ({
+vi.mock('~/auth/session', () => ({
   loadStoredSession: vi.fn(() => null),
   persistSession: vi.fn(),
   clearStoredSession: vi.fn(),
@@ -10,14 +10,14 @@ vi.mock('~/shared/auth/session', () => ({
 // inside auth-store.ts sees the mocked (null-returning) version.
 const { useAuthStore } = await import('~/stores/auth-store')
 const { persistSession, clearStoredSession } = await import(
-  '~/shared/auth/session'
+  '~/auth/session'
 )
 
 const fakeUser = {
   id: 'u1',
   email: 'a@b.com',
   name: 'Alice',
-} as AuthSession['user']
+} as unknown as AuthSession['user']
 
 const fakeSession: AuthSession = {
   accessToken: 'at-123',
