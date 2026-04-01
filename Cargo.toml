@@ -51,7 +51,7 @@ chrono = { version = "0.4.44", default-features = false, features = [
   "std",
   "serde",
 ] }
-uuid = { version = "1.22", features = ["v7", "serde"] }
+uuid = { version = "1.23", features = ["v7", "serde"] }
 
 tauri = { version = "2.10.3" }
 tauri-plugin-opener = "2"
@@ -82,7 +82,7 @@ keyring = { version = "3", features = ["windows-native"] }
 rand = "0.10"
 fake = "5.1"
 base64 = "0.22"
-rust_decimal = { version = "1", features = ["serde-with-str"] }
+rust_decimal = { version = "1.41", features = ["serde-with-str"] }
 reqwest = { version = "0.13.2", default-features = false, features = [
   "json",
   "rustls",

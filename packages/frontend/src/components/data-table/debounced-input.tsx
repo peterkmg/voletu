@@ -19,7 +19,6 @@ export function DebouncedInput({
   onChangeRef.current = onChange
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
     setValue(externalValue)
   }, [externalValue])
 

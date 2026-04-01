@@ -41,8 +41,7 @@ export function decimalToNumber(value: Decimal.Value): number {
 
 export function isDecimalString(value: string): boolean {
   try {
-    // eslint-disable-next-line no-new
-    new Decimal(value)
+    void new Decimal(value)
     return true
   }
   catch {

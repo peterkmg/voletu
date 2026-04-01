@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- context files export both Provider and hook */
 import { createContext, use, useCallback, useState } from 'react'
 
 export type TableDensity = 'compact' | 'normal' | 'comfortable'

@@ -45,7 +45,6 @@ const languages = [
 ] as const
 
 function useDensityDirect() {
-  // eslint-disable-next-line react-naming-convention/use-state -- mirrors DensityProvider naming
   const [density, setDensityState] = useState<TableDensity>(
     () => (localStorage.getItem(DENSITY_STORAGE_KEY) as TableDensity) || 'normal',
   )

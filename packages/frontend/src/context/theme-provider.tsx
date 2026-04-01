@@ -34,7 +34,6 @@ export function ThemeProvider({
   defaultTheme = DEFAULT_THEME,
   ...props
 }: ThemeProviderProps) {
-  // eslint-disable-next-line react-naming-convention/use-state
   const [theme, _setTheme] = useState<Theme>(
     () => (localStorage.getItem(STORAGE_KEY) as Theme) || defaultTheme,
   )

@@ -89,7 +89,6 @@ export function LedgerTable({ data }: LedgerTableProps) {
 
   const pageCount = table.getPageCount()
   useEffect(() => {
-    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
     ensurePageInRange(pageCount)
   }, [pageCount, ensurePageInRange])
 
