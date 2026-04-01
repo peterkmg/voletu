@@ -1,29 +1,21 @@
-import { PortDeleteDialog } from './port-delete-dialog'
+import { catalogPortHardDelete, catalogPortSoftDelete } from '~/generated/client'
+import { catalogPortListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogPortList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { PortMutateDialog } from './port-mutate-dialog'
 import { usePorts } from './ports-provider'
 
-export function PortsDialogs() {
-  const { open, setOpen, currentRow } = usePorts()
+const PortDeleteDialog = createDeleteDialog({
+  useEntity: usePorts,
+  hardDeleteFn: catalogPortHardDelete,
+  softDeleteFn: catalogPortSoftDelete,
+  queryKey: catalogPortListQueryKey,
+  entityLabel: 'catalog:port.singular',
+  i18nNamespaces: ['common', 'catalog'],
+})
 
-  return (
-    <>
-      <PortMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <PortDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <PortDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const PortsDialogs = createEntityDialogs({
+  useEntity: usePorts,
+  MutateDialog: PortMutateDialog,
+  DeleteDialog: PortDeleteDialog,
+})

@@ -1,29 +1,21 @@
+import { catalogCompanyHardDelete, catalogCompanySoftDelete } from '~/generated/client'
+import { catalogCompanyListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { useCompanies } from './companies-provider'
-import { CompanyDeleteDialog } from './company-delete-dialog'
 import { CompanyMutateDialog } from './company-mutate-dialog'
 
-export function CompaniesDialogs() {
-  const { open, setOpen, currentRow } = useCompanies()
+const CompanyDeleteDialog = createDeleteDialog({
+  useEntity: useCompanies,
+  hardDeleteFn: catalogCompanyHardDelete,
+  softDeleteFn: catalogCompanySoftDelete,
+  queryKey: catalogCompanyListQueryKey,
+  entityLabel: 'catalog:company.singular',
+  i18nNamespaces: ['common', 'catalog'],
+})
 
-  return (
-    <>
-      <CompanyMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <CompanyDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <CompanyDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const CompaniesDialogs = createEntityDialogs({
+  useEntity: useCompanies,
+  MutateDialog: CompanyMutateDialog,
+  DeleteDialog: CompanyDeleteDialog,
+})

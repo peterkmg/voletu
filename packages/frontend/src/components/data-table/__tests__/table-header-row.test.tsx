@@ -61,7 +61,7 @@ describe('TableHeaderRow', () => {
 
   it('does not render content for placeholder headers', () => {
     const headerGroup = createMockHeaderGroup()
-    headerGroup.headers[0].isPlaceholder = true
+    headerGroup.headers[0]!.isPlaceholder = true
     renderHeaderRow(headerGroup)
 
     // Only Status header should have rendered content

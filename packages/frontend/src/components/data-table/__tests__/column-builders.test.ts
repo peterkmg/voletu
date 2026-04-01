@@ -1,3 +1,4 @@
+import type { Row } from '@tanstack/react-table'
 import {
   selectColumn,
   actionsColumn,
@@ -31,7 +32,7 @@ describe('selectColumn', () => {
 })
 
 describe('actionsColumn', () => {
-  const DummyActions = (() => null) as React.ComponentType<{ row: unknown }>
+  const DummyActions = (() => null) as React.ComponentType<{ row: Row<TestRow> }>
   const col = actionsColumn<TestRow>(DummyActions)
 
   it('returns ColumnDef with id "actions"', () => {

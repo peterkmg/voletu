@@ -1,29 +1,21 @@
-import { RailWaybillDeleteDialog } from './rail-waybill-delete-dialog'
+import { transportRailWaybillHardDelete, transportRailWaybillSoftDelete } from '~/generated/client'
+import { transportRailWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { RailWaybillMutateDialog } from './rail-waybill-mutate-dialog'
 import { useRailWaybills } from './rail-waybills-provider'
 
-export function RailWaybillsDialogs() {
-  const { open, setOpen, currentRow } = useRailWaybills()
+const RailWaybillDeleteDialog = createDeleteDialog({
+  useEntity: useRailWaybills,
+  hardDeleteFn: transportRailWaybillHardDelete,
+  softDeleteFn: transportRailWaybillSoftDelete,
+  queryKey: transportRailWaybillListQueryKey,
+  entityLabel: 'transport:rail.singular',
+  i18nNamespaces: ['common', 'transport'],
+})
 
-  return (
-    <>
-      <RailWaybillMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <RailWaybillDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <RailWaybillDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const RailWaybillsDialogs = createEntityDialogs({
+  useEntity: useRailWaybills,
+  MutateDialog: RailWaybillMutateDialog,
+  DeleteDialog: RailWaybillDeleteDialog,
+})

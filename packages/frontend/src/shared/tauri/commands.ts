@@ -1,5 +1,21 @@
 import { invoke } from '@tauri-apps/api/core'
 
+const DEFAULT_IPC_TIMEOUT = 15_000
+
+/** Wraps Tauri invoke with a timeout to prevent indefinite hangs */
+async function invokeWithTimeout<T>(
+  cmd: string,
+  args?: Record<string, unknown>,
+  timeout = DEFAULT_IPC_TIMEOUT,
+): Promise<T> {
+  return Promise.race([
+    invoke<T>(cmd, args),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`IPC '${cmd}' timed out after ${timeout}ms`)), timeout),
+    ),
+  ])
+}
+
 export type AppMode = 'remote' | 'local'
 
 export interface StartupState {
@@ -30,25 +46,25 @@ export interface SaveLocalConfigPayload {
 }
 
 export async function getStartupState(): Promise<StartupState> {
-  return invoke<StartupState>('get_startup_state')
+  return invokeWithTimeout<StartupState>('get_startup_state')
 }
 
 export async function saveRemoteConfig(
   payload: SaveRemoteConfigPayload,
 ): Promise<StartupState> {
-  return invoke<StartupState>('save_remote_config', { req: payload })
+  return invokeWithTimeout<StartupState>('save_remote_config', { req: payload })
 }
 
 export async function saveLocalConfig(
   payload: SaveLocalConfigPayload,
 ): Promise<StartupState> {
-  return invoke<StartupState>('save_local_config', { req: payload })
+  return invokeWithTimeout<StartupState>('save_local_config', { req: payload })
 }
 
 export async function startLocalApi(): Promise<StartupState> {
-  return invoke<StartupState>('start_local_api')
+  return invokeWithTimeout<StartupState>('start_local_api')
 }
 
 export async function resetConfigAndMode(): Promise<StartupState> {
-  return invoke<StartupState>('reset_config_and_mode')
+  return invokeWithTimeout<StartupState>('reset_config_and_mode')
 }

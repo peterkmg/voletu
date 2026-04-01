@@ -1,42 +1,24 @@
-import { DispatchDeleteDialog } from './dispatch-delete-dialog'
+import { dispatchDocumentHardDelete, dispatchDocumentSoftDelete } from '~/generated/client'
+import { dispatchDocumentListQueryKey } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { DispatchLifecycleDialog } from './dispatch-lifecycle-dialog'
 import { DispatchMutateDialog } from './dispatch-mutate-dialog'
 import { useDispatch } from './dispatch-provider'
 
-export function DispatchDialogs() {
-  const { open, setOpen, currentRow } = useDispatch()
+const DispatchDeleteDialog = createDeleteDialog({
+  useEntity: useDispatch,
+  hardDeleteFn: dispatchDocumentHardDelete,
+  softDeleteFn: dispatchDocumentSoftDelete,
+  queryKey: dispatchDocumentListQueryKey,
+  entityLabel: 'documents:dispatch.singular',
+  i18nNamespaces: ['common', 'documents'],
+})
 
-  return (
-    <>
-      <DispatchMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <DispatchDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <DispatchDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-      <DispatchLifecycleDialog
-        open={open === 'execute'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="execute"
-      />
-      <DispatchLifecycleDialog
-        open={open === 'revert'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="revert"
-      />
-    </>
-  )
-}
+export const DispatchDialogs = createEntityDialogs({
+  useEntity: useDispatch,
+  MutateDialog: DispatchMutateDialog,
+  DeleteDialog: DispatchDeleteDialog,
+  LifecycleDialog: DispatchLifecycleDialog,
+  lifecyclePropName: 'variant',
+})

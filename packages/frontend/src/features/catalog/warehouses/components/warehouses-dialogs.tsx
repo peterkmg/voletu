@@ -1,29 +1,21 @@
-import { WarehouseDeleteDialog } from './warehouse-delete-dialog'
+import { catalogWarehouseHardDelete, catalogWarehouseSoftDelete } from '~/generated/client'
+import { catalogWarehouseListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { WarehouseMutateDialog } from './warehouse-mutate-dialog'
 import { useWarehouses } from './warehouses-provider'
 
-export function WarehousesDialogs() {
-  const { open, setOpen, currentRow } = useWarehouses()
+const WarehouseDeleteDialog = createDeleteDialog({
+  useEntity: useWarehouses,
+  hardDeleteFn: catalogWarehouseHardDelete,
+  softDeleteFn: catalogWarehouseSoftDelete,
+  queryKey: catalogWarehouseListQueryKey,
+  entityLabel: 'catalog:warehouse.singular',
+  i18nNamespaces: ['common', 'catalog'],
+})
 
-  return (
-    <>
-      <WarehouseMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <WarehouseDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <WarehouseDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const WarehousesDialogs = createEntityDialogs({
+  useEntity: useWarehouses,
+  MutateDialog: WarehouseMutateDialog,
+  DeleteDialog: WarehouseDeleteDialog,
+})

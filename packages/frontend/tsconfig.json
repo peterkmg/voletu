@@ -46,7 +46,8 @@
     // "customConditions": [],                           // Custom conditions for resolving imports
     "resolveJsonModule": true, // Enable importing .json files
     "types": [
-      "vite/client"
+      "vite/client",
+      "vitest/globals"
     ],
     // "rootDirs": [],                                   // Allow multiple folders as one for module resolution
     // "typeRoots": [],                                  // Specify multiple folders for type definitions

@@ -1,29 +1,21 @@
-import { TruckWaybillDeleteDialog } from './truck-waybill-delete-dialog'
+import { transportTruckWaybillHardDelete, transportTruckWaybillSoftDelete } from '~/generated/client'
+import { transportTruckWaybillListQueryKey } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { TruckWaybillMutateDialog } from './truck-waybill-mutate-dialog'
 import { useTruckWaybills } from './truck-waybills-provider'
 
-export function TruckWaybillsDialogs() {
-  const { open, setOpen, currentRow } = useTruckWaybills()
+const TruckWaybillDeleteDialog = createDeleteDialog({
+  useEntity: useTruckWaybills,
+  hardDeleteFn: transportTruckWaybillHardDelete,
+  softDeleteFn: transportTruckWaybillSoftDelete,
+  queryKey: transportTruckWaybillListQueryKey,
+  entityLabel: 'transport:truck.singular',
+  i18nNamespaces: ['common', 'transport'],
+})
 
-  return (
-    <>
-      <TruckWaybillMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <TruckWaybillDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <TruckWaybillDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const TruckWaybillsDialogs = createEntityDialogs({
+  useEntity: useTruckWaybills,
+  MutateDialog: TruckWaybillMutateDialog,
+  DeleteDialog: TruckWaybillDeleteDialog,
+})

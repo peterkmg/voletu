@@ -1,16 +1,8 @@
-import { Plus } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '~/components/ui/button'
+import { createPrimaryButtons } from '~/lib/create-primary-buttons'
 import { useDispatch } from './dispatch-provider'
 
-export function DispatchPrimaryButtons() {
-  const { t } = useTranslation(['documents'])
-  const { setOpen } = useDispatch()
-
-  return (
-    <Button onClick={() => setOpen('create')}>
-      <Plus className="mr-2 size-4" />
-      {t('documents:dispatch.create')}
-    </Button>
-  )
-}
+export const DispatchPrimaryButtons = createPrimaryButtons({
+  useEntity: useDispatch,
+  createLabel: 'documents:dispatch.create',
+  i18nNamespaces: ['documents'],
+})

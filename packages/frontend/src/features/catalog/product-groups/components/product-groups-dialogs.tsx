@@ -1,29 +1,21 @@
-import { ProductGroupDeleteDialog } from './product-group-delete-dialog'
+import { catalogProductGroupHardDelete, catalogProductGroupSoftDelete } from '~/generated/client'
+import { catalogProductGroupListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductGroupList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { ProductGroupMutateDialog } from './product-group-mutate-dialog'
 import { useProductGroups } from './product-groups-provider'
 
-export function ProductGroupsDialogs() {
-  const { open, setOpen, currentRow } = useProductGroups()
+const ProductGroupDeleteDialog = createDeleteDialog({
+  useEntity: useProductGroups,
+  hardDeleteFn: catalogProductGroupHardDelete,
+  softDeleteFn: catalogProductGroupSoftDelete,
+  queryKey: catalogProductGroupListQueryKey,
+  entityLabel: 'catalog:productGroup.singular',
+  i18nNamespaces: ['common', 'catalog'],
+})
 
-  return (
-    <>
-      <ProductGroupMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <ProductGroupDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <ProductGroupDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const ProductGroupsDialogs = createEntityDialogs({
+  useEntity: useProductGroups,
+  MutateDialog: ProductGroupMutateDialog,
+  DeleteDialog: ProductGroupDeleteDialog,
+})

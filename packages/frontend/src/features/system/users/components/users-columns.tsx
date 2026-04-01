@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { UserResponse } from '~/generated/types'
 import { actionsColumn, DataTableColumnHeader, dateColumn, selectColumn, textColumn } from '~/components/data-table'
 import { Badge } from '~/components/ui/badge'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useUsers } from './users-provider'
+
+const DataTableRowActions = createRowActions<UserResponse>({ useEntity: useUsers, deleteOnly: true })
 
 export function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
   return [

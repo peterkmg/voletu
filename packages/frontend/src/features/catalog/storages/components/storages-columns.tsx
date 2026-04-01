@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { StorageResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, numericColumn, resolvedColumn, selectColumn, StatusBadge, textColumn } from '~/components/data-table'
 import { entityActiveColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useStorages } from './storages-provider'
+
+const DataTableRowActions = createRowActions<StorageResponse>({ useEntity: useStorages })
 
 export function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
   return [

@@ -2,7 +2,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { RailWaybillResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useRailWaybills } from './rail-waybills-provider'
+
+const DataTableRowActions = createRowActions<RailWaybillResponse>({ useEntity: useRailWaybills })
 
 export function getRailWaybillColumns(t: TFunction): ColumnDef<RailWaybillResponse>[] {
   return [

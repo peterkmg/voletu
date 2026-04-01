@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { DispatchResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { dispatchMethodColors, dispatchPurposeColors, documentStatusColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useDispatch } from './dispatch-provider'
+
+const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity: useDispatch, lifecycle: true })
 
 export function getDispatchColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [

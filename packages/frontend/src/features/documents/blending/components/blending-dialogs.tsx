@@ -1,42 +1,24 @@
-import { BlendingDeleteDialog } from './blending-delete-dialog'
+import { blendingDocumentHardDelete, blendingDocumentSoftDelete } from '~/generated/client'
+import { blendingDocumentListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { BlendingLifecycleDialog } from './blending-lifecycle-dialog'
 import { BlendingMutateDialog } from './blending-mutate-dialog'
 import { useBlending } from './blending-provider'
 
-export function BlendingDialogs() {
-  const { open, setOpen, currentRow } = useBlending()
+const BlendingDeleteDialog = createDeleteDialog({
+  useEntity: useBlending,
+  hardDeleteFn: blendingDocumentHardDelete,
+  softDeleteFn: blendingDocumentSoftDelete,
+  queryKey: blendingDocumentListQueryKey,
+  entityLabel: 'documents:blending.singular',
+  i18nNamespaces: ['common', 'documents'],
+})
 
-  return (
-    <>
-      <BlendingMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <BlendingDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <BlendingDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-      <BlendingLifecycleDialog
-        open={open === 'execute'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="execute"
-      />
-      <BlendingLifecycleDialog
-        open={open === 'revert'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="revert"
-      />
-    </>
-  )
-}
+export const BlendingDialogs = createEntityDialogs({
+  useEntity: useBlending,
+  MutateDialog: BlendingMutateDialog,
+  DeleteDialog: BlendingDeleteDialog,
+  LifecycleDialog: BlendingLifecycleDialog,
+  lifecyclePropName: 'variant',
+})

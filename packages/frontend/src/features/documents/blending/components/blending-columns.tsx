@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { BlendingResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { documentStatusColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useBlending } from './blending-provider'
+
+const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useBlending, lifecycle: true })
 
 export function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
   return [

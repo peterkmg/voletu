@@ -2,7 +2,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { WarehouseResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useWarehouses } from './warehouses-provider'
+
+const DataTableRowActions = createRowActions<WarehouseResponse>({ useEntity: useWarehouses })
 
 export function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
   return [

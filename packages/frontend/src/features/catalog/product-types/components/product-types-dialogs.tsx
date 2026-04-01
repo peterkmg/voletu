@@ -1,29 +1,21 @@
-import { ProductTypeDeleteDialog } from './product-type-delete-dialog'
+import { catalogProductTypeHardDelete, catalogProductTypeSoftDelete } from '~/generated/client'
+import { catalogProductTypeListQueryKey } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { ProductTypeMutateDialog } from './product-type-mutate-dialog'
 import { useProductTypes } from './product-types-provider'
 
-export function ProductTypesDialogs() {
-  const { open, setOpen, currentRow } = useProductTypes()
+const ProductTypeDeleteDialog = createDeleteDialog({
+  useEntity: useProductTypes,
+  hardDeleteFn: catalogProductTypeHardDelete,
+  softDeleteFn: catalogProductTypeSoftDelete,
+  queryKey: catalogProductTypeListQueryKey,
+  entityLabel: 'catalog:productType.singular',
+  i18nNamespaces: ['common', 'catalog'],
+})
 
-  return (
-    <>
-      <ProductTypeMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <ProductTypeDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <ProductTypeDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-    </>
-  )
-}
+export const ProductTypesDialogs = createEntityDialogs({
+  useEntity: useProductTypes,
+  MutateDialog: ProductTypeMutateDialog,
+  DeleteDialog: ProductTypeDeleteDialog,
+})

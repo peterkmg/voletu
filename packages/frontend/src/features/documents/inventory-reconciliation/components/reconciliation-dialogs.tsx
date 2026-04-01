@@ -1,42 +1,24 @@
-import { ReconciliationDeleteDialog } from './reconciliation-delete-dialog'
+import { reconciliationHardDelete, reconciliationSoftDelete } from '~/generated/client'
+import { reconciliationListQueryKey } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { ReconciliationLifecycleDialog } from './reconciliation-lifecycle-dialog'
 import { ReconciliationMutateDialog } from './reconciliation-mutate-dialog'
 import { useReconciliation } from './reconciliation-provider'
 
-export function ReconciliationDialogs() {
-  const { open, setOpen, currentRow } = useReconciliation()
+const ReconciliationDeleteDialog = createDeleteDialog({
+  useEntity: useReconciliation,
+  hardDeleteFn: reconciliationHardDelete,
+  softDeleteFn: reconciliationSoftDelete,
+  queryKey: reconciliationListQueryKey,
+  entityLabel: 'documents:reconciliation.singular',
+  i18nNamespaces: ['common', 'documents'],
+})
 
-  return (
-    <>
-      <ReconciliationMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <ReconciliationDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <ReconciliationDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-      <ReconciliationLifecycleDialog
-        open={open === 'execute'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="execute"
-      />
-      <ReconciliationLifecycleDialog
-        open={open === 'revert'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="revert"
-      />
-    </>
-  )
-}
+export const ReconciliationDialogs = createEntityDialogs({
+  useEntity: useReconciliation,
+  MutateDialog: ReconciliationMutateDialog,
+  DeleteDialog: ReconciliationDeleteDialog,
+  LifecycleDialog: ReconciliationLifecycleDialog,
+  lifecyclePropName: 'variant',
+})

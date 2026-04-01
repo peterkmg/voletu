@@ -2,7 +2,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { TruckWaybillResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useTruckWaybills } from './truck-waybills-provider'
+
+const DataTableRowActions = createRowActions<TruckWaybillResponse>({ useEntity: useTruckWaybills })
 
 export function getTruckWaybillColumns(t: TFunction): ColumnDef<TruckWaybillResponse>[] {
   return [

@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { OwnershipTransferResponse } from '~/generated/types'
 import { actionsColumn, DataTableColumnHeader, dateColumn, IdCell, NumericCell, selectColumn, statusColumn } from '~/components/data-table'
 import { documentStatusColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useOwnershipTransfer } from './ownership-transfer-provider'
+
+const DataTableRowActions = createRowActions<OwnershipTransferResponse>({ useEntity: useOwnershipTransfer, lifecycle: true })
 
 export function getOwnershipTransferColumns(t: TFunction): ColumnDef<OwnershipTransferResponse>[] {
   return [

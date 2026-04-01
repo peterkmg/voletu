@@ -17,14 +17,14 @@ describe('Table', () => {
 
   it('sets --col-template CSS variable when gridTemplate is provided', () => {
     const { container } = render(<Table gridTemplate="1fr 2fr 1fr">content</Table>)
-    const el = container.querySelector('[data-slot="table"]')!
+    const el = container.querySelector<HTMLElement>('[data-slot="table"]')!
     expect(el.style.cssText).toContain('--col-template')
     expect(el.style.getPropertyValue('--col-template')).toBe('1fr 2fr 1fr')
   })
 
   it('does not set --col-template when gridTemplate is not provided', () => {
     const { container } = render(<Table>content</Table>)
-    const el = container.querySelector('[data-slot="table"]')!
+    const el = container.querySelector<HTMLElement>('[data-slot="table"]')!
     expect(el.style.getPropertyValue('--col-template')).toBe('')
   })
 

@@ -2,7 +2,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { ProductGroupResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useProductGroups } from './product-groups-provider'
+
+const DataTableRowActions = createRowActions<ProductGroupResponse>({ useEntity: useProductGroups })
 
 export function getProductGroupColumns(t: TFunction): ColumnDef<ProductGroupResponse>[] {
   return [

@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { AcceptanceResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { arrivalTypeColors, documentStatusColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useAcceptance } from './acceptance-provider'
+
+const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity: useAcceptance, lifecycle: true })
 
 export function getAcceptanceColumns(t: TFunction): ColumnDef<AcceptanceResponse>[] {
   return [

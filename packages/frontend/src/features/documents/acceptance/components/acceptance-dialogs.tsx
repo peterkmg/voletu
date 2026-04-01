@@ -1,42 +1,24 @@
-import { AcceptanceDeleteDialog } from './acceptance-delete-dialog'
+import { acceptanceDocumentHardDelete, acceptanceDocumentSoftDelete } from '~/generated/client'
+import { acceptanceDocumentListQueryKey } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { AcceptanceLifecycleDialog } from './acceptance-lifecycle-dialog'
 import { AcceptanceMutateDialog } from './acceptance-mutate-dialog'
 import { useAcceptance } from './acceptance-provider'
 
-export function AcceptanceDialogs() {
-  const { open, setOpen, currentRow } = useAcceptance()
+const AcceptanceDeleteDialog = createDeleteDialog({
+  useEntity: useAcceptance,
+  hardDeleteFn: acceptanceDocumentHardDelete,
+  softDeleteFn: acceptanceDocumentSoftDelete,
+  queryKey: acceptanceDocumentListQueryKey,
+  entityLabel: 'documents:acceptance.singular',
+  i18nNamespaces: ['common', 'documents'],
+})
 
-  return (
-    <>
-      <AcceptanceMutateDialog
-        open={open === 'create' || open === 'update'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={open === 'update' ? currentRow : null}
-      />
-      <AcceptanceDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="soft"
-      />
-      <AcceptanceDeleteDialog
-        open={open === 'hard-delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        variant="hard"
-      />
-      <AcceptanceLifecycleDialog
-        open={open === 'execute'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        action="execute"
-      />
-      <AcceptanceLifecycleDialog
-        open={open === 'revert'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-        action="revert"
-      />
-    </>
-  )
-}
+export const AcceptanceDialogs = createEntityDialogs({
+  useEntity: useAcceptance,
+  MutateDialog: AcceptanceMutateDialog,
+  DeleteDialog: AcceptanceDeleteDialog,
+  LifecycleDialog: AcceptanceLifecycleDialog,
+  lifecyclePropName: 'action',
+})

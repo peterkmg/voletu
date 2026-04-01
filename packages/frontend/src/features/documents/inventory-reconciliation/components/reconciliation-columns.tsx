@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { InventoryReconciliationResponse } from '~/generated/types'
 import { actionsColumn, DataTableColumnHeader, dateColumn, LookupCell, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { documentStatusColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useReconciliation } from './reconciliation-provider'
+
+const DataTableRowActions = createRowActions<InventoryReconciliationResponse>({ useEntity: useReconciliation, lifecycle: true })
 
 interface ReconciliationColumnLookups {
   warehouseMap: Map<string, string>

@@ -3,7 +3,10 @@ import type { TFunction } from 'i18next'
 import type { CompanyResponse } from '~/generated/types'
 import { actionsColumn, dateColumn, selectColumn, StatusBadge, textColumn } from '~/components/data-table'
 import { companyRoleColors } from '~/lib/badge-colors'
-import { DataTableRowActions } from './data-table-row-actions'
+import { createRowActions } from '~/lib/create-row-actions'
+import { useCompanies } from './companies-provider'
+
+const DataTableRowActions = createRowActions<CompanyResponse>({ useEntity: useCompanies })
 
 export function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
   return [

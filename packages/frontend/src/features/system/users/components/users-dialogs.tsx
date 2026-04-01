@@ -1,21 +1,21 @@
+import { systemUserDelete } from '~/generated/client'
+import { systemUserListQueryKey } from '~/generated/hooks/SystemUserHooks/useSystemUserList'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { UserCreateDrawer } from './user-create-drawer'
-import { UserDeleteDialog } from './user-delete-dialog'
 import { useUsers } from './users-provider'
 
-export function UsersDialogs() {
-  const { open, setOpen, currentRow } = useUsers()
+const UserDeleteDialog = createDeleteDialog({
+  useEntity: useUsers,
+  hardDeleteFn: systemUserDelete,
+  queryKey: systemUserListQueryKey,
+  entityLabel: 'system:users.singular',
+  i18nNamespaces: ['common', 'system'],
+})
 
-  return (
-    <>
-      <UserCreateDrawer
-        open={open === 'create'}
-        onOpenChange={() => setOpen(null)}
-      />
-      <UserDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
-        currentRow={currentRow}
-      />
-    </>
-  )
-}
+export const UsersDialogs = createEntityDialogs({
+  useEntity: useUsers,
+  MutateDialog: UserCreateDrawer,
+  DeleteDialog: UserDeleteDialog,
+  supportsUpdate: false,
+})

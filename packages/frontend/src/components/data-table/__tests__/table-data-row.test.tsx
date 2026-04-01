@@ -53,7 +53,7 @@ const defaultProps = {
   onKeyDown: vi.fn(),
 }
 
-function renderDataRow(props: Partial<typeof defaultProps> = {}) {
+function renderDataRow(props: Partial<typeof defaultProps> & { onRowAction?: (row: TestData) => void, virtualStart?: number } = {}) {
   return renderWithProviders(
     <div style={{ '--col-template': '1fr' } as React.CSSProperties}>
       <DataRow<TestData> {...defaultProps} {...props} />
@@ -81,7 +81,7 @@ describe('DataRow', () => {
     await userEvent.type(row, '{Enter}')
 
     expect(onKeyDown).toHaveBeenCalled()
-    const [event, data, index] = onKeyDown.mock.calls[0]
+    const [_event, data, index] = onKeyDown.mock.calls[0]!
     expect(data).toEqual({ id: '1', name: 'Test Item' })
     expect(index).toBe(0)
   })
