@@ -1,3 +1,4 @@
+import type { Resolver } from 'react-hook-form'
 import type { DbType, SaveLocalConfigPayload } from '~/tauri/commands'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -37,7 +38,7 @@ const localSchema = z.object({
   jwtRefreshExpirationSeconds: z.coerce.number().int().positive(),
 })
 
-type LocalFormValues = z.infer<typeof localSchema>
+type LocalFormValues = z.output<typeof localSchema>
 
 interface LocalConfigFormProps {
   onBack: () => void
@@ -47,8 +48,10 @@ export function LocalConfigForm({ onBack }: LocalConfigFormProps) {
   const { t } = useTranslation(['auth', 'common'])
   const { isSubmitting, error, submitLocalConfig } = useSetupFlow()
 
+  // SAFETY: zodResolver handles z.coerce input/output type mismatch at runtime correctly;
+  // cast needed because Zod v4 coerce types expose `unknown` as input which RHF can't spread.
   const form = useForm<LocalFormValues>({
-    resolver: zodResolver(localSchema),
+    resolver: zodResolver(localSchema) as unknown as Resolver<LocalFormValues>,
     defaultValues: {
       dbType: 'sqlite',
       sqliteFile: 'voletu.db',

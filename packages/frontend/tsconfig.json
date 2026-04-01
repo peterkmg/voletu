@@ -27,7 +27,6 @@
     // "reactNamespace": "",                             // Specify React namespace
     // "noLib": true,                                    // Disable including default lib files
     "useDefineForClassFields": true, // Use define semantics for class fields
-    "baseUrl": ".", // Base directory for non-relative module names
     "rootDir": ".", // Specify root folder for source files
     /* Modules */
     "module": "ESNext", // Specify module code generation
@@ -35,10 +34,10 @@
     // Absolute paths that re-map imports to additional lookup locations.
     "paths": {
       "~/*": [
-        "src/*"
+        "./src/*"
       ],
       "#/*": [
-        "public/*"
+        "./public/*"
       ]
     },
     // "resolvePackageJsonExports": true,                // Use package.json 'exports' for resolution
