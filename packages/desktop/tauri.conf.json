@@ -16,7 +16,8 @@
         "title": "voletu",
         "width": 1280,
         "height": 720,
-        "decorations": false
+        "decorations": false,
+        "backgroundColor": [255, 255, 255, 255]
       }
     ],
     "security": {

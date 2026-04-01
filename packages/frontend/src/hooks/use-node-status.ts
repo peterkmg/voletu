@@ -30,7 +30,7 @@ interface NodeStatusResponse {
 }
 
 export function useHealthCheck() {
-  const accessToken = useAuthStore(s => s.auth.accessToken)
+  const accessToken = useAuthStore(s => s.accessToken)
 
   const query = useQuery<HealthResponse>({
     queryKey: ['health'],
@@ -60,13 +60,13 @@ export function useHealthCheck() {
 }
 
 export function useNodeStatus() {
-  const accessToken = useAuthStore(s => s.auth.accessToken)
+  const accessToken = useAuthStore(s => s.accessToken)
   const isInitialized = useNodeStore(s => s.status.isInitialized)
 
   const query = useQuery<NodeStatusResponse>({
     queryKey: ['node', 'status'],
     queryFn: async () => {
-      const token = useAuthStore.getState().auth.accessToken
+      const token = useAuthStore.getState().accessToken
       const res = await fetch(`${getBaseUrl()}/node/status`, {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -6,11 +6,11 @@ import { useNodeStore } from '~/stores/node-store'
 
 export const Route = createFileRoute('/(auth)/init')({
   beforeLoad: () => {
-    const { auth } = useAuthStore.getState()
-    if (!auth.accessToken) {
+    const { accessToken, user } = useAuthStore.getState()
+    if (!accessToken) {
       throw redirect({ to: '/sign-in' })
     }
-    if (auth.user?.role !== 'ADMIN') {
+    if (user?.role !== 'ADMIN') {
       throw redirect({ to: '/' })
     }
   },

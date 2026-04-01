@@ -1,125 +1,239 @@
-import type { AuthSession } from '~/auth/session'
+export {} // module boundary for top-level await
 
 vi.mock('~/auth/session', () => ({
-  loadStoredSession: vi.fn(() => null),
-  persistSession: vi.fn(),
-  clearStoredSession: vi.fn(),
+  loadSession: vi.fn(() => null),
+  saveSession: vi.fn(),
+  clearSession: vi.fn(),
+  verifyToken: vi.fn(),
+  refreshTokens: vi.fn(),
+  isTokenExpiringSoon: vi.fn(() => false),
+  toSession: vi.fn(),
 }))
 
-// Import store AFTER the mock so the module-level `loadStoredSession()` call
-// inside auth-store.ts sees the mocked (null-returning) version.
+const sessionMocks = await import('~/auth/session') as any
 const { useAuthStore } = await import('~/stores/auth-store')
-const { persistSession, clearStoredSession } = await import(
-  '~/auth/session'
-)
 
-const fakeUser = {
-  id: 'u1',
-  email: 'a@b.com',
-  name: 'Alice',
-} as unknown as AuthSession['user']
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-const fakeSession: AuthSession = {
-  accessToken: 'at-123',
-  refreshToken: 'rt-456',
-  user: fakeUser,
+const fakeUser = { id: 'u1', username: 'admin', role: 'ADMIN', displayName: 'Admin' } as any
+
+function storedSession(overrides: Record<string, unknown> = {}) {
+  return { accessToken: 'old-access', refreshToken: 'old-refresh', user: { id: 'u1' }, ...overrides }
 }
+
+function refreshResult(overrides: Record<string, unknown> = {}) {
+  return { accessToken: 'new-access', refreshToken: 'new-refresh', user: fakeUser, ...overrides }
+}
+
+// ---------------------------------------------------------------------------
+// Setup
+// ---------------------------------------------------------------------------
 
 beforeEach(() => {
   vi.clearAllMocks()
-  useAuthStore.getState().auth.reset()
+  useAuthStore.setState({ status: 'unknown', accessToken: null, refreshToken: null, user: null })
 })
 
-describe('auth-store', () => {
-  describe('initial state', () => {
-    it('starts with null user and empty tokens', () => {
-      const { auth } = useAuthStore.getState()
-      expect(auth.user).toBeNull()
-      expect(auth.accessToken).toBe('')
-      expect(auth.refreshToken).toBe('')
-    })
+// ---------------------------------------------------------------------------
+// boot()
+// ---------------------------------------------------------------------------
 
-    it('starts with isInitializing = true', () => {
-      const { auth } = useAuthStore.getState()
-      expect(auth.isInitializing).toBe(true)
-    })
+describe('boot()', () => {
+  it('no stored tokens -> status becomes unauthenticated', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(null)
+
+    await useAuthStore.getState().boot()
+
+    expect(useAuthStore.getState().status).toBe('unauthenticated')
   })
 
-  describe('setSession()', () => {
-    it('sets user, accessToken, and refreshToken', () => {
-      useAuthStore.getState().auth.setSession(fakeSession)
+  it('stored tokens + verifyToken succeeds -> status becomes valid, user updated', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(storedSession())
+    vi.mocked(sessionMocks.verifyToken).mockResolvedValue(fakeUser)
 
-      const { auth } = useAuthStore.getState()
-      expect(auth.user).toEqual(fakeUser)
-      expect(auth.accessToken).toBe('at-123')
-      expect(auth.refreshToken).toBe('rt-456')
-    })
+    await useAuthStore.getState().boot()
 
-    it('calls persistSession with the session', () => {
-      useAuthStore.getState().auth.setSession(fakeSession)
-      expect(persistSession).toHaveBeenCalledWith(fakeSession)
-    })
-
-    it('preserves isInitializing when setting session', () => {
-      useAuthStore.getState().auth.setInitialized()
-      useAuthStore.getState().auth.setSession(fakeSession)
-
-      expect(useAuthStore.getState().auth.isInitializing).toBe(false)
-    })
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('valid')
+    expect(state.user).toEqual(fakeUser)
   })
 
-  describe('clearSession()', () => {
-    it('resets user and tokens to defaults', () => {
-      useAuthStore.getState().auth.setSession(fakeSession)
-      useAuthStore.getState().auth.clearSession()
+  it('stored tokens + verifyToken fails + refreshTokens succeeds -> status valid with new tokens', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(storedSession())
+    vi.mocked(sessionMocks.verifyToken).mockRejectedValue(new Error('expired'))
+    vi.mocked(sessionMocks.refreshTokens).mockResolvedValue(refreshResult())
 
-      const { auth } = useAuthStore.getState()
-      expect(auth.user).toBeNull()
-      expect(auth.accessToken).toBe('')
-      expect(auth.refreshToken).toBe('')
-    })
+    await useAuthStore.getState().boot()
 
-    it('calls clearStoredSession', () => {
-      useAuthStore.getState().auth.clearSession()
-      expect(clearStoredSession).toHaveBeenCalled()
-    })
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('valid')
+    expect(state.accessToken).toBe('new-access')
+    expect(state.refreshToken).toBe('new-refresh')
+    expect(state.user).toEqual(fakeUser)
   })
 
-  describe('reset()', () => {
-    it('clears user and tokens', () => {
-      useAuthStore.getState().auth.setSession(fakeSession)
-      useAuthStore.getState().auth.reset()
+  it('stored tokens + verifyToken fails + refreshTokens fails -> status unauthenticated', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(storedSession())
+    vi.mocked(sessionMocks.verifyToken).mockRejectedValue(new Error('expired'))
+    vi.mocked(sessionMocks.refreshTokens).mockRejectedValue(new Error('revoked'))
 
-      const { auth } = useAuthStore.getState()
-      expect(auth.user).toBeNull()
-      expect(auth.accessToken).toBe('')
-      expect(auth.refreshToken).toBe('')
-    })
+    await useAuthStore.getState().boot()
 
-    it('calls clearStoredSession', () => {
-      useAuthStore.getState().auth.reset()
-      expect(clearStoredSession).toHaveBeenCalled()
-    })
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('unauthenticated')
+    expect(state.accessToken).toBeNull()
+    expect(state.refreshToken).toBeNull()
+    expect(state.user).toBeNull()
   })
 
-  describe('setInitialized()', () => {
-    it('sets isInitializing to false', () => {
-      // Manually restore isInitializing because reset() does not touch it
-      useAuthStore.setState({
-        auth: { ...useAuthStore.getState().auth, isInitializing: true },
-      })
-      expect(useAuthStore.getState().auth.isInitializing).toBe(true)
-      useAuthStore.getState().auth.setInitialized()
-      expect(useAuthStore.getState().auth.isInitializing).toBe(false)
-    })
+  it('stored tokens + verifyToken fails + no refresh token -> status unauthenticated', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(storedSession({ refreshToken: null }))
+    vi.mocked(sessionMocks.verifyToken).mockRejectedValue(new Error('expired'))
 
-    it('preserves existing user/token state', () => {
-      useAuthStore.getState().auth.setSession(fakeSession)
-      useAuthStore.getState().auth.setInitialized()
+    await useAuthStore.getState().boot()
 
-      const { auth } = useAuthStore.getState()
-      expect(auth.user).toEqual(fakeUser)
-      expect(auth.accessToken).toBe('at-123')
-    })
+    expect(useAuthStore.getState().status).toBe('unauthenticated')
+    expect(sessionMocks.refreshTokens).not.toHaveBeenCalled()
+  })
+
+  it('calls saveSession after successful refresh', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(storedSession())
+    vi.mocked(sessionMocks.verifyToken).mockRejectedValue(new Error('expired'))
+    const session = refreshResult()
+    vi.mocked(sessionMocks.refreshTokens).mockResolvedValue(session)
+
+    await useAuthStore.getState().boot()
+
+    expect(sessionMocks.saveSession).toHaveBeenCalledWith(session)
+  })
+
+  it('calls clearSession when ending in unauthenticated', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(null)
+
+    await useAuthStore.getState().boot()
+
+    expect(sessionMocks.clearSession).toHaveBeenCalled()
+  })
+
+  it('transitions through validating state during verification', async () => {
+    vi.mocked(sessionMocks.loadSession).mockReturnValue(storedSession())
+
+    const statusLog: string[] = []
+    const unsub = useAuthStore.subscribe(s => statusLog.push(s.status))
+
+    // Make verifyToken resolve after we can observe state
+    vi.mocked(sessionMocks.verifyToken).mockResolvedValue(fakeUser)
+
+    await useAuthStore.getState().boot()
+    unsub()
+
+    expect(statusLog).toContain('validating')
+    expect(statusLog).toContain('valid')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// onUnauthorized()
+// ---------------------------------------------------------------------------
+
+describe('onUnauthorized()', () => {
+  it('refreshTokens succeeds -> status valid, returns true', async () => {
+    useAuthStore.setState({ status: 'valid', refreshToken: 'rt' })
+    vi.mocked(sessionMocks.refreshTokens).mockResolvedValue(refreshResult())
+
+    const result = await useAuthStore.getState().onUnauthorized()
+
+    expect(result).toBe(true)
+    expect(useAuthStore.getState().status).toBe('valid')
+  })
+
+  it('refreshTokens fails -> status unauthenticated, returns false', async () => {
+    useAuthStore.setState({ status: 'valid', refreshToken: 'rt' })
+    vi.mocked(sessionMocks.refreshTokens).mockRejectedValue(new Error('revoked'))
+
+    const result = await useAuthStore.getState().onUnauthorized()
+
+    expect(result).toBe(false)
+    expect(useAuthStore.getState().status).toBe('unauthenticated')
+  })
+
+  it('no refresh token -> status unauthenticated, returns false', async () => {
+    useAuthStore.setState({ status: 'valid', refreshToken: null })
+
+    const result = await useAuthStore.getState().onUnauthorized()
+
+    expect(result).toBe(false)
+    expect(useAuthStore.getState().status).toBe('unauthenticated')
+    expect(sessionMocks.refreshTokens).not.toHaveBeenCalled()
+  })
+
+  it('concurrent calls share one inflight promise (dedup)', async () => {
+    useAuthStore.setState({ status: 'valid', refreshToken: 'rt' })
+    let resolveRefresh!: Function
+    vi.mocked(sessionMocks.refreshTokens).mockImplementation(
+      () => new Promise(r => { resolveRefresh = r }),
+    )
+
+    const p1 = useAuthStore.getState().onUnauthorized()
+    const p2 = useAuthStore.getState().onUnauthorized()
+
+    resolveRefresh!(refreshResult())
+
+    const [r1, r2] = await Promise.all([p1, p2])
+    expect(r1).toBe(true)
+    expect(r2).toBe(true)
+    expect(sessionMocks.refreshTokens).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// login()
+// ---------------------------------------------------------------------------
+
+describe('login()', () => {
+  it('sets status=valid with tokens and user', () => {
+    const session = { accessToken: 'at', refreshToken: 'rt', user: fakeUser }
+
+    useAuthStore.getState().login(session)
+
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('valid')
+    expect(state.accessToken).toBe('at')
+    expect(state.refreshToken).toBe('rt')
+    expect(state.user).toEqual(fakeUser)
+  })
+
+  it('calls saveSession', () => {
+    const session = { accessToken: 'at', refreshToken: 'rt', user: fakeUser }
+
+    useAuthStore.getState().login(session)
+
+    expect(sessionMocks.saveSession).toHaveBeenCalledWith(session)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// logout()
+// ---------------------------------------------------------------------------
+
+describe('logout()', () => {
+  it('sets status=unauthenticated, clears tokens and user', () => {
+    useAuthStore.setState({ status: 'valid', accessToken: 'at', refreshToken: 'rt', user: fakeUser })
+
+    useAuthStore.getState().logout()
+
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('unauthenticated')
+    expect(state.accessToken).toBeNull()
+    expect(state.refreshToken).toBeNull()
+    expect(state.user).toBeNull()
+  })
+
+  it('calls clearSession', () => {
+    useAuthStore.getState().logout()
+
+    expect(sessionMocks.clearSession).toHaveBeenCalled()
   })
 })

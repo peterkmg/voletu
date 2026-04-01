@@ -20,7 +20,7 @@ export function createRowActions<TRow extends { id: string }>(
   return function DataTableRowActions({ row }: { row: Row<TRow> }) {
     const { t } = useTranslation(['common'])
     const { setOpen, setCurrentRow } = config.useEntity()
-    const userRole = useAuthStore(s => s.auth.user?.role)
+    const userRole = useAuthStore(s => s.user?.role)
 
     const select = (dialogType: string) => () => {
       setCurrentRow(row.original)

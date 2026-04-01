@@ -7,14 +7,14 @@ import { useStartupStore } from '~/stores/startup-store'
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
-    const { auth } = useAuthStore.getState()
+    const { status, user } = useAuthStore.getState()
     const { startupState } = useStartupStore.getState()
 
     if (startupState?.needsSetup) {
       throw redirect({ to: '/setup' })
     }
 
-    if (!auth.accessToken) {
+    if (status === 'unauthenticated') {
       throw redirect({
         to: '/sign-in',
         search: { redirect: location.href },
@@ -45,7 +45,7 @@ export const Route = createFileRoute('/_authenticated')({
 
       // Only redirect if health explicitly confirmed node is not initialized.
       // Don't redirect on network failure (API might just be restarting).
-      if (healthConfirmed && !useNodeStore.getState().status.isInitialized && auth.user?.role === 'ADMIN') {
+      if (healthConfirmed && !useNodeStore.getState().status.isInitialized && user?.role === 'ADMIN') {
         throw redirect({ to: '/init' })
       }
     }

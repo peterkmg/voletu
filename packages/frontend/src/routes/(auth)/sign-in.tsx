@@ -11,14 +11,14 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/(auth)/sign-in')({
   validateSearch: searchSchema,
   beforeLoad: () => {
-    const { auth } = useAuthStore.getState()
+    const { accessToken } = useAuthStore.getState()
     const { startupState } = useStartupStore.getState()
 
     if (startupState?.needsSetup) {
       throw redirect({ to: '/setup' })
     }
 
-    if (auth.accessToken) {
+    if (accessToken) {
       throw redirect({ to: '/' })
     }
   },

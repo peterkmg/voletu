@@ -1,11 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createRefreshLock, decodeJwtExp, isTokenExpiringSoon } from '../session'
+import { describe, expect, it, beforeEach } from 'vitest'
+import {
+  clearSession,
+  decodeJwtExp,
+  isTokenExpiringSoon,
+  loadSession,
+  saveSession,
+  toSession,
+} from '../session'
 
 // ---------------------------------------------------------------------------
-// JWT decode tests (formerly jwt-decode.test.ts)
+// JWT decode tests
 // ---------------------------------------------------------------------------
 
-// Helper: build a minimal JWT with a given exp claim
 function makeJwt(payload: Record<string, unknown>): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
     .replace(/\+/g, '-')
@@ -59,67 +65,81 @@ describe('isTokenExpiringSoon', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Refresh lock tests (formerly refresh.test.ts)
+// Session storage tests
 // ---------------------------------------------------------------------------
 
-describe('createRefreshLock', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
+const STORAGE_KEY = 'voletu.auth.session'
+
+const fakeSession = {
+  accessToken: 'at',
+  refreshToken: 'rt',
+  user: { id: 'u1', username: 'admin', role: 'ADMIN', displayName: 'Admin' } as any,
+}
+
+beforeEach(() => {
+  localStorage.clear()
+})
+
+describe('loadSession', () => {
+  it('returns null when no stored session', () => {
+    expect(loadSession()).toBeNull()
   })
 
-  it('calls the refresh function and returns the new session', async () => {
-    const mockSession = { accessToken: 'new-at', refreshToken: 'new-rt', user: { id: '1', username: 'admin' } }
-    const refreshFn = vi.fn().mockResolvedValue(mockSession)
-    const lock = createRefreshLock(refreshFn)
+  it('returns parsed session from localStorage', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fakeSession))
 
-    const result = await lock.acquire('old-refresh-token')
-    expect(refreshFn).toHaveBeenCalledWith('old-refresh-token')
-    expect(result).toEqual(mockSession)
+    const result = loadSession()
+
+    expect(result).toEqual(fakeSession)
   })
 
-  it('deduplicates concurrent calls — refresh function is called only once', async () => {
-    const mockSession = { accessToken: 'new-at', refreshToken: 'new-rt', user: { id: '1', username: 'admin' } }
-    const refreshFn = vi.fn().mockResolvedValue(mockSession)
-    const lock = createRefreshLock(refreshFn)
+  it('returns null and clears storage on invalid JSON', () => {
+    localStorage.setItem(STORAGE_KEY, '{bad-json')
 
-    const [r1, r2, r3] = await Promise.all([
-      lock.acquire('old-rt'),
-      lock.acquire('old-rt'),
-      lock.acquire('old-rt'),
-    ])
+    const result = loadSession()
 
-    expect(refreshFn).toHaveBeenCalledTimes(1)
-    expect(r1).toEqual(mockSession)
-    expect(r2).toEqual(mockSession)
-    expect(r3).toEqual(mockSession)
+    expect(result).toBeNull()
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
+})
 
-  it('allows a new call after the previous one resolved', async () => {
-    let callCount = 0
-    const refreshFn = vi.fn().mockImplementation(async () => {
-      callCount++
-      return { accessToken: `at-${callCount}`, refreshToken: `rt-${callCount}`, user: { id: '1', username: 'admin' } }
+describe('saveSession', () => {
+  it('persists session to localStorage', () => {
+    saveSession(fakeSession)
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
+    expect(stored).toEqual(fakeSession)
+  })
+})
+
+describe('clearSession', () => {
+  it('removes session from localStorage', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fakeSession))
+
+    clearSession()
+
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// toSession
+// ---------------------------------------------------------------------------
+
+describe('toSession', () => {
+  it('maps LoginResponse fields to AuthSession', () => {
+    const loginResponse = {
+      accessToken: 'access-123',
+      refreshToken: 'refresh-456',
+      user: { id: 'u2', username: 'user2', role: 'USER', displayName: 'User 2' },
+    } as any
+
+    const result = toSession(loginResponse)
+
+    expect(result).toEqual({
+      accessToken: 'access-123',
+      refreshToken: 'refresh-456',
+      user: loginResponse.user,
     })
-    const lock = createRefreshLock(refreshFn)
-
-    const r1 = await lock.acquire('rt-1')
-    const r2 = await lock.acquire('rt-2')
-
-    expect(refreshFn).toHaveBeenCalledTimes(2)
-    expect(r1.accessToken).toBe('at-1')
-    expect(r2.accessToken).toBe('at-2')
-  })
-
-  it('propagates errors and resets the lock', async () => {
-    const refreshFn = vi.fn().mockRejectedValue(new Error('refresh failed'))
-    const lock = createRefreshLock(refreshFn)
-
-    await expect(lock.acquire('bad-rt')).rejects.toThrow('refresh failed')
-
-    // Lock should be reset — next call should try again
-    refreshFn.mockResolvedValue({ accessToken: 'new', refreshToken: 'new', user: { id: '1', username: 'admin' } })
-    const result = await lock.acquire('good-rt')
-    expect(result.accessToken).toBe('new')
-    expect(refreshFn).toHaveBeenCalledTimes(2)
   })
 })

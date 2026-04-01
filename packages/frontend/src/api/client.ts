@@ -1,5 +1,4 @@
 import { isTokenExpiringSoon } from '~/auth/session'
-import { refreshLock } from '~/auth/session'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 
@@ -22,7 +21,7 @@ export interface ResponseConfig<TData = unknown> {
 export type ResponseErrorConfig<TError = unknown> = TError
 
 // ---------------------------------------------------------------------------
-// Base URL helpers (formerly ~/shared/api/base-url.ts)
+// Base URL
 // ---------------------------------------------------------------------------
 
 function normalizeBaseUrl(value: string): string {
@@ -42,7 +41,7 @@ export function setApiBaseUrl(baseUrl: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Kubb client
+// API client
 // ---------------------------------------------------------------------------
 
 interface ApiEnvelope {
@@ -50,68 +49,31 @@ interface ApiEnvelope {
   error?: { message?: string } | null
 }
 
-/**
- * Kubb's custom client. Called for every generated API request.
- *
- * Returns the full JSON response body as ResponseConfig.data — which matches the
- * generated OpenAPI types (e.g. ApiResponseVecBaseResponse includes success/data/error).
- * Throws before returning when success is false, so callers never see error envelopes.
- *
- * Feature code accesses the inner data via: query.data?.data ?? []
- */
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
-
-const PROACTIVE_REFRESH_THRESHOLD_SECONDS = 300 // 5 minutes
-
-/**
- * Get the current access token from zustand, optionally refreshing
- * if it is expiring soon.
- */
-async function getValidToken(): Promise<string | null> {
-  const { accessToken, refreshToken } = useAuthStore.getState().auth
-  if (!accessToken)
-    return null
-
-  if (isTokenExpiringSoon(accessToken, PROACTIVE_REFRESH_THRESHOLD_SECONDS) && refreshToken) {
-    try {
-      const newSession = await refreshLock.acquire(refreshToken)
-      useAuthStore.getState().auth.setSession(newSession)
-      return newSession.accessToken
-    }
-    catch {
-      return accessToken
-    }
-  }
-
-  return accessToken
-}
+const PROACTIVE_REFRESH_SECONDS = 300 // 5 minutes before expiry
 
 /**
- * Attempt a silent token refresh and return the new access token.
- * Returns null if refresh is not possible.
+ * Kubb HTTP client. Every generated API call goes through this function.
+ *
+ * Auth flow:
+ * 1. If access token is near expiry → proactive refresh (transparent)
+ * 2. Attach token → send request
+ * 3. If 401 → refresh → replay (transparent to caller)
+ * 4. If refresh fails → logout → throw
  */
-async function attemptSilentRefresh(): Promise<string | null> {
-  const { refreshToken } = useAuthStore.getState().auth
-  if (!refreshToken)
-    return null
-
-  try {
-    const newSession = await refreshLock.acquire(refreshToken)
-    useAuthStore.getState().auth.setSession(newSession)
-    return newSession.accessToken
-  }
-  catch {
-    useAuthStore.getState().auth.reset()
-    return null
-  }
-}
-
 export async function client<TData, _TError = unknown, TVariables = unknown>(
   config: RequestConfig<TVariables>,
-  _isRetry = false,
 ): Promise<ResponseConfig<TData>> {
+  const store = useAuthStore.getState()
+
+  // Proactive refresh: if token is valid but nearing expiry, refresh before sending
+  if (store.status === 'valid' && store.accessToken
+    && isTokenExpiringSoon(store.accessToken, PROACTIVE_REFRESH_SECONDS)) {
+    await store.onUnauthorized()
+  }
+
+  const { accessToken } = useAuthStore.getState()
   const isMutating = MUTATING_METHODS.has(config.method.toUpperCase())
-  const token = await getValidToken()
 
   const response = await fetch(`${getBaseUrl()}${config.url}`, {
     method: config.method.toUpperCase(),
@@ -123,30 +85,20 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
     signal: config.signal,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(isMutating ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
       ...(config.headers ?? {}),
     },
   })
 
-  // 401 Interceptor: check response.status directly (not string matching).
-  // On 401, attempt silent refresh and replay the original request once.
-  if (response.status === 401 && !_isRetry) {
-    const newToken = await attemptSilentRefresh()
-    if (newToken) {
-      // Replay the original request with the new token.
-      // For mutations: the replay generates a new auto-UUID idempotency key.
-      // This is safe because the backend's idempotency middleware removes keys
-      // from cache on non-2xx responses (the original 401 was non-2xx).
-      // If the caller provided a stable key via config.headers, it is preserved
-      // on replay since config is passed through unchanged.
-      return client<TData, _TError, TVariables>(config, true)
-    }
-    // Refresh failed — fall through to throw below.
+  // 401 → refresh → replay
+  if (response.status === 401) {
+    const refreshed = await useAuthStore.getState().onUnauthorized()
+    if (refreshed) return client(config)
+    throw new Error('Session expired')
   }
 
-  // 403 NODE_NOT_INITIALIZED interceptor: update the node store so the
-  // banner/UI reflects the uninitialized state immediately.
+  // 403 NODE_NOT_INITIALIZED → update node store
   if (response.status === 403) {
     const cloned = response.clone()
     try {
@@ -155,7 +107,7 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
         useNodeStore.getState().setStatus({ isInitialized: false })
       }
     }
-    catch { /* ignore parse failures, fall through to generic error */ }
+    catch { /* ignore parse failures */ }
   }
 
   if (!response.ok) {
@@ -168,7 +120,6 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
   }
 
   const envelope = await response.json() as TData & ApiEnvelope
-
   if (!envelope.success) {
     throw new Error(
       (envelope as ApiEnvelope).error?.message ?? 'Request failed',
@@ -183,5 +134,4 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
 }
 
 export type Client = typeof client
-
 export default client

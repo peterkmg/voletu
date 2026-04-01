@@ -27,14 +27,14 @@ function getInitials(name: string): string {
 export function ProfileDropdown() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const user = useAuthStore(s => s.auth.user)
+  const user = useAuthStore(s => s.user)
   const [signOutOpen, setSignOutOpen] = useState(false)
 
   const displayName = user?.fullname ?? user?.username ?? 'User'
   const displayEmail = user?.username ?? ''
 
   const handleSignOut = () => {
-    useAuthStore.getState().auth.clearSession()
+    useAuthStore.getState().logout()
     navigate({ to: '/sign-in' })
   }
 

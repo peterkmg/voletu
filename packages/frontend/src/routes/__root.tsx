@@ -4,11 +4,9 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { DebugTrigger } from '~/components/debug-trigger'
 import { Titlebar } from '~/components/layout/titlebar'
-import { SplashScreen } from '~/components/splash-screen'
 import { Toaster } from '~/components/ui/sonner'
 import { GeneralError, NotFound } from '~/features/errors'
 import { useDevToolsVisible } from '~/lib/devtools'
-import { validateOrRefreshSession } from '~/auth/session'
 import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
 
@@ -22,29 +20,15 @@ export const Route = createRootRouteWithContext<{
       await refresh()
     }
 
-    // 2. Validate or refresh the stored auth session.
-    const session = await validateOrRefreshSession()
-    const { setSession, reset, setInitialized } = useAuthStore.getState().auth
-    if (session) {
-      setSession(session)
-    }
-    else {
-      reset()
-    }
-
-    // 3. Mark initialization complete — splash screen hides.
-    setInitialized()
+    // 2. Boot auth state machine (validate / refresh stored session).
+    const { status, boot } = useAuthStore.getState()
+    if (status === 'unknown') await boot()
   },
   component: () => {
-    const isInitializing = useAuthStore(s => s.auth.isInitializing)
     const startupState = useStartupStore(s => s.startupState)
     const isTauri = startupState !== null
     const showDebugTools = startupState?.isDebugBuild ?? false
     const devToolsVisible = useDevToolsVisible()
-
-    if (isInitializing) {
-      return <SplashScreen />
-    }
 
     return (
       <div

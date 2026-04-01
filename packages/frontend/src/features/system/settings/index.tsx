@@ -14,7 +14,7 @@ import { useAuthStore } from '~/stores/auth-store'
 
 export default function Settings() {
   const { t, i18n } = useTranslation(['system', 'common'])
-  const user = useAuthStore(s => s.auth.user)
+  const user = useAuthStore(s => s.user)
   const { theme, setTheme } = useTheme()
 
   return (

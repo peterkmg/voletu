@@ -16,7 +16,7 @@ import { filterNavByRole } from './sidebar-utils'
 export function AppSidebar() {
   const { t } = useTranslation()
   const sidebarData = getSidebarData(t)
-  const user = useAuthStore(s => s.auth.user)
+  const user = useAuthStore(s => s.user)
   const filteredGroups = filterNavByRole(sidebarData.navGroups, user?.role)
 
   return (

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { authLogin } from '~/generated/client'
 import { extractErrorMessage } from '~/lib/error'
-import { toAuthSession } from '~/auth/session'
+import { toSession } from '~/auth/session'
 import { useAuthStore } from '~/stores/auth-store'
 
 export interface UseLoginResult {
@@ -24,8 +24,8 @@ export function useLogin(): UseLoginResult {
       const result = await authLogin({ username, password })
       if (!result.data)
         throw new Error('Login failed')
-      const session = toAuthSession(result.data)
-      useAuthStore.getState().auth.setSession(session)
+      const session = toSession(result.data)
+      useAuthStore.getState().login(session)
     }
     catch (err) {
       const message = extractErrorMessage(err, 'Login failed')

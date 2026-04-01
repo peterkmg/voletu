@@ -118,7 +118,7 @@ function FileMenu() {
   const [signOutOpen, setSignOutOpen] = useState(false)
 
   const handleSignOut = useCallback(() => {
-    useAuthStore.getState().auth.clearSession()
+    useAuthStore.getState().logout()
     navigate({ to: '/sign-in' })
   }, [navigate])
 

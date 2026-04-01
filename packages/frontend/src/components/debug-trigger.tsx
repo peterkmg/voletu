@@ -28,7 +28,7 @@ export function DebugTrigger() {
 
     setSeeding(true)
     try {
-      const token = useAuthStore.getState().auth.accessToken
+      const token = useAuthStore.getState().accessToken
       const response = await fetch(`${apiBaseUrl}/dev/seed`, {
         method: 'POST',
         headers: {
