@@ -8,7 +8,7 @@ use voletu_core::{
   db::seed_defaults,
   dtos::{ChangePasswordRequest, CompleteInitializationRequest, CreateUserRequest, LoginRequest},
   entities::{database_instance, local, user},
-  enums::{self, InitializeAdminAction, NodeType},
+  enums::{self, NodeType},
   services::SystemService,
   utils::password::hash_password,
 };
@@ -209,12 +209,11 @@ async fn complete_initialization_replace_rotates_bootstrap_admin_and_marks_local
   with_audit_context(Uuid::now_v7(), local_row.local_db_id, || async {
     service
       .complete_initialization(&CompleteInitializationRequest {
-        action: InitializeAdminAction::Replace,
         node_type: None,
         node_name: None,
         central_api_url: None,
-        new_username: Some("root".to_string()),
-        new_password: Some("root-password".to_string()),
+        new_username: "root".to_string(),
+        new_password: "root-password".to_string(),
         fullname: Some("Root User".to_string()),
       })
       .await
@@ -249,7 +248,7 @@ async fn complete_initialization_replace_rotates_bootstrap_admin_and_marks_local
 }
 
 #[tokio::test]
-async fn complete_initialization_delete_removes_bootstrap_admin_when_another_local_admin_exists() {
+async fn complete_initialization_conflicts_when_new_username_is_already_taken_locally() {
   let db = Arc::new(setup_db().await);
   let local_row = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();
@@ -269,34 +268,34 @@ async fn complete_initialization_delete_removes_bootstrap_admin_when_another_loc
       .await
       .unwrap();
 
-    service
+    let duplicate_target_username = service
       .complete_initialization(&CompleteInitializationRequest {
-        action: InitializeAdminAction::Delete,
         node_type: None,
         node_name: None,
         central_api_url: None,
-        new_username: None,
-        new_password: None,
+        new_username: "main-admin".to_string(),
+        new_password: "main-admin-pass-new".to_string(),
         fullname: None,
       })
-      .await
-      .unwrap();
+      .await;
+
+    assert!(matches!(duplicate_target_username, Err(ApiError::Conflict(_))));
 
     let local_state = local::Entity::find_by_id(1)
       .one(&*db)
       .await
       .unwrap()
       .unwrap();
-    assert!(local_state.is_initialized);
+    assert!(!local_state.is_initialized);
 
-    let old_login = service
+    let bootstrap_login = service
       .authenticate(&LoginRequest {
         username: "admin".to_string(),
         password: "admin".to_string(),
       })
       .await
-      .unwrap_err();
-    assert!(matches!(old_login, ApiError::Unauthorized(_)));
+      .unwrap();
+    assert_eq!(bootstrap_login.user.username, "admin");
 
     let remaining_admin_login = service
       .authenticate(&LoginRequest {
@@ -323,12 +322,11 @@ async fn complete_initialization_updates_node_type_in_db() {
   with_audit_context(Uuid::now_v7(), local_row.local_db_id, || async {
     service
       .complete_initialization(&CompleteInitializationRequest {
-        action: InitializeAdminAction::Replace,
         node_type: Some(NodeType::Central),
         node_name: None,
         central_api_url: None,
-        new_username: Some("root".to_string()),
-        new_password: Some("root-password".to_string()),
+        new_username: "root".to_string(),
+        new_password: "root-password".to_string(),
         fullname: Some("Root User".to_string()),
       })
       .await
