@@ -21,7 +21,7 @@
     "test:core-macros": "cargo test --package voletu-core-macros",
     "test:server": "cargo test --package voletu-server",
     "test:desktop": "cargo test --package voletu-desktop",
-    "test:frontend": "echo \"No frontend tests configured for @voletu/frontend\"",
+    "test:frontend": "pnpm --filter @voletu/frontend test",
     "test:rust": "cargo test --workspace",
     "test:all": "pnpm run test:core && pnpm run test:core-macros && pnpm run test:server && pnpm run test:desktop && pnpm run test:frontend",
     "check": "pnpm run check:all",
