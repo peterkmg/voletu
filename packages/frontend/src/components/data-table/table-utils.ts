@@ -30,3 +30,20 @@ export function hasAnyFooter<TData>(table: TanstackTable<TData>): boolean {
     group.headers.some(header => header.column.columnDef.footer),
   )
 }
+
+/** Compute CSS Grid column template from visible columns */
+export function getGridTemplate<TData>(table: TanstackTable<TData>): string {
+  const sizing = table.getState().columnSizing
+  return table.getVisibleLeafColumns().map((col) => {
+    const { minSize, maxSize } = col.columnDef
+    // Fixed-width column (e.g. select, actions): minSize === maxSize
+    if (minSize != null && maxSize != null && minSize === maxSize)
+      return `${col.getSize()}px`
+    // Manually resized column: use exact size
+    if (sizing[col.id] != null)
+      return `${col.getSize()}px`
+    // Flexible column: grows to fill available space
+    const min = minSize ?? 80
+    return `minmax(${min}px, 1fr)`
+  }).join(' ')
+}

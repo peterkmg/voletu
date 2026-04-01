@@ -15,7 +15,7 @@ import {
 } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DataTablePagination, DataTableToolbar } from '~/components/data-table'
+import { DataTablePagination, DataTableToolbar, getGridTemplate } from '~/components/data-table'
 import {
   Table,
   TableBody,
@@ -100,7 +100,7 @@ export function LedgerTable({ data }: LedgerTableProps) {
         filters={[]}
       />
       <div className="overflow-hidden rounded-md border">
-        <Table className="min-w-xl">
+        <Table className="min-w-xl" gridTemplate={getGridTemplate(table)}>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>

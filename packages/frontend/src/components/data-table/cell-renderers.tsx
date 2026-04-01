@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import {
   Tooltip,
   TooltipContent,
@@ -5,11 +6,11 @@ import {
 } from '~/components/ui/tooltip'
 import { formatDate, formatDateTime, truncateId } from '~/lib/formatters'
 
-export function NullCell() {
-  return <span className="text-muted-foreground">&mdash;</span>
-}
+export const NullCell = memo(() => (
+  <span className="text-muted-foreground">&mdash;</span>
+))
 
-export function DateCell({ value }: { value: string | null | undefined }) {
+export const DateCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
   return (
@@ -17,9 +18,9 @@ export function DateCell({ value }: { value: string | null | undefined }) {
       {formatDate(value)}
     </span>
   )
-}
+})
 
-export function DateTimeCell({ value }: { value: string | null | undefined }) {
+export const DateTimeCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
   return (
@@ -27,15 +28,15 @@ export function DateTimeCell({ value }: { value: string | null | undefined }) {
       {formatDateTime(value)}
     </span>
   )
-}
+})
 
-export function NumericCell({
+export const NumericCell = memo(({
   value,
   padWidth,
 }: {
   value: number | string | null | undefined
   padWidth?: number
-}) {
+}) => {
   if (value == null)
     return <NullCell />
   const display = padWidth
@@ -44,9 +45,9 @@ export function NumericCell({
   return (
     <span className="text-sm tabular-nums">{display}</span>
   )
-}
+})
 
-export function IdCell({ value }: { value: string | null | undefined }) {
+export const IdCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
   return (
@@ -61,21 +62,21 @@ export function IdCell({ value }: { value: string | null | undefined }) {
       </TooltipContent>
     </Tooltip>
   )
-}
+})
 
-export function ResolvedCell({ value }: { value: string | null | undefined }) {
+export const ResolvedCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
   return <span>{value}</span>
-}
+})
 
-export function LookupCell({
+export const LookupCell = memo(({
   value,
   lookupMap,
 }: {
   value: string | null | undefined
   lookupMap: Map<string, string>
-}) {
+}) => {
   if (!value)
     return <NullCell />
   const resolved = lookupMap.get(value)
@@ -83,4 +84,4 @@ export function LookupCell({
     return <span>{resolved}</span>
   }
   return <IdCell value={value} />
-}
+})

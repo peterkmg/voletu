@@ -18,7 +18,6 @@ import { BulkActionsBar } from './bulk-actions-bar'
 import { DataTable } from './data-table'
 import { DataTablePagination } from './pagination'
 import { DataTableToolbar } from './toolbar'
-import { VirtualizedDataTable } from './virtualized-data-table'
 
 function getStoredTableMode(tableId: string | undefined): TableMode {
   if (!tableId)
@@ -90,14 +89,7 @@ export function EntityTable<T>({
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-      globalFilter,
-      pagination,
-    },
+    state: { sorting, columnVisibility, rowSelection, columnFilters, globalFilter, pagination },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -114,10 +106,7 @@ export function EntityTable<T>({
     onColumnFiltersChange,
   })
 
-  const resolvedBulkActions = useMemo(
-    () => bulkActions?.(t) ?? [],
-    [t, bulkActions],
-  )
+  const resolvedBulkActions = useMemo(() => bulkActions?.(t) ?? [], [t, bulkActions])
 
   const pageCount = table.getPageCount()
   useEffect(() => {
@@ -133,18 +122,18 @@ export function EntityTable<T>({
         tableMode={tableMode}
         onTableModeChange={handleModeChange}
       />
-      {tableMode === 'virtual'
-        ? (
-            <div className="flex-1 min-h-0">
-              <VirtualizedDataTable table={table} columns={columns} isLoading={isLoading} height="100%" />
-            </div>
-          )
-        : (
-            <>
-              <DataTable table={table} columns={columns} isLoading={isLoading} />
-              <DataTablePagination table={table} className="mt-auto" />
-            </>
-          )}
+      <div className="flex-1 min-h-0">
+        <DataTable
+          table={table}
+          columns={columns}
+          mode={tableMode}
+          isLoading={isLoading}
+          height="100%"
+        />
+      </div>
+      {tableMode === 'paginated' && (
+        <DataTablePagination table={table} className="mt-auto" />
+      )}
       {resolvedBulkActions.length > 0 && (
         <BulkActionsBar table={table} actions={resolvedBulkActions} />
       )}

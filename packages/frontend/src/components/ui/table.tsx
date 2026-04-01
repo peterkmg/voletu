@@ -4,47 +4,56 @@ import * as React from 'react'
 
 import { cn } from '~/utils'
 
-function Table({ className, ...props }: React.ComponentProps<'table'>) {
+interface TableProps extends React.ComponentProps<'div'> {
+  /** CSS Grid column template applied to all rows via --col-template variable */
+  gridTemplate?: string
+}
+
+function Table({ className, gridTemplate, style, ...props }: TableProps) {
+  const tableStyle = gridTemplate
+    ? { ...style, '--col-template': gridTemplate } as React.CSSProperties
+    : style
+
   return (
     <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
-      <table
-        data-slot="table"
-        className={cn('w-full caption-bottom text-sm', className)}
-        {...props}
-      />
-    </div>
+      role="table"
+      data-slot="table"
+      className={cn('relative w-full text-sm', className)}
+      style={tableStyle}
+      {...props}
+    />
   )
 }
 
-function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
+function TableHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <thead
+    <div
+      role="rowgroup"
       data-slot="table-header"
-      className={cn('[&_tr]:border-b', className)}
+      className={cn('[&>[data-slot=table-row]]:border-b', className)}
       {...props}
     />
   )
 }
 
-function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
+function TableBody({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <tbody
+    <div
+      role="rowgroup"
       data-slot="table-body"
-      className={cn('[&_tr:last-child]:border-0', className)}
+      className={cn('[&>[data-slot=table-row]:last-child]:border-0', className)}
       {...props}
     />
   )
 }
 
-function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
+function TableFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <tfoot
+    <div
+      role="rowgroup"
       data-slot="table-footer"
       className={cn(
-        'border-t bg-muted/50 font-medium [&>tr]:last:border-b-0',
+        'border-t bg-muted/50 font-medium [&>[data-slot=table-row]:last-child]:border-b-0',
         className,
       )}
       {...props}
@@ -52,51 +61,71 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   )
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
+function TableRow({ className, style, ...props }: React.ComponentProps<'div'>) {
   return (
-    <tr
+    <div
+      role="row"
       data-slot="table-row"
       className={cn(
-        'border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
+        'grid items-center border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
         className,
       )}
+      style={{
+        gridTemplateColumns: 'var(--col-template)',
+        ...style,
+      }}
       {...props}
     />
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
+interface TableHeadProps extends React.ComponentProps<'div'> {
+  colSpan?: number
+}
+
+function TableHead({ className, colSpan, style, ...props }: TableHeadProps) {
   return (
-    <th
+    <div
+      role="columnheader"
       data-slot="table-head"
       className={cn(
-        'h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'flex items-center h-10 px-2 text-left font-medium whitespace-nowrap overflow-hidden text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
+      style={{
+        ...(colSpan ? { gridColumn: `span ${colSpan}` } : {}),
+        ...style,
+      }}
       {...props}
     />
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
+interface TableCellProps extends React.ComponentProps<'div'> {
+  colSpan?: number
+}
+
+function TableCell({ className, colSpan, style, ...props }: TableCellProps) {
   return (
-    <td
+    <div
+      role="cell"
       data-slot="table-cell"
       className={cn(
-        'select-text p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'flex items-center select-text p-2 overflow-hidden whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
+      style={{
+        ...(colSpan ? { gridColumn: `span ${colSpan}` } : {}),
+        ...style,
+      }}
       {...props}
     />
   )
 }
 
-function TableCaption({
-  className,
-  ...props
-}: React.ComponentProps<'caption'>) {
+function TableCaption({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <caption
+    <div
       data-slot="table-caption"
       className={cn('mt-4 text-sm text-muted-foreground', className)}
       {...props}

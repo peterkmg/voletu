@@ -1,29 +1,29 @@
 import type { ColumnDef, Table as TanstackTable } from '@tanstack/react-table'
-import { flexRender } from '@tanstack/react-table'
-import { useCallback, useRef } from 'react'
+import { useCallback, useState } from 'react'
 import {
   Table,
-  TableBody,
-  TableCell,
   TableFooter,
-  TableHead,
   TableHeader,
-  TableRow,
 } from '~/components/ui/table'
 import { cn } from '~/lib/utils'
 import { densityClasses, useDensity } from './density-context'
-import { EmptyState } from './empty-state'
-import { TableSkeleton } from './table-skeleton'
-import { alignClasses, getPinningStyles, hasAnyFooter, hasAnyPinning } from './table-utils'
+import { PaginatedTableBody } from './paginated-table-body'
+import { TableFooterRow } from './table-footer-row'
+import { TableHeaderRow } from './table-header-row'
+import { getGridTemplate, hasAnyFooter, hasAnyPinning } from './table-utils'
+import { VirtualTableBody } from './virtual-table-body'
 
 interface DataTableProps<TData> {
   table: TanstackTable<TData>
   columns: ColumnDef<TData, unknown>[]
+  mode?: 'virtual' | 'paginated'
   className?: string
-  /** Enable sticky column headers when scrolling vertically. Default: true */
-  stickyHeader?: boolean
-  /** Max height for scrollable table container. Enables vertical scrolling. */
-  maxHeight?: string
+  /** Height of the scrollable container (virtual mode). Default: '600px' */
+  height?: string
+  /** Estimated row height in pixels (virtual mode). Default: 40 */
+  estimateSize?: number
+  /** Number of rows to render outside visible area (virtual mode). Default: 20 */
+  overscan?: number
   /** Show skeleton loading state. */
   isLoading?: boolean
   /** Custom empty state message. */
@@ -37,9 +37,11 @@ interface DataTableProps<TData> {
 export function DataTable<TData>({
   table,
   columns,
+  mode = 'virtual',
   className,
-  stickyHeader = true,
-  maxHeight,
+  height = '600px',
+  estimateSize = 40,
+  overscan = 20,
   isLoading,
   emptyMessage,
   emptyIcon,
@@ -47,179 +49,59 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const { density } = useDensity()
   const densityCls = densityClasses[density]
-  const tableRef = useRef<HTMLDivElement>(null)
+  // useState (not useRef) so that when the div mounts, the state change
+  // triggers a re-render and the virtualizer picks up the scroll element.
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+  const scrollRefCb = useCallback((node: HTMLDivElement | null) => setScrollEl(node), [])
 
+  const gridTemplate = getGridTemplate(table)
   const isPinning = hasAnyPinning(table)
   const showFooter = hasAnyFooter(table)
-  const isResizing = table.getState().columnSizingInfo.isResizingColumn
-
-  // Focus a row without scrolling the document (prevents layout break in fixed layout)
-  const focusRow = useCallback((el: HTMLElement | null | undefined) => {
-    if (!el)
-      return
-    el.focus({ preventScroll: true })
-    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [])
-
-  // Keyboard navigation handler
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTableRowElement>, rowData: TData, rowIndex: number) => {
-      const rows = table.getRowModel().rows
-      switch (e.key) {
-        case 'ArrowDown': {
-          e.preventDefault()
-          focusRow(tableRef.current?.querySelector(`[data-row-index="${rowIndex + 1}"]`))
-          break
-        }
-        case 'ArrowUp': {
-          e.preventDefault()
-          focusRow(tableRef.current?.querySelector(`[data-row-index="${rowIndex - 1}"]`))
-          break
-        }
-        case 'Home': {
-          e.preventDefault()
-          focusRow(tableRef.current?.querySelector('[data-row-index="0"]'))
-          break
-        }
-        case 'End': {
-          e.preventDefault()
-          focusRow(tableRef.current?.querySelector(`[data-row-index="${rows.length - 1}"]`))
-          break
-        }
-        case 'Enter': {
-          e.preventDefault()
-          onRowAction?.(rowData)
-          break
-        }
-        case ' ': {
-          e.preventDefault()
-          const row = rows[rowIndex]
-          row?.toggleSelected()
-          break
-        }
-      }
-    },
-    [table, onRowAction, focusRow],
-  )
 
   return (
     <div
-      ref={tableRef}
-      className={cn(
-        'overflow-auto rounded-md border',
-        className,
-      )}
-      style={maxHeight ? { maxHeight } : undefined}
+      ref={scrollRefCb}
+      className={cn('overflow-auto rounded-md border', className)}
+      style={{ maxHeight: height }}
     >
-      <Table
-        className="min-w-xl"
-        style={isResizing ? { userSelect: 'none' } : undefined}
-      >
-        <TableHeader className={stickyHeader ? 'sticky top-0 z-10 bg-background' : undefined}>
-          {table.getHeaderGroups().map(headerGroup => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef.meta
-                const alignCls = meta?.align ? alignClasses[meta.align] : ''
-                const pinStyle = isPinning ? getPinningStyles(header.column) : {}
-                const pinBg = header.column.getIsPinned() ? 'bg-background' : ''
-
-                const pinnedSide = header.column.getIsPinned()
-                return (
-                  <TableHead
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    className={cn(meta?.className, meta?.thClassName, alignCls, pinBg)}
-                    aria-label={pinnedSide ? `Pinned ${pinnedSide} column` : undefined}
-                    style={{
-                      ...pinStyle,
-                      width: header.getSize(),
-                    }}
-                  >
-                    <div className="flex items-center">
-                      <div className="flex-1">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </div>
-                      {header.column.getCanResize() && (
-                        <div
-                          onMouseDown={header.getResizeHandler()}
-                          onTouchStart={header.getResizeHandler()}
-                          onDoubleClick={() => header.column.resetSize()}
-                          className={cn(
-                            'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
-                            'opacity-0 hover:opacity-100 group-hover/header:opacity-100',
-                            header.column.getIsResizing()
-                              ? 'bg-primary opacity-100'
-                              : 'bg-border',
-                          )}
-                        />
-                      )}
-                    </div>
-                  </TableHead>
-                )
-              })}
-            </TableRow>
+      <Table gridTemplate={gridTemplate}>
+        <TableHeader className="sticky top-0 z-10 bg-background">
+          {table.getHeaderGroups().map(hg => (
+            <TableHeaderRow key={hg.id} headerGroup={hg} isPinning={isPinning} />
           ))}
         </TableHeader>
-        <TableBody>
-          {isLoading && !table.getRowModel().rows?.length
-            ? <TableSkeleton columns={columns.length} densityCls={densityCls} />
-            : !table.getRowModel().rows?.length
-                ? <EmptyState colSpan={columns.length} message={emptyMessage} icon={emptyIcon} />
-                : table.getRowModel().rows.map((row, rowIndex) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && 'selected'}
-                      data-row-index={rowIndex}
-                      tabIndex={0}
-                      onKeyDown={e => handleKeyDown(e, row.original, rowIndex)}
-                      onDoubleClick={() => onRowAction?.(row.original)}
-                      className="focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      {row.getVisibleCells().map((cell) => {
-                        const meta = cell.column.columnDef.meta
-                        const alignCls = meta?.align ? alignClasses[meta.align] : ''
-                        const pinStyle = isPinning ? getPinningStyles(cell.column) : {}
-                        const pinBg = cell.column.getIsPinned() ? 'bg-background' : ''
-
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            className={cn(meta?.className, meta?.tdClassName, alignCls, densityCls, pinBg)}
-                            style={{
-                              ...pinStyle,
-                              width: cell.column.getSize(),
-                            }}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        )
-                      })}
-                    </TableRow>
-                  ))}
-        </TableBody>
+        {mode === 'virtual'
+          ? (
+              <VirtualTableBody
+                table={table}
+                columns={columns}
+                scrollElement={scrollEl}
+                isPinning={isPinning}
+                densityCls={densityCls}
+                overscan={overscan}
+                estimateSize={estimateSize}
+                isLoading={isLoading}
+                emptyMessage={emptyMessage}
+                emptyIcon={emptyIcon}
+                onRowAction={onRowAction}
+              />
+            )
+          : (
+              <PaginatedTableBody
+                table={table}
+                columns={columns}
+                isPinning={isPinning}
+                densityCls={densityCls}
+                isLoading={isLoading}
+                emptyMessage={emptyMessage}
+                emptyIcon={emptyIcon}
+                onRowAction={onRowAction}
+              />
+            )}
         {showFooter && (
-          <TableFooter className={stickyHeader ? 'sticky bottom-0 z-10' : undefined}>
-            {table.getFooterGroups().map(footerGroup => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta
-                  const alignCls = meta?.align ? alignClasses[meta.align] : ''
-                  return (
-                    <TableCell
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={cn(alignCls, 'font-medium')}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.footer, header.getContext())}
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
+          <TableFooter className="sticky bottom-0 z-10">
+            {table.getFooterGroups().map(fg => (
+              <TableFooterRow key={fg.id} footerGroup={fg} />
             ))}
           </TableFooter>
         )}

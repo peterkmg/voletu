@@ -5,7 +5,7 @@
     "create": "Create Company",
     "edit": "Edit Company",
     "columns": {
-      "commonName": "Common Name",
+      "commonName": "Name",
       "legalName": "Legal Name",
       "isContractor": "Contractor",
       "isExporter": "Exporter",
