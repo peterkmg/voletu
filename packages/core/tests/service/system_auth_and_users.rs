@@ -279,7 +279,10 @@ async fn complete_initialization_conflicts_when_new_username_is_already_taken_lo
       })
       .await;
 
-    assert!(matches!(duplicate_target_username, Err(ApiError::Conflict(_))));
+    assert!(matches!(
+      duplicate_target_username,
+      Err(ApiError::Conflict(_))
+    ));
 
     let local_state = local::Entity::find_by_id(1)
       .one(&*db)
