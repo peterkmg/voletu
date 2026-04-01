@@ -6,6 +6,7 @@ pub mod auth {
   pub const LOGIN: &str = "/auth/login";
   pub const REFRESH: &str = "/auth/refresh";
   pub const CHANGE_PASSWORD: &str = "/auth/change-password";
+  pub const ME: &str = "/auth/me";
 }
 
 pub mod node {

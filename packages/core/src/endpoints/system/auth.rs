@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{extract::State, Json};
+use axum::{extract::State, Extension, Json};
 use axum_valid::Valid;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -12,9 +12,10 @@ use crate::{
     LoginRequest,
     LoginResponse,
     RefreshTokenRequest,
+    UserResponse,
   },
   endpoints::paths,
-  utils::lifecycle::request_restart,
+  utils::{jwt::Claims, lifecycle::request_restart},
 };
 
 #[derive(Debug, serde::Serialize, utoipa::ToSchema)]
@@ -138,8 +139,30 @@ pub fn auth_public_routes(state: Arc<ApiState>) -> OpenApiRouter {
     .with_state(state)
 }
 
+#[utoipa::path(
+  get,
+  tag = "System - Auth",
+  operation_id = "auth_me",
+  summary = "Get current user",
+  description = "Returns the authenticated user's profile. Used by the frontend to verify token validity at startup.",
+  path = paths::auth::ME,
+  responses(
+    (status = 200, description = "Current user profile", body = ApiResponse<UserResponse>),
+    (status = 401, description = "Unauthorized — invalid or expired token")
+  )
+)]
+#[axum::debug_handler]
+async fn get_me(
+  State(state): State<Arc<ApiState>>,
+  Extension(claims): Extension<Claims>,
+) -> ApiResult<UserResponse> {
+  let user = state.svc.system.user_get(claims.uid).await?;
+  Ok(ApiResponse::success(user))
+}
+
 pub fn auth_protected_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
+    .routes(routes!(get_me))
     .routes(routes!(change_password))
     .routes(routes!(complete_initialization))
     .with_state(state)
