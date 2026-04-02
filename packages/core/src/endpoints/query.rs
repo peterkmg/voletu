@@ -1,5 +1,6 @@
-use serde::{Deserialize, Deserializer};
 use std::fmt;
+
+use serde::{Deserialize, Deserializer};
 
 /// Filter for nullable FK columns: `?field=isNull` or `?field=isNotNull`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

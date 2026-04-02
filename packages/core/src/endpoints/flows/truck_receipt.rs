@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::response::flow::TruckReceiptFlowRow,
+  dtos::response::pipeline::TruckReceiptPipelineResponse,
   endpoints::{paths, query::PaginationParams},
   enums::PipelineStatus,
 };
@@ -34,17 +34,17 @@ struct TruckReceiptFlowQueryParams {
     ("page" = Option<u64>, Query),
     ("per_page" = Option<u64>, Query),
   ),
-  responses((status = 200, body = ApiResponse<Vec<TruckReceiptFlowRow>>))
+  responses((status = 200, body = ApiResponse<Vec<TruckReceiptPipelineResponse>>))
 )]
 #[axum::debug_handler]
 async fn truck_receipt_query(
   State(state): State<Arc<ApiState>>,
   Query(params): Query<TruckReceiptFlowQueryParams>,
-) -> ApiResult<Vec<TruckReceiptFlowRow>> {
+) -> ApiResult<Vec<TruckReceiptPipelineResponse>> {
   let rows = state
     .svc
-    .flow
-    .truck_receipt_query(
+    .document
+    .truck_receipt_pipeline_query(
       params.pipeline_status,
       params.contractor_id,
       params.pagination.page,

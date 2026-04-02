@@ -2,7 +2,7 @@ use crate::{
   dtos,
   entities::{company, product, product_group},
   services::{
-    common::{set_if_some, set_if_some_mapped},
+    common::{set_if_some, set_if_some_mapped, validate_fk_exists, validate_optional_fk_exists},
     CatalogService,
   },
 };
@@ -25,7 +25,7 @@ async fn before_product_create(
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateProductRequest,
 ) -> Result<(), crate::api::ApiError> {
-  crate::services::common::validate_fk_exists::<product_group::Entity>(
+  validate_fk_exists::<product_group::Entity>(
     conn,
     req.product_group_id,
     product_group::Column::Id,
@@ -33,7 +33,8 @@ async fn before_product_create(
     "productGroupId",
   )
   .await?;
-  crate::services::common::validate_optional_fk_exists::<company::Entity>(
+
+  validate_optional_fk_exists::<company::Entity>(
     conn,
     req.manufacturer_id,
     company::Column::Id,
@@ -51,7 +52,7 @@ async fn before_product_update(
   req: &dtos::UpdateProductRequest,
 ) -> Result<(), crate::api::ApiError> {
   if let Some(product_group_id) = req.product_group_id {
-    crate::services::common::validate_fk_exists::<product_group::Entity>(
+    validate_fk_exists::<product_group::Entity>(
       conn,
       product_group_id,
       product_group::Column::Id,
@@ -61,7 +62,7 @@ async fn before_product_update(
     .await?;
   }
   if let Some(manufacturer_id) = req.manufacturer_id {
-    crate::services::common::validate_fk_exists::<company::Entity>(
+    validate_fk_exists::<company::Entity>(
       conn,
       manufacturer_id,
       company::Column::Id,

@@ -156,7 +156,7 @@ pub use response::{
     TruckWaybillResponse,
     TruckWeightDocResponse,
   },
-  flow::{CargoFlowRow, RailReceiptFlowRow, TruckDispatchFlowRow, TruckReceiptFlowRow},
+  pipeline::{RailReceiptPipelineResponse, TruckDispatchPipelineResponse, TruckReceiptPipelineResponse},
   ledger::LedgerEntryResponse,
   sync::{PullAuditLogsResponse, PushAuditLogsResponse, SyncStatusResponse, SyncWatermarkResponse},
   system::{

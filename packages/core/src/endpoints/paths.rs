@@ -229,7 +229,6 @@ pub mod flows {
   pub const TRUCK_RECEIPT_QUERY: &str = "/flows/truck-receipt/query";
   pub const RAIL_RECEIPT_QUERY: &str = "/flows/rail-receipt/query";
   pub const TRUCK_DISPATCH_QUERY: &str = "/flows/truck-dispatch/query";
-  pub const CARGO_FLOW_QUERY: &str = "/flows/cargo-flow/query";
 }
 
 pub mod docs {

@@ -8,7 +8,6 @@ use crate::{
     audit::AuditService,
     catalog::CatalogService as DomainCatalogService,
     document::DocumentService,
-    flow::FlowService,
     ledger::LedgerService,
     sync::SyncService,
     system::SystemService,
@@ -19,7 +18,6 @@ pub struct ApiServices {
   pub system: Arc<SystemService>,
   pub catalog_service: Arc<DomainCatalogService>,
   pub document: Arc<DocumentService>,
-  pub flow: Arc<FlowService>,
   pub ledger: Arc<LedgerService>,
   pub audit: Arc<AuditService>,
   pub sync: Arc<SyncService>,
@@ -36,14 +34,12 @@ impl ApiServices {
       ledger.clone(),
       audit.clone(),
     ));
-    let flow = Arc::new(FlowService::new(db.clone()));
     let sync = Arc::new(SyncService::new(db.clone(), cfg));
 
     Self {
       system,
       catalog_service,
       document,
-      flow,
       ledger,
       audit,
       sync,

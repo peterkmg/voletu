@@ -1,19 +1,14 @@
 use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  TransactionTrait,
+  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, PaginatorTrait,
+  QueryFilter, QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos,
-  entities::{dispatch_document, dispatch_item, dispatch_storage_measurement},
-  enums,
+  dtos::{self, response::pipeline::TruckDispatchPipelineResponse},
+  entities::{company, dispatch_document, dispatch_item, dispatch_storage_measurement, product},
+  enums::{self, DispatchMethod, DocumentStatus, PipelineStatus},
   services::document::DocumentService,
 };
 
@@ -150,5 +145,58 @@ impl DocumentService {
       .ok_or_else(|| ApiError::NotFound(format!("Dispatch document '{}' not found", id)))?;
 
     dtos::DispatchCompositeResponse::try_from(doc)
+  }
+
+  pub async fn truck_dispatch_pipeline_query(
+    &self,
+    pipeline_status: Option<PipelineStatus>,
+    contractor_id: Option<Uuid>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<TruckDispatchPipelineResponse>, ApiError> {
+    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let db = self.db.as_ref();
+
+    let mut cond = Condition::all()
+      .add(dispatch_document::Column::DeletedAt.is_null())
+      .add(dispatch_document::Column::DispatchMethod.eq(DispatchMethod::Truck));
+    if let Some(cid) = contractor_id {
+      cond = cond.add(dispatch_document::Column::ContractorId.eq(cid));
+    }
+    if let Some(ps) = pipeline_status {
+      match ps {
+        PipelineStatus::Pending => return Ok(vec![]),
+        PipelineStatus::Draft => cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Draft)),
+        PipelineStatus::Executed => cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Posted)),
+      }
+    }
+
+    let dispatches: Vec<dispatch_document::ModelEx> = dispatch_document::Entity::load()
+      .filter(cond)
+      .with(company::Entity)
+      .with((dispatch_item::Entity, product::Entity))
+      .order_by_desc(dispatch_document::Column::Date)
+      .paginate(db, per_page)
+      .fetch_page(page - 1)
+      .await?;
+
+    let mut rows = Vec::with_capacity(dispatches.len());
+    for dd in &dispatches {
+      let first_item = dd.items.get(0);
+      let total: Decimal = dd.items.iter().map(|i| i.dispatched_amount).sum();
+
+      rows.push(TruckDispatchPipelineResponse {
+        dispatch_id: dd.id,
+        document_number: dd.document_number.clone(),
+        date: dd.date.to_string(),
+        contractor_id: dd.contractor_id,
+        contractor_name: dd.contractor.as_ref().map(|c| c.common_name.clone()).unwrap_or_default(),
+        product_name: first_item.and_then(|i| i.product.as_ref().map(|p| p.common_name.clone())),
+        dispatched_quantity: if total > Decimal::ZERO { Some(total) } else { None },
+        pipeline_status: PipelineStatus::from_doc_status(Some(&dd.status)),
+      });
+    }
+
+    Ok(rows)
   }
 }

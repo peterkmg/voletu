@@ -7,14 +7,14 @@ use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::response::flow::RailReceiptFlowRow,
+  dtos::response::pipeline::RailReceiptPipelineResponse,
   endpoints::{paths, query::PaginationParams},
   enums::PipelineStatus,
 };
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RailReceiptFlowQueryParams {
+struct RailReceiptPipelineQueryParams {
   pipeline_status: Option<PipelineStatus>,
   contractor_id: Option<Uuid>,
   #[serde(flatten)]
@@ -24,9 +24,9 @@ struct RailReceiptFlowQueryParams {
 #[utoipa::path(
   get,
   tag = "Flows",
-  operation_id = "flow_rail_receipt_query",
-  summary = "Query rail receipt flow",
-  description = "Returns rail waybills LEFT JOINed with their linked acceptance documents and a computed pipeline_status.",
+  operation_id = "rail_receipt_pipeline_query",
+  summary = "Query rail receipt pipeline",
+  description = "Returns rail waybills with their linked acceptance documents and a computed pipeline_status.",
   path = paths::flows::RAIL_RECEIPT_QUERY,
   params(
     ("pipelineStatus" = Option<PipelineStatus>, Query, description = "Filter by pipeline status: PENDING, DRAFT, EXECUTED"),
@@ -34,17 +34,17 @@ struct RailReceiptFlowQueryParams {
     ("page" = Option<u64>, Query),
     ("per_page" = Option<u64>, Query),
   ),
-  responses((status = 200, body = ApiResponse<Vec<RailReceiptFlowRow>>))
+  responses((status = 200, body = ApiResponse<Vec<RailReceiptPipelineResponse>>))
 )]
 #[axum::debug_handler]
-async fn rail_receipt_query(
+async fn rail_receipt_pipeline_query(
   State(state): State<Arc<ApiState>>,
-  Query(params): Query<RailReceiptFlowQueryParams>,
-) -> ApiResult<Vec<RailReceiptFlowRow>> {
+  Query(params): Query<RailReceiptPipelineQueryParams>,
+) -> ApiResult<Vec<RailReceiptPipelineResponse>> {
   let rows = state
     .svc
-    .flow
-    .rail_receipt_query(
+    .document
+    .rail_receipt_pipeline_query(
       params.pipeline_status,
       params.contractor_id,
       params.pagination.page,
@@ -56,6 +56,6 @@ async fn rail_receipt_query(
 
 pub fn rail_receipt_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
-    .routes(routes!(rail_receipt_query))
+    .routes(routes!(rail_receipt_pipeline_query))
     .with_state(state)
 }

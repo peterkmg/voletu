@@ -36,13 +36,29 @@ async fn dispatch_document_list(
     state
       .svc
       .document
-      .dispatch_document_query_with_names(None, None, None, None, None, pagination.page, pagination.per_page)
+      .dispatch_document_query_with_names(
+        None,
+        None,
+        None,
+        None,
+        None,
+        pagination.page,
+        pagination.per_page,
+      )
       .await?
   } else {
     state
       .svc
       .document
-      .dispatch_document_query(None, None, None, None, None, pagination.page, pagination.per_page)
+      .dispatch_document_query(
+        None,
+        None,
+        None,
+        None,
+        None,
+        pagination.page,
+        pagination.per_page,
+      )
       .await?
   };
   Ok(ApiResponse::success(rows))

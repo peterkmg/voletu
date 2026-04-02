@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use chrono::NaiveDate;
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, prelude::Decimal};
+use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   entities::{acceptance_document, acceptance_item, truck_waybill, truck_waybill_item},
   enums::{self, PipelineStatus},
-  services::flow::FlowService,
+  services::{audit::AuditService, document::DocumentService, ledger::LedgerService},
 };
 
 use crate::common::{fixtures::seed_inventory_fixture, setup_db};
@@ -24,7 +24,11 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
   with_audit_context(actor, origin, || async {
     let db = Arc::new(setup_db().await);
     let fix = seed_inventory_fixture(&db).await;
-    let flow = FlowService::new(db.clone());
+    let mut cfg = crate::common::test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let svc = DocumentService::new(db.clone(), ledger, audit);
 
     // Waybill 1: no acceptance → Pending
     let wb1 = truck_waybill::ActiveModel {
@@ -110,47 +114,80 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
     // --- Assertions ---
 
     // All rows
-    let all = flow.truck_receipt_query(None, None, Some(1), Some(50)).await.unwrap();
+    let all = svc
+      .truck_receipt_pipeline_query(None, None, Some(1), Some(50))
+      .await
+      .unwrap();
     assert_eq!(all.len(), 3);
 
-    let pending = all.iter().find(|r| r.basis_document_number == "TWB-001").unwrap();
+    let pending = all
+      .iter()
+      .find(|r| r.basis_document_number == "TWB-001")
+      .unwrap();
     assert_eq!(pending.pipeline_status, PipelineStatus::Pending);
     assert!(pending.action_id.is_none());
     assert_eq!(pending.expected_quantity, Some(Decimal::new(25000, 0)));
 
-    let draft = all.iter().find(|r| r.basis_document_number == "TWB-002").unwrap();
+    let draft = all
+      .iter()
+      .find(|r| r.basis_document_number == "TWB-002")
+      .unwrap();
     assert_eq!(draft.pipeline_status, PipelineStatus::Draft);
     assert_eq!(draft.action_id, Some(acc2.id));
     assert_eq!(draft.action_document_number.as_deref(), Some("ACC-001"));
 
-    let executed = all.iter().find(|r| r.basis_document_number == "TWB-003").unwrap();
+    let executed = all
+      .iter()
+      .find(|r| r.basis_document_number == "TWB-003")
+      .unwrap();
     assert_eq!(executed.pipeline_status, PipelineStatus::Executed);
     assert_eq!(executed.action_id, Some(acc3.id));
     assert_eq!(executed.actual_quantity, Some(Decimal::new(24900, 0)));
 
     // Filter by status
-    let pending_only = flow.truck_receipt_query(Some(PipelineStatus::Pending), None, Some(1), Some(50)).await.unwrap();
+    let pending_only = svc
+      .truck_receipt_pipeline_query(Some(PipelineStatus::Pending), None, Some(1), Some(50))
+      .await
+      .unwrap();
     assert_eq!(pending_only.len(), 1);
     assert_eq!(pending_only[0].basis_document_number, "TWB-001");
 
-    let draft_only = flow.truck_receipt_query(Some(PipelineStatus::Draft), None, Some(1), Some(50)).await.unwrap();
+    let draft_only = svc
+      .truck_receipt_pipeline_query(Some(PipelineStatus::Draft), None, Some(1), Some(50))
+      .await
+      .unwrap();
     assert_eq!(draft_only.len(), 1);
     assert_eq!(draft_only[0].basis_document_number, "TWB-002");
 
-    let executed_only = flow.truck_receipt_query(Some(PipelineStatus::Executed), None, Some(1), Some(50)).await.unwrap();
+    let executed_only = svc
+      .truck_receipt_pipeline_query(Some(PipelineStatus::Executed), None, Some(1), Some(50))
+      .await
+      .unwrap();
     assert_eq!(executed_only.len(), 1);
     assert_eq!(executed_only[0].basis_document_number, "TWB-003");
 
     // Filter by contractor
-    let by_sender = flow.truck_receipt_query(None, Some(fix.sender_id), Some(1), Some(50)).await.unwrap();
+    let by_sender = svc
+      .truck_receipt_pipeline_query(None, Some(fix.sender_id), Some(1), Some(50))
+      .await
+      .unwrap();
     assert_eq!(by_sender.len(), 3);
-    let by_nobody = flow.truck_receipt_query(None, Some(Uuid::now_v7()), Some(1), Some(50)).await.unwrap();
+    let by_nobody = svc
+      .truck_receipt_pipeline_query(None, Some(Uuid::now_v7()), Some(1), Some(50))
+      .await
+      .unwrap();
     assert_eq!(by_nobody.len(), 0);
 
     // Pagination
-    let page1 = flow.truck_receipt_query(None, None, Some(1), Some(2)).await.unwrap();
+    let page1 = svc
+      .truck_receipt_pipeline_query(None, None, Some(1), Some(2))
+      .await
+      .unwrap();
     assert_eq!(page1.len(), 2);
-    let page2 = flow.truck_receipt_query(None, None, Some(2), Some(2)).await.unwrap();
+    let page2 = svc
+      .truck_receipt_pipeline_query(None, None, Some(2), Some(2))
+      .await
+      .unwrap();
     assert_eq!(page2.len(), 1);
   })
   .await;
