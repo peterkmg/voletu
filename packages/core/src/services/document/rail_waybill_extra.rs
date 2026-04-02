@@ -15,7 +15,14 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::RailReceiptPipelineResponse},
-  entities::{acceptance_document, acceptance_item, company, product, rail_wagon_manifest, rail_waybill},
+  entities::{
+    acceptance_document,
+    acceptance_item,
+    company,
+    product,
+    rail_wagon_manifest,
+    rail_waybill,
+  },
   enums::PipelineStatus,
   services::DocumentService,
 };
@@ -172,12 +179,20 @@ impl DocumentService {
         basis_document_number: wb.document_number.clone(),
         basis_date: wb.date.to_string(),
         contractor_id: wb.sender_id,
-        contractor_name: wb.sender.as_ref().map(|s| s.common_name.clone()).unwrap_or_default(),
+        contractor_name: wb
+          .sender
+          .as_ref()
+          .map(|s| s.common_name.clone())
+          .unwrap_or_default(),
         product_name: manifest.and_then(|m| m.product.as_ref().map(|p| p.common_name.clone())),
         expected_quantity: manifest.map(|m| m.declared_mass),
         action_id: acc.map(|a| a.id),
         action_document_number: acc.map(|a| a.document_number.clone()),
-        actual_quantity: if actual_quantity > Decimal::ZERO { Some(actual_quantity) } else { None },
+        actual_quantity: if actual_quantity > Decimal::ZERO {
+          Some(actual_quantity)
+        } else {
+          None
+        },
         pipeline_status: status,
       });
     }

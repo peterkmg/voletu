@@ -1,13 +1,27 @@
 use sea_orm::{
-  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, PaginatorTrait,
-  QueryFilter, QueryOrder, TransactionTrait,
+  entity::prelude::*,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  EntityTrait,
+  PaginatorTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::TruckReceiptPipelineResponse},
-  entities::{acceptance_document, acceptance_item, company, product, truck_waybill, truck_waybill_item},
+  entities::{
+    acceptance_document,
+    acceptance_item,
+    company,
+    product,
+    truck_waybill,
+    truck_waybill_item,
+  },
   enums::PipelineStatus,
   services::DocumentService,
 };
@@ -146,12 +160,20 @@ impl DocumentService {
         basis_document_number: wb.document_number.clone(),
         basis_date: wb.date.to_string(),
         contractor_id: wb.sender_id,
-        contractor_name: wb.sender.as_ref().map(|s| s.common_name.clone()).unwrap_or_default(),
+        contractor_name: wb
+          .sender
+          .as_ref()
+          .map(|s| s.common_name.clone())
+          .unwrap_or_default(),
         product_name: first_item.and_then(|i| i.product.as_ref().map(|p| p.common_name.clone())),
         expected_quantity: first_item.map(|i| i.declared_amount),
         action_id: acc.map(|a| a.id),
         action_document_number: acc.map(|a| a.document_number.clone()),
-        actual_quantity: if actual_quantity > Decimal::ZERO { Some(actual_quantity) } else { None },
+        actual_quantity: if actual_quantity > Decimal::ZERO {
+          Some(actual_quantity)
+        } else {
+          None
+        },
         pipeline_status: status,
       });
     }

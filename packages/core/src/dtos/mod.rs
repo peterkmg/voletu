@@ -156,8 +156,12 @@ pub use response::{
     TruckWaybillResponse,
     TruckWeightDocResponse,
   },
-  pipeline::{RailReceiptPipelineResponse, TruckDispatchPipelineResponse, TruckReceiptPipelineResponse},
   ledger::LedgerEntryResponse,
+  pipeline::{
+    RailReceiptPipelineResponse,
+    TruckDispatchPipelineResponse,
+    TruckReceiptPipelineResponse,
+  },
   sync::{PullAuditLogsResponse, PushAuditLogsResponse, SyncStatusResponse, SyncWatermarkResponse},
   system::{
     DatabaseInstanceResponse,

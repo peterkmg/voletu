@@ -1,6 +1,13 @@
 use sea_orm::{
-  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, PaginatorTrait,
-  QueryFilter, QueryOrder, TransactionTrait,
+  entity::prelude::*,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  EntityTrait,
+  PaginatorTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -166,8 +173,12 @@ impl DocumentService {
     if let Some(ps) = pipeline_status {
       match ps {
         PipelineStatus::Pending => return Ok(vec![]),
-        PipelineStatus::Draft => cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Draft)),
-        PipelineStatus::Executed => cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Posted)),
+        PipelineStatus::Draft => {
+          cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Draft))
+        }
+        PipelineStatus::Executed => {
+          cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Posted))
+        }
       }
     }
 
@@ -190,9 +201,17 @@ impl DocumentService {
         document_number: dd.document_number.clone(),
         date: dd.date.to_string(),
         contractor_id: dd.contractor_id,
-        contractor_name: dd.contractor.as_ref().map(|c| c.common_name.clone()).unwrap_or_default(),
+        contractor_name: dd
+          .contractor
+          .as_ref()
+          .map(|c| c.common_name.clone())
+          .unwrap_or_default(),
         product_name: first_item.and_then(|i| i.product.as_ref().map(|p| p.common_name.clone())),
-        dispatched_quantity: if total > Decimal::ZERO { Some(total) } else { None },
+        dispatched_quantity: if total > Decimal::ZERO {
+          Some(total)
+        } else {
+          None
+        },
         pipeline_status: PipelineStatus::from_doc_status(Some(&dd.status)),
       });
     }
