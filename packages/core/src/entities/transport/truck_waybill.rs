@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   dtos::{CreateTruckWaybillRequest, TruckWaybillCompositeRequest},
-  entities::{company, truck_waybill_item, truck_weight_doc},
+  entities::{acceptance_document, company, truck_waybill_item, truck_weight_doc},
 };
 
 #[voletu_core_macros::handle_audit]
@@ -24,6 +24,8 @@ pub struct Model {
   pub items: HasMany<truck_waybill_item::Entity>,
   #[sea_orm(has_many)]
   pub weight_docs: HasMany<truck_weight_doc::Entity>,
+  #[sea_orm(has_many)]
+  pub acceptances: HasMany<acceptance_document::Entity>,
 }
 
 impl From<&CreateTruckWaybillRequest> for ActiveModel {

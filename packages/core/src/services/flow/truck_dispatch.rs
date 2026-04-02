@@ -8,8 +8,8 @@ use super::FlowService;
 use crate::{
   api::ApiError,
   dtos::response::flow::TruckDispatchFlowRow,
-  entities::{dispatch_document, dispatch_item},
-  enums::{DispatchMethod, PipelineStatus},
+  entities::{company, dispatch_document, dispatch_item, product},
+  enums::{DispatchMethod, DocumentStatus, PipelineStatus},
   services::common::normalize_pagination,
 };
 
@@ -30,9 +30,13 @@ impl FlowService {
     if let Some(cid) = contractor_id {
       cond = cond.add(dispatch_document::Column::ContractorId.eq(cid));
     }
-    let Some(cond) = Self::add_status_filter(cond, pipeline_status, dispatch_document::Column::Status) else {
-      return Ok(vec![]);
-    };
+    if let Some(ps) = pipeline_status {
+      match ps {
+        PipelineStatus::Pending => return Ok(vec![]),
+        PipelineStatus::Draft => cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Draft)),
+        PipelineStatus::Executed => cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Posted)),
+      }
+    }
 
     let dispatches = dispatch_document::Entity::find()
       .filter(cond)
@@ -46,8 +50,7 @@ impl FlowService {
     }
 
     let doc_ids: Vec<Uuid> = dispatches.iter().map(|d| d.id).collect();
-
-    let items = dispatch_item::Entity::find()
+    let items: Vec<dispatch_item::Model> = dispatch_item::Entity::find()
       .filter(
         Condition::all()
           .add(dispatch_item::Column::DispatchDocId.is_in(doc_ids))
@@ -55,18 +58,35 @@ impl FlowService {
       )
       .all(db)
       .await?;
-    let first_item = Self::first_per_parent(&items, |i| i.dispatch_doc_id);
 
-    let mut dispatched_sums: std::collections::HashMap<Uuid, Decimal> = std::collections::HashMap::new();
+    let mut first_item: std::collections::HashMap<Uuid, &dispatch_item::Model> = Default::default();
+    let mut sums: std::collections::HashMap<Uuid, Decimal> = Default::default();
     for item in &items {
-      *dispatched_sums.entry(item.dispatch_doc_id).or_insert(Decimal::ZERO) += item.dispatched_amount;
+      first_item.entry(item.dispatch_doc_id).or_insert(item);
+      *sums.entry(item.dispatch_doc_id).or_insert(Decimal::ZERO) += item.dispatched_amount;
     }
 
-    let company_map =
-      self.resolve_companies(&dispatches.iter().map(|d| d.contractor_id).collect::<Vec<_>>()).await?;
-    let product_map = self
-      .resolve_products(&first_item.values().map(|i| i.product_id).collect::<Vec<_>>())
-      .await?;
+    let cids: Vec<Uuid> = dispatches.iter().map(|d| d.contractor_id).collect();
+    let companies: std::collections::HashMap<Uuid, String> = company::Entity::find()
+      .filter(company::Column::Id.is_in(cids))
+      .all(db)
+      .await?
+      .into_iter()
+      .map(|c| (c.id, c.common_name))
+      .collect();
+
+    let pids: Vec<Uuid> = first_item.values().map(|i| i.product_id).collect();
+    let products: std::collections::HashMap<Uuid, String> = if pids.is_empty() {
+      Default::default()
+    } else {
+      product::Entity::find()
+        .filter(product::Column::Id.is_in(pids))
+        .all(db)
+        .await?
+        .into_iter()
+        .map(|p| (p.id, p.common_name))
+        .collect()
+    };
 
     let mut rows = Vec::with_capacity(dispatches.len());
     for dd in &dispatches {
@@ -76,9 +96,9 @@ impl FlowService {
         document_number: dd.document_number.clone(),
         date: dd.date.to_string(),
         contractor_id: dd.contractor_id,
-        contractor_name: Self::company_name(&company_map, dd.contractor_id),
-        product_name: fi.and_then(|i| product_map.get(&i.product_id).cloned()),
-        dispatched_quantity: dispatched_sums.get(&dd.id).copied(),
+        contractor_name: companies.get(&dd.contractor_id).cloned().unwrap_or_default(),
+        product_name: fi.and_then(|i| products.get(&i.product_id).cloned()),
+        dispatched_quantity: sums.get(&dd.id).copied(),
         pipeline_status: PipelineStatus::from_doc_status(Some(&dd.status)),
       });
     }

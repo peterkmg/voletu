@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   dtos::{CreateRailWaybillRequest, RailWaybillCompositeRequest},
-  entities::{company, rail_wagon_manifest},
+  entities::{acceptance_document, company, rail_wagon_manifest},
 };
 
 #[voletu_core_macros::handle_audit]
@@ -22,6 +22,8 @@ pub struct Model {
   pub sender: HasOne<company::Entity>,
   #[sea_orm(has_many)]
   pub wagon_manifests: HasMany<rail_wagon_manifest::Entity>,
+  #[sea_orm(has_many)]
+  pub acceptances: HasMany<acceptance_document::Entity>,
 }
 
 impl From<&CreateRailWaybillRequest> for ActiveModel {
