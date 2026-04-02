@@ -2,16 +2,17 @@ import type { TFunction } from 'i18next'
 import type { SidebarData } from '../types'
 import {
   Anchor,
-  ArrowRightLeft,
-  BookOpen,
+  ArrowDownToLine,
+  ArrowLeftRight,
+  BarChart3,
   Building2,
   ClipboardCheck,
-  FileInput,
-  FileOutput,
   FlaskConical,
+  Fuel,
   LayoutDashboard,
   Package,
   RefreshCw,
+  Ship,
   TrainFront,
   Truck,
   Users,
@@ -25,6 +26,32 @@ export function getSidebarData(t: TFunction): SidebarData {
         title: t('common:nav.overview'),
         items: [
           { title: t('common:nav.dashboard'), url: '/', icon: LayoutDashboard },
+          { title: t('common:nav.cargoFlow'), url: '/cargo-flow', icon: BarChart3 },
+        ],
+      },
+      {
+        title: t('common:nav.incoming'),
+        items: [
+          { title: t('common:nav.truckReceipt'), url: '/incoming/truck', icon: Truck },
+          { title: t('common:nav.railReceipt'), url: '/incoming/rail', icon: TrainFront },
+          { title: t('common:nav.externalAcceptance'), url: '/incoming/external', icon: ArrowDownToLine },
+        ],
+      },
+      {
+        title: t('common:nav.outgoing'),
+        items: [
+          { title: t('common:nav.truckDispatch'), url: '/outgoing/truck', icon: Truck },
+          { title: t('common:nav.directDispatch'), url: '/outgoing/direct', icon: Ship },
+          { title: t('common:nav.bunkering'), url: '/outgoing/bunkering', icon: Fuel },
+        ],
+      },
+      {
+        title: t('common:nav.internal'),
+        items: [
+          { title: t('common:nav.physicalTransfer'), url: '/internal/physical-transfer', icon: ArrowLeftRight },
+          { title: t('common:nav.ownershipTransfer'), url: '/internal/ownership-transfer', icon: ArrowLeftRight },
+          { title: t('common:nav.blending'), url: '/internal/blending', icon: FlaskConical },
+          { title: t('common:nav.reconciliation'), url: '/internal/reconciliation', icon: ClipboardCheck },
         ],
       },
       {
@@ -53,33 +80,8 @@ export function getSidebarData(t: TFunction): SidebarData {
         ],
       },
       {
-        title: t('common:nav.documents'),
-        items: [
-          { title: t('common:nav.acceptance'), url: '/documents/acceptance', icon: FileInput },
-          { title: t('common:nav.dispatch'), url: '/documents/dispatch', icon: FileOutput },
-          { title: t('common:nav.blending'), url: '/documents/blending', icon: FlaskConical },
-          {
-            title: t('common:nav.transfers'),
-            icon: ArrowRightLeft,
-            items: [
-              { title: t('common:nav.physicalTransfer'), url: '/documents/physical-transfer' },
-              { title: t('common:nav.ownershipTransfer'), url: '/documents/ownership-transfer' },
-            ],
-          },
-          { title: t('common:nav.reconciliation'), url: '/documents/inventory-reconciliation', icon: ClipboardCheck },
-        ],
-      },
-      {
-        title: t('common:nav.transport'),
-        items: [
-          { title: t('common:nav.truckWaybills'), url: '/transport/truck-waybills', icon: Truck },
-          { title: t('common:nav.railWaybills'), url: '/transport/rail-waybills', icon: TrainFront },
-        ],
-      },
-      {
         title: t('common:nav.system'),
         items: [
-          { title: t('common:nav.ledger'), url: '/ledger', icon: BookOpen },
           { title: t('common:nav.users'), url: '/system/users', icon: Users, roles: ['ADMIN'] },
           { title: t('common:nav.syncStatus'), url: '/system/sync', icon: RefreshCw, roles: ['ADMIN'] },
         ],
