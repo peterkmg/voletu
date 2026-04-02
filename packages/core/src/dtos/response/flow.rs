@@ -66,6 +66,31 @@ pub struct RailReceiptFlowRow {
   pub pipeline_status: String,
 }
 
+/// A unified row for the cargo flow aggregate view.
+/// Contains common fields projected from all document types.
+#[response_dto]
+#[derive(Clone)]
+pub struct CargoFlowRow {
+  pub id: Uuid,
+  pub document_number: String,
+  pub date: String,
+  pub flow_type: String,
+  pub operation: String,
+  pub contractor_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub quantity: Option<Decimal>,
+  pub status: String,
+  pub entity_type: String,
+  pub flow_route: String,
+}
+
 /// A single row in the truck-dispatch flow view.
 ///
 /// Shows dispatch documents with `dispatch_method = Truck` and a computed
