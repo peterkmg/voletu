@@ -16,10 +16,21 @@ import { Route as authSetupRouteImport } from './routes/(auth)/setup'
 import { Route as authInitRouteImport } from './routes/(auth)/init'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedLedgerIndexRouteImport } from './routes/_authenticated/ledger/index'
+import { Route as AuthenticatedCargoFlowIndexRouteImport } from './routes/_authenticated/cargo-flow/index'
 import { Route as AuthenticatedTransportTruckWaybillsIndexRouteImport } from './routes/_authenticated/transport/truck-waybills/index'
 import { Route as AuthenticatedTransportRailWaybillsIndexRouteImport } from './routes/_authenticated/transport/rail-waybills/index'
 import { Route as AuthenticatedSystemUsersIndexRouteImport } from './routes/_authenticated/system/users/index'
 import { Route as AuthenticatedSystemSyncIndexRouteImport } from './routes/_authenticated/system/sync/index'
+import { Route as AuthenticatedOutgoingTruckIndexRouteImport } from './routes/_authenticated/outgoing/truck/index'
+import { Route as AuthenticatedOutgoingDirectIndexRouteImport } from './routes/_authenticated/outgoing/direct/index'
+import { Route as AuthenticatedOutgoingBunkeringIndexRouteImport } from './routes/_authenticated/outgoing/bunkering/index'
+import { Route as AuthenticatedInternalReconciliationIndexRouteImport } from './routes/_authenticated/internal/reconciliation/index'
+import { Route as AuthenticatedInternalPhysicalTransferIndexRouteImport } from './routes/_authenticated/internal/physical-transfer/index'
+import { Route as AuthenticatedInternalOwnershipTransferIndexRouteImport } from './routes/_authenticated/internal/ownership-transfer/index'
+import { Route as AuthenticatedInternalBlendingIndexRouteImport } from './routes/_authenticated/internal/blending/index'
+import { Route as AuthenticatedIncomingTruckIndexRouteImport } from './routes/_authenticated/incoming/truck/index'
+import { Route as AuthenticatedIncomingRailIndexRouteImport } from './routes/_authenticated/incoming/rail/index'
+import { Route as AuthenticatedIncomingExternalIndexRouteImport } from './routes/_authenticated/incoming/external/index'
 import { Route as AuthenticatedDocumentsPhysicalTransferIndexRouteImport } from './routes/_authenticated/documents/physical-transfer/index'
 import { Route as AuthenticatedDocumentsOwnershipTransferIndexRouteImport } from './routes/_authenticated/documents/ownership-transfer/index'
 import { Route as AuthenticatedDocumentsInventoryReconciliationIndexRouteImport } from './routes/_authenticated/documents/inventory-reconciliation/index'
@@ -34,6 +45,16 @@ import { Route as AuthenticatedCatalogProductGroupsIndexRouteImport } from './ro
 import { Route as AuthenticatedCatalogPortsIndexRouteImport } from './routes/_authenticated/catalog/ports/index'
 import { Route as AuthenticatedCatalogCompaniesIndexRouteImport } from './routes/_authenticated/catalog/companies/index'
 import { Route as AuthenticatedCatalogBasesIndexRouteImport } from './routes/_authenticated/catalog/bases/index'
+import { Route as AuthenticatedOutgoingTruckIdRouteImport } from './routes/_authenticated/outgoing/truck/$id'
+import { Route as AuthenticatedOutgoingDirectIdRouteImport } from './routes/_authenticated/outgoing/direct/$id'
+import { Route as AuthenticatedOutgoingBunkeringIdRouteImport } from './routes/_authenticated/outgoing/bunkering/$id'
+import { Route as AuthenticatedInternalReconciliationIdRouteImport } from './routes/_authenticated/internal/reconciliation/$id'
+import { Route as AuthenticatedInternalPhysicalTransferIdRouteImport } from './routes/_authenticated/internal/physical-transfer/$id'
+import { Route as AuthenticatedInternalOwnershipTransferIdRouteImport } from './routes/_authenticated/internal/ownership-transfer/$id'
+import { Route as AuthenticatedInternalBlendingIdRouteImport } from './routes/_authenticated/internal/blending/$id'
+import { Route as AuthenticatedIncomingTruckIdRouteImport } from './routes/_authenticated/incoming/truck/$id'
+import { Route as AuthenticatedIncomingRailIdRouteImport } from './routes/_authenticated/incoming/rail/$id'
+import { Route as AuthenticatedIncomingExternalIdRouteImport } from './routes/_authenticated/incoming/external/$id'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -71,6 +92,12 @@ const AuthenticatedLedgerIndexRoute =
     path: '/ledger/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCargoFlowIndexRoute =
+  AuthenticatedCargoFlowIndexRouteImport.update({
+    id: '/cargo-flow/',
+    path: '/cargo-flow/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTransportTruckWaybillsIndexRoute =
   AuthenticatedTransportTruckWaybillsIndexRouteImport.update({
     id: '/transport/truck-waybills/',
@@ -93,6 +120,66 @@ const AuthenticatedSystemSyncIndexRoute =
   AuthenticatedSystemSyncIndexRouteImport.update({
     id: '/system/sync/',
     path: '/system/sync/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutgoingTruckIndexRoute =
+  AuthenticatedOutgoingTruckIndexRouteImport.update({
+    id: '/outgoing/truck/',
+    path: '/outgoing/truck/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutgoingDirectIndexRoute =
+  AuthenticatedOutgoingDirectIndexRouteImport.update({
+    id: '/outgoing/direct/',
+    path: '/outgoing/direct/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutgoingBunkeringIndexRoute =
+  AuthenticatedOutgoingBunkeringIndexRouteImport.update({
+    id: '/outgoing/bunkering/',
+    path: '/outgoing/bunkering/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalReconciliationIndexRoute =
+  AuthenticatedInternalReconciliationIndexRouteImport.update({
+    id: '/internal/reconciliation/',
+    path: '/internal/reconciliation/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalPhysicalTransferIndexRoute =
+  AuthenticatedInternalPhysicalTransferIndexRouteImport.update({
+    id: '/internal/physical-transfer/',
+    path: '/internal/physical-transfer/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalOwnershipTransferIndexRoute =
+  AuthenticatedInternalOwnershipTransferIndexRouteImport.update({
+    id: '/internal/ownership-transfer/',
+    path: '/internal/ownership-transfer/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalBlendingIndexRoute =
+  AuthenticatedInternalBlendingIndexRouteImport.update({
+    id: '/internal/blending/',
+    path: '/internal/blending/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIncomingTruckIndexRoute =
+  AuthenticatedIncomingTruckIndexRouteImport.update({
+    id: '/incoming/truck/',
+    path: '/incoming/truck/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIncomingRailIndexRoute =
+  AuthenticatedIncomingRailIndexRouteImport.update({
+    id: '/incoming/rail/',
+    path: '/incoming/rail/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIncomingExternalIndexRoute =
+  AuthenticatedIncomingExternalIndexRouteImport.update({
+    id: '/incoming/external/',
+    path: '/incoming/external/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDocumentsPhysicalTransferIndexRoute =
@@ -179,14 +266,85 @@ const AuthenticatedCatalogBasesIndexRoute =
     path: '/catalog/bases/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOutgoingTruckIdRoute =
+  AuthenticatedOutgoingTruckIdRouteImport.update({
+    id: '/outgoing/truck/$id',
+    path: '/outgoing/truck/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutgoingDirectIdRoute =
+  AuthenticatedOutgoingDirectIdRouteImport.update({
+    id: '/outgoing/direct/$id',
+    path: '/outgoing/direct/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutgoingBunkeringIdRoute =
+  AuthenticatedOutgoingBunkeringIdRouteImport.update({
+    id: '/outgoing/bunkering/$id',
+    path: '/outgoing/bunkering/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalReconciliationIdRoute =
+  AuthenticatedInternalReconciliationIdRouteImport.update({
+    id: '/internal/reconciliation/$id',
+    path: '/internal/reconciliation/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalPhysicalTransferIdRoute =
+  AuthenticatedInternalPhysicalTransferIdRouteImport.update({
+    id: '/internal/physical-transfer/$id',
+    path: '/internal/physical-transfer/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalOwnershipTransferIdRoute =
+  AuthenticatedInternalOwnershipTransferIdRouteImport.update({
+    id: '/internal/ownership-transfer/$id',
+    path: '/internal/ownership-transfer/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInternalBlendingIdRoute =
+  AuthenticatedInternalBlendingIdRouteImport.update({
+    id: '/internal/blending/$id',
+    path: '/internal/blending/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIncomingTruckIdRoute =
+  AuthenticatedIncomingTruckIdRouteImport.update({
+    id: '/incoming/truck/$id',
+    path: '/incoming/truck/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIncomingRailIdRoute =
+  AuthenticatedIncomingRailIdRouteImport.update({
+    id: '/incoming/rail/$id',
+    path: '/incoming/rail/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIncomingExternalIdRoute =
+  AuthenticatedIncomingExternalIdRouteImport.update({
+    id: '/incoming/external/$id',
+    path: '/incoming/external/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/init': typeof authInitRoute
   '/setup': typeof authSetupRoute
   '/sign-in': typeof authSignInRoute
+  '/cargo-flow/': typeof AuthenticatedCargoFlowIndexRoute
   '/ledger/': typeof AuthenticatedLedgerIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/incoming/external/$id': typeof AuthenticatedIncomingExternalIdRoute
+  '/incoming/rail/$id': typeof AuthenticatedIncomingRailIdRoute
+  '/incoming/truck/$id': typeof AuthenticatedIncomingTruckIdRoute
+  '/internal/blending/$id': typeof AuthenticatedInternalBlendingIdRoute
+  '/internal/ownership-transfer/$id': typeof AuthenticatedInternalOwnershipTransferIdRoute
+  '/internal/physical-transfer/$id': typeof AuthenticatedInternalPhysicalTransferIdRoute
+  '/internal/reconciliation/$id': typeof AuthenticatedInternalReconciliationIdRoute
+  '/outgoing/bunkering/$id': typeof AuthenticatedOutgoingBunkeringIdRoute
+  '/outgoing/direct/$id': typeof AuthenticatedOutgoingDirectIdRoute
+  '/outgoing/truck/$id': typeof AuthenticatedOutgoingTruckIdRoute
   '/catalog/bases/': typeof AuthenticatedCatalogBasesIndexRoute
   '/catalog/companies/': typeof AuthenticatedCatalogCompaniesIndexRoute
   '/catalog/ports/': typeof AuthenticatedCatalogPortsIndexRoute
@@ -201,6 +359,16 @@ export interface FileRoutesByFullPath {
   '/documents/inventory-reconciliation/': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/documents/ownership-transfer/': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/documents/physical-transfer/': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  '/incoming/external/': typeof AuthenticatedIncomingExternalIndexRoute
+  '/incoming/rail/': typeof AuthenticatedIncomingRailIndexRoute
+  '/incoming/truck/': typeof AuthenticatedIncomingTruckIndexRoute
+  '/internal/blending/': typeof AuthenticatedInternalBlendingIndexRoute
+  '/internal/ownership-transfer/': typeof AuthenticatedInternalOwnershipTransferIndexRoute
+  '/internal/physical-transfer/': typeof AuthenticatedInternalPhysicalTransferIndexRoute
+  '/internal/reconciliation/': typeof AuthenticatedInternalReconciliationIndexRoute
+  '/outgoing/bunkering/': typeof AuthenticatedOutgoingBunkeringIndexRoute
+  '/outgoing/direct/': typeof AuthenticatedOutgoingDirectIndexRoute
+  '/outgoing/truck/': typeof AuthenticatedOutgoingTruckIndexRoute
   '/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users/': typeof AuthenticatedSystemUsersIndexRoute
   '/transport/rail-waybills/': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -211,8 +379,19 @@ export interface FileRoutesByTo {
   '/setup': typeof authSetupRoute
   '/sign-in': typeof authSignInRoute
   '/': typeof AuthenticatedIndexRoute
+  '/cargo-flow': typeof AuthenticatedCargoFlowIndexRoute
   '/ledger': typeof AuthenticatedLedgerIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/incoming/external/$id': typeof AuthenticatedIncomingExternalIdRoute
+  '/incoming/rail/$id': typeof AuthenticatedIncomingRailIdRoute
+  '/incoming/truck/$id': typeof AuthenticatedIncomingTruckIdRoute
+  '/internal/blending/$id': typeof AuthenticatedInternalBlendingIdRoute
+  '/internal/ownership-transfer/$id': typeof AuthenticatedInternalOwnershipTransferIdRoute
+  '/internal/physical-transfer/$id': typeof AuthenticatedInternalPhysicalTransferIdRoute
+  '/internal/reconciliation/$id': typeof AuthenticatedInternalReconciliationIdRoute
+  '/outgoing/bunkering/$id': typeof AuthenticatedOutgoingBunkeringIdRoute
+  '/outgoing/direct/$id': typeof AuthenticatedOutgoingDirectIdRoute
+  '/outgoing/truck/$id': typeof AuthenticatedOutgoingTruckIdRoute
   '/catalog/bases': typeof AuthenticatedCatalogBasesIndexRoute
   '/catalog/companies': typeof AuthenticatedCatalogCompaniesIndexRoute
   '/catalog/ports': typeof AuthenticatedCatalogPortsIndexRoute
@@ -227,6 +406,16 @@ export interface FileRoutesByTo {
   '/documents/inventory-reconciliation': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/documents/ownership-transfer': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/documents/physical-transfer': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  '/incoming/external': typeof AuthenticatedIncomingExternalIndexRoute
+  '/incoming/rail': typeof AuthenticatedIncomingRailIndexRoute
+  '/incoming/truck': typeof AuthenticatedIncomingTruckIndexRoute
+  '/internal/blending': typeof AuthenticatedInternalBlendingIndexRoute
+  '/internal/ownership-transfer': typeof AuthenticatedInternalOwnershipTransferIndexRoute
+  '/internal/physical-transfer': typeof AuthenticatedInternalPhysicalTransferIndexRoute
+  '/internal/reconciliation': typeof AuthenticatedInternalReconciliationIndexRoute
+  '/outgoing/bunkering': typeof AuthenticatedOutgoingBunkeringIndexRoute
+  '/outgoing/direct': typeof AuthenticatedOutgoingDirectIndexRoute
+  '/outgoing/truck': typeof AuthenticatedOutgoingTruckIndexRoute
   '/system/sync': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users': typeof AuthenticatedSystemUsersIndexRoute
   '/transport/rail-waybills': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -239,8 +428,19 @@ export interface FileRoutesById {
   '/(auth)/setup': typeof authSetupRoute
   '/(auth)/sign-in': typeof authSignInRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/cargo-flow/': typeof AuthenticatedCargoFlowIndexRoute
   '/_authenticated/ledger/': typeof AuthenticatedLedgerIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/incoming/external/$id': typeof AuthenticatedIncomingExternalIdRoute
+  '/_authenticated/incoming/rail/$id': typeof AuthenticatedIncomingRailIdRoute
+  '/_authenticated/incoming/truck/$id': typeof AuthenticatedIncomingTruckIdRoute
+  '/_authenticated/internal/blending/$id': typeof AuthenticatedInternalBlendingIdRoute
+  '/_authenticated/internal/ownership-transfer/$id': typeof AuthenticatedInternalOwnershipTransferIdRoute
+  '/_authenticated/internal/physical-transfer/$id': typeof AuthenticatedInternalPhysicalTransferIdRoute
+  '/_authenticated/internal/reconciliation/$id': typeof AuthenticatedInternalReconciliationIdRoute
+  '/_authenticated/outgoing/bunkering/$id': typeof AuthenticatedOutgoingBunkeringIdRoute
+  '/_authenticated/outgoing/direct/$id': typeof AuthenticatedOutgoingDirectIdRoute
+  '/_authenticated/outgoing/truck/$id': typeof AuthenticatedOutgoingTruckIdRoute
   '/_authenticated/catalog/bases/': typeof AuthenticatedCatalogBasesIndexRoute
   '/_authenticated/catalog/companies/': typeof AuthenticatedCatalogCompaniesIndexRoute
   '/_authenticated/catalog/ports/': typeof AuthenticatedCatalogPortsIndexRoute
@@ -255,6 +455,16 @@ export interface FileRoutesById {
   '/_authenticated/documents/inventory-reconciliation/': typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   '/_authenticated/documents/ownership-transfer/': typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   '/_authenticated/documents/physical-transfer/': typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  '/_authenticated/incoming/external/': typeof AuthenticatedIncomingExternalIndexRoute
+  '/_authenticated/incoming/rail/': typeof AuthenticatedIncomingRailIndexRoute
+  '/_authenticated/incoming/truck/': typeof AuthenticatedIncomingTruckIndexRoute
+  '/_authenticated/internal/blending/': typeof AuthenticatedInternalBlendingIndexRoute
+  '/_authenticated/internal/ownership-transfer/': typeof AuthenticatedInternalOwnershipTransferIndexRoute
+  '/_authenticated/internal/physical-transfer/': typeof AuthenticatedInternalPhysicalTransferIndexRoute
+  '/_authenticated/internal/reconciliation/': typeof AuthenticatedInternalReconciliationIndexRoute
+  '/_authenticated/outgoing/bunkering/': typeof AuthenticatedOutgoingBunkeringIndexRoute
+  '/_authenticated/outgoing/direct/': typeof AuthenticatedOutgoingDirectIndexRoute
+  '/_authenticated/outgoing/truck/': typeof AuthenticatedOutgoingTruckIndexRoute
   '/_authenticated/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/_authenticated/system/users/': typeof AuthenticatedSystemUsersIndexRoute
   '/_authenticated/transport/rail-waybills/': typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -267,8 +477,19 @@ export interface FileRouteTypes {
     | '/init'
     | '/setup'
     | '/sign-in'
+    | '/cargo-flow/'
     | '/ledger/'
     | '/settings/'
+    | '/incoming/external/$id'
+    | '/incoming/rail/$id'
+    | '/incoming/truck/$id'
+    | '/internal/blending/$id'
+    | '/internal/ownership-transfer/$id'
+    | '/internal/physical-transfer/$id'
+    | '/internal/reconciliation/$id'
+    | '/outgoing/bunkering/$id'
+    | '/outgoing/direct/$id'
+    | '/outgoing/truck/$id'
     | '/catalog/bases/'
     | '/catalog/companies/'
     | '/catalog/ports/'
@@ -283,6 +504,16 @@ export interface FileRouteTypes {
     | '/documents/inventory-reconciliation/'
     | '/documents/ownership-transfer/'
     | '/documents/physical-transfer/'
+    | '/incoming/external/'
+    | '/incoming/rail/'
+    | '/incoming/truck/'
+    | '/internal/blending/'
+    | '/internal/ownership-transfer/'
+    | '/internal/physical-transfer/'
+    | '/internal/reconciliation/'
+    | '/outgoing/bunkering/'
+    | '/outgoing/direct/'
+    | '/outgoing/truck/'
     | '/system/sync/'
     | '/system/users/'
     | '/transport/rail-waybills/'
@@ -293,8 +524,19 @@ export interface FileRouteTypes {
     | '/setup'
     | '/sign-in'
     | '/'
+    | '/cargo-flow'
     | '/ledger'
     | '/settings'
+    | '/incoming/external/$id'
+    | '/incoming/rail/$id'
+    | '/incoming/truck/$id'
+    | '/internal/blending/$id'
+    | '/internal/ownership-transfer/$id'
+    | '/internal/physical-transfer/$id'
+    | '/internal/reconciliation/$id'
+    | '/outgoing/bunkering/$id'
+    | '/outgoing/direct/$id'
+    | '/outgoing/truck/$id'
     | '/catalog/bases'
     | '/catalog/companies'
     | '/catalog/ports'
@@ -309,6 +551,16 @@ export interface FileRouteTypes {
     | '/documents/inventory-reconciliation'
     | '/documents/ownership-transfer'
     | '/documents/physical-transfer'
+    | '/incoming/external'
+    | '/incoming/rail'
+    | '/incoming/truck'
+    | '/internal/blending'
+    | '/internal/ownership-transfer'
+    | '/internal/physical-transfer'
+    | '/internal/reconciliation'
+    | '/outgoing/bunkering'
+    | '/outgoing/direct'
+    | '/outgoing/truck'
     | '/system/sync'
     | '/system/users'
     | '/transport/rail-waybills'
@@ -320,8 +572,19 @@ export interface FileRouteTypes {
     | '/(auth)/setup'
     | '/(auth)/sign-in'
     | '/_authenticated/'
+    | '/_authenticated/cargo-flow/'
     | '/_authenticated/ledger/'
     | '/_authenticated/settings/'
+    | '/_authenticated/incoming/external/$id'
+    | '/_authenticated/incoming/rail/$id'
+    | '/_authenticated/incoming/truck/$id'
+    | '/_authenticated/internal/blending/$id'
+    | '/_authenticated/internal/ownership-transfer/$id'
+    | '/_authenticated/internal/physical-transfer/$id'
+    | '/_authenticated/internal/reconciliation/$id'
+    | '/_authenticated/outgoing/bunkering/$id'
+    | '/_authenticated/outgoing/direct/$id'
+    | '/_authenticated/outgoing/truck/$id'
     | '/_authenticated/catalog/bases/'
     | '/_authenticated/catalog/companies/'
     | '/_authenticated/catalog/ports/'
@@ -336,6 +599,16 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/inventory-reconciliation/'
     | '/_authenticated/documents/ownership-transfer/'
     | '/_authenticated/documents/physical-transfer/'
+    | '/_authenticated/incoming/external/'
+    | '/_authenticated/incoming/rail/'
+    | '/_authenticated/incoming/truck/'
+    | '/_authenticated/internal/blending/'
+    | '/_authenticated/internal/ownership-transfer/'
+    | '/_authenticated/internal/physical-transfer/'
+    | '/_authenticated/internal/reconciliation/'
+    | '/_authenticated/outgoing/bunkering/'
+    | '/_authenticated/outgoing/direct/'
+    | '/_authenticated/outgoing/truck/'
     | '/_authenticated/system/sync/'
     | '/_authenticated/system/users/'
     | '/_authenticated/transport/rail-waybills/'
@@ -400,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLedgerIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cargo-flow/': {
+      id: '/_authenticated/cargo-flow/'
+      path: '/cargo-flow'
+      fullPath: '/cargo-flow/'
+      preLoaderRoute: typeof AuthenticatedCargoFlowIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/transport/truck-waybills/': {
       id: '/_authenticated/transport/truck-waybills/'
       path: '/transport/truck-waybills'
@@ -426,6 +706,76 @@ declare module '@tanstack/react-router' {
       path: '/system/sync'
       fullPath: '/system/sync/'
       preLoaderRoute: typeof AuthenticatedSystemSyncIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outgoing/truck/': {
+      id: '/_authenticated/outgoing/truck/'
+      path: '/outgoing/truck'
+      fullPath: '/outgoing/truck/'
+      preLoaderRoute: typeof AuthenticatedOutgoingTruckIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outgoing/direct/': {
+      id: '/_authenticated/outgoing/direct/'
+      path: '/outgoing/direct'
+      fullPath: '/outgoing/direct/'
+      preLoaderRoute: typeof AuthenticatedOutgoingDirectIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outgoing/bunkering/': {
+      id: '/_authenticated/outgoing/bunkering/'
+      path: '/outgoing/bunkering'
+      fullPath: '/outgoing/bunkering/'
+      preLoaderRoute: typeof AuthenticatedOutgoingBunkeringIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/reconciliation/': {
+      id: '/_authenticated/internal/reconciliation/'
+      path: '/internal/reconciliation'
+      fullPath: '/internal/reconciliation/'
+      preLoaderRoute: typeof AuthenticatedInternalReconciliationIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/physical-transfer/': {
+      id: '/_authenticated/internal/physical-transfer/'
+      path: '/internal/physical-transfer'
+      fullPath: '/internal/physical-transfer/'
+      preLoaderRoute: typeof AuthenticatedInternalPhysicalTransferIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/ownership-transfer/': {
+      id: '/_authenticated/internal/ownership-transfer/'
+      path: '/internal/ownership-transfer'
+      fullPath: '/internal/ownership-transfer/'
+      preLoaderRoute: typeof AuthenticatedInternalOwnershipTransferIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/blending/': {
+      id: '/_authenticated/internal/blending/'
+      path: '/internal/blending'
+      fullPath: '/internal/blending/'
+      preLoaderRoute: typeof AuthenticatedInternalBlendingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/incoming/truck/': {
+      id: '/_authenticated/incoming/truck/'
+      path: '/incoming/truck'
+      fullPath: '/incoming/truck/'
+      preLoaderRoute: typeof AuthenticatedIncomingTruckIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/incoming/rail/': {
+      id: '/_authenticated/incoming/rail/'
+      path: '/incoming/rail'
+      fullPath: '/incoming/rail/'
+      preLoaderRoute: typeof AuthenticatedIncomingRailIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/incoming/external/': {
+      id: '/_authenticated/incoming/external/'
+      path: '/incoming/external'
+      fullPath: '/incoming/external/'
+      preLoaderRoute: typeof AuthenticatedIncomingExternalIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/documents/physical-transfer/': {
@@ -526,13 +876,94 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCatalogBasesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/outgoing/truck/$id': {
+      id: '/_authenticated/outgoing/truck/$id'
+      path: '/outgoing/truck/$id'
+      fullPath: '/outgoing/truck/$id'
+      preLoaderRoute: typeof AuthenticatedOutgoingTruckIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outgoing/direct/$id': {
+      id: '/_authenticated/outgoing/direct/$id'
+      path: '/outgoing/direct/$id'
+      fullPath: '/outgoing/direct/$id'
+      preLoaderRoute: typeof AuthenticatedOutgoingDirectIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outgoing/bunkering/$id': {
+      id: '/_authenticated/outgoing/bunkering/$id'
+      path: '/outgoing/bunkering/$id'
+      fullPath: '/outgoing/bunkering/$id'
+      preLoaderRoute: typeof AuthenticatedOutgoingBunkeringIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/reconciliation/$id': {
+      id: '/_authenticated/internal/reconciliation/$id'
+      path: '/internal/reconciliation/$id'
+      fullPath: '/internal/reconciliation/$id'
+      preLoaderRoute: typeof AuthenticatedInternalReconciliationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/physical-transfer/$id': {
+      id: '/_authenticated/internal/physical-transfer/$id'
+      path: '/internal/physical-transfer/$id'
+      fullPath: '/internal/physical-transfer/$id'
+      preLoaderRoute: typeof AuthenticatedInternalPhysicalTransferIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/ownership-transfer/$id': {
+      id: '/_authenticated/internal/ownership-transfer/$id'
+      path: '/internal/ownership-transfer/$id'
+      fullPath: '/internal/ownership-transfer/$id'
+      preLoaderRoute: typeof AuthenticatedInternalOwnershipTransferIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/internal/blending/$id': {
+      id: '/_authenticated/internal/blending/$id'
+      path: '/internal/blending/$id'
+      fullPath: '/internal/blending/$id'
+      preLoaderRoute: typeof AuthenticatedInternalBlendingIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/incoming/truck/$id': {
+      id: '/_authenticated/incoming/truck/$id'
+      path: '/incoming/truck/$id'
+      fullPath: '/incoming/truck/$id'
+      preLoaderRoute: typeof AuthenticatedIncomingTruckIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/incoming/rail/$id': {
+      id: '/_authenticated/incoming/rail/$id'
+      path: '/incoming/rail/$id'
+      fullPath: '/incoming/rail/$id'
+      preLoaderRoute: typeof AuthenticatedIncomingRailIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/incoming/external/$id': {
+      id: '/_authenticated/incoming/external/$id'
+      path: '/incoming/external/$id'
+      fullPath: '/incoming/external/$id'
+      preLoaderRoute: typeof AuthenticatedIncomingExternalIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCargoFlowIndexRoute: typeof AuthenticatedCargoFlowIndexRoute
   AuthenticatedLedgerIndexRoute: typeof AuthenticatedLedgerIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedIncomingExternalIdRoute: typeof AuthenticatedIncomingExternalIdRoute
+  AuthenticatedIncomingRailIdRoute: typeof AuthenticatedIncomingRailIdRoute
+  AuthenticatedIncomingTruckIdRoute: typeof AuthenticatedIncomingTruckIdRoute
+  AuthenticatedInternalBlendingIdRoute: typeof AuthenticatedInternalBlendingIdRoute
+  AuthenticatedInternalOwnershipTransferIdRoute: typeof AuthenticatedInternalOwnershipTransferIdRoute
+  AuthenticatedInternalPhysicalTransferIdRoute: typeof AuthenticatedInternalPhysicalTransferIdRoute
+  AuthenticatedInternalReconciliationIdRoute: typeof AuthenticatedInternalReconciliationIdRoute
+  AuthenticatedOutgoingBunkeringIdRoute: typeof AuthenticatedOutgoingBunkeringIdRoute
+  AuthenticatedOutgoingDirectIdRoute: typeof AuthenticatedOutgoingDirectIdRoute
+  AuthenticatedOutgoingTruckIdRoute: typeof AuthenticatedOutgoingTruckIdRoute
   AuthenticatedCatalogBasesIndexRoute: typeof AuthenticatedCatalogBasesIndexRoute
   AuthenticatedCatalogCompaniesIndexRoute: typeof AuthenticatedCatalogCompaniesIndexRoute
   AuthenticatedCatalogPortsIndexRoute: typeof AuthenticatedCatalogPortsIndexRoute
@@ -547,6 +978,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsInventoryReconciliationIndexRoute: typeof AuthenticatedDocumentsInventoryReconciliationIndexRoute
   AuthenticatedDocumentsOwnershipTransferIndexRoute: typeof AuthenticatedDocumentsOwnershipTransferIndexRoute
   AuthenticatedDocumentsPhysicalTransferIndexRoute: typeof AuthenticatedDocumentsPhysicalTransferIndexRoute
+  AuthenticatedIncomingExternalIndexRoute: typeof AuthenticatedIncomingExternalIndexRoute
+  AuthenticatedIncomingRailIndexRoute: typeof AuthenticatedIncomingRailIndexRoute
+  AuthenticatedIncomingTruckIndexRoute: typeof AuthenticatedIncomingTruckIndexRoute
+  AuthenticatedInternalBlendingIndexRoute: typeof AuthenticatedInternalBlendingIndexRoute
+  AuthenticatedInternalOwnershipTransferIndexRoute: typeof AuthenticatedInternalOwnershipTransferIndexRoute
+  AuthenticatedInternalPhysicalTransferIndexRoute: typeof AuthenticatedInternalPhysicalTransferIndexRoute
+  AuthenticatedInternalReconciliationIndexRoute: typeof AuthenticatedInternalReconciliationIndexRoute
+  AuthenticatedOutgoingBunkeringIndexRoute: typeof AuthenticatedOutgoingBunkeringIndexRoute
+  AuthenticatedOutgoingDirectIndexRoute: typeof AuthenticatedOutgoingDirectIndexRoute
+  AuthenticatedOutgoingTruckIndexRoute: typeof AuthenticatedOutgoingTruckIndexRoute
   AuthenticatedSystemSyncIndexRoute: typeof AuthenticatedSystemSyncIndexRoute
   AuthenticatedSystemUsersIndexRoute: typeof AuthenticatedSystemUsersIndexRoute
   AuthenticatedTransportRailWaybillsIndexRoute: typeof AuthenticatedTransportRailWaybillsIndexRoute
@@ -555,8 +996,22 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCargoFlowIndexRoute: AuthenticatedCargoFlowIndexRoute,
   AuthenticatedLedgerIndexRoute: AuthenticatedLedgerIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedIncomingExternalIdRoute: AuthenticatedIncomingExternalIdRoute,
+  AuthenticatedIncomingRailIdRoute: AuthenticatedIncomingRailIdRoute,
+  AuthenticatedIncomingTruckIdRoute: AuthenticatedIncomingTruckIdRoute,
+  AuthenticatedInternalBlendingIdRoute: AuthenticatedInternalBlendingIdRoute,
+  AuthenticatedInternalOwnershipTransferIdRoute:
+    AuthenticatedInternalOwnershipTransferIdRoute,
+  AuthenticatedInternalPhysicalTransferIdRoute:
+    AuthenticatedInternalPhysicalTransferIdRoute,
+  AuthenticatedInternalReconciliationIdRoute:
+    AuthenticatedInternalReconciliationIdRoute,
+  AuthenticatedOutgoingBunkeringIdRoute: AuthenticatedOutgoingBunkeringIdRoute,
+  AuthenticatedOutgoingDirectIdRoute: AuthenticatedOutgoingDirectIdRoute,
+  AuthenticatedOutgoingTruckIdRoute: AuthenticatedOutgoingTruckIdRoute,
   AuthenticatedCatalogBasesIndexRoute: AuthenticatedCatalogBasesIndexRoute,
   AuthenticatedCatalogCompaniesIndexRoute:
     AuthenticatedCatalogCompaniesIndexRoute,
@@ -583,6 +1038,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDocumentsOwnershipTransferIndexRoute,
   AuthenticatedDocumentsPhysicalTransferIndexRoute:
     AuthenticatedDocumentsPhysicalTransferIndexRoute,
+  AuthenticatedIncomingExternalIndexRoute:
+    AuthenticatedIncomingExternalIndexRoute,
+  AuthenticatedIncomingRailIndexRoute: AuthenticatedIncomingRailIndexRoute,
+  AuthenticatedIncomingTruckIndexRoute: AuthenticatedIncomingTruckIndexRoute,
+  AuthenticatedInternalBlendingIndexRoute:
+    AuthenticatedInternalBlendingIndexRoute,
+  AuthenticatedInternalOwnershipTransferIndexRoute:
+    AuthenticatedInternalOwnershipTransferIndexRoute,
+  AuthenticatedInternalPhysicalTransferIndexRoute:
+    AuthenticatedInternalPhysicalTransferIndexRoute,
+  AuthenticatedInternalReconciliationIndexRoute:
+    AuthenticatedInternalReconciliationIndexRoute,
+  AuthenticatedOutgoingBunkeringIndexRoute:
+    AuthenticatedOutgoingBunkeringIndexRoute,
+  AuthenticatedOutgoingDirectIndexRoute: AuthenticatedOutgoingDirectIndexRoute,
+  AuthenticatedOutgoingTruckIndexRoute: AuthenticatedOutgoingTruckIndexRoute,
   AuthenticatedSystemSyncIndexRoute: AuthenticatedSystemSyncIndexRoute,
   AuthenticatedSystemUsersIndexRoute: AuthenticatedSystemUsersIndexRoute,
   AuthenticatedTransportRailWaybillsIndexRoute:
