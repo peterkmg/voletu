@@ -26,7 +26,10 @@ use crate::{
     UpdateRailWagonWeightRequest,
     UpdateRailWaybillRequest,
   },
-  endpoints::{paths, query::EmbedParams},
+  endpoints::{
+    paths,
+    query::{EmbedParams, PaginationParams},
+  },
 };
 
 mod composite;
