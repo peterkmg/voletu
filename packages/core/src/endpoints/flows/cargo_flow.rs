@@ -9,14 +9,14 @@ use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::flow::CargoFlowRow,
   endpoints::{paths, query::PaginationParams},
-  enums::{FlowType, PipelineStatus},
+  enums::{FlowOperation, FlowType, PipelineStatus},
 };
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CargoFlowQueryParams {
   pub flow_type: Option<FlowType>,
-  pub operation: Option<String>,
+  pub operation: Option<FlowOperation>,
   pub status: Option<PipelineStatus>,
   pub contractor_id: Option<Uuid>,
   #[serde(flatten)]
@@ -31,7 +31,7 @@ pub struct CargoFlowQueryParams {
   path = paths::flows::CARGO_FLOW_QUERY,
   params(
     ("flowType" = Option<FlowType>, Query, description = "INCOMING, OUTGOING, or INTERNAL"),
-    ("operation" = Option<String>, Query, description = "Truck Receipt, Bunkering, etc."),
+    ("operation" = Option<FlowOperation>, Query, description = "TRUCK_RECEIPT, BUNKERING, etc."),
     ("status" = Option<PipelineStatus>, Query, description = "PENDING, DRAFT, or EXECUTED"),
     ("contractorId" = Option<Uuid>, Query),
     ("page" = Option<u64>, Query),
@@ -52,7 +52,7 @@ pub(super) async fn cargo_flow_query(
     .flow
     .cargo_flow_query(
       params.flow_type,
-      params.operation.as_deref(),
+      params.operation,
       params.status,
       params.contractor_id,
       params.pagination.page,

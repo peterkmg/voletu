@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder};
 use uuid::Uuid;
 
@@ -12,129 +10,69 @@ use crate::{
     inventory_adjustment, inventory_reconciliation, ownership_transfer, ownership_transfer_item,
     physical_storage_transfer, physical_transfer_item, rail_waybill, truck_waybill,
   },
-  enums::{DocumentStatus, FlowEntityType, FlowType, PipelineStatus},
+  enums::{FlowOperation, FlowType, PipelineStatus},
   services::common::normalize_pagination,
 };
 
 impl FlowService {
-  /// Query the unified cargo flow view across all document types.
-  ///
-  /// Returns a merged, date-sorted list of all inventory-impacting documents
-  /// with common fields projected. Supports filtering by flow_type, operation,
-  /// status, and contractor_id.
-  ///
-  /// NOTE: This endpoint fetches all matching documents into memory, sorts by
-  /// date, and slices for pagination. This is a known limitation due to the
-  /// UNION ALL nature of the query across heterogeneous entity types. For large
-  /// datasets, consider creating a database view or using raw SQL with
-  /// server-side pagination.
-  #[allow(clippy::too_many_arguments)]
   pub async fn cargo_flow_query(
     &self,
     flow_type: Option<FlowType>,
-    operation: Option<&str>,
+    operation: Option<FlowOperation>,
     status: Option<PipelineStatus>,
     contractor_id: Option<Uuid>,
     page: Option<u64>,
     per_page: Option<u64>,
   ) -> Result<Vec<CargoFlowRow>, ApiError> {
     let (page, per_page) = normalize_pagination(page, per_page)?;
+    let mut rows = Vec::new();
+    let ft = flow_type;
+    let op = operation;
 
-    let mut rows: Vec<CargoFlowRow> = Vec::new();
-
-    // -- 1. Dispatch documents (Outgoing) ------------------------------------
-    if flow_type.is_none() || flow_type == Some(FlowType::Outgoing) {
-      self
-        .collect_dispatch_rows(&mut rows, operation, status, contractor_id)
-        .await?;
+    if matches_any(ft, op, &[FlowOperation::TruckDispatch, FlowOperation::DirectDispatch, FlowOperation::Bunkering, FlowOperation::InternalDispatch]) {
+      self.collect_dispatches(&mut rows, op, status, contractor_id).await?;
     }
 
-    // -- 2. Acceptance documents (Incoming, only those with status = draft/posted)
-    if flow_type.is_none() || flow_type == Some(FlowType::Incoming) {
-      self
-        .collect_acceptance_rows(&mut rows, operation, status, contractor_id)
-        .await?;
+    if matches_any(ft, op, &[FlowOperation::TruckReceipt, FlowOperation::RailReceipt, FlowOperation::ExternalAcceptance, FlowOperation::TransitReceipt]) {
+      if status != Some(PipelineStatus::Pending) {
+        self.collect_acceptances(&mut rows, op, status, contractor_id).await?;
+      }
+      if status.is_none() || status == Some(PipelineStatus::Pending) {
+        self.collect_pending_waybills(&mut rows, op, contractor_id).await?;
+      }
     }
 
-    // -- 3. Pending waybills (Incoming, no acceptance yet) -------------------
-    if (flow_type.is_none() || flow_type == Some(FlowType::Incoming))
-      && (status.is_none() || status == Some(PipelineStatus::Pending))
-    {
-      self
-        .collect_pending_waybills(&mut rows, operation, contractor_id)
-        .await?;
+    if FlowOperation::Blending.matches_filter(ft, op.as_ref()) {
+      self.collect_blending(&mut rows, status, contractor_id).await?;
+    }
+    if FlowOperation::PhysicalTransfer.matches_filter(ft, op.as_ref()) {
+      self.collect_physical_transfers(&mut rows, status, contractor_id).await?;
+    }
+    if FlowOperation::OwnershipTransfer.matches_filter(ft, op.as_ref()) {
+      self.collect_ownership_transfers(&mut rows, status, contractor_id).await?;
+    }
+    if FlowOperation::InventoryReconciliation.matches_filter(ft, op.as_ref()) {
+      self.collect_reconciliations(&mut rows, status, contractor_id).await?;
     }
 
-    // -- 4. Blending documents (Internal) ------------------------------------
-    if (flow_type.is_none() || flow_type == Some(FlowType::Internal))
-      && (operation.is_none() || operation == Some("Blending"))
-    {
-      self
-        .collect_blending_rows(&mut rows, status, contractor_id)
-        .await?;
-    }
-
-    // -- 5. Physical storage transfers (Internal) ----------------------------
-    if (flow_type.is_none() || flow_type == Some(FlowType::Internal))
-      && (operation.is_none() || operation == Some("Physical Transfer"))
-    {
-      self
-        .collect_physical_transfer_rows(&mut rows, status, contractor_id)
-        .await?;
-    }
-
-    // -- 6. Ownership transfers (Internal) -----------------------------------
-    if (flow_type.is_none() || flow_type == Some(FlowType::Internal))
-      && (operation.is_none() || operation == Some("Ownership Transfer"))
-    {
-      self
-        .collect_ownership_transfer_rows(&mut rows, status, contractor_id)
-        .await?;
-    }
-
-    // -- 7. Inventory reconciliations (Internal) -----------------------------
-    if (flow_type.is_none() || flow_type == Some(FlowType::Internal))
-      && (operation.is_none() || operation == Some("Inventory Reconciliation"))
-    {
-      self
-        .collect_reconciliation_rows(&mut rows, status, contractor_id)
-        .await?;
-    }
-
-    // -- Sort by date descending, paginate -----------------------------------
     rows.sort_by(|a, b| b.date.cmp(&a.date));
-
-    let start = ((page - 1) * per_page) as usize;
-    let end = (start + per_page as usize).min(rows.len());
-    if start >= rows.len() {
-      return Ok(vec![]);
-    }
-    Ok(rows[start..end].to_vec())
+    Ok(paginate(rows, page, per_page))
   }
 
-  // -- Dispatch documents ---------------------------------------------------
-
-  async fn collect_dispatch_rows(
+  async fn collect_dispatches(
     &self,
     rows: &mut Vec<CargoFlowRow>,
-    operation: Option<&str>,
+    filter_op: Option<FlowOperation>,
     status: Option<PipelineStatus>,
     contractor_id: Option<Uuid>,
   ) -> Result<(), ApiError> {
-    let mut cond = Condition::all().add(dispatch_document::Column::DeletedAt.is_null());
+    let base = Condition::all().add(dispatch_document::Column::DeletedAt.is_null());
+    let Some(mut cond) = Self::add_status_filter(base, status, dispatch_document::Column::Status)
+    else {
+      return Ok(());
+    };
     if let Some(cid) = contractor_id {
       cond = cond.add(dispatch_document::Column::ContractorId.eq(cid));
-    }
-    if let Some(ref s) = status {
-      match s {
-        PipelineStatus::Draft => {
-          cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Draft));
-        }
-        PipelineStatus::Executed => {
-          cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Posted));
-        }
-        PipelineStatus::Pending => return Ok(()), // dispatches are never pending
-      }
     }
 
     let docs = dispatch_document::Entity::find()
@@ -143,98 +81,41 @@ impl FlowService {
       .all(self.db.as_ref())
       .await?;
 
-    let cids: Vec<Uuid> = docs.iter().map(|d| d.contractor_id).collect();
-    let company_map = self.resolve_companies(&cids).await?;
-
-    let doc_ids: Vec<Uuid> = docs.iter().map(|d| d.id).collect();
-    let items = if doc_ids.is_empty() {
-      vec![]
-    } else {
-      dispatch_item::Entity::find()
-        .filter(
-          Condition::all()
-            .add(dispatch_item::Column::DispatchDocId.is_in(doc_ids))
-            .add(dispatch_item::Column::DeletedAt.is_null()),
-        )
-        .all(self.db.as_ref())
-        .await?
-    };
-    let mut first_item: HashMap<Uuid, &dispatch_item::Model> = HashMap::new();
-    for i in &items {
-      first_item.entry(i.dispatch_doc_id).or_insert(i);
-    }
-
-    let pids: Vec<Uuid> = first_item.values().map(|i| i.product_id).collect();
-    let product_map = self.resolve_products(&pids).await?;
+    let company_map = self.resolve_companies(&ids(&docs, |d| d.contractor_id)).await?;
+    let items = self.load_children::<dispatch_item::Entity>(
+      dispatch_item::Column::DispatchDocId, &ids(&docs, |d| d.id),
+    ).await?;
+    let first = Self::first_per_parent(&items, |i| i.dispatch_doc_id);
+    let product_map = self.resolve_products(&ids_from_map(&first, |i| i.product_id)).await?;
 
     for d in &docs {
-      let op = match (d.dispatch_method, d.dispatch_purpose) {
-        (crate::enums::DispatchMethod::Bunkering, _) => "Bunkering",
-        (crate::enums::DispatchMethod::VesselTerminal, _) => "Direct Dispatch",
-        (crate::enums::DispatchMethod::Truck, crate::enums::DispatchPurpose::Internal) => {
-          "Internal Dispatch"
-        }
-        (crate::enums::DispatchMethod::Truck, crate::enums::DispatchPurpose::External) => {
-          "Truck Dispatch"
-        }
-      };
-      if let Some(filter_op) = operation {
-        if filter_op != op {
-          continue;
-        }
-      }
+      let op = FlowOperation::from_dispatch(d.dispatch_method, d.dispatch_purpose);
+      if !op.matches_filter(None, filter_op.as_ref()) { continue; }
 
-      let item = first_item.get(&d.id);
-      rows.push(CargoFlowRow {
-        id: d.id,
-        document_number: d.document_number.clone(),
-        date: d.date.to_string(),
-        flow_type: FlowType::Outgoing,
-        operation: op.to_owned(),
-        contractor_id: Some(d.contractor_id),
-        contractor_name: Some(
-          company_map
-            .get(&d.contractor_id)
-            .cloned()
-            .unwrap_or_else(|| "Unknown".to_owned()),
-        ),
-        product_name: item.and_then(|i| product_map.get(&i.product_id).map(|n| n.to_string())),
-        quantity: item.map(|i| i.dispatched_amount),
-        status: PipelineStatus::from_doc_status(Some(&d.status)),
-        entity_type: FlowEntityType::Dispatch,
-        flow_route: match op {
-          "Bunkering" => "/outgoing/bunkering",
-          "Direct Dispatch" => "/outgoing/direct",
-          "Internal Dispatch" => "/outgoing/direct",
-          _ => "/outgoing/truck",
-        }
-        .to_owned(),
-      });
+      let item = first.get(&d.id);
+      rows.push(make_row(
+        d.id, d.document_number.clone(), d.date.to_string(), op,
+        Some(d.contractor_id), Some(Self::company_name(&company_map, d.contractor_id)),
+        item.and_then(|i| product_map.get(&i.product_id).cloned()),
+        item.map(|i| i.dispatched_amount),
+        PipelineStatus::from_doc_status(Some(&d.status)),
+      ));
     }
     Ok(())
   }
 
-  // -- Acceptance documents -------------------------------------------------
-
-  async fn collect_acceptance_rows(
+  async fn collect_acceptances(
     &self,
     rows: &mut Vec<CargoFlowRow>,
-    operation: Option<&str>,
+    filter_op: Option<FlowOperation>,
     status: Option<PipelineStatus>,
     contractor_id: Option<Uuid>,
   ) -> Result<(), ApiError> {
-    let mut cond = Condition::all().add(acceptance_document::Column::DeletedAt.is_null());
-    if let Some(ref s) = status {
-      match s {
-        PipelineStatus::Draft => {
-          cond = cond.add(acceptance_document::Column::Status.eq(DocumentStatus::Draft));
-        }
-        PipelineStatus::Executed => {
-          cond = cond.add(acceptance_document::Column::Status.eq(DocumentStatus::Posted));
-        }
-        PipelineStatus::Pending => return Ok(()), // pending waybills handled separately
-      }
-    }
+    let base = Condition::all().add(acceptance_document::Column::DeletedAt.is_null());
+    let Some(cond) = Self::add_status_filter(base, status, acceptance_document::Column::Status)
+    else {
+      return Ok(());
+    };
 
     let docs = acceptance_document::Entity::find()
       .filter(cond)
@@ -242,531 +123,302 @@ impl FlowService {
       .all(self.db.as_ref())
       .await?;
 
-    // Determine contractor from linked waybills
     let twb_ids: Vec<Uuid> = docs.iter().filter_map(|d| d.truck_waybill_id).collect();
-    let rwb_ids: Vec<Uuid> = docs.iter().filter_map(|d| d.rail_waybill_id).collect();
-
-    let truck_waybills: HashMap<Uuid, truck_waybill::Model> = if twb_ids.is_empty() {
-      HashMap::new()
+    let twb_map: std::collections::HashMap<Uuid, truck_waybill::Model> = if twb_ids.is_empty() {
+      Default::default()
     } else {
       truck_waybill::Entity::find()
         .filter(truck_waybill::Column::Id.is_in(twb_ids))
-        .all(self.db.as_ref())
-        .await?
-        .into_iter()
-        .map(|w| (w.id, w))
-        .collect()
+        .all(self.db.as_ref()).await?
+        .into_iter().map(|w| (w.id, w)).collect()
     };
-    let rail_waybills: HashMap<Uuid, rail_waybill::Model> = if rwb_ids.is_empty() {
-      HashMap::new()
+    let rwb_ids: Vec<Uuid> = docs.iter().filter_map(|d| d.rail_waybill_id).collect();
+    let rwb_map: std::collections::HashMap<Uuid, rail_waybill::Model> = if rwb_ids.is_empty() {
+      Default::default()
     } else {
       rail_waybill::Entity::find()
         .filter(rail_waybill::Column::Id.is_in(rwb_ids))
-        .all(self.db.as_ref())
-        .await?
-        .into_iter()
-        .map(|w| (w.id, w))
-        .collect()
+        .all(self.db.as_ref()).await?
+        .into_iter().map(|w| (w.id, w)).collect()
     };
 
-    let mut all_cids: Vec<Uuid> = Vec::new();
-    for d in &docs {
-      if let Some(twb_id) = d.truck_waybill_id {
-        if let Some(tw) = truck_waybills.get(&twb_id) {
-          all_cids.push(tw.sender_id);
-        }
-      } else if let Some(rwb_id) = d.rail_waybill_id {
-        if let Some(rw) = rail_waybills.get(&rwb_id) {
-          all_cids.push(rw.sender_id);
-        }
-      }
-    }
+    let all_cids: Vec<Uuid> = docs.iter()
+      .filter_map(|d| contractor_from_waybill(d, &twb_map, &rwb_map))
+      .collect();
     let company_map = self.resolve_companies(&all_cids).await?;
 
-    let doc_ids: Vec<Uuid> = docs.iter().map(|d| d.id).collect();
-    let items = if doc_ids.is_empty() {
-      vec![]
-    } else {
-      acceptance_item::Entity::find()
-        .filter(
-          Condition::all()
-            .add(acceptance_item::Column::AcceptanceDocId.is_in(doc_ids))
-            .add(acceptance_item::Column::DeletedAt.is_null()),
-        )
-        .all(self.db.as_ref())
-        .await?
-    };
-    let mut first_item: HashMap<Uuid, &acceptance_item::Model> = HashMap::new();
-    for i in &items {
-      first_item.entry(i.acceptance_doc_id).or_insert(i);
-    }
-
-    let pids: Vec<Uuid> = first_item.values().map(|i| i.product_id).collect();
-    let product_map = self.resolve_products(&pids).await?;
+    let items = self.load_children::<acceptance_item::Entity>(
+      acceptance_item::Column::AcceptanceDocId, &ids(&docs, |d| d.id),
+    ).await?;
+    let first = Self::first_per_parent(&items, |i| i.acceptance_doc_id);
+    let product_map = self.resolve_products(&ids_from_map(&first, |i| i.product_id)).await?;
 
     for d in &docs {
-      let (op, route, cid) = if d.truck_waybill_id.is_some() {
-        let c = d
-          .truck_waybill_id
-          .and_then(|id| truck_waybills.get(&id).map(|w| w.sender_id));
-        ("Truck Receipt", "/incoming/truck", c)
-      } else if d.rail_waybill_id.is_some() {
-        let c = d
-          .rail_waybill_id
-          .and_then(|id| rail_waybills.get(&id).map(|w| w.sender_id));
-        ("Rail Receipt", "/incoming/rail", c)
-      } else if d.transit_dispatch_id.is_some() {
-        ("Transit Receipt", "/incoming/external", None)
-      } else {
-        ("External Acceptance", "/incoming/external", None)
-      };
+      let (op, cid) = classify_acceptance(d, &twb_map, &rwb_map);
+      if !op.matches_filter(None, filter_op.as_ref()) { continue; }
+      if contractor_id.is_some() && cid != contractor_id { continue; }
 
-      if let Some(filter_op) = operation {
-        if filter_op != op {
-          continue;
-        }
-      }
-      if let Some(filter_cid) = contractor_id {
-        if cid != Some(filter_cid) {
-          continue;
-        }
-      }
-
-      let item = first_item.get(&d.id);
-      rows.push(CargoFlowRow {
-        id: d.id,
-        document_number: d.document_number.clone(),
-        date: d.date_accepted.to_string(),
-        flow_type: FlowType::Incoming,
-        operation: op.to_owned(),
-        contractor_id: cid,
-        contractor_name: cid.and_then(|c| company_map.get(&c).map(|n| n.to_string())),
-        product_name: item.and_then(|i| product_map.get(&i.product_id).map(|n| n.to_string())),
-        quantity: item.map(|i| i.accepted_amount),
-        status: PipelineStatus::from_doc_status(Some(&d.status)),
-        entity_type: FlowEntityType::Acceptance,
-        flow_route: route.to_owned(),
-      });
+      let item = first.get(&d.id);
+      rows.push(make_row(
+        d.id, d.document_number.clone(), d.date_accepted.to_string(), op,
+        cid, cid.and_then(|c| company_map.get(&c).cloned()),
+        item.and_then(|i| product_map.get(&i.product_id).cloned()),
+        item.map(|i| i.accepted_amount),
+        PipelineStatus::from_doc_status(Some(&d.status)),
+      ));
     }
     Ok(())
   }
-
-  // -- Pending waybills (no acceptance yet) ---------------------------------
 
   async fn collect_pending_waybills(
     &self,
     rows: &mut Vec<CargoFlowRow>,
-    operation: Option<&str>,
+    filter_op: Option<FlowOperation>,
     contractor_id: Option<Uuid>,
   ) -> Result<(), ApiError> {
-    // Truck waybills without acceptance
-    if operation.is_none() || operation == Some("Truck Receipt") {
-      let mut cond = Condition::all().add(truck_waybill::Column::DeletedAt.is_null());
-      if let Some(cid) = contractor_id {
-        cond = cond.add(truck_waybill::Column::SenderId.eq(cid));
-      }
-      let waybills = truck_waybill::Entity::find()
-        .filter(cond)
-        .all(self.db.as_ref())
-        .await?;
-
-      let wb_ids: Vec<Uuid> = waybills.iter().map(|w| w.id).collect();
-      let linked: Vec<Uuid> = if wb_ids.is_empty() {
-        vec![]
-      } else {
-        acceptance_document::Entity::find()
-          .filter(
-            Condition::all()
-              .add(acceptance_document::Column::TruckWaybillId.is_in(wb_ids))
-              .add(acceptance_document::Column::DeletedAt.is_null()),
-          )
-          .all(self.db.as_ref())
-          .await?
-          .iter()
-          .filter_map(|a| a.truck_waybill_id)
-          .collect()
-      };
-      let linked_set: std::collections::HashSet<Uuid> = linked.into_iter().collect();
-
-      let cids: Vec<Uuid> = waybills.iter().map(|w| w.sender_id).collect();
-      let company_map = self.resolve_companies(&cids).await?;
-
-      for w in &waybills {
-        if linked_set.contains(&w.id) {
-          continue;
-        }
-        rows.push(CargoFlowRow {
-          id: w.id,
-          document_number: w.document_number.clone(),
-          date: w.date.to_string(),
-          flow_type: FlowType::Incoming,
-          operation: "Truck Receipt".to_owned(),
-          contractor_id: Some(w.sender_id),
-          contractor_name: Some(
-            company_map
-              .get(&w.sender_id)
-              .cloned()
-              .unwrap_or_else(|| "Unknown".to_owned()),
-          ),
-          product_name: None,
-          quantity: None,
-          status: PipelineStatus::Pending,
-          entity_type: FlowEntityType::TruckWaybill,
-          flow_route: "/incoming/truck".to_owned(),
-        });
-      }
+    if FlowOperation::TruckReceipt.matches_filter(None, filter_op.as_ref()) {
+      self.collect_pending_truck(rows, contractor_id).await?;
     }
-
-    // Rail waybills without acceptance
-    if operation.is_none() || operation == Some("Rail Receipt") {
-      let mut cond = Condition::all().add(rail_waybill::Column::DeletedAt.is_null());
-      if let Some(cid) = contractor_id {
-        cond = cond.add(rail_waybill::Column::SenderId.eq(cid));
-      }
-      let waybills = rail_waybill::Entity::find()
-        .filter(cond)
-        .all(self.db.as_ref())
-        .await?;
-
-      let wb_ids: Vec<Uuid> = waybills.iter().map(|w| w.id).collect();
-      let linked: Vec<Uuid> = if wb_ids.is_empty() {
-        vec![]
-      } else {
-        acceptance_document::Entity::find()
-          .filter(
-            Condition::all()
-              .add(acceptance_document::Column::RailWaybillId.is_in(wb_ids))
-              .add(acceptance_document::Column::DeletedAt.is_null()),
-          )
-          .all(self.db.as_ref())
-          .await?
-          .iter()
-          .filter_map(|a| a.rail_waybill_id)
-          .collect()
-      };
-      let linked_set: std::collections::HashSet<Uuid> = linked.into_iter().collect();
-
-      let cids: Vec<Uuid> = waybills.iter().map(|w| w.sender_id).collect();
-      let company_map = self.resolve_companies(&cids).await?;
-
-      for w in &waybills {
-        if linked_set.contains(&w.id) {
-          continue;
-        }
-        rows.push(CargoFlowRow {
-          id: w.id,
-          document_number: w.document_number.clone(),
-          date: w.date.to_string(),
-          flow_type: FlowType::Incoming,
-          operation: "Rail Receipt".to_owned(),
-          contractor_id: Some(w.sender_id),
-          contractor_name: Some(
-            company_map
-              .get(&w.sender_id)
-              .cloned()
-              .unwrap_or_else(|| "Unknown".to_owned()),
-          ),
-          product_name: None,
-          quantity: None,
-          status: PipelineStatus::Pending,
-          entity_type: FlowEntityType::RailWaybill,
-          flow_route: "/incoming/rail".to_owned(),
-        });
-      }
+    if FlowOperation::RailReceipt.matches_filter(None, filter_op.as_ref()) {
+      self.collect_pending_rail(rows, contractor_id).await?;
     }
-
     Ok(())
   }
 
-  // -- Blending documents ---------------------------------------------------
+  async fn collect_pending_truck(&self, rows: &mut Vec<CargoFlowRow>, contractor_id: Option<Uuid>) -> Result<(), ApiError> {
+    let mut cond = Condition::all().add(truck_waybill::Column::DeletedAt.is_null());
+    if let Some(cid) = contractor_id {
+      cond = cond.add(truck_waybill::Column::SenderId.eq(cid));
+    }
+    let waybills = truck_waybill::Entity::find().filter(cond).all(self.db.as_ref()).await?;
+    let wb_ids = ids(&waybills, |w| w.id);
 
-  async fn collect_blending_rows(
-    &self,
-    rows: &mut Vec<CargoFlowRow>,
-    status: Option<PipelineStatus>,
-    contractor_id: Option<Uuid>,
-  ) -> Result<(), ApiError> {
-    let mut cond = Condition::all().add(blending_document::Column::DeletedAt.is_null());
+    let linked = self.linked_waybill_ids(acceptance_document::Column::TruckWaybillId, &wb_ids).await?;
+    let company_map = self.resolve_companies(&ids(&waybills, |w| w.sender_id)).await?;
+
+    for w in &waybills {
+      if linked.contains(&w.id) { continue; }
+      rows.push(make_row(
+        w.id, w.document_number.clone(), w.date.to_string(), FlowOperation::TruckReceipt,
+        Some(w.sender_id), Some(Self::company_name(&company_map, w.sender_id)),
+        None, None, PipelineStatus::Pending,
+      ));
+    }
+    Ok(())
+  }
+
+  async fn collect_pending_rail(&self, rows: &mut Vec<CargoFlowRow>, contractor_id: Option<Uuid>) -> Result<(), ApiError> {
+    let mut cond = Condition::all().add(rail_waybill::Column::DeletedAt.is_null());
+    if let Some(cid) = contractor_id {
+      cond = cond.add(rail_waybill::Column::SenderId.eq(cid));
+    }
+    let waybills = rail_waybill::Entity::find().filter(cond).all(self.db.as_ref()).await?;
+    let wb_ids = ids(&waybills, |w| w.id);
+
+    let linked = self.linked_waybill_ids(acceptance_document::Column::RailWaybillId, &wb_ids).await?;
+    let company_map = self.resolve_companies(&ids(&waybills, |w| w.sender_id)).await?;
+
+    for w in &waybills {
+      if linked.contains(&w.id) { continue; }
+      rows.push(make_row(
+        w.id, w.document_number.clone(), w.date.to_string(), FlowOperation::RailReceipt,
+        Some(w.sender_id), Some(Self::company_name(&company_map, w.sender_id)),
+        None, None, PipelineStatus::Pending,
+      ));
+    }
+    Ok(())
+  }
+
+  async fn collect_blending(&self, rows: &mut Vec<CargoFlowRow>, status: Option<PipelineStatus>, contractor_id: Option<Uuid>) -> Result<(), ApiError> {
+    let base = Condition::all().add(blending_document::Column::DeletedAt.is_null());
+    let Some(mut cond) = Self::add_status_filter(base, status, blending_document::Column::Status) else { return Ok(()); };
     if let Some(cid) = contractor_id {
       cond = cond.add(blending_document::Column::ContractorId.eq(cid));
     }
-    if let Some(ref s) = status {
-      match s {
-        PipelineStatus::Draft => {
-          cond = cond.add(blending_document::Column::Status.eq(DocumentStatus::Draft));
-        }
-        PipelineStatus::Executed => {
-          cond = cond.add(blending_document::Column::Status.eq(DocumentStatus::Posted));
-        }
-        PipelineStatus::Pending => return Ok(()),
-      }
-    }
 
-    let docs = blending_document::Entity::find()
-      .filter(cond)
-      .all(self.db.as_ref())
-      .await?;
-
-    let cids: Vec<Uuid> = docs.iter().map(|d| d.contractor_id).collect();
-    let company_map = self.resolve_companies(&cids).await?;
-    let pids: Vec<Uuid> = docs.iter().map(|d| d.target_product_id).collect();
-    let product_map = self.resolve_products(&pids).await?;
+    let docs = blending_document::Entity::find().filter(cond).all(self.db.as_ref()).await?;
+    let company_map = self.resolve_companies(&ids(&docs, |d| d.contractor_id)).await?;
+    let product_map = self.resolve_products(&ids(&docs, |d| d.target_product_id)).await?;
 
     for d in &docs {
-      rows.push(CargoFlowRow {
-        id: d.id,
-        document_number: d.document_number.clone(),
-        date: d.date.to_string(),
-        flow_type: FlowType::Internal,
-        operation: "Blending".to_owned(),
-        contractor_id: Some(d.contractor_id),
-        contractor_name: Some(
-          company_map
-            .get(&d.contractor_id)
-            .cloned()
-            .unwrap_or_else(|| "Unknown".to_owned()),
-        ),
-        product_name: product_map.get(&d.target_product_id).map(|n| n.to_string()),
-        quantity: None, // blending has components/results, not a single quantity
-        status: PipelineStatus::from_doc_status(Some(&d.status)),
-        entity_type: FlowEntityType::Blending,
-        flow_route: "/internal/blending".to_owned(),
-      });
+      rows.push(make_row(
+        d.id, d.document_number.clone(), d.date.to_string(), FlowOperation::Blending,
+        Some(d.contractor_id), Some(Self::company_name(&company_map, d.contractor_id)),
+        product_map.get(&d.target_product_id).cloned(), None,
+        PipelineStatus::from_doc_status(Some(&d.status)),
+      ));
     }
     Ok(())
   }
 
-  // -- Physical storage transfers -------------------------------------------
+  async fn collect_physical_transfers(&self, rows: &mut Vec<CargoFlowRow>, status: Option<PipelineStatus>, contractor_id: Option<Uuid>) -> Result<(), ApiError> {
+    let base = Condition::all().add(physical_storage_transfer::Column::DeletedAt.is_null());
+    let Some(cond) = Self::add_status_filter(base, status, physical_storage_transfer::Column::Status) else { return Ok(()); };
 
-  async fn collect_physical_transfer_rows(
-    &self,
-    rows: &mut Vec<CargoFlowRow>,
-    status: Option<PipelineStatus>,
-    _contractor_id: Option<Uuid>,
-  ) -> Result<(), ApiError> {
-    let mut cond = Condition::all().add(physical_storage_transfer::Column::DeletedAt.is_null());
-    if let Some(ref s) = status {
-      match s {
-        PipelineStatus::Draft => {
-          cond = cond.add(physical_storage_transfer::Column::Status.eq(DocumentStatus::Draft));
-        }
-        PipelineStatus::Executed => {
-          cond = cond.add(physical_storage_transfer::Column::Status.eq(DocumentStatus::Posted));
-        }
-        PipelineStatus::Pending => return Ok(()),
-      }
-    }
+    let docs = physical_storage_transfer::Entity::find().filter(cond).all(self.db.as_ref()).await?;
+    let items = self.load_children::<physical_transfer_item::Entity>(
+      physical_transfer_item::Column::PhysicalTransferId, &ids(&docs, |d| d.id),
+    ).await?;
+    let first = Self::first_per_parent(&items, |i| i.physical_transfer_id);
 
-    let docs = physical_storage_transfer::Entity::find()
-      .filter(cond)
-      .all(self.db.as_ref())
-      .await?;
-
-    let doc_ids: Vec<Uuid> = docs.iter().map(|d| d.id).collect();
-    let items = if doc_ids.is_empty() {
-      vec![]
-    } else {
-      physical_transfer_item::Entity::find()
-        .filter(
-          Condition::all()
-            .add(physical_transfer_item::Column::PhysicalTransferId.is_in(doc_ids))
-            .add(physical_transfer_item::Column::DeletedAt.is_null()),
-        )
-        .all(self.db.as_ref())
-        .await?
-    };
-    let mut first_item: HashMap<Uuid, &physical_transfer_item::Model> = HashMap::new();
-    for i in &items {
-      first_item.entry(i.physical_transfer_id).or_insert(i);
-    }
-
-    let cids: Vec<Uuid> = first_item.values().map(|i| i.contractor_id).collect();
-    let company_map = self.resolve_companies(&cids).await?;
-    let pids: Vec<Uuid> = first_item.values().map(|i| i.product_id).collect();
-    let product_map = self.resolve_products(&pids).await?;
+    let company_map = self.resolve_companies(&ids_from_map(&first, |i| i.contractor_id)).await?;
+    let product_map = self.resolve_products(&ids_from_map(&first, |i| i.product_id)).await?;
 
     for d in &docs {
-      let item = first_item.get(&d.id);
+      let item = first.get(&d.id);
       let cid = item.map(|i| i.contractor_id);
+      if contractor_id.is_some() && cid != contractor_id { continue; }
 
-      if let Some(filter_cid) = _contractor_id {
-        if cid != Some(filter_cid) {
-          continue;
-        }
-      }
-
-      rows.push(CargoFlowRow {
-        id: d.id,
-        document_number: d.document_number.clone(),
-        date: d.date.to_string(),
-        flow_type: FlowType::Internal,
-        operation: "Physical Transfer".to_owned(),
-        contractor_id: cid,
-        contractor_name: cid.and_then(|c| company_map.get(&c).map(|n| n.to_string())),
-        product_name: item.and_then(|i| product_map.get(&i.product_id).map(|n| n.to_string())),
-        quantity: item.map(|i| i.amount),
-        status: PipelineStatus::from_doc_status(Some(&d.status)),
-        entity_type: FlowEntityType::PhysicalTransfer,
-        flow_route: "/internal/physical-transfer".to_owned(),
-      });
+      rows.push(make_row(
+        d.id, d.document_number.clone(), d.date.to_string(), FlowOperation::PhysicalTransfer,
+        cid, cid.map(|c| Self::company_name(&company_map, c)),
+        item.and_then(|i| product_map.get(&i.product_id).cloned()),
+        item.map(|i| i.amount),
+        PipelineStatus::from_doc_status(Some(&d.status)),
+      ));
     }
     Ok(())
   }
 
-  // -- Ownership transfers --------------------------------------------------
+  async fn collect_ownership_transfers(&self, rows: &mut Vec<CargoFlowRow>, status: Option<PipelineStatus>, contractor_id: Option<Uuid>) -> Result<(), ApiError> {
+    let base = Condition::all().add(ownership_transfer::Column::DeletedAt.is_null());
+    let Some(cond) = Self::add_status_filter(base, status, ownership_transfer::Column::Status) else { return Ok(()); };
 
-  async fn collect_ownership_transfer_rows(
-    &self,
-    rows: &mut Vec<CargoFlowRow>,
-    status: Option<PipelineStatus>,
-    _contractor_id: Option<Uuid>,
-  ) -> Result<(), ApiError> {
-    let mut cond = Condition::all().add(ownership_transfer::Column::DeletedAt.is_null());
-    if let Some(ref s) = status {
-      match s {
-        PipelineStatus::Draft => {
-          cond = cond.add(ownership_transfer::Column::Status.eq(DocumentStatus::Draft));
-        }
-        PipelineStatus::Executed => {
-          cond = cond.add(ownership_transfer::Column::Status.eq(DocumentStatus::Posted));
-        }
-        PipelineStatus::Pending => return Ok(()),
-      }
-    }
+    let docs = ownership_transfer::Entity::find().filter(cond).all(self.db.as_ref()).await?;
+    let items = self.load_children::<ownership_transfer_item::Entity>(
+      ownership_transfer_item::Column::OwnershipTransferId, &ids(&docs, |d| d.id),
+    ).await?;
+    let first = Self::first_per_parent(&items, |i| i.ownership_transfer_id);
 
-    let docs = ownership_transfer::Entity::find()
-      .filter(cond)
-      .all(self.db.as_ref())
-      .await?;
-
-    let doc_ids: Vec<Uuid> = docs.iter().map(|d| d.id).collect();
-    let items = if doc_ids.is_empty() {
-      vec![]
-    } else {
-      ownership_transfer_item::Entity::find()
-        .filter(
-          Condition::all()
-            .add(ownership_transfer_item::Column::OwnershipTransferId.is_in(doc_ids))
-            .add(ownership_transfer_item::Column::DeletedAt.is_null()),
-        )
-        .all(self.db.as_ref())
-        .await?
-    };
-    let mut first_item: HashMap<Uuid, &ownership_transfer_item::Model> = HashMap::new();
-    for i in &items {
-      first_item.entry(i.ownership_transfer_id).or_insert(i);
-    }
-
-    let cids: Vec<Uuid> = first_item.values().map(|i| i.from_contractor_id).collect();
-    let company_map = self.resolve_companies(&cids).await?;
-    let pids: Vec<Uuid> = first_item.values().map(|i| i.product_id).collect();
-    let product_map = self.resolve_products(&pids).await?;
+    let company_map = self.resolve_companies(&ids_from_map(&first, |i| i.from_contractor_id)).await?;
+    let product_map = self.resolve_products(&ids_from_map(&first, |i| i.product_id)).await?;
 
     for d in &docs {
-      let item = first_item.get(&d.id);
+      let item = first.get(&d.id);
       let cid = item.map(|i| i.from_contractor_id);
+      if contractor_id.is_some() && cid != contractor_id { continue; }
 
-      if let Some(filter_cid) = _contractor_id {
-        if cid != Some(filter_cid) {
-          continue;
-        }
-      }
-
-      // ownership_transfer has no document_number field -- use id as display
-      let doc_num = d.id.to_string();
-
-      rows.push(CargoFlowRow {
-        id: d.id,
-        document_number: doc_num,
-        date: d.date.to_string(),
-        flow_type: FlowType::Internal,
-        operation: "Ownership Transfer".to_owned(),
-        contractor_id: cid,
-        contractor_name: cid.and_then(|c| company_map.get(&c).map(|n| n.to_string())),
-        product_name: item.and_then(|i| product_map.get(&i.product_id).map(|n| n.to_string())),
-        quantity: item.map(|i| i.amount),
-        status: PipelineStatus::from_doc_status(Some(&d.status)),
-        entity_type: FlowEntityType::OwnershipTransfer,
-        flow_route: "/internal/ownership-transfer".to_owned(),
-      });
+      rows.push(make_row(
+        d.id, d.id.to_string(), d.date.to_string(), FlowOperation::OwnershipTransfer,
+        cid, cid.map(|c| Self::company_name(&company_map, c)),
+        item.and_then(|i| product_map.get(&i.product_id).cloned()),
+        item.map(|i| i.amount),
+        PipelineStatus::from_doc_status(Some(&d.status)),
+      ));
     }
     Ok(())
   }
 
-  // -- Inventory reconciliations --------------------------------------------
+  async fn collect_reconciliations(&self, rows: &mut Vec<CargoFlowRow>, status: Option<PipelineStatus>, contractor_id: Option<Uuid>) -> Result<(), ApiError> {
+    let base = Condition::all().add(inventory_reconciliation::Column::DeletedAt.is_null());
+    let Some(cond) = Self::add_status_filter(base, status, inventory_reconciliation::Column::Status) else { return Ok(()); };
 
-  async fn collect_reconciliation_rows(
-    &self,
-    rows: &mut Vec<CargoFlowRow>,
-    status: Option<PipelineStatus>,
-    _contractor_id: Option<Uuid>,
-  ) -> Result<(), ApiError> {
-    let mut cond = Condition::all().add(inventory_reconciliation::Column::DeletedAt.is_null());
-    if let Some(ref s) = status {
-      match s {
-        PipelineStatus::Draft => {
-          cond = cond.add(inventory_reconciliation::Column::Status.eq(DocumentStatus::Draft));
-        }
-        PipelineStatus::Executed => {
-          cond = cond.add(inventory_reconciliation::Column::Status.eq(DocumentStatus::Posted));
-        }
-        PipelineStatus::Pending => return Ok(()),
-      }
-    }
+    let docs = inventory_reconciliation::Entity::find().filter(cond).all(self.db.as_ref()).await?;
+    let items = self.load_children::<inventory_adjustment::Entity>(
+      inventory_adjustment::Column::ReconciliationId, &ids(&docs, |d| d.id),
+    ).await?;
+    let first = Self::first_per_parent(&items, |i| i.reconciliation_id);
 
-    let docs = inventory_reconciliation::Entity::find()
-      .filter(cond)
-      .all(self.db.as_ref())
-      .await?;
-
-    let doc_ids: Vec<Uuid> = docs.iter().map(|d| d.id).collect();
-    let items = if doc_ids.is_empty() {
-      vec![]
-    } else {
-      inventory_adjustment::Entity::find()
-        .filter(
-          Condition::all()
-            .add(inventory_adjustment::Column::ReconciliationId.is_in(doc_ids))
-            .add(inventory_adjustment::Column::DeletedAt.is_null()),
-        )
-        .all(self.db.as_ref())
-        .await?
-    };
-    let mut first_item: HashMap<Uuid, &inventory_adjustment::Model> = HashMap::new();
-    for i in &items {
-      first_item.entry(i.reconciliation_id).or_insert(i);
-    }
-
-    let cids: Vec<Uuid> = first_item.values().map(|i| i.contractor_id).collect();
-    let company_map = self.resolve_companies(&cids).await?;
-    let pids: Vec<Uuid> = first_item.values().map(|i| i.product_id).collect();
-    let product_map = self.resolve_products(&pids).await?;
+    let company_map = self.resolve_companies(&ids_from_map(&first, |i| i.contractor_id)).await?;
+    let product_map = self.resolve_products(&ids_from_map(&first, |i| i.product_id)).await?;
 
     for d in &docs {
-      let item = first_item.get(&d.id);
+      let item = first.get(&d.id);
       let cid = item.map(|i| i.contractor_id);
+      if contractor_id.is_some() && cid != contractor_id { continue; }
 
-      if let Some(filter_cid) = _contractor_id {
-        if cid != Some(filter_cid) {
-          continue;
-        }
-      }
-
-      rows.push(CargoFlowRow {
-        id: d.id,
-        document_number: d.document_number.clone(),
-        date: d.date.to_string(),
-        flow_type: FlowType::Internal,
-        operation: "Inventory Reconciliation".to_owned(),
-        contractor_id: cid,
-        contractor_name: cid.and_then(|c| company_map.get(&c).map(|n| n.to_string())),
-        product_name: item.and_then(|i| product_map.get(&i.product_id).map(|n| n.to_string())),
-        quantity: None,
-        status: PipelineStatus::from_doc_status(Some(&d.status)),
-        entity_type: FlowEntityType::Reconciliation,
-        flow_route: "/internal/reconciliation".to_owned(),
-      });
+      rows.push(make_row(
+        d.id, d.document_number.clone(), d.date.to_string(), FlowOperation::InventoryReconciliation,
+        cid, cid.map(|c| Self::company_name(&company_map, c)),
+        item.and_then(|i| product_map.get(&i.product_id).cloned()),
+        None,
+        PipelineStatus::from_doc_status(Some(&d.status)),
+      ));
     }
     Ok(())
   }
+
+  async fn load_children<E: EntityTrait>(
+    &self, parent_col: impl ColumnTrait, parent_ids: &[Uuid],
+  ) -> Result<Vec<E::Model>, ApiError>
+  where E::Model: Send {
+    if parent_ids.is_empty() { return Ok(vec![]); }
+    Ok(E::find()
+      .filter(parent_col.is_in(parent_ids.to_vec()))
+      .all(self.db.as_ref())
+      .await?)
+  }
+
+  async fn linked_waybill_ids(
+    &self, link_col: impl ColumnTrait, wb_ids: &[Uuid],
+  ) -> Result<std::collections::HashSet<Uuid>, ApiError> {
+    if wb_ids.is_empty() { return Ok(Default::default()); }
+    Ok(acceptance_document::Entity::find()
+      .filter(Condition::all()
+        .add(link_col.is_in(wb_ids.to_vec()))
+        .add(acceptance_document::Column::DeletedAt.is_null()))
+      .all(self.db.as_ref()).await?
+      .iter()
+      .filter_map(|a| a.truck_waybill_id.or(a.rail_waybill_id))
+      .collect())
+  }
+}
+
+fn matches_any(ft: Option<FlowType>, op: Option<FlowOperation>, ops: &[FlowOperation]) -> bool {
+  ops.iter().any(|o| o.matches_filter(ft, op.as_ref()))
+}
+
+fn classify_acceptance(
+  doc: &acceptance_document::Model,
+  twb: &std::collections::HashMap<Uuid, truck_waybill::Model>,
+  rwb: &std::collections::HashMap<Uuid, rail_waybill::Model>,
+) -> (FlowOperation, Option<Uuid>) {
+  if let Some(id) = doc.truck_waybill_id {
+    (FlowOperation::TruckReceipt, twb.get(&id).map(|w| w.sender_id))
+  } else if let Some(id) = doc.rail_waybill_id {
+    (FlowOperation::RailReceipt, rwb.get(&id).map(|w| w.sender_id))
+  } else if doc.transit_dispatch_id.is_some() {
+    (FlowOperation::TransitReceipt, None)
+  } else {
+    (FlowOperation::ExternalAcceptance, None)
+  }
+}
+
+fn contractor_from_waybill(
+  doc: &acceptance_document::Model,
+  twb: &std::collections::HashMap<Uuid, truck_waybill::Model>,
+  rwb: &std::collections::HashMap<Uuid, rail_waybill::Model>,
+) -> Option<Uuid> {
+  doc.truck_waybill_id.and_then(|id| twb.get(&id).map(|w| w.sender_id))
+    .or_else(|| doc.rail_waybill_id.and_then(|id| rwb.get(&id).map(|w| w.sender_id)))
+}
+
+fn ids<T>(items: &[T], f: impl Fn(&T) -> Uuid) -> Vec<Uuid> {
+  items.iter().map(f).collect()
+}
+
+fn ids_from_map<T>(map: &std::collections::HashMap<Uuid, &T>, f: impl Fn(&T) -> Uuid) -> Vec<Uuid> {
+  map.values().map(|v| f(v)).collect()
+}
+
+fn make_row(
+  id: Uuid, document_number: String, date: String, operation: FlowOperation,
+  contractor_id: Option<Uuid>, contractor_name: Option<String>,
+  product_name: Option<String>, quantity: Option<sea_orm::entity::prelude::Decimal>,
+  status: PipelineStatus,
+) -> CargoFlowRow {
+  CargoFlowRow {
+    id, document_number, date,
+    flow_type: operation.flow_type(),
+    operation,
+    contractor_id, contractor_name, product_name, quantity, status,
+    entity_type: operation.entity_type(),
+  }
+}
+
+fn paginate(rows: Vec<CargoFlowRow>, page: u64, per_page: u64) -> Vec<CargoFlowRow> {
+  let start = ((page - 1) * per_page) as usize;
+  if start >= rows.len() { return vec![]; }
+  let end = (start + per_page as usize).min(rows.len());
+  rows[start..end].to_vec()
 }

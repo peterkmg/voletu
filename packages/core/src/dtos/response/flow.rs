@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::enums::{FlowEntityType, FlowType, PipelineStatus};
+use crate::enums::{FlowEntityType, FlowOperation, FlowType, PipelineStatus};
 
 /// A single row in the truck-receipt flow view.
 ///
@@ -83,7 +83,7 @@ pub struct CargoFlowRow {
   pub document_number: String,
   pub date: String,
   pub flow_type: FlowType,
-  pub operation: String,
+  pub operation: FlowOperation,
   pub contractor_id: Option<Uuid>,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
@@ -96,7 +96,6 @@ pub struct CargoFlowRow {
   pub quantity: Option<Decimal>,
   pub status: PipelineStatus,
   pub entity_type: FlowEntityType,
-  pub flow_route: String,
 }
 
 /// A single row in the truck-dispatch flow view.
