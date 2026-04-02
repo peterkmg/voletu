@@ -27,16 +27,19 @@ impl DocumentService {
     Ok(item)
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub async fn dispatch_document_query_with_names(
     &self,
     document_number: Option<&str>,
     status: Option<enums::DocumentStatus>,
     contractor_id: Option<Uuid>,
+    dispatch_method: Option<enums::DispatchMethod>,
+    dispatch_purpose: Option<enums::DispatchPurpose>,
     page: Option<u64>,
     per_page: Option<u64>,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
     let mut items = self
-      .dispatch_document_query(document_number, status, contractor_id, page, per_page)
+      .dispatch_document_query(document_number, status, contractor_id, dispatch_method, dispatch_purpose, page, per_page)
       .await?;
     resolve_names(self.db.as_ref(), &mut items).await?;
     Ok(items)

@@ -6,6 +6,8 @@ struct DispatchQueryParams {
   document_number: Option<String>,
   status: Option<enums::DocumentStatus>,
   contractor_id: Option<Uuid>,
+  dispatch_method: Option<enums::DispatchMethod>,
+  dispatch_purpose: Option<enums::DispatchPurpose>,
   #[serde(flatten)]
   pagination: PaginationParams,
 }
@@ -34,13 +36,13 @@ async fn dispatch_document_list(
     state
       .svc
       .document
-      .dispatch_document_query_with_names(None, None, None, pagination.page, pagination.per_page)
+      .dispatch_document_query_with_names(None, None, None, None, None, pagination.page, pagination.per_page)
       .await?
   } else {
     state
       .svc
       .document
-      .dispatch_document_query(None, None, None, pagination.page, pagination.per_page)
+      .dispatch_document_query(None, None, None, None, None, pagination.page, pagination.per_page)
       .await?
   };
   Ok(ApiResponse::success(rows))
@@ -103,6 +105,8 @@ async fn dispatch_document_create_and_execute(
     ("documentNumber" = Option<String>, Query),
     ("status" = Option<enums::DocumentStatus>, Query),
     ("contractorId" = Option<Uuid>, Query),
+    ("dispatchMethod" = Option<enums::DispatchMethod>, Query),
+    ("dispatchPurpose" = Option<enums::DispatchPurpose>, Query),
     ("page" = Option<u64>, Query),
     ("per_page" = Option<u64>, Query),
     ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
@@ -123,6 +127,8 @@ async fn dispatch_document_query(
         query.document_number.as_deref(),
         query.status,
         query.contractor_id,
+        query.dispatch_method,
+        query.dispatch_purpose,
         query.pagination.page,
         query.pagination.per_page,
       )
@@ -135,6 +141,8 @@ async fn dispatch_document_query(
         query.document_number.as_deref(),
         query.status,
         query.contractor_id,
+        query.dispatch_method,
+        query.dispatch_purpose,
         query.pagination.page,
         query.pagination.per_page,
       )

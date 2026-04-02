@@ -91,11 +91,14 @@ impl DocumentService {
     })
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub async fn dispatch_document_query(
     &self,
     document_number: Option<&str>,
     status: Option<enums::DocumentStatus>,
     contractor_id: Option<Uuid>,
+    dispatch_method: Option<enums::DispatchMethod>,
+    dispatch_purpose: Option<enums::DispatchPurpose>,
     page: Option<u64>,
     per_page: Option<u64>,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
@@ -115,6 +118,14 @@ impl DocumentService {
 
     if let Some(contractor_id) = contractor_id {
       condition = condition.add(dispatch_document::Column::ContractorId.eq(contractor_id));
+    }
+
+    if let Some(dispatch_method) = dispatch_method {
+      condition = condition.add(dispatch_document::Column::DispatchMethod.eq(dispatch_method));
+    }
+
+    if let Some(dispatch_purpose) = dispatch_purpose {
+      condition = condition.add(dispatch_document::Column::DispatchPurpose.eq(dispatch_purpose));
     }
 
     let docs = dispatch_document::Entity::find()
