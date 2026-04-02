@@ -1,13 +1,26 @@
+use serde::Deserialize;
+
 use super::*;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TruckWaybillQueryParams {
+  document_number: Option<String>,
+  sender_id: Option<Uuid>,
+  #[serde(flatten)]
+  pagination: PaginationParams,
+}
 
 #[utoipa::path(
   get,
   tag = "Document - Transport",
   operation_id = "transport_truck_waybill_list",
   summary = "List truck waybills",
-  description = "Returns truck waybill headers. Supports query filtering and pagination through common entity query params.",
+  description = "Returns truck waybill headers. Supports pagination.",
   path = paths::transport::truck::WAYBILLS,
   params(
+    ("page" = Option<u64>, Query),
+    ("per_page" = Option<u64>, Query),
     ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
   ),
   responses((status = 200, body = ApiResponse<Vec<TruckWaybillResponse>>))
@@ -15,12 +28,69 @@ use super::*;
 #[axum::debug_handler]
 async fn truck_waybill_list(
   State(state): State<Arc<ApiState>>,
+  Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<TruckWaybillResponse>> {
   let rows = if embed.wants_names() {
-    state.svc.document.truck_waybill_list_with_names().await?
+    state
+      .svc
+      .document
+      .truck_waybill_query_with_names(None, None, pagination.page, pagination.per_page)
+      .await?
   } else {
-    state.svc.document.truck_waybill_list(None).await?
+    state
+      .svc
+      .document
+      .truck_waybill_query(None, None, pagination.page, pagination.per_page)
+      .await?
+  };
+  Ok(ApiResponse::success(rows))
+}
+
+#[utoipa::path(
+  get,
+  tag = "Document - Transport",
+  operation_id = "transport_truck_waybill_query",
+  summary = "Query truck waybills",
+  description = "Queries truck waybills by optional filters.",
+  path = paths::transport::truck::WAYBILLS_QUERY,
+  params(
+    ("documentNumber" = Option<String>, Query),
+    ("senderId" = Option<Uuid>, Query),
+    ("page" = Option<u64>, Query),
+    ("per_page" = Option<u64>, Query),
+    ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
+  ),
+  responses((status = 200, body = ApiResponse<Vec<TruckWaybillResponse>>), (status = 400))
+)]
+#[axum::debug_handler]
+async fn truck_waybill_query(
+  State(state): State<Arc<ApiState>>,
+  Query(query): Query<TruckWaybillQueryParams>,
+  Query(embed): Query<EmbedParams>,
+) -> ApiResult<Vec<TruckWaybillResponse>> {
+  let rows = if embed.wants_names() {
+    state
+      .svc
+      .document
+      .truck_waybill_query_with_names(
+        query.document_number.as_deref(),
+        query.sender_id,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
+  } else {
+    state
+      .svc
+      .document
+      .truck_waybill_query(
+        query.document_number.as_deref(),
+        query.sender_id,
+        query.pagination.page,
+        query.pagination.per_page,
+      )
+      .await?
   };
   Ok(ApiResponse::success(rows))
 }
@@ -131,6 +201,7 @@ async fn truck_waybill_hard_delete(
 pub(super) fn waybill_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(truck_waybill_list, truck_waybill_create))
+    .routes(routes!(truck_waybill_query))
     .routes(routes!(truck_waybill_get, truck_waybill_update))
     .routes(routes!(truck_waybill_soft_delete))
     .routes(routes!(truck_waybill_hard_delete))

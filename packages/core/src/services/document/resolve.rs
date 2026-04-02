@@ -229,6 +229,20 @@ impl DocumentService {
     Ok(item)
   }
 
+  pub async fn truck_waybill_query_with_names(
+    &self,
+    document_number: Option<&str>,
+    sender_id: Option<Uuid>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<dtos::TruckWaybillResponse>, ApiError> {
+    let mut items = self
+      .truck_waybill_query(document_number, sender_id, page, per_page)
+      .await?;
+    resolve_names(self.db.as_ref(), &mut items).await?;
+    Ok(items)
+  }
+
   // ── Rail waybill ──────────────────────────
 
   pub async fn rail_waybill_list_with_names(
@@ -246,6 +260,20 @@ impl DocumentService {
     let mut item = self.rail_waybill_get(id).await?;
     resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
     Ok(item)
+  }
+
+  pub async fn rail_waybill_query_with_names(
+    &self,
+    document_number: Option<&str>,
+    sender_id: Option<Uuid>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<dtos::RailWaybillResponse>, ApiError> {
+    let mut items = self
+      .rail_waybill_query(document_number, sender_id, page, per_page)
+      .await?;
+    resolve_names(self.db.as_ref(), &mut items).await?;
+    Ok(items)
   }
 
   // ── Physical transfer ─────────────────────

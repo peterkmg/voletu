@@ -187,6 +187,7 @@ pub mod transport {
     pub const WEIGHT_DOCS: &str = "/transport/truck/weight-docs";
     pub const WEIGHT_DOCS_BY_ID: &str = "/transport/truck/weight-docs/{id}";
     pub const WEIGHT_DOCS_HARD_DELETE_BY_ID: &str = "/transport/truck/weight-docs/{id}/hard";
+    pub const WAYBILLS_QUERY: &str = "/transport/truck/waybills/query";
     pub const COMPOSITE_CREATE: &str = "/transport/truck/save";
     pub const SAVE: &str = COMPOSITE_CREATE;
   }
@@ -204,6 +205,7 @@ pub mod transport {
     pub const WEIGHTS: &str = "/transport/rail/weights";
     pub const WEIGHTS_BY_ID: &str = "/transport/rail/weights/{id}";
     pub const WEIGHTS_HARD_DELETE_BY_ID: &str = "/transport/rail/weights/{id}/hard";
+    pub const WAYBILLS_QUERY: &str = "/transport/rail/waybills/query";
     pub const COMPOSITE_CREATE: &str = "/transport/rail/save";
     pub const SAVE: &str = COMPOSITE_CREATE;
   }

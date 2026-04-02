@@ -23,7 +23,7 @@ use crate::{
     UpdateTruckWaybillRequest,
     UpdateTruckWeightDocRequest,
   },
-  endpoints::{paths, query::EmbedParams},
+  endpoints::{paths, query::{EmbedParams, PaginationParams}},
 };
 
 mod composite;

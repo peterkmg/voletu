@@ -1,8 +1,49 @@
-use sea_orm::TransactionTrait;
+use sea_orm::{ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, TransactionTrait};
+use uuid::Uuid;
 
-use crate::{api::ApiError, dtos, services::DocumentService};
+use crate::{
+  api::ApiError,
+  dtos,
+  entities::truck_waybill,
+  services::DocumentService,
+};
 
 impl DocumentService {
+  pub async fn truck_waybill_query(
+    &self,
+    document_number: Option<&str>,
+    sender_id: Option<Uuid>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<dtos::TruckWaybillResponse>, ApiError> {
+    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+
+    let mut condition = Condition::all();
+    condition = condition.add(truck_waybill::Column::DeletedAt.is_null());
+
+    if let Some(document_number) = document_number {
+      condition =
+        condition.add(truck_waybill::Column::DocumentNumber.contains(document_number));
+    }
+
+    if let Some(sender_id) = sender_id {
+      condition = condition.add(truck_waybill::Column::SenderId.eq(sender_id));
+    }
+
+    let docs = truck_waybill::Entity::find()
+      .filter(condition)
+      .paginate(self.db.as_ref(), per_page)
+      .fetch_page(page - 1)
+      .await?;
+
+    Ok(
+      docs
+        .into_iter()
+        .map(dtos::TruckWaybillResponse::from)
+        .collect(),
+    )
+  }
+
   pub async fn truck_waybill_composite_create(
     &self,
     req: &dtos::TruckWaybillCompositeRequest,
