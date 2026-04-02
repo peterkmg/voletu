@@ -9,12 +9,13 @@ use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::flow::TruckReceiptFlowRow,
   endpoints::{paths, query::PaginationParams},
+  enums::PipelineStatus,
 };
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct TruckReceiptFlowQueryParams {
-  pipeline_status: Option<String>,
+  pipeline_status: Option<PipelineStatus>,
   contractor_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
@@ -28,7 +29,7 @@ struct TruckReceiptFlowQueryParams {
   description = "Returns truck waybills LEFT JOINed with their linked acceptance documents and a computed pipeline_status.",
   path = paths::flows::TRUCK_RECEIPT_QUERY,
   params(
-    ("pipelineStatus" = Option<String>, Query, description = "Filter by pipeline status: pending, draft, executed"),
+    ("pipelineStatus" = Option<PipelineStatus>, Query, description = "Filter by pipeline status: PENDING, DRAFT, EXECUTED"),
     ("contractorId" = Option<Uuid>, Query, description = "Filter by contractor (sender) UUID"),
     ("page" = Option<u64>, Query),
     ("per_page" = Option<u64>, Query),
@@ -44,7 +45,7 @@ async fn truck_receipt_query(
     .svc
     .flow
     .truck_receipt_query(
-      params.pipeline_status.as_deref(),
+      params.pipeline_status,
       params.contractor_id,
       params.pagination.page,
       params.pagination.per_page,

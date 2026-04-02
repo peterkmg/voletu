@@ -62,6 +62,54 @@ pub enum DocumentStatus {
   Posted,
 }
 
+/// Pipeline status for flow views.
+///
+/// Represents the computed lifecycle stage of a document in a flow pipeline:
+/// - `Pending` -- basis document exists but no action document yet
+/// - `Draft` -- action document exists in draft state
+/// - `Executed` -- action document has been posted/executed
+#[enum_type]
+pub enum PipelineStatus {
+  Pending,
+  Draft,
+  Executed,
+}
+
+impl PipelineStatus {
+  /// Derive pipeline status from an optional linked document's status.
+  ///
+  /// If no document exists, the pipeline is `Pending`.
+  /// Otherwise, `Draft` maps to `Draft` and `Posted` maps to `Executed`.
+  pub fn from_doc_status(status: Option<&DocumentStatus>) -> Self {
+    match status {
+      None => Self::Pending,
+      Some(DocumentStatus::Draft) => Self::Draft,
+      Some(DocumentStatus::Posted) => Self::Executed,
+    }
+  }
+}
+
+/// Flow direction category for the cargo flow aggregate view.
+#[enum_type]
+pub enum FlowType {
+  Incoming,
+  Outgoing,
+  Internal,
+}
+
+/// Entity type identifier for cargo flow rows.
+#[enum_type]
+pub enum FlowEntityType {
+  Dispatch,
+  Acceptance,
+  TruckWaybill,
+  RailWaybill,
+  Blending,
+  PhysicalTransfer,
+  OwnershipTransfer,
+  Reconciliation,
+}
+
 #[enum_type]
 pub enum RoleType {
   Admin,

@@ -9,12 +9,13 @@ use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::flow::TruckDispatchFlowRow,
   endpoints::{paths, query::PaginationParams},
+  enums::PipelineStatus,
 };
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct TruckDispatchFlowQueryParams {
-  pipeline_status: Option<String>,
+  pipeline_status: Option<PipelineStatus>,
   contractor_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
@@ -28,7 +29,7 @@ struct TruckDispatchFlowQueryParams {
   description = "Returns truck-method dispatch documents with a computed pipeline_status based on document status.",
   path = paths::flows::TRUCK_DISPATCH_QUERY,
   params(
-    ("pipelineStatus" = Option<String>, Query, description = "Filter by pipeline status: draft, executed"),
+    ("pipelineStatus" = Option<PipelineStatus>, Query, description = "Filter by pipeline status: DRAFT, EXECUTED"),
     ("contractorId" = Option<Uuid>, Query, description = "Filter by contractor UUID"),
     ("page" = Option<u64>, Query),
     ("per_page" = Option<u64>, Query),
@@ -44,7 +45,7 @@ async fn truck_dispatch_query(
     .svc
     .flow
     .truck_dispatch_query(
-      params.pipeline_status.as_deref(),
+      params.pipeline_status,
       params.contractor_id,
       params.pagination.page,
       params.pagination.per_page,
