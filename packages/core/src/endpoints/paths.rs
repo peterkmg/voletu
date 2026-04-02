@@ -225,6 +225,12 @@ pub mod sync {
   pub const WATERMARKS: &str = "/sync/watermarks";
 }
 
+pub mod flows {
+  pub const TRUCK_RECEIPT_QUERY: &str = "/flows/truck-receipt/query";
+  pub const RAIL_RECEIPT_QUERY: &str = "/flows/rail-receipt/query";
+  pub const TRUCK_DISPATCH_QUERY: &str = "/flows/truck-dispatch/query";
+}
+
 pub mod docs {
   pub const SWAGGER_UI: &str = "/swagger-ui";
   pub const OPENAPI_JSON: &str = "/api-docs/openapi.json";

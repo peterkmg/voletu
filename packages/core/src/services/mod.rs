@@ -2,6 +2,7 @@ pub mod audit;
 pub mod catalog;
 pub mod common;
 pub mod document;
+pub mod flow;
 pub mod ledger;
 pub mod sync;
 pub mod system;
@@ -48,6 +49,7 @@ Service macro contracts:
 pub use audit::AuditService;
 pub use catalog::CatalogService;
 pub use document::DocumentService;
+pub use flow::FlowService;
 pub use ledger::LedgerService;
 pub use sync::SyncService;
 pub use system::SystemService;

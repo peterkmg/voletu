@@ -1,0 +1,88 @@
+use sea_orm::entity::prelude::Decimal;
+use uuid::Uuid;
+use voletu_core_macros::response_dto;
+
+/// A single row in the truck-receipt flow view.
+///
+/// Joins a truck waybill (the "basis") with its linked acceptance document
+/// (the "action"), if one exists, and computes a `pipeline_status`.
+#[response_dto]
+pub struct TruckReceiptFlowRow {
+  // ── Basis (truck waybill) ─────────────────
+  pub basis_id: Uuid,
+  pub basis_document_number: String,
+  pub basis_date: String,
+  pub contractor_id: Uuid,
+  pub contractor_name: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub expected_quantity: Option<Decimal>,
+  // ── Action (acceptance document) ──────────
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub action_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub action_document_number: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub actual_quantity: Option<Decimal>,
+  // ── Computed ──────────────────────────────
+  pub pipeline_status: String,
+}
+
+/// A single row in the rail-receipt flow view.
+///
+/// Joins a rail waybill (the "basis") with its linked acceptance document
+/// (the "action"), if one exists, and computes a `pipeline_status`.
+#[response_dto]
+pub struct RailReceiptFlowRow {
+  // ── Basis (rail waybill) ──────────────────
+  pub basis_id: Uuid,
+  pub basis_document_number: String,
+  pub basis_date: String,
+  pub contractor_id: Uuid,
+  pub contractor_name: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub expected_quantity: Option<Decimal>,
+  // ── Action (acceptance document) ──────────
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub action_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub action_document_number: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub actual_quantity: Option<Decimal>,
+  // ── Computed ──────────────────────────────
+  pub pipeline_status: String,
+}
+
+/// A single row in the truck-dispatch flow view.
+///
+/// Shows dispatch documents with `dispatch_method = Truck` and a computed
+/// `pipeline_status` based on the document's own status.
+#[response_dto]
+pub struct TruckDispatchFlowRow {
+  pub dispatch_id: Uuid,
+  pub document_number: String,
+  pub date: String,
+  pub contractor_id: Uuid,
+  pub contractor_name: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub product_name: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub dispatched_quantity: Option<Decimal>,
+  // ── Computed ──────────────────────────────
+  pub pipeline_status: String,
+}

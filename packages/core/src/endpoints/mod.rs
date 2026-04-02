@@ -2,6 +2,7 @@ pub mod catalog;
 #[cfg(debug_assertions)]
 pub mod dev;
 pub mod document;
+pub mod flows;
 pub mod ledger;
 pub mod paths;
 pub mod query;
