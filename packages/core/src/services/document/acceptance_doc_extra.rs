@@ -12,6 +12,7 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos,
+  endpoints::query::NullableFilter,
   entities::{acceptance_document, acceptance_item},
   enums,
   services::document::DocumentService,
@@ -75,10 +76,14 @@ impl DocumentService {
     Ok(dtos::AcceptanceCompositeResponse { document, items })
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub async fn acceptance_document_query(
     &self,
     document_number: Option<&str>,
     status: Option<enums::DocumentStatus>,
+    truck_waybill_id: Option<NullableFilter>,
+    rail_waybill_id: Option<NullableFilter>,
+    transit_dispatch_id: Option<NullableFilter>,
     page: Option<u64>,
     per_page: Option<u64>,
   ) -> Result<Vec<dtos::AcceptanceResponse>, ApiError> {
@@ -94,6 +99,39 @@ impl DocumentService {
 
     if let Some(status) = status {
       condition = condition.add(acceptance_document::Column::Status.eq(status));
+    }
+
+    if let Some(filter) = truck_waybill_id {
+      match filter {
+        NullableFilter::IsNull => {
+          condition = condition.add(acceptance_document::Column::TruckWaybillId.is_null());
+        }
+        NullableFilter::IsNotNull => {
+          condition = condition.add(acceptance_document::Column::TruckWaybillId.is_not_null());
+        }
+      }
+    }
+
+    if let Some(filter) = rail_waybill_id {
+      match filter {
+        NullableFilter::IsNull => {
+          condition = condition.add(acceptance_document::Column::RailWaybillId.is_null());
+        }
+        NullableFilter::IsNotNull => {
+          condition = condition.add(acceptance_document::Column::RailWaybillId.is_not_null());
+        }
+      }
+    }
+
+    if let Some(filter) = transit_dispatch_id {
+      match filter {
+        NullableFilter::IsNull => {
+          condition = condition.add(acceptance_document::Column::TransitDispatchId.is_null());
+        }
+        NullableFilter::IsNotNull => {
+          condition = condition.add(acceptance_document::Column::TransitDispatchId.is_not_null());
+        }
+      }
     }
 
     let docs = acceptance_document::Entity::find()

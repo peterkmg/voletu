@@ -14,7 +14,7 @@ use crate::{
   dtos::{AcceptanceResponse, CreateAcceptanceRequest},
   endpoints::{
     paths,
-    query::{EmbedParams, PaginationParams},
+    query::{EmbedParams, NullableFilter, PaginationParams},
   },
   enums,
   services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
@@ -26,6 +26,9 @@ use crate::{
 pub(super) struct AcceptanceQueryParams {
   pub(super) document_number: Option<String>,
   pub(super) status: Option<enums::DocumentStatus>,
+  pub(super) truck_waybill_id: Option<NullableFilter>,
+  pub(super) rail_waybill_id: Option<NullableFilter>,
+  pub(super) transit_dispatch_id: Option<NullableFilter>,
   #[serde(flatten)]
   pub(super) pagination: PaginationParams,
 }
@@ -53,13 +56,29 @@ pub(super) async fn acceptance_document_list(
     state
       .svc
       .document
-      .acceptance_document_query_with_names(None, None, pagination.page, pagination.per_page)
+      .acceptance_document_query_with_names(
+        None,
+        None,
+        None,
+        None,
+        None,
+        pagination.page,
+        pagination.per_page,
+      )
       .await?
   } else {
     state
       .svc
       .document
-      .acceptance_document_query(None, None, pagination.page, pagination.per_page)
+      .acceptance_document_query(
+        None,
+        None,
+        None,
+        None,
+        None,
+        pagination.page,
+        pagination.per_page,
+      )
       .await?
   };
   Ok(ApiResponse::success(rows))
@@ -118,6 +137,9 @@ pub(super) async fn acceptance_document_create_and_execute(
   params(
     ("documentNumber" = Option<String>, Query),
     ("status" = Option<enums::DocumentStatus>, Query),
+    ("truckWaybillId" = Option<String>, Query, description = "Pass 'isNull' or 'isNotNull'"),
+    ("railWaybillId" = Option<String>, Query, description = "Pass 'isNull' or 'isNotNull'"),
+    ("transitDispatchId" = Option<String>, Query, description = "Pass 'isNull' or 'isNotNull'"),
     ("page" = Option<u64>, Query),
     ("per_page" = Option<u64>, Query),
     ("embed" = Option<String>, Query, description = "Pass 'names' to include resolved FK names")
@@ -137,6 +159,9 @@ pub(super) async fn acceptance_document_query(
       .acceptance_document_query_with_names(
         query.document_number.as_deref(),
         query.status,
+        query.truck_waybill_id,
+        query.rail_waybill_id,
+        query.transit_dispatch_id,
         query.pagination.page,
         query.pagination.per_page,
       )
@@ -148,6 +173,9 @@ pub(super) async fn acceptance_document_query(
       .acceptance_document_query(
         query.document_number.as_deref(),
         query.status,
+        query.truck_waybill_id,
+        query.rail_waybill_id,
+        query.transit_dispatch_id,
         query.pagination.page,
         query.pagination.per_page,
       )

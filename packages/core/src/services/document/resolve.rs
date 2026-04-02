@@ -39,7 +39,15 @@ impl DocumentService {
     per_page: Option<u64>,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
     let mut items = self
-      .dispatch_document_query(document_number, status, contractor_id, dispatch_method, dispatch_purpose, page, per_page)
+      .dispatch_document_query(
+        document_number,
+        status,
+        contractor_id,
+        dispatch_method,
+        dispatch_purpose,
+        page,
+        per_page,
+      )
       .await?;
     resolve_names(self.db.as_ref(), &mut items).await?;
     Ok(items)
@@ -79,15 +87,27 @@ impl DocumentService {
     Ok(item)
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub async fn acceptance_document_query_with_names(
     &self,
     document_number: Option<&str>,
     status: Option<enums::DocumentStatus>,
+    truck_waybill_id: Option<crate::endpoints::query::NullableFilter>,
+    rail_waybill_id: Option<crate::endpoints::query::NullableFilter>,
+    transit_dispatch_id: Option<crate::endpoints::query::NullableFilter>,
     page: Option<u64>,
     per_page: Option<u64>,
   ) -> Result<Vec<dtos::AcceptanceResponse>, ApiError> {
     let mut items = self
-      .acceptance_document_query(document_number, status, page, per_page)
+      .acceptance_document_query(
+        document_number,
+        status,
+        truck_waybill_id,
+        rail_waybill_id,
+        transit_dispatch_id,
+        page,
+        per_page,
+      )
       .await?;
     resolve_names(self.db.as_ref(), &mut items).await?;
     Ok(items)

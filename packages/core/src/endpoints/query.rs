@@ -1,4 +1,38 @@
 use serde::{Deserialize, Deserializer};
+use std::fmt;
+
+/// Filter for nullable FK columns: `?field=isNull` or `?field=isNotNull`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NullableFilter {
+  IsNull,
+  IsNotNull,
+}
+
+impl<'de> Deserialize<'de> for NullableFilter {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+    match s.as_str() {
+      "isNull" => Ok(NullableFilter::IsNull),
+      "isNotNull" => Ok(NullableFilter::IsNotNull),
+      other => Err(serde::de::Error::custom(format!(
+        "invalid NullableFilter value '{}', expected 'isNull' or 'isNotNull'",
+        other
+      ))),
+    }
+  }
+}
+
+impl fmt::Display for NullableFilter {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      NullableFilter::IsNull => write!(f, "isNull"),
+      NullableFilter::IsNotNull => write!(f, "isNotNull"),
+    }
+  }
+}
 
 fn deserialize_optional_u64_from_string<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
