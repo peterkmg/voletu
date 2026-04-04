@@ -9,6 +9,8 @@ import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusCol
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
+import { RelatedDocuments } from '~/components/document/related-documents'
+import type { RelatedDocument } from '~/components/document/related-documents'
 import { Skeleton } from '~/components/ui/skeleton'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -144,6 +146,13 @@ export function RailReceiptDetail() {
         config={{ title: 'Acceptance Document', entityLabel: 'Acceptance', backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: documentStatusColors }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.railReceipt')}
+        relatedContent={(() => {
+          const docs: RelatedDocument[] = []
+          if (doc.railWaybillId) {
+            docs.push({ type: 'basis', label: 'Rail Waybill', documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: 'Pending', statusColorMap: documentStatusColors, to: `/incoming/rail/${doc.railWaybillId}` })
+          }
+          return <RelatedDocuments documents={docs} />
+        })()}
         formContent={
           <div className="grid grid-cols-3 gap-4">
             <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.dateAccepted}</p></div>

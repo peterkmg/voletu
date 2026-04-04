@@ -9,6 +9,8 @@ import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusCol
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
+import { RelatedDocuments } from '~/components/document/related-documents'
+import type { RelatedDocument } from '~/components/document/related-documents'
 import { Skeleton } from '~/components/ui/skeleton'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -159,7 +161,7 @@ export function TruckReceiptDetail() {
 
   if (isLoading) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
-  // If acceptance found, show acceptance detail with BasisLink
+  // If acceptance found, show acceptance detail with related documents
   if (acceptanceQuery.data?.data) {
     const doc = acceptanceQuery.data.data
     return (
@@ -175,6 +177,13 @@ export function TruckReceiptDetail() {
         }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.truckReceipt')}
+        relatedContent={(() => {
+          const docs: RelatedDocument[] = []
+          if (doc.truckWaybillId) {
+            docs.push({ type: 'basis', label: 'Truck Waybill', documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: 'Pending', statusColorMap: documentStatusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
+          }
+          return <RelatedDocuments documents={docs} />
+        })()}
         formContent={
           <div className="grid grid-cols-3 gap-4">
             <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.dateAccepted}</p></div>
