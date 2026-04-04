@@ -133,16 +133,16 @@ export function statusColumn<T>(
 export function numericColumn<T>(
   accessorKey: keyof T & string,
   title: string,
-  opts?: { align?: 'left' | 'right', padWidth?: number },
+  opts?: { align?: 'left' | 'right', padWidth?: number, unit?: string },
 ): ColumnDef<T> {
   return {
     accessorKey,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    meta: { label: title, align: opts?.align ?? 'left' as const },
+    meta: { label: title, align: opts?.align ?? 'right' as const },
     cell: ({ row }) => (
-      <NumericCell value={row.getValue(accessorKey)} padWidth={opts?.padWidth} />
+      <NumericCell value={row.getValue(accessorKey)} padWidth={opts?.padWidth} unit={opts?.unit} />
     ),
   }
 }

@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '~/components/ui/tooltip'
-import { formatDate, formatDateTime, truncateId } from '~/lib/formatters'
+import { formatAmount, formatDate, formatDateTime, truncateId } from '~/lib/formatters'
 
 export const NullCell = memo(() => (
   <span className="text-muted-foreground">&mdash;</span>
@@ -33,15 +33,17 @@ export const DateTimeCell = memo(({ value }: { value: string | null | undefined 
 export const NumericCell = memo(({
   value,
   padWidth,
+  unit,
 }: {
   value: number | string | null | undefined
   padWidth?: number
+  unit?: string
 }) => {
   if (value == null)
     return <NullCell />
   const display = padWidth
     ? String(value).padStart(padWidth, '0')
-    : String(value)
+    : formatAmount(value, unit)
   return (
     <span className="text-sm tabular-nums">{display}</span>
   )

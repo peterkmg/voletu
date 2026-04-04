@@ -36,3 +36,17 @@ export function zeroPad(n: number, width: number): string {
 export function truncateId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id
 }
+
+/**
+ * Format a numeric amount with thousand separators, 2 decimal places, and optional unit.
+ */
+export function formatAmount(value: number | string | null | undefined, unit?: string): string {
+  if (value == null || value === '') return '\u2014'
+  const num = typeof value === 'string' ? Number.parseFloat(value) : value
+  if (Number.isNaN(num)) return '\u2014'
+  const formatted = num.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  return unit ? `${formatted} ${unit}` : formatted
+}
