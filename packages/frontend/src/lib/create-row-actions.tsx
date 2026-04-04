@@ -1,5 +1,6 @@
 import type { Row } from '@tanstack/react-table'
 import type { RowAction } from '~/components/data-table'
+import { useNavigate } from '@tanstack/react-router'
 import { Archive, ChevronRight, Pencil, Play, Trash2, Undo2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RowActions } from '~/components/data-table'
@@ -12,10 +13,8 @@ interface CreateRowActionsConfig<TRow extends { id: string }> {
   }
   lifecycle?: boolean
   deleteOnly?: boolean
-  /** Adds an inline navigate button. Receives row data. */
-  navigate?: (row: TRow) => void
-  /** Only show navigate action (no edit/delete). For read-only aggregation tables. */
-  navigateOnly?: boolean
+  /** Returns the detail page path for the given row. Adds an inline navigate button. */
+  getDetailPath?: (row: TRow) => string
 }
 
 export function createRowActions<TRow extends { id: string }>(
@@ -23,6 +22,7 @@ export function createRowActions<TRow extends { id: string }>(
 ) {
   return function DataTableRowActions({ row }: { row: Row<TRow> }) {
     const { t } = useTranslation(['common'])
+    const navigate = useNavigate()
     const { setOpen, setCurrentRow } = config.useEntity()
     const userRole = useAuthStore(s => s.user?.role)
 
@@ -31,32 +31,18 @@ export function createRowActions<TRow extends { id: string }>(
       ;(setOpen as (s: string | null) => void)(dialogType)
     }
 
-    // Navigate-only mode (e.g. Cargo Flow aggregation)
-    if (config.navigateOnly && config.navigate) {
-      return (
-        <RowActions
-          actions={[
-            {
-              label: t('common:actions.viewDetails'),
-              icon: ChevronRight,
-              inline: true,
-              onClick: () => config.navigate!(row.original),
-            },
-          ]}
-        />
-      )
-    }
-
-    if (config.deleteOnly) {
-      const actions: RowAction[] = []
-      if (config.navigate) {
-        actions.push({
+    const navAction: RowAction | undefined = config.getDetailPath
+      ? {
           label: t('common:actions.viewDetails'),
           icon: ChevronRight,
           inline: true,
-          onClick: () => config.navigate!(row.original),
-        })
-      }
+          onClick: () => navigate({ to: config.getDetailPath!(row.original) }),
+        }
+      : undefined
+
+    if (config.deleteOnly) {
+      const actions: RowAction[] = []
+      if (navAction) actions.push(navAction)
       actions.push({
         label: t('common:actions.delete'),
         icon: Trash2,
@@ -76,14 +62,7 @@ export function createRowActions<TRow extends { id: string }>(
     ]
 
     // Inline navigate button (after edit)
-    if (config.navigate) {
-      actions.push({
-        label: t('common:actions.viewDetails'),
-        icon: ChevronRight,
-        inline: true,
-        onClick: () => config.navigate!(row.original),
-      })
-    }
+    if (navAction) actions.push(navAction)
 
     if (config.lifecycle) {
       const status = (row.original as { status?: string }).status

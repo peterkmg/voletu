@@ -28,7 +28,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<AcceptanceResponse, DialogType>('ExternalAcceptance')
 
-const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity, lifecycle: true })
+const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/incoming/external/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<AcceptanceResponse>[] {
   return [

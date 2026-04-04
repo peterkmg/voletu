@@ -31,7 +31,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<InventoryReconciliationResponse, DialogType>('Reconciliation')
 
-const DataTableRowActions = createRowActions<InventoryReconciliationResponse>({ useEntity, lifecycle: true })
+const DataTableRowActions = createRowActions<InventoryReconciliationResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/internal/reconciliation/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<InventoryReconciliationResponse>[] {
   return [

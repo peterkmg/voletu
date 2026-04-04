@@ -28,7 +28,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<OwnershipTransferResponse, DialogType>('OwnershipTransfer')
 
-const DataTableRowActions = createRowActions<OwnershipTransferResponse>({ useEntity, lifecycle: true })
+const DataTableRowActions = createRowActions<OwnershipTransferResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/internal/ownership-transfer/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<OwnershipTransferResponse>[] {
   return [

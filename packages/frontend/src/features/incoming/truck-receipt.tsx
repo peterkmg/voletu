@@ -2,10 +2,11 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { TruckReceiptPipelineResponse } from '~/generated/types'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { Eye } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { Skeleton } from '~/components/ui/skeleton'
@@ -15,7 +16,6 @@ import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import type { AcceptanceItemResponse } from '~/generated/types'
 import { acceptanceDocumentExecute, acceptanceDocumentRevert, transportTruckWaybillCreate } from '~/generated/client'
 import { useTransportTruckWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillGet'
@@ -31,7 +31,6 @@ type DialogType = 'create'
 
 const { Provider, useEntity } = createEntityProvider<TruckReceiptPipelineResponse, DialogType>('TruckReceipt')
 
-// Row action: View Details only (navigate to detail page)
 function DataTableRowActions({ row }: { row: { original: TruckReceiptPipelineResponse } }) {
   const navigate = useNavigate()
   const { t } = useTranslation('common')
@@ -39,20 +38,16 @@ function DataTableRowActions({ row }: { row: { original: TruckReceiptPipelineRes
   const targetId = r.pipelineStatus === 'PENDING' ? r.id : (r.actionId ?? r.id)
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <Eye className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigate({ to: `/incoming/truck/${targetId}` })}>
-          <Eye className="mr-2 size-4" />
-          {t('actions.viewDetails')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <RowActions
+      actions={[
+        {
+          label: t('actions.viewDetails'),
+          icon: ChevronRight,
+          inline: true,
+          onClick: () => navigate({ to: `/incoming/truck/${targetId}` }),
+        },
+      ]}
+    />
   )
 }
 

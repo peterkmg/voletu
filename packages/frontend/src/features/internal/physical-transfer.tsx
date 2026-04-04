@@ -28,7 +28,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<PhysicalTransferResponse, DialogType>('PhysicalTransfer')
 
-const DataTableRowActions = createRowActions<PhysicalTransferResponse>({ useEntity, lifecycle: true })
+const DataTableRowActions = createRowActions<PhysicalTransferResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/internal/physical-transfer/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
   return [

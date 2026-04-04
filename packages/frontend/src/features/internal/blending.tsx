@@ -36,7 +36,7 @@ const { Provider: BlendingProvider, useEntity: useBlending }
 
 // --- Row Actions ---
 
-const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useBlending, lifecycle: true })
+const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useBlending, lifecycle: true, getDetailPath: (row) => `/internal/blending/${row.id}` })
 
 // --- Columns ---
 

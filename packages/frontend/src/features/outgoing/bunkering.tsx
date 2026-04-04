@@ -30,7 +30,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<DispatchResponse, DialogType>('Bunkering')
 
-const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true })
+const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/outgoing/bunkering/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [

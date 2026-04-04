@@ -30,7 +30,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<DispatchResponse, DialogType>('DirectDispatch')
 
-const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true })
+const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/outgoing/direct/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [
