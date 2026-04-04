@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isSeniorOrHigher, isSupervisorOrHigher } from '../lifecycle-actions'
+import { isSeniorOrHigher, isSupervisorOrHigher } from '~/lib/rbac'
 
 const ADMIN = '019c8cc2-8913-774a-a432-4dee8eb3f194'
 const SENIOR = '019c8cc4-3538-7b66-8ce5-6faad856b217'

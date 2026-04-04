@@ -8,9 +8,9 @@ function LockStatus() {
 }
 
 describe('DocumentForm', () => {
-  it('renders children as editable when draft', () => {
+  it('renders children as editable when DRAFT', () => {
     const { container } = render(
-      <DocumentForm status="draft">
+      <DocumentForm status="DRAFT">
         <input data-testid="field" />
       </DocumentForm>,
     )
@@ -18,9 +18,9 @@ describe('DocumentForm', () => {
     expect(fieldset).not.toBeDisabled()
   })
 
-  it('renders children as disabled when posted', () => {
+  it('renders children as disabled when POSTED', () => {
     const { container } = render(
-      <DocumentForm status="posted">
+      <DocumentForm status="POSTED">
         <input data-testid="field" />
       </DocumentForm>,
     )
@@ -28,28 +28,28 @@ describe('DocumentForm', () => {
     expect(fieldset).toBeDisabled()
   })
 
-  it('renders children as disabled when executed', () => {
+  it('does not lock for unknown status', () => {
     const { container } = render(
-      <DocumentForm status="executed">
+      <DocumentForm status="SOME_OTHER">
         <input data-testid="field" />
       </DocumentForm>,
     )
     const fieldset = container.querySelector('fieldset')
-    expect(fieldset).toBeDisabled()
+    expect(fieldset).not.toBeDisabled()
   })
 
-  it('provides isLocked=false via context when draft', () => {
+  it('provides isLocked=false via context when DRAFT', () => {
     render(
-      <DocumentForm status="draft">
+      <DocumentForm status="DRAFT">
         <LockStatus />
       </DocumentForm>,
     )
     expect(screen.getByTestId('locked')).toHaveTextContent('false')
   })
 
-  it('provides isLocked=true via context when posted', () => {
+  it('provides isLocked=true via context when POSTED', () => {
     render(
-      <DocumentForm status="posted">
+      <DocumentForm status="POSTED">
         <LockStatus />
       </DocumentForm>,
     )

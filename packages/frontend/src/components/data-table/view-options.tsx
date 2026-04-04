@@ -2,7 +2,7 @@ import type { Table } from '@tanstack/react-table'
 import { SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
-import { isSeniorOrHigher } from '~/components/document/lifecycle-actions'
+import { isSeniorOrHigher } from '~/lib/rbac'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

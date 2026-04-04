@@ -1,4 +1,4 @@
-export { LifecycleActions, isSupervisorOrHigher, isSeniorOrHigher } from './lifecycle-actions'
+export { LifecycleActions } from './lifecycle-actions'
 export { DocumentHeader } from './document-header'
 export { DocumentForm, useDocumentFormLock } from './document-form'
 export { ChildItemsTable } from './child-items-table'

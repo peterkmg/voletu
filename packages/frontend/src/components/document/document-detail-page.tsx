@@ -45,7 +45,7 @@ export function DocumentDetailPage({
   itemsContent,
   metadataContent,
 }: DocumentDetailPageProps) {
-  const isLocked = document.status === 'posted' || document.status === 'Posted' || document.status === 'executed'
+  const isLocked = document.status === 'POSTED'
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4">

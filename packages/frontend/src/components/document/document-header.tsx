@@ -85,7 +85,7 @@ export function DocumentHeader({
           </DropdownMenu>
         )}
       </div>
-      {(status === 'posted' || status === 'Posted' || status === 'executed') && (
+      {status === 'POSTED' && (
         <div className="rounded-md border border-yellow-600/50 bg-yellow-950/20 px-4 py-2 text-sm text-yellow-500">
           {t('document.executedWarning', 'This document is executed and locked. Only Senior Supervisors can revert it to draft.')}
         </div>

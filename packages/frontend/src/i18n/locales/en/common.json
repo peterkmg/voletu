@@ -103,7 +103,12 @@
     "quantity": "Quantity",
     "expectedQty": "Expected Qty",
     "actualQty": "Actual Qty",
-    "source": "Source"
+    "source": "Source",
+    "storage": "Storage",
+    "fromStorage": "From Storage",
+    "toStorage": "To Storage",
+    "fromContractor": "From Contractor",
+    "toContractor": "To Contractor"
   },
   "error": {
     "title": "Something went wrong",

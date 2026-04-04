@@ -103,7 +103,12 @@
     "quantity": "Количество",
     "expectedQty": "Ожидаемое кол-во",
     "actualQty": "Фактическое кол-во",
-    "source": "Источник"
+    "source": "Источник",
+    "storage": "Ёмкость",
+    "fromStorage": "Из ёмкости",
+    "toStorage": "В ёмкость",
+    "fromContractor": "От контрагента",
+    "toContractor": "К контрагенту"
   },
   "error": {
     "title": "Что-то пошло не так",
