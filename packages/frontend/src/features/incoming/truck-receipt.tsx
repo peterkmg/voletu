@@ -1,24 +1,45 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { TruckReceiptPipelineResponse } from '~/generated/types'
-import { getRouteApi } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { Eye } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { z } from 'zod'
+import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
+import { EntityPickerField } from '~/components/entity-picker'
+import { FormDialog } from '~/components/forms/form-dialog'
+import { TextField } from '~/components/forms/form-fields'
+import { Form } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
-import { useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
+import { DropdownMenuItem } from '~/components/ui/dropdown-menu'
+import { transportTruckWaybillCreate } from '~/generated/client'
+import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { flowTruckReceiptQueryQueryKey, useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
+import { pipelineStatusColors } from '~/lib/badge-colors'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
-
-const pipelineStatusColors: Record<string, string> = {
-  PENDING: 'bg-yellow-950 text-yellow-500 border-yellow-800',
-  DRAFT: 'bg-blue-950 text-blue-400 border-blue-800',
-  EXECUTED: 'bg-green-950 text-green-400 border-green-800',
-}
 
 type DialogType = 'create'
 
-const { Provider, useEntity: _useEntity } = createEntityProvider<TruckReceiptPipelineResponse, DialogType>('TruckReceipt')
+const { Provider, useEntity } = createEntityProvider<TruckReceiptPipelineResponse, DialogType>('TruckReceipt')
+
+// Row action: View Details only (navigate to detail page)
+function DataTableRowActions({ row }: { row: { original: TruckReceiptPipelineResponse } }) {
+  const navigate = useNavigate()
+  const { t } = useTranslation('common')
+  const r = row.original
+
+  const targetId = r.pipelineStatus === 'PENDING' ? r.id : (r.actionId ?? r.id)
+
+  return (
+    <DropdownMenuItem onClick={() => navigate({ to: `/incoming/truck/${targetId}` })}>
+      <Eye className="mr-2 size-4" />
+      {t('actions.viewDetails')}
+    </DropdownMenuItem>
+  )
+}
 
 function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
   return [
@@ -31,6 +52,7 @@ function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
     statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
     textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber')),
     textColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
+    actionsColumn<TruckReceiptPipelineResponse>(DataTableRowActions),
   ]
 }
 
@@ -50,18 +72,52 @@ function TruckReceiptTable({ data }: { data: TruckReceiptPipelineResponse[] }) {
   )
 }
 
-function PrimaryButtons() {
-  const { t } = useTranslation('common')
+// Waybill creation dialog
+const waybillSchema = z.object({
+  documentNumber: z.string().min(1),
+  date: z.string().min(1),
+  senderId: z.string().uuid(),
+})
+
+type WaybillFormValues = z.infer<typeof waybillSchema>
+
+function WaybillMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: TruckReceiptPipelineResponse | null }) {
+  const { t } = useTranslation(['common'])
+  const companiesQuery = useCatalogCompanyList()
+
+  const { form, handleSubmit, handleOpenChange } = useMutateDialog({
+    open, onOpenChange, schema: waybillSchema,
+    defaultValues: { documentNumber: '', date: '', senderId: '' },
+    createFn: transportTruckWaybillCreate,
+    queryKey: flowTruckReceiptQueryQueryKey(),
+    entityLabel: t('common:nav.truckReceipt'),
+    formId: 'truck-waybill-form',
+  })
+
   return (
-    <Button size="sm">
-      <Plus className="mr-1 size-4" />
-      {t('actions.create')}
-    </Button>
+    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description="Truck Waybill" formId="truck-waybill-form" isSubmitting={form.formState.isSubmitting}>
+      <Form {...form}>
+        <form id="truck-waybill-form" onSubmit={handleSubmit} className="space-y-5">
+          <TextField<WaybillFormValues> name="documentNumber" label={t('common:table.documentNumber')} />
+          <TextField<WaybillFormValues> name="date" label={t('common:table.date')} type="date" />
+          <EntityPickerField<WaybillFormValues> name="senderId" label={t('common:table.contractor')} queryResult={companiesQuery} />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }
 
-function Dialogs() {
-  return null
+const Dialogs = createEntityDialogs({ useEntity, MutateDialog: WaybillMutateDialog })
+
+function PrimaryButtons() {
+  const { t } = useTranslation('common')
+  const { setOpen, setCurrentRow } = useEntity()
+
+  return (
+    <Button size="sm" onClick={() => { setCurrentRow(null); setOpen('create') }}>
+      {t('actions.create')} Waybill
+    </Button>
+  )
 }
 
 export function TruckReceiptPage() {
