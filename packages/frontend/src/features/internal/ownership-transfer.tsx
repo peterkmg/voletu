@@ -35,6 +35,7 @@ function getColumns(t: TFunction): ColumnDef<OwnershipTransferResponse>[] {
     selectColumn<OwnershipTransferResponse>(),
     dateColumn<OwnershipTransferResponse>('date', t('common:table.date')),
     statusColumn<OwnershipTransferResponse>('status', t('common:table.status'), documentStatusColors),
+    { ...dateColumn<OwnershipTransferResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<OwnershipTransferResponse>(DataTableRowActions),
   ]
 }

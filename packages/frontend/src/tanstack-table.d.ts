@@ -11,5 +11,7 @@ declare module '@tanstack/react-table' {
     label?: string
     filterType?: 'text' | 'date' | 'number' | 'enum'
     enableHeaderFilter?: boolean
+    /** Role required to see this column in view-options dropdown. */
+    requiresRole?: string
   }
 }

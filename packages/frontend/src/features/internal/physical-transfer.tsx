@@ -36,6 +36,7 @@ function getColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
     textColumn<PhysicalTransferResponse>('documentNumber', t('common:table.documentNumber')),
     dateColumn<PhysicalTransferResponse>('date', t('common:table.date')),
     statusColumn<PhysicalTransferResponse>('status', t('common:table.status'), documentStatusColors),
+    { ...dateColumn<PhysicalTransferResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<PhysicalTransferResponse>(DataTableRowActions),
   ]
 }

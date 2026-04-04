@@ -39,6 +39,7 @@ function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
     dateColumn<DispatchResponse>('date', t('common:table.date')),
     resolvedColumn<DispatchResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
     statusColumn<DispatchResponse>('status', t('common:table.status'), documentStatusColors),
+    { ...dateColumn<DispatchResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<DispatchResponse>(DataTableRowActions),
   ]
 }

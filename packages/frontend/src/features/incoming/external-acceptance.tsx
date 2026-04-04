@@ -37,6 +37,7 @@ function getColumns(t: TFunction): ColumnDef<AcceptanceResponse>[] {
     dateColumn<AcceptanceResponse>('dateAccepted', t('common:table.date')),
     textColumn<AcceptanceResponse>('sourceEntity', t('common:table.source')),
     statusColumn<AcceptanceResponse>('status', t('common:table.status'), documentStatusColors),
+    { ...dateColumn<AcceptanceResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<AcceptanceResponse>(DataTableRowActions),
   ]
 }

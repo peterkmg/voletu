@@ -39,6 +39,7 @@ function getColumns(t: TFunction): ColumnDef<InventoryReconciliationResponse>[] 
     textColumn<InventoryReconciliationResponse>('documentNumber', t('common:table.documentNumber')),
     dateColumn<InventoryReconciliationResponse>('date', t('common:table.date')),
     statusColumn<InventoryReconciliationResponse>('status', t('common:table.status'), documentStatusColors),
+    { ...dateColumn<InventoryReconciliationResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<InventoryReconciliationResponse>(DataTableRowActions),
   ]
 }

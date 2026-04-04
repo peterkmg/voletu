@@ -48,6 +48,8 @@ function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
     resolvedColumn<BlendingResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
     resolvedColumn<BlendingResponse>('targetProductId', t('common:table.product'), 'targetProductIdName'),
     statusColumn<BlendingResponse>('status', t('common:table.status'), documentStatusColors),
+    { ...dateColumn<BlendingResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
+    { ...dateColumn<BlendingResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<BlendingResponse>(DataTableRowActions),
   ]
 }
