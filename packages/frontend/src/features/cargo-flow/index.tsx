@@ -1,10 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Eye, Plus } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { createGlobalFilter, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { RowActions } from '~/components/data-table/row-actions'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
 import { Button } from '~/components/ui/button'
@@ -32,25 +33,21 @@ interface CargoFlowRow {
   flowRoute: string
 }
 
-function RowActions({ row }: { row: { original: CargoFlowRow } }) {
+function CargoFlowRowActions({ row }: { row: { original: CargoFlowRow } }) {
   const navigate = useNavigate()
   const { t } = useTranslation('common')
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <Eye className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigate({ to: `${row.original.flowRoute}/${row.original.id}` })}>
-          <Eye className="mr-2 size-4" />
-          {t('actions.viewDetails')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <RowActions
+      actions={[
+        {
+          label: t('actions.viewDetails'),
+          icon: ChevronRight,
+          inline: true,
+          onClick: () => navigate({ to: `${row.original.flowRoute}/${row.original.id}` }),
+        },
+      ]}
+    />
   )
 }
 
@@ -58,14 +55,13 @@ const cargoFlowStatusColors = { ...documentStatusColors, ...pipelineStatusColors
 
 function getColumns(t: TFunction): ColumnDef<CargoFlowRow>[] {
   return [
-    selectColumn<CargoFlowRow>(),
     textColumn<CargoFlowRow>('type', 'Type'),
     textColumn<CargoFlowRow>('operation', 'Operation'),
     textColumn<CargoFlowRow>('documentNumber', t('common:table.documentNumber')),
     textColumn<CargoFlowRow>('date', t('common:table.date')),
     textColumn<CargoFlowRow>('contractorName', t('common:table.contractor')),
     statusColumn<CargoFlowRow>('status', t('common:table.status'), cargoFlowStatusColors),
-    { id: 'actions', cell: ({ row }) => <RowActions row={row} />, size: 40 },
+    { id: 'actions', cell: ({ row }) => <CargoFlowRowActions row={row} />, size: 48, enableHiding: false },
   ]
 }
 
