@@ -1,6 +1,6 @@
 import type { Row } from '@tanstack/react-table'
 import type { RowAction } from '~/components/data-table'
-import { Archive, Pencil, Play, Trash2, Undo2 } from 'lucide-react'
+import { Archive, ChevronRight, Pencil, Play, Trash2, Undo2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RowActions } from '~/components/data-table'
 import { useAuthStore } from '~/stores/auth-store'
@@ -12,6 +12,10 @@ interface CreateRowActionsConfig<TRow extends { id: string }> {
   }
   lifecycle?: boolean
   deleteOnly?: boolean
+  /** Adds an inline navigate button. Receives row data. */
+  navigate?: (row: TRow) => void
+  /** Only show navigate action (no edit/delete). For read-only aggregation tables. */
+  navigateOnly?: boolean
 }
 
 export function createRowActions<TRow extends { id: string }>(
@@ -27,19 +31,39 @@ export function createRowActions<TRow extends { id: string }>(
       ;(setOpen as (s: string | null) => void)(dialogType)
     }
 
-    if (config.deleteOnly) {
+    // Navigate-only mode (e.g. Cargo Flow aggregation)
+    if (config.navigateOnly && config.navigate) {
       return (
         <RowActions
           actions={[
             {
-              label: t('common:actions.delete'),
-              icon: Trash2,
-              variant: 'destructive' as const,
-              onClick: select('delete'),
+              label: t('common:actions.viewDetails'),
+              icon: ChevronRight,
+              inline: true,
+              onClick: () => config.navigate!(row.original),
             },
           ]}
         />
       )
+    }
+
+    if (config.deleteOnly) {
+      const actions: RowAction[] = []
+      if (config.navigate) {
+        actions.push({
+          label: t('common:actions.viewDetails'),
+          icon: ChevronRight,
+          inline: true,
+          onClick: () => config.navigate!(row.original),
+        })
+      }
+      actions.push({
+        label: t('common:actions.delete'),
+        icon: Trash2,
+        variant: 'destructive' as const,
+        onClick: select('delete'),
+      })
+      return <RowActions actions={actions} />
     }
 
     const actions: RowAction[] = [
@@ -50,6 +74,16 @@ export function createRowActions<TRow extends { id: string }>(
         onClick: select('update'),
       },
     ]
+
+    // Inline navigate button (after edit)
+    if (config.navigate) {
+      actions.push({
+        label: t('common:actions.viewDetails'),
+        icon: ChevronRight,
+        inline: true,
+        onClick: () => config.navigate!(row.original),
+      })
+    }
 
     if (config.lifecycle) {
       const status = (row.original as { status?: string }).status
