@@ -141,10 +141,9 @@ export function RailReceiptDetail() {
     const doc = acceptanceQuery.data.data
     return (
       <DocumentDetailPage
-        config={{ title: 'Acceptance Document', entityLabel: 'Acceptance', backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: documentStatusColors, basis: { label: 'Rail Waybill' } }}
+        config={{ title: 'Acceptance Document', entityLabel: 'Acceptance', backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: documentStatusColors }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.railReceipt')}
-        basisDocument={doc.railWaybillId ? { documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, details: [], navigateTo: `/incoming/rail/${doc.railWaybillId}` } : undefined}
         formContent={
           <div className="grid grid-cols-3 gap-4">
             <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.dateAccepted}</p></div>

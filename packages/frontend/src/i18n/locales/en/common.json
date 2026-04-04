@@ -175,6 +175,13 @@
     "aboutVersion": "Version {{version}}",
     "keyboardShortcuts": "Keyboard Shortcuts"
   },
+  "document": {
+    "information": "Document Information",
+    "relatedDocuments": "Related Documents",
+    "noRelatedDocuments": "No related documents",
+    "executionMetadata": "Execution Metadata",
+    "lineItems": "Line Items"
+  },
   "debug": {
     "seedDatabase": "Seed Database",
     "seeding": "Seeding\u2026",

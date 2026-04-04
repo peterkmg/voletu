@@ -1,6 +1,7 @@
+import { useTranslation } from 'react-i18next'
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { DocumentHeader } from './document-header'
 import { DocumentForm } from './document-form'
-import { BasisLink } from './basis-link'
 
 interface DocumentDetailConfig {
   title: string
@@ -10,9 +11,6 @@ interface DocumentDetailConfig {
   revertFn: (id: string) => Promise<unknown>
   queryKey: readonly unknown[]
   statusColorMap?: Record<string, string>
-  basis?: {
-    label: string
-  }
 }
 
 interface DocumentDetailPageProps {
@@ -24,11 +22,7 @@ interface DocumentDetailPageProps {
     [key: string]: unknown
   }
   subtitle?: string
-  basisDocument?: {
-    documentNumber: string
-    details: { label: string; value: string }[]
-    navigateTo: string
-  }
+  relatedContent?: React.ReactNode
   formContent: React.ReactNode
   itemsContent?: React.ReactNode
   metadataContent?: React.ReactNode
@@ -40,15 +34,16 @@ export function DocumentDetailPage({
   config,
   document,
   subtitle,
-  basisDocument,
+  relatedContent,
   formContent,
   itemsContent,
   metadataContent,
 }: DocumentDetailPageProps) {
+  const { t } = useTranslation(['common'])
   const isLocked = document.status === 'POSTED'
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4">
+    <div className="mx-auto max-w-5xl space-y-6 p-4">
       <DocumentHeader
         title={config.title}
         documentNumber={document.documentNumber}
@@ -63,33 +58,34 @@ export function DocumentDetailPage({
         documentId={document.id}
       />
 
-      {basisDocument && config.basis && (
-        <BasisLink
-          label={config.basis.label}
-          documentNumber={basisDocument.documentNumber}
-          details={basisDocument.details}
-          navigateTo={basisDocument.navigateTo}
-        />
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            {t('common:document.information')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DocumentForm status={document.status}>
+            {formContent}
+          </DocumentForm>
+        </CardContent>
+      </Card>
 
-      <div>
-        <h3 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Document Details
-        </h3>
-        <DocumentForm status={document.status}>
-          {formContent}
-        </DocumentForm>
-      </div>
+      {relatedContent}
 
       {itemsContent}
 
       {isLocked && metadataContent && (
-        <div>
-          <h3 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            Execution Metadata
-          </h3>
-          {metadataContent}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              {t('common:document.executionMetadata')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metadataContent}
+          </CardContent>
+        </Card>
       )}
     </div>
   )

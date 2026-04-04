@@ -172,15 +172,9 @@ export function TruckReceiptDetail() {
           revertFn: acceptanceDocumentRevert,
           queryKey: flowTruckReceiptQueryQueryKey(),
           statusColorMap: documentStatusColors,
-          basis: { label: 'Truck Waybill' },
         }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.truckReceipt')}
-        basisDocument={doc.truckWaybillId ? {
-          documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId,
-          details: [],
-          navigateTo: `/incoming/truck/${doc.truckWaybillId}`,
-        } : undefined}
         formContent={
           <div className="grid grid-cols-3 gap-4">
             <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.dateAccepted}</p></div>
