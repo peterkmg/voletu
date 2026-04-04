@@ -6,15 +6,10 @@ import {
   ArrowLeftRight,
   BarChart3,
   Building2,
-  ClipboardCheck,
-  FlaskConical,
-  Fuel,
   LayoutDashboard,
   Package,
+  PackageOpen,
   RefreshCw,
-  Ship,
-  TrainFront,
-  Truck,
   Users,
   Warehouse,
 } from 'lucide-react'
@@ -26,32 +21,40 @@ export function getSidebarData(t: TFunction): SidebarData {
         title: t('common:nav.overview'),
         items: [
           { title: t('common:nav.dashboard'), url: '/', icon: LayoutDashboard },
+        ],
+      },
+      {
+        title: t('common:nav.operations'),
+        items: [
           { title: t('common:nav.cargoFlow'), url: '/cargo-flow', icon: BarChart3 },
-        ],
-      },
-      {
-        title: t('common:nav.incoming'),
-        items: [
-          { title: t('common:nav.truckReceipt'), url: '/incoming/truck', icon: Truck },
-          { title: t('common:nav.railReceipt'), url: '/incoming/rail', icon: TrainFront },
-          { title: t('common:nav.externalAcceptance'), url: '/incoming/external', icon: ArrowDownToLine },
-        ],
-      },
-      {
-        title: t('common:nav.outgoing'),
-        items: [
-          { title: t('common:nav.truckDispatch'), url: '/outgoing/truck', icon: Truck },
-          { title: t('common:nav.directDispatch'), url: '/outgoing/direct', icon: Ship },
-          { title: t('common:nav.bunkering'), url: '/outgoing/bunkering', icon: Fuel },
-        ],
-      },
-      {
-        title: t('common:nav.internal'),
-        items: [
-          { title: t('common:nav.physicalTransfer'), url: '/internal/physical-transfer', icon: ArrowLeftRight },
-          { title: t('common:nav.ownershipTransfer'), url: '/internal/ownership-transfer', icon: ArrowLeftRight },
-          { title: t('common:nav.blending'), url: '/internal/blending', icon: FlaskConical },
-          { title: t('common:nav.reconciliation'), url: '/internal/reconciliation', icon: ClipboardCheck },
+          {
+            title: t('common:nav.incoming'),
+            icon: ArrowDownToLine,
+            items: [
+              { title: t('common:nav.truckReceipt'), url: '/incoming/truck' },
+              { title: t('common:nav.railReceipt'), url: '/incoming/rail' },
+              { title: t('common:nav.externalAcceptance'), url: '/incoming/external' },
+            ],
+          },
+          {
+            title: t('common:nav.outgoing'),
+            icon: PackageOpen,
+            items: [
+              { title: t('common:nav.truckDispatch'), url: '/outgoing/truck' },
+              { title: t('common:nav.directDispatch'), url: '/outgoing/direct' },
+              { title: t('common:nav.bunkering'), url: '/outgoing/bunkering' },
+            ],
+          },
+          {
+            title: t('common:nav.internal'),
+            icon: ArrowLeftRight,
+            items: [
+              { title: t('common:nav.physicalTransfer'), url: '/internal/physical-transfer' },
+              { title: t('common:nav.ownershipTransfer'), url: '/internal/ownership-transfer' },
+              { title: t('common:nav.blending'), url: '/internal/blending' },
+              { title: t('common:nav.reconciliation'), url: '/internal/reconciliation' },
+            ],
+          },
         ],
       },
       {

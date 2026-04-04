@@ -37,7 +37,8 @@
     "users": "Users",
     "syncStatus": "Sync Status",
     "overview": "Overview",
-    "settings": "Settings"
+    "settings": "Settings",
+    "operations": "Operations"
   },
   "actions": {
     "create": "Create",
