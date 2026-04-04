@@ -1,10 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { BlendingResponse } from '~/generated/types'
+import type { BlendingComponentResponse, BlendingResponse, BlendingResultResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { DocumentDetailPage } from '~/components/document'
+import { ChildItemsTable } from '~/components/document/child-items-table'
+import { Skeleton } from '~/components/ui/skeleton'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -12,6 +15,7 @@ import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { blendingDocumentCreate, blendingDocumentExecute, blendingDocumentHardDelete, blendingDocumentRevert, blendingDocumentSoftDelete, blendingDocumentUpdate } from '~/generated/client'
+import { useBlendingCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useBlendingCompositeGet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
 import { blendingDocumentListQueryKey, useBlendingDocumentList } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
@@ -51,6 +55,7 @@ function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
 // --- Table ---
 
 const blendingRoute = getRouteApi('/_authenticated/internal/blending/')
+const blendingDetailRoute = getRouteApi('/_authenticated/internal/blending/$id')
 const blendingGlobalFilterFn = createGlobalFilter<BlendingResponse>('documentNumber')
 
 function BlendingTable({ data }: { data: BlendingResponse[] }) {
@@ -218,5 +223,66 @@ export function BlendingPage() {
 }
 
 export function BlendingDetail() {
-  return <div className="p-4">Blending Detail — TODO</div>
+  const { id } = blendingDetailRoute.useParams()
+  const { t } = useTranslation(['common'])
+  const { data, isLoading } = useBlendingCompositeGet(id)
+
+  if (isLoading || !data?.data) {
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  }
+
+  const composite = data.data
+  const doc = composite.document
+
+  return (
+    <DocumentDetailPage
+      config={{
+        title: t('common:nav.blending'),
+        entityLabel: 'Blending Document',
+        backTo: '/internal/blending',
+        executeFn: blendingDocumentExecute,
+        revertFn: blendingDocumentRevert,
+        queryKey: blendingDocumentListQueryKey(),
+        statusColorMap: documentStatusColors,
+      }}
+      document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
+      formContent={
+        <div className="grid grid-cols-3 gap-4">
+          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
+          <div><span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span><p>{doc.contractorIdName ?? doc.contractorId}</p></div>
+          <div><span className="text-sm text-muted-foreground">{t('common:table.product')}</span><p>{doc.targetProductIdName ?? doc.targetProductId}</p></div>
+        </div>
+      }
+      itemsContent={
+        <>
+          <ChildItemsTable
+            items={composite.components}
+            columns={[
+              textColumn<BlendingComponentResponse>('sourceProductIdName', t('common:table.product')),
+              textColumn<BlendingComponentResponse>('storageIdName', 'Storage'),
+              textColumn<BlendingComponentResponse>('amountUsed', t('common:table.quantity')),
+            ]}
+            isLocked={doc.status === 'POSTED'}
+            sectionTitle="Components (Inputs)"
+          />
+          <ChildItemsTable
+            items={composite.results}
+            columns={[
+              textColumn<BlendingResultResponse>('storageIdName', 'Storage'),
+              textColumn<BlendingResultResponse>('producedAmount', t('common:table.quantity')),
+            ]}
+            isLocked={doc.status === 'POSTED'}
+            sectionTitle="Results (Outputs)"
+          />
+        </>
+      }
+      metadataContent={
+        doc.executedAt ? (
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div>
+          </div>
+        ) : null
+      }
+    />
+  )
 }
