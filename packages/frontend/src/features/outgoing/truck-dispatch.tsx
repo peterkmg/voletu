@@ -15,7 +15,7 @@ import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
-import { DropdownMenuItem } from '~/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import type { DispatchItemResponse } from '~/generated/types'
 import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentRevert } from '~/generated/client'
 import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
@@ -35,10 +35,20 @@ function DataTableRowActions({ row }: { row: { original: TruckDispatchPipelineRe
   const { t } = useTranslation('common')
 
   return (
-    <DropdownMenuItem onClick={() => navigate({ to: `/outgoing/truck/${row.original.id}` })}>
-      <Eye className="mr-2 size-4" />
-      {t('actions.viewDetails')}
-    </DropdownMenuItem>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <Eye className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => navigate({ to: `/outgoing/truck/${row.original.id}` })}>
+          <Eye className="mr-2 size-4" />
+          {t('actions.viewDetails')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

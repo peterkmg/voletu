@@ -37,10 +37,20 @@ function RowActions({ row }: { row: { original: CargoFlowRow } }) {
   const { t } = useTranslation('common')
 
   return (
-    <DropdownMenuItem onClick={() => navigate({ to: `${row.original.flowRoute}/${row.original.id}` })}>
-      <Eye className="mr-2 size-4" />
-      {t('actions.viewDetails')}
-    </DropdownMenuItem>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <Eye className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => navigate({ to: `${row.original.flowRoute}/${row.original.id}` })}>
+          <Eye className="mr-2 size-4" />
+          {t('actions.viewDetails')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
