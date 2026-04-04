@@ -1,41 +1,74 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import type { TFunction } from 'i18next'
 import type { BlendingResponse } from '~/generated/types'
-import { useTranslation } from 'react-i18next'
-import { createGlobalFilter, dateColumn, EntityTable, resolvedColumn, statusColumn, textColumn } from '~/components/data-table'
-import { useBlendingDocumentList } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
 import { getRouteApi } from '@tanstack/react-router'
+import { Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { EntityPage } from '~/components/entity-page'
+import { Button } from '~/components/ui/button'
+import { useBlendingDocumentList } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
 import { documentStatusColors } from '~/lib/badge-colors'
+import { createEntityProvider } from '~/lib/create-entity-provider'
 
-function getColumns(t: (k: string) => string): ColumnDef<BlendingResponse>[] {
+type DialogType = 'create'
+
+const { Provider, useEntity: _useEntity } = createEntityProvider<BlendingResponse, DialogType>('Blending')
+
+function getColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
   return [
-    textColumn('documentNumber', t('common:table.documentNumber'), { primary: true }),
-    dateColumn('date', t('common:table.date')),
-    resolvedColumn('contractorId', t('common:table.contractor'), 'contractorIdName'),
-    resolvedColumn('targetProductId', t('common:table.product'), 'targetProductIdName'),
-    statusColumn('status', t('common:table.status'), documentStatusColors),
+    selectColumn<BlendingResponse>(),
+    textColumn<BlendingResponse>('documentNumber', t('common:table.documentNumber')),
+    dateColumn<BlendingResponse>('date', t('common:table.date')),
+    resolvedColumn<BlendingResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
+    resolvedColumn<BlendingResponse>('targetProductId', t('common:table.product'), 'targetProductIdName'),
+    statusColumn<BlendingResponse>('status', t('common:table.status'), documentStatusColors),
   ]
 }
 
 const route = getRouteApi('/_authenticated/internal/blending/')
 const globalFilterFn = createGlobalFilter<BlendingResponse>('documentNumber')
 
+function BlendingTable({ data }: { data: BlendingResponse[] }) {
+  return (
+    <EntityTable
+      tableId="blending-internal"
+      data={data}
+      getColumns={getColumns}
+      routeApi={route}
+      globalFilterFn={globalFilterFn}
+      i18nNamespaces={['common']}
+    />
+  )
+}
+
+function PrimaryButtons() {
+  const { t } = useTranslation('common')
+  return (
+    <Button size="sm">
+      <Plus className="mr-1 size-4" />
+      {t('actions.create')}
+    </Button>
+  )
+}
+
+function Dialogs() {
+  return null
+}
+
 export function BlendingPage() {
   const { t } = useTranslation(['common'])
   const queryResult = useBlendingDocumentList()
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">{t('common:nav.blending')}</h1>
-      <EntityTable
-        data={queryResult.data?.data ?? []}
-        getColumns={getColumns}
-        routeApi={route}
-        globalFilterFn={globalFilterFn}
-        i18nNamespaces={['common']}
-        isLoading={queryResult.isLoading}
-        tableId="blending-internal"
-      />
-    </div>
+    <EntityPage
+      provider={Provider}
+      title={t('common:nav.blending')}
+      queryResult={queryResult}
+      primaryButtons={PrimaryButtons}
+      table={BlendingTable}
+      dialogs={Dialogs}
+    />
   )
 }
 

@@ -156,7 +156,7 @@ impl DocumentService {
         .unwrap_or(Decimal::ZERO);
 
       rows.push(TruckReceiptPipelineResponse {
-        basis_id: wb.id,
+        id: wb.id,
         basis_document_number: wb.document_number.clone(),
         basis_date: wb.date.to_string(),
         contractor_id: wb.sender_id,

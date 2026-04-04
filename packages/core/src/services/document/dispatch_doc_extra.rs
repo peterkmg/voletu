@@ -197,7 +197,7 @@ impl DocumentService {
       let total: Decimal = dd.items.iter().map(|i| i.dispatched_amount).sum();
 
       rows.push(TruckDispatchPipelineResponse {
-        dispatch_id: dd.id,
+        id: dd.id,
         document_number: dd.document_number.clone(),
         date: dd.date.to_string(),
         contractor_id: dd.contractor_id,

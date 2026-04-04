@@ -90,7 +90,17 @@
     "modePaginated": "Paginated view",
     "densityCompact": "Compact",
     "densityNormal": "Normal",
-    "densityComfortable": "Comfortable"
+    "densityComfortable": "Comfortable",
+    "documentNumber": "Document #",
+    "waybillNumber": "Waybill #",
+    "acceptanceNumber": "Acceptance #",
+    "date": "Date",
+    "contractor": "Contractor",
+    "product": "Product",
+    "quantity": "Quantity",
+    "expectedQty": "Expected Qty",
+    "actualQty": "Actual Qty",
+    "source": "Source"
   },
   "error": {
     "title": "Something went wrong",

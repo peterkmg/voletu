@@ -6,7 +6,7 @@ use crate::enums::PipelineStatus;
 
 #[response_dto]
 pub struct TruckReceiptPipelineResponse {
-  pub basis_id: Uuid,
+  pub id: Uuid,
   pub basis_document_number: String,
   pub basis_date: String,
   pub contractor_id: Uuid,
@@ -31,7 +31,7 @@ pub struct TruckReceiptPipelineResponse {
 
 #[response_dto]
 pub struct RailReceiptPipelineResponse {
-  pub basis_id: Uuid,
+  pub id: Uuid,
   pub basis_document_number: String,
   pub basis_date: String,
   pub contractor_id: Uuid,
@@ -56,7 +56,7 @@ pub struct RailReceiptPipelineResponse {
 
 #[response_dto]
 pub struct TruckDispatchPipelineResponse {
-  pub dispatch_id: Uuid,
+  pub id: Uuid,
   pub document_number: String,
   pub date: String,
   pub contractor_id: Uuid,

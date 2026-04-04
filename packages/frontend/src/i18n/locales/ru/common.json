@@ -90,7 +90,17 @@
     "modePaginated": "Постраничный",
     "densityCompact": "Компактный",
     "densityNormal": "Обычный",
-    "densityComfortable": "Свободный"
+    "densityComfortable": "Свободный",
+    "documentNumber": "Номер документа",
+    "waybillNumber": "Номер накладной",
+    "acceptanceNumber": "Номер приёмки",
+    "date": "Дата",
+    "contractor": "Контрагент",
+    "product": "Продукция",
+    "quantity": "Количество",
+    "expectedQty": "Ожидаемое кол-во",
+    "actualQty": "Фактическое кол-во",
+    "source": "Источник"
   },
   "error": {
     "title": "Что-то пошло не так",
