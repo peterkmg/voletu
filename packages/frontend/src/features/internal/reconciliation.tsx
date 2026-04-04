@@ -1,10 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { InventoryReconciliationResponse } from '~/generated/types'
+import type { InventoryAdjustmentResponse, InventoryReconciliationResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { DocumentDetailPage } from '~/components/document'
+import { ChildItemsTable } from '~/components/document/child-items-table'
+import { Skeleton } from '~/components/ui/skeleton'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -12,6 +15,8 @@ import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { reconciliationCreate, reconciliationExecute, reconciliationHardDelete, reconciliationRevert, reconciliationSoftDelete, reconciliationUpdate } from '~/generated/client'
+import { useReconciliationGet } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationGet'
+import { useAdjustmentList } from '~/generated/hooks/DocumentOperationsHooks/useAdjustmentList'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { reconciliationListQueryKey, useReconciliationList } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
@@ -39,6 +44,7 @@ function getColumns(t: TFunction): ColumnDef<InventoryReconciliationResponse>[] 
 }
 
 const route = getRouteApi('/_authenticated/internal/reconciliation/')
+const detailRoute = getRouteApi('/_authenticated/internal/reconciliation/$id')
 const globalFilterFn = createGlobalFilter<InventoryReconciliationResponse>('documentNumber')
 
 function ReconciliationTable({ data }: { data: InventoryReconciliationResponse[] }) {
@@ -95,5 +101,41 @@ export function ReconciliationPage() {
 }
 
 export function ReconciliationDetail() {
-  return <div className="p-4">Reconciliation Detail — TODO</div>
+  const { id } = detailRoute.useParams()
+  const { t } = useTranslation(['common'])
+  const { data: docData, isLoading } = useReconciliationGet(id)
+  const { data: itemsData } = useAdjustmentList()
+
+  if (isLoading || !docData?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+
+  const doc = docData.data
+  const items = (itemsData?.data ?? []).filter((i: InventoryAdjustmentResponse) => i.reconciliationId === id)
+
+  return (
+    <DocumentDetailPage
+      config={{ title: t('common:nav.reconciliation'), entityLabel: 'Reconciliation', backTo: '/internal/reconciliation', executeFn: reconciliationExecute, revertFn: reconciliationRevert, queryKey: reconciliationListQueryKey(), statusColorMap: documentStatusColors }}
+      document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
+      formContent={
+        <div className="grid grid-cols-3 gap-4">
+          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
+          <div><span className="text-sm text-muted-foreground">Warehouse</span><p>{doc.warehouseIdName ?? doc.warehouseId}</p></div>
+        </div>
+      }
+      itemsContent={
+        <ChildItemsTable
+          items={items}
+          columns={[
+            textColumn<InventoryAdjustmentResponse>('productIdName', t('common:table.product')),
+            textColumn<InventoryAdjustmentResponse>('storageIdName', 'Storage'),
+            textColumn<InventoryAdjustmentResponse>('contractorIdName', t('common:table.contractor')),
+            textColumn<InventoryAdjustmentResponse>('adjustmentType', 'Type'),
+            textColumn<InventoryAdjustmentResponse>('amount', t('common:table.quantity')),
+          ]}
+          isLocked={doc.status === 'POSTED'}
+          sectionTitle="Adjustments"
+        />
+      }
+      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+    />
+  )
 }

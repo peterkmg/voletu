@@ -1,16 +1,20 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { OwnershipTransferResponse } from '~/generated/types'
+import type { OwnershipTransferItemResponse, OwnershipTransferResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { DocumentDetailPage } from '~/components/document'
+import { ChildItemsTable } from '~/components/document/child-items-table'
+import { Skeleton } from '~/components/ui/skeleton'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { ownershipDocumentCreate, ownershipDocumentExecute, ownershipDocumentHardDelete, ownershipDocumentRevert, ownershipDocumentSoftDelete, ownershipDocumentUpdate } from '~/generated/client'
+import { useOwnershipTransferCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferCompositeGet'
 import { ownershipTransferListQueryKey, useOwnershipTransferList } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferList'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors } from '~/lib/badge-colors'
@@ -36,6 +40,7 @@ function getColumns(t: TFunction): ColumnDef<OwnershipTransferResponse>[] {
 }
 
 const route = getRouteApi('/_authenticated/internal/ownership-transfer/')
+const detailRoute = getRouteApi('/_authenticated/internal/ownership-transfer/$id')
 const globalFilterFn = createGlobalFilter<OwnershipTransferResponse>('id')
 
 function OwnershipTransferTable({ data }: { data: OwnershipTransferResponse[] }) {
@@ -87,5 +92,39 @@ export function OwnershipTransferPage() {
 }
 
 export function OwnershipTransferDetail() {
-  return <div className="p-4">Ownership Transfer Detail — TODO</div>
+  const { id } = detailRoute.useParams()
+  const { t } = useTranslation(['common'])
+  const { data, isLoading } = useOwnershipTransferCompositeGet(id)
+
+  if (isLoading || !data?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+
+  const doc = data.data
+  const items = doc.items ?? []
+
+  return (
+    <DocumentDetailPage
+      config={{ title: t('common:nav.ownershipTransfer'), entityLabel: 'Ownership Transfer', backTo: '/internal/ownership-transfer', executeFn: ownershipDocumentExecute, revertFn: ownershipDocumentRevert, queryKey: ownershipTransferListQueryKey(), statusColorMap: documentStatusColors }}
+      document={{ id: doc.id, documentNumber: doc.id, status: doc.status }}
+      formContent={
+        <div className="grid grid-cols-3 gap-4">
+          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
+        </div>
+      }
+      itemsContent={
+        <ChildItemsTable
+          items={items}
+          columns={[
+            textColumn<OwnershipTransferItemResponse>('fromContractorIdName', 'From Contractor'),
+            textColumn<OwnershipTransferItemResponse>('toContractorIdName', 'To Contractor'),
+            textColumn<OwnershipTransferItemResponse>('productIdName', t('common:table.product')),
+            textColumn<OwnershipTransferItemResponse>('storageIdName', 'Storage'),
+            textColumn<OwnershipTransferItemResponse>('amount', t('common:table.quantity')),
+          ]}
+          isLocked={doc.status === 'POSTED'}
+          sectionTitle="Transfer Items"
+        />
+      }
+      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+    />
+  )
 }

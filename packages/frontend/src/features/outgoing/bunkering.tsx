@@ -1,10 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { DispatchResponse } from '~/generated/types'
+import type { DispatchItemResponse, DispatchResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { DocumentDetailPage } from '~/components/document'
+import { ChildItemsTable } from '~/components/document/child-items-table'
+import { Skeleton } from '~/components/ui/skeleton'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -12,6 +15,7 @@ import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentHardDelete, dispatchDocumentRevert, dispatchDocumentSoftDelete, dispatchDocumentUpdate } from '~/generated/client'
+import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { dispatchDocumentQueryQueryKey, useDispatchDocumentQuery } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
@@ -40,6 +44,7 @@ function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
 }
 
 const route = getRouteApi('/_authenticated/outgoing/bunkering/')
+const detailRoute = getRouteApi('/_authenticated/outgoing/bunkering/$id')
 const globalFilterFn = createGlobalFilter<DispatchResponse>('documentNumber')
 
 function BunkeringTable({ data }: { data: DispatchResponse[] }) {
@@ -99,5 +104,38 @@ export function BunkeringPage() {
 }
 
 export function BunkeringDetail() {
-  return <div className="p-4">Bunkering Detail — TODO</div>
+  const { id } = detailRoute.useParams()
+  const { t } = useTranslation(['common'])
+  const { data, isLoading } = useDispatchCompositeGet(id)
+
+  if (isLoading || !data?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+
+  const doc = data.data
+
+  return (
+    <DocumentDetailPage
+      config={{ title: t('common:nav.bunkering'), entityLabel: 'Bunkering', backTo: '/outgoing/bunkering', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: dispatchDocumentQueryQueryKey(), statusColorMap: documentStatusColors }}
+      document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
+      formContent={
+        <div className="grid grid-cols-3 gap-4">
+          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
+          <div><span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span><p>{doc.contractorIdName ?? doc.contractorId}</p></div>
+          <div><span className="text-sm text-muted-foreground">Bunker Type</span><p>{doc.bunkerType ?? '—'}</p></div>
+        </div>
+      }
+      itemsContent={
+        <ChildItemsTable
+          items={doc.items}
+          columns={[
+            textColumn<DispatchItemResponse>('productIdName', t('common:table.product')),
+            textColumn<DispatchItemResponse>('storageIdName', 'Storage'),
+            textColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
+          ]}
+          isLocked={doc.status === 'POSTED'}
+          sectionTitle="Dispatch Items"
+        />
+      }
+      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+    />
+  )
 }
