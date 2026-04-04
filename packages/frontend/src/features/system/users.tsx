@@ -273,11 +273,7 @@ const UsersDialogs = createEntityDialogs({
 
 // --- Primary buttons ---
 
-const UsersPrimaryButtons = createPrimaryButtons({
-  useEntity: useUsers,
-  createLabel: 'system:users.create',
-  i18nNamespaces: ['system'],
-})
+const UsersPrimaryButtons = createPrimaryButtons({ useEntity: useUsers })
 
 // --- Page component ---
 

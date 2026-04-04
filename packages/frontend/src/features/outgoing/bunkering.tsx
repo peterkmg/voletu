@@ -95,7 +95,7 @@ function BunkeringLifecycleDialog({ open, onOpenChange, currentRow, variant }: {
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: BunkeringLifecycleDialog, lifecyclePropName: 'variant' })
-const PrimaryButtons = createPrimaryButtons({ useEntity, createLabel: 'common:actions.create', i18nNamespaces: ['common'] })
+const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function BunkeringPage() {
   const { t } = useTranslation(['common'])

@@ -92,7 +92,7 @@ function ReconciliationLifecycleDialog({ open, onOpenChange, currentRow, variant
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: ReconciliationLifecycleDialog, lifecyclePropName: 'variant' })
-const PrimaryButtons = createPrimaryButtons({ useEntity, createLabel: 'common:actions.create', i18nNamespaces: ['common'] })
+const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function ReconciliationPage() {
   const { t } = useTranslation(['common'])

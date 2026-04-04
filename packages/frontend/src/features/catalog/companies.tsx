@@ -210,11 +210,7 @@ const CompaniesDialogs = createEntityDialogs({
 
 // --- Primary Buttons ---
 
-const CompaniesPrimaryButtons = createPrimaryButtons({
-  useEntity: useCompanies,
-  createLabel: 'catalog:company.create',
-  i18nNamespaces: ['catalog'],
-})
+const CompaniesPrimaryButtons = createPrimaryButtons({ useEntity: useCompanies })
 
 // --- Page ---
 

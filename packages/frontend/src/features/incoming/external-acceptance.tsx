@@ -116,7 +116,7 @@ function AcceptanceLifecycleDialog({ open, onOpenChange, currentRow, variant }: 
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: AcceptanceLifecycleDialog, lifecyclePropName: 'variant' })
-const PrimaryButtons = createPrimaryButtons({ useEntity, createLabel: 'common:actions.create', i18nNamespaces: ['common'] })
+const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function ExternalAcceptancePage() {
   const { t } = useTranslation(['common'])

@@ -164,11 +164,7 @@ const PortsDialogs = createEntityDialogs({
 
 // --- Primary Buttons ---
 
-const PortsPrimaryButtons = createPrimaryButtons({
-  useEntity: usePorts,
-  createLabel: 'catalog:port.create',
-  i18nNamespaces: ['catalog'],
-})
+const PortsPrimaryButtons = createPrimaryButtons({ useEntity: usePorts })
 
 // --- Page ---
 

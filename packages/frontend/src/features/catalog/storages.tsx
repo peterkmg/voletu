@@ -220,11 +220,7 @@ const StoragesDialogs = createEntityDialogs({
 
 // --- Primary Buttons ---
 
-const StoragesPrimaryButtons = createPrimaryButtons({
-  useEntity: useStorages,
-  createLabel: 'catalog:storage.create',
-  i18nNamespaces: ['catalog'],
-})
+const StoragesPrimaryButtons = createPrimaryButtons({ useEntity: useStorages })
 
 // --- Page ---
 

@@ -93,7 +93,7 @@ function DispatchLifecycleDialog({ open, onOpenChange, currentRow, variant }: { 
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: DispatchLifecycleDialog, lifecyclePropName: 'variant' })
-const PrimaryButtons = createPrimaryButtons({ useEntity, createLabel: 'common:actions.create', i18nNamespaces: ['common'] })
+const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function DirectDispatchPage() {
   const { t } = useTranslation(['common'])

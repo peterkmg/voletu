@@ -200,11 +200,7 @@ const BlendingDialogs = createEntityDialogs({
 
 // --- Primary Buttons ---
 
-const BlendingPrimaryButtons = createPrimaryButtons({
-  useEntity: useBlending,
-  createLabel: 'common:actions.create',
-  i18nNamespaces: ['common'],
-})
+const BlendingPrimaryButtons = createPrimaryButtons({ useEntity: useBlending })
 
 // --- Page ---
 
