@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { ProductResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
-import { Archive } from 'lucide-react'
+
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
@@ -67,16 +67,6 @@ function ProductsTable({ data }: ProductsTableProps) {
       routeApi={productsRoute}
       globalFilterFn={productsGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
-      bulkActions={t => [
-        {
-          label: t('common:actions.softDelete'),
-          icon: Archive,
-          variant: 'destructive',
-          onClick: (rows) => {
-            void rows // TODO: wire bulk soft-delete API
-          },
-        },
-      ]}
     />
   )
 }
