@@ -27,7 +27,8 @@ export function decodeJwtExp(token: string): number | null {
 /** Returns true if the token will expire within `thresholdSeconds` or is already expired. */
 export function isTokenExpiringSoon(token: string, thresholdSeconds = 300): boolean {
   const exp = decodeJwtExp(token)
-  if (exp === null) return true
+  if (exp === null)
+    return true
   return exp - Math.floor(Date.now() / 1000) < thresholdSeconds
 }
 
@@ -53,7 +54,8 @@ export function toSession(payload: LoginResponse): AuthSession {
 
 export function loadSession(): AuthSession | null {
   const raw = globalThis.localStorage.getItem(STORAGE_KEY)
-  if (!raw) return null
+  if (!raw)
+    return null
   try {
     return JSON.parse(raw) as AuthSession
   }

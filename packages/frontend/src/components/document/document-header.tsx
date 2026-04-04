@@ -1,15 +1,15 @@
 import { useNavigate } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
 import { ArrowLeft, MoreVertical } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
-import { StatusBadge } from '~/components/ui/status-badge'
-import { LifecycleActions } from './lifecycle-actions'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { StatusBadge } from '~/components/ui/status-badge'
+import { LifecycleActions } from './lifecycle-actions'
 
 interface DocumentHeaderProps {
   title: string
@@ -51,7 +51,8 @@ export function DocumentHeader({
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold truncate">
-            {title}{' '}
+            {title}
+            {' '}
             <span className="text-muted-foreground">{documentNumber}</span>
           </h1>
           {subtitle && (

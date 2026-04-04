@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '../table'
 
-describe('Table', () => {
+describe('table', () => {
   it('renders with role="table"', () => {
     render(<Table>content</Table>)
     expect(screen.getByRole('table')).toBeInTheDocument()
@@ -34,7 +34,7 @@ describe('Table', () => {
   })
 })
 
-describe('TableRow', () => {
+describe('tableRow', () => {
   it('renders with role="row"', () => {
     render(<TableRow>cell</TableRow>)
     expect(screen.getByRole('row')).toBeInTheDocument()
@@ -54,7 +54,7 @@ describe('TableRow', () => {
   })
 })
 
-describe('TableHead', () => {
+describe('tableHead', () => {
   it('renders with role="columnheader"', () => {
     render(<TableHead>Header</TableHead>)
     expect(screen.getByRole('columnheader')).toBeInTheDocument()
@@ -73,7 +73,7 @@ describe('TableHead', () => {
   })
 })
 
-describe('TableCell', () => {
+describe('tableCell', () => {
   it('renders with role="cell"', () => {
     render(<TableCell>Data</TableCell>)
     expect(screen.getByRole('cell')).toBeInTheDocument()
@@ -92,7 +92,7 @@ describe('TableCell', () => {
   })
 })
 
-describe('TableHeader', () => {
+describe('tableHeader', () => {
   it('renders with role="rowgroup"', () => {
     render(<TableHeader>header content</TableHeader>)
     expect(screen.getByRole('rowgroup')).toBeInTheDocument()
@@ -104,7 +104,7 @@ describe('TableHeader', () => {
   })
 })
 
-describe('TableBody', () => {
+describe('tableBody', () => {
   it('renders with role="rowgroup"', () => {
     render(<TableBody>body content</TableBody>)
     expect(screen.getByRole('rowgroup')).toBeInTheDocument()
@@ -116,7 +116,7 @@ describe('TableBody', () => {
   })
 })
 
-describe('TableFooter', () => {
+describe('tableFooter', () => {
   it('renders with role="rowgroup"', () => {
     render(<TableFooter>footer content</TableFooter>)
     expect(screen.getByRole('rowgroup')).toBeInTheDocument()

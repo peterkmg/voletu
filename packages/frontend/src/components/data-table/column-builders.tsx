@@ -1,8 +1,8 @@
 import type { ColumnDef, Row } from '@tanstack/react-table'
 import { Checkbox } from '~/components/ui/checkbox'
+import { StatusBadge } from '~/components/ui/status-badge'
 import { DateCell, NumericCell, ResolvedCell } from './cell-renderers'
 import { DataTableColumnHeader } from './column-header'
-import { StatusBadge } from '~/components/ui/status-badge'
 
 export function selectColumn<T>(): ColumnDef<T> {
   return {

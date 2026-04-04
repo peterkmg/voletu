@@ -2,13 +2,13 @@ import type { Column } from '@tanstack/react-table'
 import { Filter } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '~/components/ui/button'
+import { DebouncedInput } from '~/components/ui/debounced-input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { cn } from '~/lib/utils'
-import { DebouncedInput } from '~/components/ui/debounced-input'
 import { FilterPopover } from './filter-popover'
 
 type FilterType = 'text' | 'date' | 'number' | 'enum'

@@ -14,7 +14,7 @@ import { TooltipProvider } from '~/components/ui/tooltip'
 // NullCell
 // ---------------------------------------------------------------------------
 
-describe('NullCell', () => {
+describe('nullCell', () => {
   it('renders an em-dash', () => {
     render(<NullCell />)
     expect(screen.getByText('—')).toBeInTheDocument()
@@ -25,7 +25,7 @@ describe('NullCell', () => {
 // DateCell
 // ---------------------------------------------------------------------------
 
-describe('DateCell', () => {
+describe('dateCell', () => {
   it('renders NullCell for null value', () => {
     render(<DateCell value={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
@@ -49,7 +49,7 @@ describe('DateCell', () => {
 // DateTimeCell
 // ---------------------------------------------------------------------------
 
-describe('DateTimeCell', () => {
+describe('dateTimeCell', () => {
   it('renders NullCell for null value', () => {
     render(<DateTimeCell value={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
@@ -66,7 +66,7 @@ describe('DateTimeCell', () => {
 // NumericCell
 // ---------------------------------------------------------------------------
 
-describe('NumericCell', () => {
+describe('numericCell', () => {
   it('renders NullCell for null value', () => {
     render(<NumericCell value={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
@@ -92,7 +92,7 @@ describe('NumericCell', () => {
 // IdCell
 // ---------------------------------------------------------------------------
 
-describe('IdCell', () => {
+describe('idCell', () => {
   it('renders NullCell for null value', () => {
     render(<IdCell value={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
@@ -115,7 +115,7 @@ describe('IdCell', () => {
 // ResolvedCell
 // ---------------------------------------------------------------------------
 
-describe('ResolvedCell', () => {
+describe('resolvedCell', () => {
   it('renders NullCell for null value', () => {
     render(<ResolvedCell value={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
@@ -131,7 +131,7 @@ describe('ResolvedCell', () => {
 // LookupCell
 // ---------------------------------------------------------------------------
 
-describe('LookupCell', () => {
+describe('lookupCell', () => {
   it('renders NullCell for null value', () => {
     const map = new Map<string, string>()
     render(<LookupCell value={null} lookupMap={map} />)

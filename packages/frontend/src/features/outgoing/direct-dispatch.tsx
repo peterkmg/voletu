@@ -5,18 +5,18 @@ import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { Skeleton } from '~/components/ui/skeleton'
-import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentHardDelete, dispatchDocumentRevert, dispatchDocumentSoftDelete, dispatchDocumentUpdate } from '~/generated/client'
-import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { dispatchDocumentQueryQueryKey, useDispatchDocumentQuery } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors } from '~/lib/badge-colors'
@@ -30,7 +30,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<DispatchResponse, DialogType>('DirectDispatch')
 
-const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/outgoing/direct/${row.id}` })
+const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true, getDetailPath: row => `/outgoing/direct/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [
@@ -65,12 +65,18 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
   const companiesQuery = useCatalogCompanyList()
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open, onOpenChange, currentRow, schema: formSchema,
+    open,
+    onOpenChange,
+    currentRow,
+    schema: formSchema,
     defaultValues: { documentNumber: '', date: '', contractorId: '' },
     mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '', contractorId: row.contractorId }),
     transformPayload: v => ({ ...v, dispatchMethod: 'VESSEL_TERMINAL' as const, dispatchPurpose: 'EXTERNAL' as const }),
-    createFn: dispatchDocumentCreate, updateFn: dispatchDocumentUpdate,
-    queryKey: dispatchDocumentQueryQueryKey(), entityLabel: t('common:nav.directDispatch'), formId: 'direct-dispatch-form',
+    createFn: dispatchDocumentCreate,
+    updateFn: dispatchDocumentUpdate,
+    queryKey: dispatchDocumentQueryQueryKey(),
+    entityLabel: t('common:nav.directDispatch'),
+    formId: 'direct-dispatch-form',
   })
 
   return (
@@ -107,7 +113,8 @@ export function DirectDispatchDetail() {
   const { t } = useTranslation(['common'])
   const { data, isLoading } = useDispatchCompositeGet(id)
 
-  if (isLoading || !data?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  if (isLoading || !data?.data)
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
   const doc = data.data
 
@@ -115,13 +122,19 @@ export function DirectDispatchDetail() {
     <DocumentDetailPage
       config={{ title: t('common:nav.directDispatch'), entityLabel: 'Dispatch', backTo: '/outgoing/direct', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: dispatchDocumentQueryQueryKey(), statusColorMap: documentStatusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
-      formContent={
+      formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
-          <div><span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span><p>{doc.contractorIdName ?? doc.contractorId}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{doc.date}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+            <p>{doc.contractorIdName ?? doc.contractorId}</p>
+          </div>
         </div>
-      }
-      itemsContent={
+      )}
+      itemsContent={(
         <ChildItemsTable
           items={doc.items}
           columns={[
@@ -132,8 +145,16 @@ export function DirectDispatchDetail() {
           isLocked={doc.status === 'POSTED'}
           sectionTitle="Dispatch Items"
         />
-      }
-      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+      )}
+      metadataContent={doc.executedAt
+        ? (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Executed at:</span>
+              {' '}
+              {doc.executedAt}
+            </div>
+          )
+        : null}
     />
   )
 }

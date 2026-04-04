@@ -1,13 +1,13 @@
 import type { SaveLocalConfigPayload } from '~/tauri/commands'
 import { useState } from 'react'
-import { extractErrorMessage } from '~/lib/error'
 import { setApiBaseUrl } from '~/api/client'
+import { extractErrorMessage } from '~/lib/error'
+import { useStartupStore } from '~/stores/startup-store'
 import {
   saveLocalConfig,
   saveRemoteConfig,
   startLocalApi,
 } from '~/tauri/commands'
-import { useStartupStore } from '~/stores/startup-store'
 
 async function checkHealth(baseUrl: string): Promise<boolean> {
   try {

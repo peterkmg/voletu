@@ -2,7 +2,6 @@ import type { Table } from '@tanstack/react-table'
 import { SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
-import { isSeniorOrHigher } from '~/lib/rbac'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -11,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { isSeniorOrHigher } from '~/lib/rbac'
 import { useAuthStore } from '~/stores/auth-store'
 
 interface DataTableViewOptionsProps<TData> {
@@ -21,7 +21,7 @@ export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
   const { t } = useTranslation('common')
-  const user = useAuthStore((s) => s.user)
+  const user = useAuthStore(s => s.user)
 
   return (
     <DropdownMenu modal={false}>

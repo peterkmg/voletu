@@ -42,7 +42,8 @@ export function createRowActions<TRow extends { id: string }>(
 
     if (config.deleteOnly) {
       const actions: RowAction[] = []
-      if (navAction) actions.push(navAction)
+      if (navAction)
+        actions.push(navAction)
       actions.push({
         label: t('common:actions.delete'),
         icon: Trash2,
@@ -62,7 +63,8 @@ export function createRowActions<TRow extends { id: string }>(
     ]
 
     // Inline navigate button (after edit)
-    if (navAction) actions.push(navAction)
+    if (navAction)
+      actions.push(navAction)
 
     if (config.lifecycle) {
       const status = (row.original as { status?: string }).status

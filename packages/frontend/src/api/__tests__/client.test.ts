@@ -93,7 +93,8 @@ describe('client()', () => {
     fetchSpy.mockResolvedValue(jsonResponse(payload))
 
     await expect(client({ method: 'GET', url: '/test' }))
-      .rejects.toThrow('Bad input')
+      .rejects
+      .toThrow('Bad input')
   })
 
   it('handles 204 No Content', async () => {
@@ -111,7 +112,8 @@ describe('client()', () => {
     )
 
     await expect(client({ method: 'GET', url: '/test' }))
-      .rejects.toThrow('Internal Server Error')
+      .rejects
+      .toThrow('Internal Server Error')
   })
 
   // ---------------------------------------------------------------------------
@@ -140,7 +142,8 @@ describe('client()', () => {
     fetchSpy.mockResolvedValue(new Response('Unauthorized', { status: 401 }))
 
     await expect(client({ method: 'GET', url: '/test' }))
-      .rejects.toThrow('Session expired')
+      .rejects
+      .toThrow('Session expired')
   })
 
   // ---------------------------------------------------------------------------

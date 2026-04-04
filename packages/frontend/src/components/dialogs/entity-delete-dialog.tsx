@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { queryClient } from '~/api/query-client'
 import { ConfirmDialog } from '~/components/dialogs/confirm-dialog'
 import { extractErrorMessage } from '~/lib/error'
-import { queryClient } from '~/api/query-client'
 
 interface EntityDeleteDialogProps<TRow extends { id: string }> {
   open: boolean

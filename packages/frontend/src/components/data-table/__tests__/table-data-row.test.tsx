@@ -1,7 +1,7 @@
 import type { Cell, Column, ColumnDef, Row } from '@tanstack/react-table'
-import { renderWithProviders } from '~/test-utils'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { renderWithProviders } from '~/test-utils'
 import { DataRow } from '../table-data-row'
 
 vi.mock('@tanstack/react-table', async () => {
@@ -9,7 +9,8 @@ vi.mock('@tanstack/react-table', async () => {
   return {
     ...actual,
     flexRender: (component: any, context: any) => {
-      if (typeof component === 'function') return component(context)
+      if (typeof component === 'function')
+        return component(context)
       return component
     },
   }
@@ -61,7 +62,7 @@ function renderDataRow(props: Partial<typeof defaultProps> & { onRowAction?: (ro
   )
 }
 
-describe('DataRow', () => {
+describe('dataRow', () => {
   it('renders cell content', () => {
     renderDataRow()
     expect(screen.getByText('Cell Content')).toBeInTheDocument()

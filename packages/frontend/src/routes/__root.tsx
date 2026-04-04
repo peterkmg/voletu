@@ -22,7 +22,8 @@ export const Route = createRootRouteWithContext<{
 
     // 2. Boot auth state machine (validate / refresh stored session).
     const { status, boot } = useAuthStore.getState()
-    if (status === 'unknown') await boot()
+    if (status === 'unknown')
+      await boot()
   },
   component: () => {
     const startupState = useStartupStore(s => s.startupState)

@@ -1,5 +1,5 @@
-import type { UserResponse } from '~/generated/types'
 import type { AuthSession } from '~/auth/session'
+import type { UserResponse } from '~/generated/types'
 import { create } from 'zustand'
 import {
   clearSession,
@@ -107,7 +107,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   onUnauthorized: () => {
-    if (inflight) return inflight
+    if (inflight)
+      return inflight
 
     inflight = (async () => {
       const { refreshToken: token } = get()

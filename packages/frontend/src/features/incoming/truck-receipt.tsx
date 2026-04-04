@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { TruckReceiptPipelineResponse } from '~/generated/types'
+import type { RelatedDocument } from '~/components/document/related-documents'
+import type { AcceptanceItemResponse, TruckReceiptPipelineResponse } from '~/generated/types'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -10,19 +11,17 @@ import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { RelatedDocuments } from '~/components/document/related-documents'
-import type { RelatedDocument } from '~/components/document/related-documents'
-import { Skeleton } from '~/components/ui/skeleton'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
-import type { AcceptanceItemResponse } from '~/generated/types'
+import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { acceptanceDocumentExecute, acceptanceDocumentRevert, transportTruckWaybillCreate } from '~/generated/client'
-import { useTransportTruckWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillGet'
-import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
+import { useTransportTruckWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillGet'
 import { flowTruckReceiptQueryQueryKey, useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
@@ -99,7 +98,9 @@ function WaybillMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChan
   const companiesQuery = useCatalogCompanyList()
 
   const { form, handleSubmit, handleOpenChange } = useMutateDialog({
-    open, onOpenChange, schema: waybillSchema,
+    open,
+    onOpenChange,
+    schema: waybillSchema,
     defaultValues: { documentNumber: '', date: '', senderId: '' },
     createFn: transportTruckWaybillCreate,
     queryKey: flowTruckReceiptQueryQueryKey(),
@@ -128,7 +129,9 @@ function PrimaryButtons() {
 
   return (
     <Button size="sm" onClick={() => { setCurrentRow(null); setOpen('create') }}>
-      {t('actions.create')} Waybill
+      {t('actions.create')}
+      {' '}
+      Waybill
     </Button>
   )
 }
@@ -159,7 +162,8 @@ export function TruckReceiptDetail() {
 
   const isLoading = waybillQuery.isLoading && acceptanceQuery.isLoading
 
-  if (isLoading) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  if (isLoading)
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
   // If acceptance found, show acceptance detail with related documents
   if (acceptanceQuery.data?.data) {
@@ -184,13 +188,19 @@ export function TruckReceiptDetail() {
           }
           return <RelatedDocuments documents={docs} />
         })()}
-        formContent={
+        formContent={(
           <div className="grid grid-cols-3 gap-4">
-            <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.dateAccepted}</p></div>
-            <div><span className="text-sm text-muted-foreground">{t('common:table.source')}</span><p>{doc.sourceEntity ?? '—'}</p></div>
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+              <p>{doc.dateAccepted}</p>
+            </div>
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.source')}</span>
+              <p>{doc.sourceEntity ?? '—'}</p>
+            </div>
           </div>
-        }
-        itemsContent={
+        )}
+        itemsContent={(
           <ChildItemsTable
             items={doc.items}
             columns={[
@@ -202,8 +212,16 @@ export function TruckReceiptDetail() {
             isLocked={doc.status === 'POSTED'}
             sectionTitle="Acceptance Items"
           />
-        }
-        metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+        )}
+        metadataContent={doc.executedAt
+          ? (
+              <div className="text-sm">
+                <span className="text-muted-foreground">Executed at:</span>
+                {' '}
+                {doc.executedAt}
+              </div>
+            )
+          : null}
       />
     )
   }
@@ -215,13 +233,21 @@ export function TruckReceiptDetail() {
       <div className="mx-auto max-w-4xl space-y-6 p-4">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-semibold">
-            Truck Waybill <span className="text-muted-foreground">{wb.documentNumber}</span>
+            Truck Waybill
+            {' '}
+            <span className="text-muted-foreground">{wb.documentNumber}</span>
           </h1>
           <span className="rounded-full bg-amber-100/30 px-3 py-1 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Pending Acceptance</span>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{wb.date}</p></div>
-          <div><span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span><p>{wb.senderIdName ?? wb.senderId}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{wb.date}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+            <p>{wb.senderIdName ?? wb.senderId}</p>
+          </div>
         </div>
       </div>
     )

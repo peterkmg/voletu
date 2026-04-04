@@ -1,6 +1,6 @@
+import { Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { StatusBadge } from '~/components/ui/status-badge'
 import { cn } from '~/lib/utils'
@@ -11,7 +11,7 @@ export interface RelatedDocument {
   documentNumber: string
   status?: string
   statusColorMap?: Record<string, string>
-  details?: { label: string; value: string }[]
+  details?: { label: string, value: string }[]
   to: string
 }
 
@@ -22,7 +22,8 @@ interface RelatedDocumentsProps {
 export function RelatedDocuments({ documents }: RelatedDocumentsProps) {
   const { t } = useTranslation(['common'])
 
-  if (documents.length === 0) return null
+  if (documents.length === 0)
+    return null
 
   const basis = documents.filter(d => d.type === 'basis')
   const references = documents.filter(d => d.type === 'reference')
@@ -65,7 +66,9 @@ function RelatedDocumentItem({
       >
         <div className="flex-1 space-y-1">
           <div className={cn('text-xs font-semibold uppercase tracking-wider', labelColor)}>
-            {doc.type === 'basis' ? 'Basis' : 'Referenced by'}: {doc.label}
+            {doc.type === 'basis' ? 'Basis' : 'Referenced by'}
+            :
+            {doc.label}
           </div>
           <div className="flex items-center gap-2">
             <span className="font-semibold">{doc.documentNumber}</span>
@@ -76,7 +79,12 @@ function RelatedDocumentItem({
           {doc.details && doc.details.length > 0 && (
             <div className="flex gap-4 text-xs text-muted-foreground">
               {doc.details.map(d => (
-                <span key={d.label}>{d.label}: {d.value}</span>
+                <span key={d.label}>
+                  {d.label}
+                  :
+                  {' '}
+                  {d.value}
+                </span>
               ))}
             </div>
           )}

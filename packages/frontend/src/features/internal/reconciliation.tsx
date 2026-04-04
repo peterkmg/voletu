@@ -5,19 +5,19 @@ import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { Skeleton } from '~/components/ui/skeleton'
-import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { reconciliationCreate, reconciliationExecute, reconciliationHardDelete, reconciliationRevert, reconciliationSoftDelete, reconciliationUpdate } from '~/generated/client'
-import { useReconciliationGet } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationGet'
-import { useAdjustmentList } from '~/generated/hooks/DocumentOperationsHooks/useAdjustmentList'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
+import { useAdjustmentList } from '~/generated/hooks/DocumentOperationsHooks/useAdjustmentList'
+import { useReconciliationGet } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationGet'
 import { reconciliationListQueryKey, useReconciliationList } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors } from '~/lib/badge-colors'
@@ -31,7 +31,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<InventoryReconciliationResponse, DialogType>('Reconciliation')
 
-const DataTableRowActions = createRowActions<InventoryReconciliationResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/internal/reconciliation/${row.id}` })
+const DataTableRowActions = createRowActions<InventoryReconciliationResponse>({ useEntity, lifecycle: true, getDetailPath: row => `/internal/reconciliation/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<InventoryReconciliationResponse>[] {
   return [
@@ -65,11 +65,17 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
   const warehousesQuery = useCatalogWarehouseList()
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open, onOpenChange, currentRow, schema: formSchema,
+    open,
+    onOpenChange,
+    currentRow,
+    schema: formSchema,
     defaultValues: { documentNumber: '', date: '', warehouseId: '' },
     mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '', warehouseId: row.warehouseId }),
-    createFn: reconciliationCreate, updateFn: reconciliationUpdate,
-    queryKey: reconciliationListQueryKey(), entityLabel: t('common:nav.reconciliation'), formId: 'reconciliation-form',
+    createFn: reconciliationCreate,
+    updateFn: reconciliationUpdate,
+    queryKey: reconciliationListQueryKey(),
+    entityLabel: t('common:nav.reconciliation'),
+    formId: 'reconciliation-form',
   })
 
   return (
@@ -107,7 +113,8 @@ export function ReconciliationDetail() {
   const { data: docData, isLoading } = useReconciliationGet(id)
   const { data: itemsData } = useAdjustmentList()
 
-  if (isLoading || !docData?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  if (isLoading || !docData?.data)
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
   const doc = docData.data
   const items = (itemsData?.data ?? []).filter((i: InventoryAdjustmentResponse) => i.reconciliationId === id)
@@ -116,13 +123,19 @@ export function ReconciliationDetail() {
     <DocumentDetailPage
       config={{ title: t('common:nav.reconciliation'), entityLabel: 'Reconciliation', backTo: '/internal/reconciliation', executeFn: reconciliationExecute, revertFn: reconciliationRevert, queryKey: reconciliationListQueryKey(), statusColorMap: documentStatusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
-      formContent={
+      formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
-          <div><span className="text-sm text-muted-foreground">Warehouse</span><p>{doc.warehouseIdName ?? doc.warehouseId}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{doc.date}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">Warehouse</span>
+            <p>{doc.warehouseIdName ?? doc.warehouseId}</p>
+          </div>
         </div>
-      }
-      itemsContent={
+      )}
+      itemsContent={(
         <ChildItemsTable
           items={items}
           columns={[
@@ -135,8 +148,16 @@ export function ReconciliationDetail() {
           isLocked={doc.status === 'POSTED'}
           sectionTitle="Adjustments"
         />
-      }
-      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+      )}
+      metadataContent={doc.executedAt
+        ? (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Executed at:</span>
+              {' '}
+              {doc.executedAt}
+            </div>
+          )
+        : null}
     />
   )
 }

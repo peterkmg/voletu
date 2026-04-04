@@ -1,8 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { screen } from '@testing-library/react'
-import { renderWithProviders } from '~/test-utils'
 import { textColumn } from '~/components/data-table'
 import { TooltipProvider } from '~/components/ui/tooltip'
+import { renderWithProviders } from '~/test-utils'
 import { EntityTable } from '../entity-table'
 
 vi.mock('react-i18next', () => ({
@@ -28,9 +28,11 @@ interface SimpleItem {
   name: string
 }
 
-const getColumns = (_t: any): ColumnDef<SimpleItem, unknown>[] => [
-  textColumn<SimpleItem>('name', 'Name'),
-]
+function getColumns(_t: any): ColumnDef<SimpleItem, unknown>[] {
+  return [
+    textColumn<SimpleItem>('name', 'Name'),
+  ]
+}
 
 const globalFilterFn = () => true
 
@@ -56,7 +58,7 @@ function renderEntityTable(data: SimpleItem[] = [], tableId?: string) {
 
 // ---------- tests ----------
 
-describe('EntityTable', () => {
+describe('entityTable', () => {
   afterEach(() => {
     localStorage.clear()
   })

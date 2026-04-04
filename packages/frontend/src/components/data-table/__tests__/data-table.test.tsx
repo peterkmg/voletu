@@ -1,8 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import type { TestItem } from '~/test-utils'
 import { screen } from '@testing-library/react'
-import { textColumn, selectColumn } from '~/components/data-table'
+import { selectColumn, textColumn } from '~/components/data-table'
 import { DataTable } from '~/components/data-table/data-table'
-import { type TestItem, createTestData, renderWithProviders, useTestTable } from '~/test-utils'
+import { createTestData, renderWithProviders, useTestTable } from '~/test-utils'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -40,7 +41,7 @@ function TestDataTable({
   )
 }
 
-describe('DataTable', () => {
+describe('dataTable', () => {
   it('renders table with role="table"', () => {
     renderWithProviders(<TestDataTable data={createTestData(3)} />)
     expect(screen.getByRole('table')).toBeInTheDocument()

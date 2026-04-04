@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { queryClient } from '~/api/query-client'
 import { actionsColumn, createGlobalFilter, DataTableColumnHeader, dateColumn, EntityTable, selectColumn, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { PasswordInput } from '~/components/forms/password-input'
@@ -40,7 +41,6 @@ import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
 import { createRowActions } from '~/lib/create-row-actions'
 import { extractErrorMessage } from '~/lib/error'
-import { queryClient } from '~/api/query-client'
 
 // --- Provider ---
 

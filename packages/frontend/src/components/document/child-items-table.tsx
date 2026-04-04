@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
+import { DataTable } from '~/components/data-table/data-table'
 import { Button } from '~/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { DataTable } from '~/components/data-table/data-table'
-import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 
 interface ChildItemsTableProps<TItem> {
   items: TItem[]

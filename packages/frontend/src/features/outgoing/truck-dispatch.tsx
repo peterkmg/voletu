@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { TruckDispatchPipelineResponse } from '~/generated/types'
+import type { DispatchItemResponse, TruckDispatchPipelineResponse } from '~/generated/types'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,17 +9,16 @@ import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusCol
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { Skeleton } from '~/components/ui/skeleton'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
-import type { DispatchItemResponse } from '~/generated/types'
+import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentRevert } from '~/generated/client'
-import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { truckDispatchPipelineQueryQueryKey, useTruckDispatchPipelineQuery } from '~/generated/hooks/FlowsHooks/useTruckDispatchPipelineQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
@@ -82,7 +81,9 @@ function DispatchMutateDialog({ open, onOpenChange }: { open: boolean, onOpenCha
   const companiesQuery = useCatalogCompanyList()
 
   const { form, handleSubmit, handleOpenChange } = useMutateDialog({
-    open, onOpenChange, schema: dispatchSchema,
+    open,
+    onOpenChange,
+    schema: dispatchSchema,
     defaultValues: { documentNumber: '', date: '', contractorId: '' },
     transformPayload: v => ({ ...v, dispatchMethod: 'TRUCK' as const, dispatchPurpose: 'EXTERNAL' as const }),
     createFn: dispatchDocumentCreate,
@@ -112,7 +113,9 @@ function PrimaryButtons() {
 
   return (
     <Button size="sm" onClick={() => { setCurrentRow(null); setOpen('create') }}>
-      {t('actions.create')} Dispatch
+      {t('actions.create')}
+      {' '}
+      Dispatch
     </Button>
   )
 }
@@ -129,7 +132,8 @@ export function TruckDispatchDetail() {
   const { t } = useTranslation(['common'])
   const { data, isLoading } = useDispatchCompositeGet(id)
 
-  if (isLoading || !data?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  if (isLoading || !data?.data)
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
   const doc = data.data
 
@@ -137,13 +141,19 @@ export function TruckDispatchDetail() {
     <DocumentDetailPage
       config={{ title: t('common:nav.truckDispatch'), entityLabel: 'Dispatch', backTo: '/outgoing/truck', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: truckDispatchPipelineQueryQueryKey(), statusColorMap: documentStatusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
-      formContent={
+      formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
-          <div><span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span><p>{doc.contractorIdName ?? doc.contractorId}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{doc.date}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+            <p>{doc.contractorIdName ?? doc.contractorId}</p>
+          </div>
         </div>
-      }
-      itemsContent={
+      )}
+      itemsContent={(
         <ChildItemsTable
           items={doc.items}
           columns={[
@@ -154,8 +164,16 @@ export function TruckDispatchDetail() {
           isLocked={doc.status === 'POSTED'}
           sectionTitle="Dispatch Items"
         />
-      }
-      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+      )}
+      metadataContent={doc.executedAt
+        ? (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Executed at:</span>
+              {' '}
+              {doc.executedAt}
+            </div>
+          )
+        : null}
     />
   )
 }

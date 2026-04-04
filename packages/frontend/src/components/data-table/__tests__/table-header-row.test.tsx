@@ -46,7 +46,7 @@ function renderHeaderRow(headerGroup = createMockHeaderGroup()) {
   )
 }
 
-describe('TableHeaderRow', () => {
+describe('tableHeaderRow', () => {
   it('renders column headers', () => {
     renderHeaderRow()
     expect(screen.getByText('Name')).toBeInTheDocument()

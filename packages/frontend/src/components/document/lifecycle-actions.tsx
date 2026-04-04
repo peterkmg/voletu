@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '~/components/ui/button'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
-import { useAuthStore } from '~/stores/auth-store'
-
+import { Button } from '~/components/ui/button'
 import { isSeniorOrHigher, isSupervisorOrHigher } from '~/lib/rbac'
+
+import { useAuthStore } from '~/stores/auth-store'
 
 interface LifecycleActionsProps {
   documentId: string
@@ -24,7 +24,7 @@ export function LifecycleActions({
   entityLabel,
 }: LifecycleActionsProps) {
   const { t } = useTranslation('common')
-  const user = useAuthStore((s) => s.user)
+  const user = useAuthStore(s => s.user)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogAction, setDialogAction] = useState<'execute' | 'revert'>('execute')
 

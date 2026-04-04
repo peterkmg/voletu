@@ -5,19 +5,19 @@ import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { Skeleton } from '~/components/ui/skeleton'
-import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { blendingDocumentCreate, blendingDocumentExecute, blendingDocumentHardDelete, blendingDocumentRevert, blendingDocumentSoftDelete, blendingDocumentUpdate } from '~/generated/client'
-import { useBlendingCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useBlendingCompositeGet'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
+import { useBlendingCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useBlendingCompositeGet'
 import { blendingDocumentListQueryKey, useBlendingDocumentList } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors } from '~/lib/badge-colors'
@@ -36,7 +36,7 @@ const { Provider: BlendingProvider, useEntity: useBlending }
 
 // --- Row Actions ---
 
-const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useBlending, lifecycle: true, getDetailPath: (row) => `/internal/blending/${row.id}` })
+const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useBlending, lifecycle: true, getDetailPath: row => `/internal/blending/${row.id}` })
 
 // --- Columns ---
 
@@ -244,14 +244,23 @@ export function BlendingDetail() {
         statusColorMap: documentStatusColors,
       }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
-      formContent={
+      formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
-          <div><span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span><p>{doc.contractorIdName ?? doc.contractorId}</p></div>
-          <div><span className="text-sm text-muted-foreground">{t('common:table.product')}</span><p>{doc.targetProductIdName ?? doc.targetProductId}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{doc.date}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+            <p>{doc.contractorIdName ?? doc.contractorId}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.product')}</span>
+            <p>{doc.targetProductIdName ?? doc.targetProductId}</p>
+          </div>
         </div>
-      }
-      itemsContent={
+      )}
+      itemsContent={(
         <>
           <ChildItemsTable
             items={composite.components}
@@ -273,13 +282,19 @@ export function BlendingDetail() {
             sectionTitle="Results (Outputs)"
           />
         </>
-      }
+      )}
       metadataContent={
-        doc.executedAt ? (
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div>
-          </div>
-        ) : null
+        doc.executedAt
+          ? (
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Executed at:</span>
+                  {' '}
+                  {doc.executedAt}
+                </div>
+              </div>
+            )
+          : null
       }
     />
   )

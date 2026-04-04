@@ -38,7 +38,7 @@ describe('startup-store', () => {
     it('sets loading state during fetch', async () => {
       let resolve!: (v: unknown) => void
       vi.mocked(getStartupState).mockImplementation(
-        () => new Promise(r => { resolve = r }),
+        () => new Promise((r) => { resolve = r }),
       )
 
       const promise = useStartupStore.getState().refresh()

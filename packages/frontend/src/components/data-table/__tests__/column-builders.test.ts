@@ -1,15 +1,15 @@
 import type { Row } from '@tanstack/react-table'
 import {
-  selectColumn,
   actionsColumn,
-  textColumn,
   dateColumn,
   numericColumn,
-  statusColumn,
   resolvedColumn,
+  selectColumn,
+  statusColumn,
+  textColumn,
 } from '~/components/data-table/column-builders'
 
-type TestRow = { name: string; date: string; amount: number; status: string; resolvedName: string }
+interface TestRow { name: string, date: string, amount: number, status: string, resolvedName: string }
 
 describe('selectColumn', () => {
   const col = selectColumn<TestRow>()

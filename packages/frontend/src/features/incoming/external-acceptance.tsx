@@ -5,14 +5,14 @@ import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { Skeleton } from '~/components/ui/skeleton'
-import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { acceptanceDocumentCreate, acceptanceDocumentExecute, acceptanceDocumentHardDelete, acceptanceDocumentRevert, acceptanceDocumentSoftDelete, acceptanceDocumentUpdate } from '~/generated/client'
 import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
 import { acceptanceDocumentQueryQueryKey, useAcceptanceDocumentQuery } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentQuery'
@@ -28,7 +28,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<AcceptanceResponse, DialogType>('ExternalAcceptance')
 
-const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/incoming/external/${row.id}` })
+const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity, lifecycle: true, getDetailPath: row => `/incoming/external/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<AcceptanceResponse>[] {
   return [
@@ -130,7 +130,8 @@ export function ExternalAcceptanceDetail() {
   const { t } = useTranslation(['common'])
   const { data, isLoading } = useAcceptanceCompositeGet(id)
 
-  if (isLoading || !data?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  if (isLoading || !data?.data)
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
   const doc = data.data
 
@@ -138,13 +139,19 @@ export function ExternalAcceptanceDetail() {
     <DocumentDetailPage
       config={{ title: t('common:nav.externalAcceptance'), entityLabel: 'Acceptance', backTo: '/incoming/external', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: acceptanceDocumentQueryQueryKey(), statusColorMap: documentStatusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
-      formContent={
+      formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.dateAccepted}</p></div>
-          <div><span className="text-sm text-muted-foreground">{t('common:table.source')}</span><p>{doc.sourceEntity ?? '—'}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{doc.dateAccepted}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.source')}</span>
+            <p>{doc.sourceEntity ?? '—'}</p>
+          </div>
         </div>
-      }
-      itemsContent={
+      )}
+      itemsContent={(
         <ChildItemsTable
           items={doc.items}
           columns={[
@@ -156,8 +163,16 @@ export function ExternalAcceptanceDetail() {
           isLocked={doc.status === 'POSTED'}
           sectionTitle="Acceptance Items"
         />
-      }
-      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+      )}
+      metadataContent={doc.executedAt
+        ? (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Executed at:</span>
+              {' '}
+              {doc.executedAt}
+            </div>
+          )
+        : null}
     />
   )
 }

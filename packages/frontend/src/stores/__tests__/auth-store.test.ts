@@ -173,7 +173,7 @@ describe('onUnauthorized()', () => {
     useAuthStore.setState({ status: 'valid', refreshToken: 'rt' })
     let resolveRefresh!: Function
     vi.mocked(sessionMocks.refreshTokens).mockImplementation(
-      () => new Promise(r => { resolveRefresh = r }),
+      () => new Promise((r) => { resolveRefresh = r }),
     )
 
     const p1 = useAuthStore.getState().onUnauthorized()

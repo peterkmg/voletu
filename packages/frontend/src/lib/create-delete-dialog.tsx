@@ -25,9 +25,9 @@ interface HardDeleteConfig<TRow extends { id: string }> {
   useEntity: () => EntityHook<TRow>
 }
 
-type DeleteDialogConfig<TRow extends { id: string }> =
-  | SoftDeleteConfig<TRow>
-  | HardDeleteConfig<TRow>
+type DeleteDialogConfig<TRow extends { id: string }>
+  = | SoftDeleteConfig<TRow>
+    | HardDeleteConfig<TRow>
 
 export function createDeleteDialog<TRow extends { id: string }>(
   config: DeleteDialogConfig<TRow>,

@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { AuthenticatedLayout } from '~/components/layout/authenticated-layout'
 import { getBaseUrl } from '~/api/client'
+import { AuthenticatedLayout } from '~/components/layout/authenticated-layout'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 import { useStartupStore } from '~/stores/startup-store'

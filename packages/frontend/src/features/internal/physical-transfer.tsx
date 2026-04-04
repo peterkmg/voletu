@@ -5,14 +5,14 @@ import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { Skeleton } from '~/components/ui/skeleton'
-import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
+import { Skeleton } from '~/components/ui/skeleton'
 import { physicalDocumentCreate, physicalDocumentExecute, physicalDocumentHardDelete, physicalDocumentRevert, physicalDocumentSoftDelete, physicalDocumentUpdate } from '~/generated/client'
 import { usePhysicalTransferCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferCompositeGet'
 import { physicalTransferListQueryKey, usePhysicalTransferList } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferList'
@@ -28,7 +28,7 @@ type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | '
 
 const { Provider, useEntity } = createEntityProvider<PhysicalTransferResponse, DialogType>('PhysicalTransfer')
 
-const DataTableRowActions = createRowActions<PhysicalTransferResponse>({ useEntity, lifecycle: true, getDetailPath: (row) => `/internal/physical-transfer/${row.id}` })
+const DataTableRowActions = createRowActions<PhysicalTransferResponse>({ useEntity, lifecycle: true, getDetailPath: row => `/internal/physical-transfer/${row.id}` })
 
 function getColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
   return [
@@ -60,11 +60,17 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
   const { t } = useTranslation(['common'])
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open, onOpenChange, currentRow, schema: formSchema,
+    open,
+    onOpenChange,
+    currentRow,
+    schema: formSchema,
     defaultValues: { documentNumber: '', date: '' },
     mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '' }),
-    createFn: physicalDocumentCreate, updateFn: physicalDocumentUpdate,
-    queryKey: physicalTransferListQueryKey(), entityLabel: t('common:nav.physicalTransfer'), formId: 'physical-transfer-form',
+    createFn: physicalDocumentCreate,
+    updateFn: physicalDocumentUpdate,
+    queryKey: physicalTransferListQueryKey(),
+    entityLabel: t('common:nav.physicalTransfer'),
+    formId: 'physical-transfer-form',
   })
 
   return (
@@ -100,7 +106,8 @@ export function PhysicalTransferDetail() {
   const { t } = useTranslation(['common'])
   const { data, isLoading } = usePhysicalTransferCompositeGet(id)
 
-  if (isLoading || !data?.data) return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
+  if (isLoading || !data?.data)
+    return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
 
   const doc = data.data
   const items = doc.items ?? []
@@ -109,12 +116,15 @@ export function PhysicalTransferDetail() {
     <DocumentDetailPage
       config={{ title: t('common:nav.physicalTransfer'), entityLabel: 'Physical Transfer', backTo: '/internal/physical-transfer', executeFn: physicalDocumentExecute, revertFn: physicalDocumentRevert, queryKey: physicalTransferListQueryKey(), statusColorMap: documentStatusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
-      formContent={
+      formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div><span className="text-sm text-muted-foreground">{t('common:table.date')}</span><p>{doc.date}</p></div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+            <p>{doc.date}</p>
+          </div>
         </div>
-      }
-      itemsContent={
+      )}
+      itemsContent={(
         <ChildItemsTable
           items={items}
           columns={[
@@ -127,8 +137,16 @@ export function PhysicalTransferDetail() {
           isLocked={doc.status === 'POSTED'}
           sectionTitle="Transfer Items"
         />
-      }
-      metadataContent={doc.executedAt ? <div className="text-sm"><span className="text-muted-foreground">Executed at:</span> {doc.executedAt}</div> : null}
+      )}
+      metadataContent={doc.executedAt
+        ? (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Executed at:</span>
+              {' '}
+              {doc.executedAt}
+            </div>
+          )
+        : null}
     />
   )
 }

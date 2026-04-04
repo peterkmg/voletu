@@ -94,7 +94,8 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
   // 401 → refresh → replay
   if (response.status === 401) {
     const refreshed = await useAuthStore.getState().onUnauthorized()
-    if (refreshed) return client(config)
+    if (refreshed)
+      return client(config)
     throw new Error('Session expired')
   }
 

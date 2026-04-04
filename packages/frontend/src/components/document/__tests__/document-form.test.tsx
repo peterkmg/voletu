@@ -7,7 +7,7 @@ function LockStatus() {
   return <span data-testid="locked">{String(isLocked)}</span>
 }
 
-describe('DocumentForm', () => {
+describe('documentForm', () => {
   it('renders children as editable when DRAFT', () => {
     const { container } = render(
       <DocumentForm status="DRAFT">

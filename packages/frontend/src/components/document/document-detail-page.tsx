@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { DocumentHeader } from './document-header'
 import { DocumentForm } from './document-form'
+import { DocumentHeader } from './document-header'
 
 interface DocumentDetailConfig {
   title: string
