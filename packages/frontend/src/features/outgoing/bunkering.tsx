@@ -2,18 +2,31 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { DispatchResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { z } from 'zod'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { EntityPage } from '~/components/entity-page'
-import { Button } from '~/components/ui/button'
-import { useDispatchDocumentQuery } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentQuery'
+import { EntityPickerField } from '~/components/entity-picker'
+import { FormDialog } from '~/components/forms/form-dialog'
+import { TextField } from '~/components/forms/form-fields'
+import { Form } from '~/components/ui/form'
+import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentHardDelete, dispatchDocumentRevert, dispatchDocumentSoftDelete, dispatchDocumentUpdate } from '~/generated/client'
+import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { dispatchDocumentQueryQueryKey, useDispatchDocumentQuery } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentQuery'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors } from '~/lib/badge-colors'
+import { createDeleteDialog } from '~/lib/create-delete-dialog'
+import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
+import { createPrimaryButtons } from '~/lib/create-primary-buttons'
+import { createRowActions } from '~/lib/create-row-actions'
 
-type DialogType = 'create'
+type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | 'revert'
 
-const { Provider, useEntity: _useEntity } = createEntityProvider<DispatchResponse, DialogType>('Bunkering')
+const { Provider, useEntity } = createEntityProvider<DispatchResponse, DialogType>('Bunkering')
+
+const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, lifecycle: true })
 
 function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [
@@ -22,6 +35,7 @@ function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
     dateColumn<DispatchResponse>('date', t('common:table.date')),
     resolvedColumn<DispatchResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
     statusColumn<DispatchResponse>('status', t('common:table.status'), documentStatusColors),
+    actionsColumn<DispatchResponse>(DataTableRowActions),
   ]
 }
 
@@ -29,48 +43,59 @@ const route = getRouteApi('/_authenticated/outgoing/bunkering/')
 const globalFilterFn = createGlobalFilter<DispatchResponse>('documentNumber')
 
 function BunkeringTable({ data }: { data: DispatchResponse[] }) {
-  return (
-    <EntityTable
-      tableId="bunkering"
-      data={data}
-      getColumns={getColumns}
-      routeApi={route}
-      globalFilterFn={globalFilterFn}
-      i18nNamespaces={['common']}
-    />
-  )
+  return <EntityTable tableId="bunkering" data={data} getColumns={getColumns} routeApi={route} globalFilterFn={globalFilterFn} i18nNamespaces={['common']} />
 }
 
-function PrimaryButtons() {
-  const { t } = useTranslation('common')
-  return (
-    <Button size="sm">
-      <Plus className="mr-1 size-4" />
-      {t('actions.create')}
-    </Button>
-  )
-}
+const formSchema = z.object({
+  documentNumber: z.string().min(1),
+  date: z.string().min(1),
+  contractorId: z.string().uuid(),
+  bunkerType: z.enum(['DOMESTIC', 'EXPORT']),
+})
 
-function Dialogs() {
-  return null
-}
+type FormValues = z.infer<typeof formSchema>
 
-export function BunkeringPage() {
+function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: DispatchResponse | null }) {
   const { t } = useTranslation(['common'])
-  const queryResult = useDispatchDocumentQuery({
-    dispatchMethod: 'BUNKERING' as any,
+  const companiesQuery = useCatalogCompanyList()
+
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
+    open, onOpenChange, currentRow, schema: formSchema,
+    defaultValues: { documentNumber: '', date: '', contractorId: '', bunkerType: 'DOMESTIC' },
+    mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '', contractorId: row.contractorId, bunkerType: row.bunkerType ?? 'DOMESTIC' }),
+    transformPayload: v => ({ ...v, dispatchMethod: 'BUNKERING' as const, dispatchPurpose: 'EXTERNAL' as const, bunkerType: v.bunkerType as 'DOMESTIC' | 'EXPORT' }),
+    createFn: dispatchDocumentCreate, updateFn: dispatchDocumentUpdate,
+    queryKey: dispatchDocumentQueryQueryKey(), entityLabel: t('common:nav.bunkering'), formId: 'bunkering-form',
   })
 
   return (
-    <EntityPage
-      provider={Provider}
-      title={t('common:nav.bunkering')}
-      queryResult={queryResult}
-      primaryButtons={PrimaryButtons}
-      table={BunkeringTable}
-      dialogs={Dialogs}
-    />
+    <FormDialog open={open} onOpenChange={handleOpenChange} title={isUpdate ? t('common:actions.edit') : t('common:actions.create')} description={t('common:nav.bunkering')} formId="bunkering-form" isSubmitting={form.formState.isSubmitting}>
+      <Form {...form}>
+        <form id="bunkering-form" onSubmit={handleSubmit} className="space-y-5">
+          <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
+          <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
+          <EntityPickerField<FormValues> name="contractorId" label={t('common:table.contractor')} queryResult={companiesQuery} />
+          <TextField<FormValues> name="bunkerType" label="Bunker Type" />
+        </form>
+      </Form>
+    </FormDialog>
   )
+}
+
+const DeleteDialog = createDeleteDialog({ useEntity, hardDeleteFn: dispatchDocumentHardDelete, softDeleteFn: dispatchDocumentSoftDelete, queryKey: dispatchDocumentQueryQueryKey, entityLabel: 'common:nav.bunkering', i18nNamespaces: ['common'] })
+
+function BunkeringLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: DispatchResponse | null, variant: 'execute' | 'revert' }) {
+  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={dispatchDocumentExecute} revertFn={dispatchDocumentRevert} queryKey={dispatchDocumentQueryQueryKey()} entityLabel="Bunkering Document" />
+}
+
+const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: BunkeringLifecycleDialog, lifecyclePropName: 'variant' })
+const PrimaryButtons = createPrimaryButtons({ useEntity, createLabel: 'common:actions.create', i18nNamespaces: ['common'] })
+
+export function BunkeringPage() {
+  const { t } = useTranslation(['common'])
+  const queryResult = useDispatchDocumentQuery({ dispatchMethod: 'BUNKERING' as any })
+
+  return <EntityPage provider={Provider} title={t('common:nav.bunkering')} queryResult={queryResult} primaryButtons={PrimaryButtons} table={BunkeringTable} dialogs={Dialogs} />
 }
 
 export function BunkeringDetail() {
