@@ -40,6 +40,12 @@ export const dispatchPurposeColors: BadgeColorMap = {
   INTERNAL: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
 }
 
+export const pipelineStatusColors: BadgeColorMap = {
+  PENDING: 'bg-amber-100/30 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+  DRAFT: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
+  EXECUTED: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+}
+
 export const entityActiveColors: BadgeColorMap = {
   active: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
   archived: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
