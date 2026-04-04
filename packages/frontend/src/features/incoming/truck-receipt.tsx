@@ -6,7 +6,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -56,13 +56,13 @@ function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
   return [
     selectColumn<TruckReceiptPipelineResponse>(),
     textColumn<TruckReceiptPipelineResponse>('basisDocumentNumber', t('common:table.waybillNumber')),
-    textColumn<TruckReceiptPipelineResponse>('basisDate', t('common:table.date')),
-    textColumn<TruckReceiptPipelineResponse>('contractorName', t('common:table.contractor')),
-    textColumn<TruckReceiptPipelineResponse>('productName', t('common:table.product')),
-    textColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty')),
+    dateColumn<TruckReceiptPipelineResponse>('basisDate', t('common:table.date')),
+    textColumn<TruckReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
+    textColumn<TruckReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
+    textColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty'), { primary: false }),
     statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
-    textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber')),
-    textColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
+    textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false }),
+    textColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false }),
     actionsColumn<TruckReceiptPipelineResponse>(DataTableRowActions),
   ]
 }

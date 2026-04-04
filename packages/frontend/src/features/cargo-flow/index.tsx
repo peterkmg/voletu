@@ -4,7 +4,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createGlobalFilter, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
@@ -55,11 +55,11 @@ const cargoFlowStatusColors = { ...documentStatusColors, ...pipelineStatusColors
 
 function getColumns(t: TFunction): ColumnDef<CargoFlowRow>[] {
   return [
-    textColumn<CargoFlowRow>('type', 'Type'),
-    textColumn<CargoFlowRow>('operation', 'Operation'),
+    textColumn<CargoFlowRow>('type', 'Type', { primary: false }),
+    textColumn<CargoFlowRow>('operation', 'Operation', { primary: false }),
     textColumn<CargoFlowRow>('documentNumber', t('common:table.documentNumber')),
-    textColumn<CargoFlowRow>('date', t('common:table.date')),
-    textColumn<CargoFlowRow>('contractorName', t('common:table.contractor')),
+    dateColumn<CargoFlowRow>('date', t('common:table.date')),
+    textColumn<CargoFlowRow>('contractorName', t('common:table.contractor'), { primary: false }),
     statusColumn<CargoFlowRow>('status', t('common:table.status'), cargoFlowStatusColors),
     { id: 'actions', cell: ({ row }) => <CargoFlowRowActions row={row} />, size: 48, enableHiding: false },
   ]

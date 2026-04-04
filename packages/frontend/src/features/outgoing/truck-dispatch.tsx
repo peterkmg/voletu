@@ -5,7 +5,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -51,10 +51,10 @@ function getColumns(t: TFunction): ColumnDef<TruckDispatchPipelineResponse>[] {
   return [
     selectColumn<TruckDispatchPipelineResponse>(),
     textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber')),
-    textColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')),
-    textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor')),
-    textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product')),
-    textColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity')),
+    dateColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')),
+    textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
+    textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }),
+    textColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity'), { primary: false }),
     statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
     actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions),
   ]

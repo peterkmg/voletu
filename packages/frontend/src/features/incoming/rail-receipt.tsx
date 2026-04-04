@@ -6,7 +6,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -56,13 +56,13 @@ function getColumns(t: TFunction): ColumnDef<RailReceiptPipelineResponse>[] {
   return [
     selectColumn<RailReceiptPipelineResponse>(),
     textColumn<RailReceiptPipelineResponse>('basisDocumentNumber', t('common:table.waybillNumber')),
-    textColumn<RailReceiptPipelineResponse>('basisDate', t('common:table.date')),
-    textColumn<RailReceiptPipelineResponse>('contractorName', t('common:table.contractor')),
-    textColumn<RailReceiptPipelineResponse>('productName', t('common:table.product')),
-    textColumn<RailReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty')),
+    dateColumn<RailReceiptPipelineResponse>('basisDate', t('common:table.date')),
+    textColumn<RailReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
+    textColumn<RailReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
+    textColumn<RailReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty'), { primary: false }),
     statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
-    textColumn<RailReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber')),
-    textColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
+    textColumn<RailReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false }),
+    textColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false }),
     actionsColumn<RailReceiptPipelineResponse>(DataTableRowActions),
   ]
 }
