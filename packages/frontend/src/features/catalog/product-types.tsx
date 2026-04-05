@@ -37,7 +37,7 @@ function getProductTypeColumns(t: TFunction): ColumnDef<ProductTypeResponse>[] {
     textColumn<ProductTypeResponse>('commonName', t('catalog:productType.columns.commonName')),
     textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false }),
     dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<ProductTypeResponse>(DataTableRowActions),
+    actionsColumn<ProductTypeResponse>(DataTableRowActions, 2),
   ]
 }
 

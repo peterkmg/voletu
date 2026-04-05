@@ -47,7 +47,7 @@ function getColumns(t: TFunction): ColumnDef<RailReceiptPipelineResponse>[] {
     statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
     textColumn<RailReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false }),
     textColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false }),
-    actionsColumn<RailReceiptPipelineResponse>(DataTableRowActions),
+    actionsColumn<RailReceiptPipelineResponse>(DataTableRowActions, 1),
   ]
 }
 

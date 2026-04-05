@@ -62,7 +62,7 @@ function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
       },
     },
     dateColumn<CompanyResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<CompanyResponse>(DataTableRowActions),
+    actionsColumn<CompanyResponse>(DataTableRowActions, 2),
   ]
 }
 

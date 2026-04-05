@@ -60,7 +60,7 @@ function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
       },
     },
     dateColumn<StorageResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<StorageResponse>(DataTableRowActions),
+    actionsColumn<StorageResponse>(DataTableRowActions, 2),
   ]
 }
 

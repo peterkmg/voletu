@@ -74,7 +74,7 @@ function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
       ),
     },
     dateColumn<UserResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<UserResponse>(DataTableRowActions),
+    actionsColumn<UserResponse>(DataTableRowActions, 1),
   ]
 }
 

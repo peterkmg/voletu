@@ -37,7 +37,7 @@ function getBaseColumns(t: TFunction): ColumnDef<BaseResponse>[] {
     textColumn<BaseResponse>('commonName', t('catalog:base.columns.commonName')),
     textColumn<BaseResponse>('longName', t('catalog:base.columns.longName'), { primary: false }),
     dateColumn<BaseResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<BaseResponse>(DataTableRowActions),
+    actionsColumn<BaseResponse>(DataTableRowActions, 2),
   ]
 }
 

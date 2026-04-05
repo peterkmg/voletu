@@ -40,7 +40,7 @@ function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
     textColumn<WarehouseResponse>('commonName', t('catalog:warehouse.columns.commonName')),
     resolvedColumn<WarehouseResponse>('baseId', t('catalog:warehouse.columns.baseId'), 'baseIdName'),
     dateColumn<WarehouseResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<WarehouseResponse>(DataTableRowActions),
+    actionsColumn<WarehouseResponse>(DataTableRowActions, 2),
   ]
 }
 

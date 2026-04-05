@@ -40,7 +40,7 @@ function getProductGroupColumns(t: TFunction): ColumnDef<ProductGroupResponse>[]
     textColumn<ProductGroupResponse>('commonName', t('catalog:productGroup.columns.commonName')),
     resolvedColumn<ProductGroupResponse>('productTypeId', t('catalog:productGroup.columns.productType'), 'productTypeIdName'),
     dateColumn<ProductGroupResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<ProductGroupResponse>(DataTableRowActions),
+    actionsColumn<ProductGroupResponse>(DataTableRowActions, 2),
   ]
 }
 

@@ -42,7 +42,7 @@ function getColumns(t: TFunction): ColumnDef<TruckDispatchPipelineResponse>[] {
     textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }),
     textColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity'), { primary: false }),
     statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
-    actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions),
+    actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions, 1),
   ]
 }
 

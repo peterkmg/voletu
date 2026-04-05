@@ -35,14 +35,18 @@ export function selectColumn<T>(): ColumnDef<T> {
   }
 }
 
+/** @param slots Number of visible button slots (1=details only, 2=edit+more, 3=details+edit+more) */
 export function actionsColumn<T>(
   Actions: React.ComponentType<{ row: Row<T> }>,
+  slots: 1 | 2 | 3 = 3,
 ): ColumnDef<T> {
+  // 28px per button (h-7 w-7) + 4px gap + 16px cell padding
+  const width = slots * 32 + 16
   return {
     id: 'actions',
-    size: 100,
-    minSize: 100,
-    maxSize: 100,
+    size: width,
+    minSize: width,
+    maxSize: width,
     enableResizing: false,
     enableHiding: false,
     cell: ({ row }) => <Actions row={row} />,

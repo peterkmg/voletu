@@ -44,7 +44,7 @@ function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
     resolvedColumn<ProductResponse>('manufacturerId', t('catalog:product.columns.manufacturerId'), 'manufacturerIdName'),
     textColumn<ProductResponse>('addIdentification', t('catalog:product.columns.identification'), { primary: false }),
     dateColumn<ProductResponse>('createdAt', t('common:table.createdAt')),
-    actionsColumn<ProductResponse>(DataTableRowActions),
+    actionsColumn<ProductResponse>(DataTableRowActions, 2),
   ]
 }
 
