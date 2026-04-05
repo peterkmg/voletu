@@ -94,7 +94,7 @@ function BlendingMutateDialog({
 }) {
   const { t } = useTranslation(['common'])
   const companiesQuery = useCatalogCompanyList()
-  const productsQuery = useCatalogProductList()
+  const productsQuery = useCatalogProductList({ embed: 'names' })
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
@@ -205,7 +205,7 @@ const BlendingPrimaryButtons = createPrimaryButtons({ useEntity: useBlending })
 
 export function BlendingPage() {
   const { t } = useTranslation(['common'])
-  const queryResult = useBlendingDocumentList()
+  const queryResult = useBlendingDocumentList({ embed: 'names' })
 
   return (
     <EntityPage

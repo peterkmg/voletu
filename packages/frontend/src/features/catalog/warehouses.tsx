@@ -171,7 +171,7 @@ const WarehousesPrimaryButtons = createPrimaryButtons({ useEntity: useWarehouses
 
 export function Warehouses() {
   const { t } = useTranslation(['catalog'])
-  const queryResult = useCatalogWarehouseList()
+  const queryResult = useCatalogWarehouseList({ embed: 'names' })
 
   return (
     <EntityPage

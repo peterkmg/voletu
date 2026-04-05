@@ -171,7 +171,7 @@ const ProductGroupsPrimaryButtons = createPrimaryButtons({ useEntity: useProduct
 
 export function ProductGroups() {
   const { t } = useTranslation(['catalog'])
-  const queryResult = useCatalogProductGroupList()
+  const queryResult = useCatalogProductGroupList({ embed: 'names' })
 
   return (
     <EntityPage

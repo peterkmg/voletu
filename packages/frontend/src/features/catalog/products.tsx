@@ -94,7 +94,7 @@ function ProductMutateDialog({
 }: ProductMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
 
-  const productGroupsQuery = useCatalogProductGroupList()
+  const productGroupsQuery = useCatalogProductGroupList({ embed: 'names' })
   const companiesQuery = useCatalogCompanyList()
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
@@ -195,7 +195,7 @@ const ProductsPrimaryButtons = createPrimaryButtons({ useEntity: useProducts })
 
 export function Products() {
   const { t } = useTranslation(['catalog'])
-  const queryResult = useCatalogProductList()
+  const queryResult = useCatalogProductList({ embed: 'names' })
 
   return (
     <EntityPage

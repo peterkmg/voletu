@@ -105,7 +105,7 @@ const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function BunkeringPage() {
   const { t } = useTranslation(['common'])
-  const queryResult = useDispatchDocumentQuery({ dispatchMethod: 'BUNKERING' as any })
+  const queryResult = useDispatchDocumentQuery({ dispatchMethod: 'BUNKERING' as any, embed: 'names' })
 
   return <EntityPage provider={Provider} title={t('common:nav.bunkering')} queryResult={queryResult} primaryButtons={PrimaryButtons} table={BunkeringTable} dialogs={Dialogs} />
 }

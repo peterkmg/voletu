@@ -103,7 +103,7 @@ const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function DirectDispatchPage() {
   const { t } = useTranslation(['common'])
-  const queryResult = useDispatchDocumentQuery({ dispatchMethod: 'VESSEL_TERMINAL' as any, dispatchPurpose: 'EXTERNAL' as any })
+  const queryResult = useDispatchDocumentQuery({ dispatchMethod: 'VESSEL_TERMINAL' as any, dispatchPurpose: 'EXTERNAL' as any, embed: 'names' })
 
   return <EntityPage provider={Provider} title={t('common:nav.directDispatch')} queryResult={queryResult} primaryButtons={PrimaryButtons} table={DirectDispatchTable} dialogs={Dialogs} />
 }

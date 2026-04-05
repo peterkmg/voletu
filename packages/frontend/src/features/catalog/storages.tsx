@@ -111,7 +111,7 @@ function StorageMutateDialog({
 }: StorageMutateDialogProps) {
   const { t } = useTranslation(['catalog', 'common'])
 
-  const warehousesQuery = useCatalogWarehouseList()
+  const warehousesQuery = useCatalogWarehouseList({ embed: 'names' })
   const productTypesQuery = useCatalogProductTypeList()
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
@@ -215,7 +215,7 @@ const StoragesPrimaryButtons = createPrimaryButtons({ useEntity: useStorages })
 
 export function Storages() {
   const { t } = useTranslation(['catalog'])
-  const queryResult = useCatalogStorageList()
+  const queryResult = useCatalogStorageList({ embed: 'names' })
 
   return (
     <EntityPage
