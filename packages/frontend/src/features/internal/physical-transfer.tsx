@@ -4,7 +4,7 @@ import type { PhysicalTransferItemResponse, PhysicalTransferResponse } from '~/g
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -32,11 +32,11 @@ const DataTableRowActions = createRowActions<PhysicalTransferResponse>({ useEnti
 
 function getColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
   return [
-    selectColumn<PhysicalTransferResponse>(),
     textColumn<PhysicalTransferResponse>('documentNumber', t('common:table.documentNumber')),
     dateColumn<PhysicalTransferResponse>('date', t('common:table.date')),
     statusColumn<PhysicalTransferResponse>('status', t('common:table.status'), documentStatusColors),
     { ...dateColumn<PhysicalTransferResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
+    { ...dateColumn<PhysicalTransferResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<PhysicalTransferResponse>(DataTableRowActions),
   ]
 }
@@ -130,18 +130,18 @@ export function PhysicalTransferDetail() {
           columns={[
             textColumn<PhysicalTransferItemResponse>('contractorIdName', t('common:table.contractor')),
             textColumn<PhysicalTransferItemResponse>('productIdName', t('common:table.product')),
-            textColumn<PhysicalTransferItemResponse>('fromStorageIdName', 'From Storage'),
-            textColumn<PhysicalTransferItemResponse>('toStorageIdName', 'To Storage'),
+            textColumn<PhysicalTransferItemResponse>('fromStorageIdName', t('common:columns.fromStorage')),
+            textColumn<PhysicalTransferItemResponse>('toStorageIdName', t('common:columns.toStorage')),
             textColumn<PhysicalTransferItemResponse>('amount', t('common:table.quantity')),
           ]}
           isLocked={doc.status === 'POSTED'}
-          sectionTitle="Transfer Items"
+          sectionTitle={t('common:sections.transferItems')}
         />
       )}
       metadataContent={doc.executedAt
         ? (
             <div className="text-sm">
-              <span className="text-muted-foreground">Executed at:</span>
+              <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
               {' '}
               {doc.executedAt}
             </div>

@@ -5,7 +5,7 @@ import { getRouteApi } from '@tanstack/react-router'
 
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, resolvedColumn, selectColumn, StatusBadge, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, resolvedColumn, StatusBadge, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
@@ -40,7 +40,6 @@ const DataTableRowActions = createRowActions<StorageResponse>({ useEntity: useSt
 
 function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
   return [
-    selectColumn<StorageResponse>(),
     textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName')),
     resolvedColumn<StorageResponse>('warehouseId', t('catalog:storage.columns.warehouseId'), 'warehouseIdName'),
     numericColumn<StorageResponse>('capacity', t('catalog:storage.columns.capacity')),

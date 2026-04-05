@@ -5,7 +5,7 @@ import { getRouteApi } from '@tanstack/react-router'
 
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
@@ -34,7 +34,6 @@ const DataTableRowActions = createRowActions<ProductTypeResponse>({ useEntity: u
 
 function getProductTypeColumns(t: TFunction): ColumnDef<ProductTypeResponse>[] {
   return [
-    selectColumn<ProductTypeResponse>(),
     textColumn<ProductTypeResponse>('commonName', t('catalog:productType.columns.commonName')),
     textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false }),
     dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')),

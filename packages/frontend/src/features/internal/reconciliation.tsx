@@ -4,7 +4,7 @@ import type { InventoryAdjustmentResponse, InventoryReconciliationResponse } fro
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -35,11 +35,11 @@ const DataTableRowActions = createRowActions<InventoryReconciliationResponse>({ 
 
 function getColumns(t: TFunction): ColumnDef<InventoryReconciliationResponse>[] {
   return [
-    selectColumn<InventoryReconciliationResponse>(),
     textColumn<InventoryReconciliationResponse>('documentNumber', t('common:table.documentNumber')),
     dateColumn<InventoryReconciliationResponse>('date', t('common:table.date')),
     statusColumn<InventoryReconciliationResponse>('status', t('common:table.status'), documentStatusColors),
     { ...dateColumn<InventoryReconciliationResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
+    { ...dateColumn<InventoryReconciliationResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<InventoryReconciliationResponse>(DataTableRowActions),
   ]
 }
@@ -130,7 +130,7 @@ export function ReconciliationDetail() {
             <p>{doc.date}</p>
           </div>
           <div>
-            <span className="text-sm text-muted-foreground">Warehouse</span>
+            <span className="text-sm text-muted-foreground">{t('common:columns.warehouse')}</span>
             <p>{doc.warehouseIdName ?? doc.warehouseId}</p>
           </div>
         </div>
@@ -140,19 +140,19 @@ export function ReconciliationDetail() {
           items={items}
           columns={[
             textColumn<InventoryAdjustmentResponse>('productIdName', t('common:table.product')),
-            textColumn<InventoryAdjustmentResponse>('storageIdName', 'Storage'),
+            textColumn<InventoryAdjustmentResponse>('storageIdName', t('common:columns.storage')),
             textColumn<InventoryAdjustmentResponse>('contractorIdName', t('common:table.contractor')),
-            textColumn<InventoryAdjustmentResponse>('adjustmentType', 'Type'),
+            textColumn<InventoryAdjustmentResponse>('adjustmentType', t('common:columns.type')),
             textColumn<InventoryAdjustmentResponse>('amount', t('common:table.quantity')),
           ]}
           isLocked={doc.status === 'POSTED'}
-          sectionTitle="Adjustments"
+          sectionTitle={t('common:sections.adjustments')}
         />
       )}
       metadataContent={doc.executedAt
         ? (
             <div className="text-sm">
-              <span className="text-muted-foreground">Executed at:</span>
+              <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
               {' '}
               {doc.executedAt}
             </div>

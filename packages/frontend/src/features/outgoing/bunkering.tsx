@@ -4,7 +4,7 @@ import type { DispatchItemResponse, DispatchResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -34,12 +34,12 @@ const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, life
 
 function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [
-    selectColumn<DispatchResponse>(),
     textColumn<DispatchResponse>('documentNumber', t('common:table.documentNumber')),
     dateColumn<DispatchResponse>('date', t('common:table.date')),
     resolvedColumn<DispatchResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
     statusColumn<DispatchResponse>('status', t('common:table.status'), documentStatusColors),
     { ...dateColumn<DispatchResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
+    { ...dateColumn<DispatchResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<DispatchResponse>(DataTableRowActions),
   ]
 }
@@ -135,7 +135,7 @@ export function BunkeringDetail() {
             <p>{doc.contractorIdName ?? doc.contractorId}</p>
           </div>
           <div>
-            <span className="text-sm text-muted-foreground">Bunker Type</span>
+            <span className="text-sm text-muted-foreground">{t('common:columns.bunkerType')}</span>
             <p>{doc.bunkerType ?? '—'}</p>
           </div>
         </div>
@@ -145,17 +145,17 @@ export function BunkeringDetail() {
           items={doc.items}
           columns={[
             textColumn<DispatchItemResponse>('productIdName', t('common:table.product')),
-            textColumn<DispatchItemResponse>('storageIdName', 'Storage'),
+            textColumn<DispatchItemResponse>('storageIdName', t('common:columns.storage')),
             textColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
           ]}
           isLocked={doc.status === 'POSTED'}
-          sectionTitle="Dispatch Items"
+          sectionTitle={t('common:sections.dispatchItems')}
         />
       )}
       metadataContent={doc.executedAt
         ? (
             <div className="text-sm">
-              <span className="text-muted-foreground">Executed at:</span>
+              <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
               {' '}
               {doc.executedAt}
             </div>

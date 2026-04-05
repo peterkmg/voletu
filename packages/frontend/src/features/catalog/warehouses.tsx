@@ -5,7 +5,7 @@ import { getRouteApi } from '@tanstack/react-router'
 
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
@@ -37,7 +37,6 @@ const DataTableRowActions = createRowActions<WarehouseResponse>({ useEntity: use
 
 function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
   return [
-    selectColumn<WarehouseResponse>(),
     textColumn<WarehouseResponse>('commonName', t('catalog:warehouse.columns.commonName')),
     resolvedColumn<WarehouseResponse>('baseId', t('catalog:warehouse.columns.baseId'), 'baseIdName'),
     dateColumn<WarehouseResponse>('createdAt', t('common:table.createdAt')),

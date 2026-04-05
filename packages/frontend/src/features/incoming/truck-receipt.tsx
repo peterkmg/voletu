@@ -6,7 +6,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -15,7 +15,6 @@ import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
-import { Button } from '~/components/ui/button'
 import { Form } from '~/components/ui/form'
 import { Skeleton } from '~/components/ui/skeleton'
 import { acceptanceDocumentExecute, acceptanceDocumentRevert, transportTruckWaybillCreate } from '~/generated/client'
@@ -27,6 +26,7 @@ import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
+import { createPrimaryButtons } from '~/lib/create-primary-buttons'
 
 type DialogType = 'create'
 
@@ -54,7 +54,6 @@ function DataTableRowActions({ row }: { row: { original: TruckReceiptPipelineRes
 
 function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
   return [
-    selectColumn<TruckReceiptPipelineResponse>(),
     textColumn<TruckReceiptPipelineResponse>('basisDocumentNumber', t('common:table.waybillNumber')),
     dateColumn<TruckReceiptPipelineResponse>('basisDate', t('common:table.date')),
     textColumn<TruckReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
@@ -123,18 +122,7 @@ function WaybillMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChan
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog: WaybillMutateDialog })
 
-function PrimaryButtons() {
-  const { t } = useTranslation('common')
-  const { setOpen, setCurrentRow } = useEntity()
-
-  return (
-    <Button size="sm" onClick={() => { setCurrentRow(null); setOpen('create') }}>
-      {t('actions.create')}
-      {' '}
-      Waybill
-    </Button>
-  )
-}
+const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function TruckReceiptPage() {
   const { t } = useTranslation(['common'])
@@ -205,18 +193,18 @@ export function TruckReceiptDetail() {
             items={doc.items}
             columns={[
               textColumn<AcceptanceItemResponse>('productIdName', t('common:table.product')),
-              textColumn<AcceptanceItemResponse>('storageIdName', 'Storage'),
+              textColumn<AcceptanceItemResponse>('storageIdName', t('common:columns.storage')),
               textColumn<AcceptanceItemResponse>('contractorIdName', t('common:table.contractor')),
               textColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
             ]}
             isLocked={doc.status === 'POSTED'}
-            sectionTitle="Acceptance Items"
+            sectionTitle={t('common:sections.acceptanceItems')}
           />
         )}
         metadataContent={doc.executedAt
           ? (
               <div className="text-sm">
-                <span className="text-muted-foreground">Executed at:</span>
+                <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
                 {' '}
                 {doc.executedAt}
               </div>

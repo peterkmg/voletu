@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { queryClient } from '~/api/query-client'
-import { actionsColumn, createGlobalFilter, DataTableColumnHeader, dateColumn, EntityTable, selectColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, DataTableColumnHeader, dateColumn, EntityTable, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { PasswordInput } from '~/components/forms/password-input'
 import { Badge } from '~/components/ui/badge'
@@ -57,7 +57,6 @@ const DataTableRowActions = createRowActions<UserResponse>({ useEntity: useUsers
 
 function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
   return [
-    selectColumn<UserResponse>(),
     textColumn<UserResponse>('username', t('system:users.columns.username')),
     textColumn<UserResponse>('fullname', t('system:users.columns.fullname'), { primary: false }),
     {

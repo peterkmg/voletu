@@ -4,7 +4,7 @@ import type { BlendingComponentResponse, BlendingResponse, BlendingResultRespons
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -42,7 +42,6 @@ const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useB
 
 function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
   return [
-    selectColumn<BlendingResponse>(),
     textColumn<BlendingResponse>('documentNumber', t('common:table.documentNumber')),
     dateColumn<BlendingResponse>('date', t('common:table.date')),
     resolvedColumn<BlendingResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
@@ -266,20 +265,20 @@ export function BlendingDetail() {
             items={composite.components}
             columns={[
               textColumn<BlendingComponentResponse>('sourceProductIdName', t('common:table.product')),
-              textColumn<BlendingComponentResponse>('storageIdName', 'Storage'),
+              textColumn<BlendingComponentResponse>('storageIdName', t('common:columns.storage')),
               textColumn<BlendingComponentResponse>('amountUsed', t('common:table.quantity')),
             ]}
             isLocked={doc.status === 'POSTED'}
-            sectionTitle="Components (Inputs)"
+            sectionTitle={t('common:sections.componentInputs')}
           />
           <ChildItemsTable
             items={composite.results}
             columns={[
-              textColumn<BlendingResultResponse>('storageIdName', 'Storage'),
+              textColumn<BlendingResultResponse>('storageIdName', t('common:columns.storage')),
               textColumn<BlendingResultResponse>('producedAmount', t('common:table.quantity')),
             ]}
             isLocked={doc.status === 'POSTED'}
-            sectionTitle="Results (Outputs)"
+            sectionTitle={t('common:sections.resultOutputs')}
           />
         </>
       )}
@@ -288,7 +287,7 @@ export function BlendingDetail() {
           ? (
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Executed at:</span>
+                  <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
                   {' '}
                   {doc.executedAt}
                 </div>

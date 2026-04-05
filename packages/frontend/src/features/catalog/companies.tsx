@@ -5,7 +5,7 @@ import { getRouteApi } from '@tanstack/react-router'
 
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, StatusBadge, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, StatusBadge, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { CheckboxField, TextField } from '~/components/forms/form-fields'
@@ -35,7 +35,6 @@ const DataTableRowActions = createRowActions<CompanyResponse>({ useEntity: useCo
 
 function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
   return [
-    selectColumn<CompanyResponse>(),
     textColumn<CompanyResponse>('commonName', t('catalog:company.columns.commonName')),
     textColumn<CompanyResponse>('legalName', t('catalog:company.columns.legalName'), { primary: false }),
     {

@@ -4,7 +4,7 @@ import type { OwnershipTransferItemResponse, OwnershipTransferResponse } from '~
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -32,10 +32,10 @@ const DataTableRowActions = createRowActions<OwnershipTransferResponse>({ useEnt
 
 function getColumns(t: TFunction): ColumnDef<OwnershipTransferResponse>[] {
   return [
-    selectColumn<OwnershipTransferResponse>(),
     dateColumn<OwnershipTransferResponse>('date', t('common:table.date')),
     statusColumn<OwnershipTransferResponse>('status', t('common:table.status'), documentStatusColors),
     { ...dateColumn<OwnershipTransferResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
+    { ...dateColumn<OwnershipTransferResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
     actionsColumn<OwnershipTransferResponse>(DataTableRowActions),
   ]
 }
@@ -125,20 +125,20 @@ export function OwnershipTransferDetail() {
         <ChildItemsTable
           items={items}
           columns={[
-            textColumn<OwnershipTransferItemResponse>('fromContractorIdName', 'From Contractor'),
-            textColumn<OwnershipTransferItemResponse>('toContractorIdName', 'To Contractor'),
+            textColumn<OwnershipTransferItemResponse>('fromContractorIdName', t('common:columns.fromContractor')),
+            textColumn<OwnershipTransferItemResponse>('toContractorIdName', t('common:columns.toContractor')),
             textColumn<OwnershipTransferItemResponse>('productIdName', t('common:table.product')),
-            textColumn<OwnershipTransferItemResponse>('storageIdName', 'Storage'),
+            textColumn<OwnershipTransferItemResponse>('storageIdName', t('common:columns.storage')),
             textColumn<OwnershipTransferItemResponse>('amount', t('common:table.quantity')),
           ]}
           isLocked={doc.status === 'POSTED'}
-          sectionTitle="Transfer Items"
+          sectionTitle={t('common:sections.transferItems')}
         />
       )}
       metadataContent={doc.executedAt
         ? (
             <div className="text-sm">
-              <span className="text-muted-foreground">Executed at:</span>
+              <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
               {' '}
               {doc.executedAt}
             </div>

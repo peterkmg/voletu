@@ -182,6 +182,27 @@
     "executionMetadata": "Execution Metadata",
     "lineItems": "Line Items"
   },
+  "sections": {
+    "acceptanceItems": "Acceptance Items",
+    "dispatchItems": "Dispatch Items",
+    "componentInputs": "Components (Inputs)",
+    "resultOutputs": "Results (Outputs)",
+    "transferItems": "Transfer Items",
+    "adjustments": "Adjustments"
+  },
+  "metadata": {
+    "executedAt": "Executed at"
+  },
+  "columns": {
+    "storage": "Storage",
+    "fromStorage": "From Storage",
+    "toStorage": "To Storage",
+    "fromContractor": "From Contractor",
+    "toContractor": "To Contractor",
+    "type": "Type",
+    "bunkerType": "Bunker Type",
+    "warehouse": "Warehouse"
+  },
   "debug": {
     "seedDatabase": "Seed Database",
     "seeding": "Seeding\u2026",

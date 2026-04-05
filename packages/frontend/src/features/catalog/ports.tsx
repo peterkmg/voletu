@@ -5,7 +5,7 @@ import { getRouteApi } from '@tanstack/react-router'
 
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, selectColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, textColumn } from '~/components/data-table'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
 import { TextField } from '~/components/forms/form-fields'
@@ -34,7 +34,6 @@ const DataTableRowActions = createRowActions<PortResponse>({ useEntity: usePorts
 
 function getPortColumns(t: TFunction): ColumnDef<PortResponse>[] {
   return [
-    selectColumn<PortResponse>(),
     textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName')),
     textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false }),
     dateColumn<PortResponse>('createdAt', t('common:table.createdAt')),
