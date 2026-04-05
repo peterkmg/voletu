@@ -89,7 +89,7 @@ function TableHead({ className, colSpan, style, ...props }: TableHeadProps) {
       role="columnheader"
       data-slot="table-head"
       className={cn(
-        'flex items-center h-10 px-2 text-left font-medium whitespace-nowrap overflow-hidden text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'flex items-center h-10 px-2 first:pl-4 last:pr-4 text-left font-medium whitespace-nowrap overflow-hidden text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       style={{
@@ -111,7 +111,7 @@ function TableCell({ className, colSpan, style, ...props }: TableCellProps) {
       role="cell"
       data-slot="table-cell"
       className={cn(
-        'flex items-center select-text p-2 overflow-hidden whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'flex items-center select-text p-2 first:pl-4 last:pr-4 overflow-hidden whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       style={{

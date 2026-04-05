@@ -53,8 +53,9 @@ export function getGridTemplate<TData>(table: TanstackTable<TData>): string {
     // Manually resized column: use exact size
     if (sizing[col.id] != null)
       return `${col.getSize()}px`
-    // Flexible column: grows to fill available space
+    // Flexible column: grows to fill available space, respects maxSize cap
     const min = minSize ?? 80
-    return `minmax(${min}px, 1fr)`
+    const max = maxSize ? `${maxSize}px` : '1fr'
+    return `minmax(${min}px, ${max})`
   }).join(' ')
 }

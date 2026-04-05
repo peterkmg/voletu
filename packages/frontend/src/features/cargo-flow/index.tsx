@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
+import { ChevronDown, Plus, Search } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
@@ -42,7 +42,7 @@ function CargoFlowRowActions({ row }: { row: { original: CargoFlowRow } }) {
       actions={[
         {
           label: t('actions.viewDetails'),
-          icon: ChevronRight,
+          icon: Search,
           inline: true,
           onClick: () => navigate({ to: `${row.original.flowRoute}/${row.original.id}` }),
         },

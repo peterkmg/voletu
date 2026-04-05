@@ -2,12 +2,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { RelatedDocument } from '~/components/document/related-documents'
 import type { AcceptanceItemResponse, RailReceiptPipelineResponse } from '~/generated/types'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
-import { RowActions } from '~/components/data-table/row-actions'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { RelatedDocuments } from '~/components/document/related-documents'
@@ -27,30 +25,17 @@ import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
+import { createRowActions } from '~/lib/create-row-actions'
 
 type DialogType = 'create'
 
 const { Provider, useEntity } = createEntityProvider<RailReceiptPipelineResponse, DialogType>('RailReceipt')
 
-function DataTableRowActions({ row }: { row: { original: RailReceiptPipelineResponse } }) {
-  const navigate = useNavigate()
-  const { t } = useTranslation('common')
-  const r = row.original
-  const targetId = r.pipelineStatus === 'PENDING' ? r.id : (r.actionId ?? r.id)
-
-  return (
-    <RowActions
-      actions={[
-        {
-          label: t('actions.viewDetails'),
-          icon: ChevronRight,
-          inline: true,
-          onClick: () => navigate({ to: `/incoming/rail/${targetId}` }),
-        },
-      ]}
-    />
-  )
-}
+const DataTableRowActions = createRowActions<RailReceiptPipelineResponse>({
+  useEntity,
+  disableEdit: true,
+  getDetailPath: (row) => `/incoming/rail/${row.pipelineStatus === 'PENDING' ? row.id : (row.actionId ?? row.id)}`,
+})
 
 function getColumns(t: TFunction): ColumnDef<RailReceiptPipelineResponse>[] {
   return [

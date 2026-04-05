@@ -40,9 +40,9 @@ export function actionsColumn<T>(
 ): ColumnDef<T> {
   return {
     id: 'actions',
-    size: 72,
-    minSize: 72,
-    maxSize: 72,
+    size: 100,
+    minSize: 100,
+    maxSize: 100,
     enableResizing: false,
     enableHiding: false,
     cell: ({ row }) => <Actions row={row} />,
@@ -56,6 +56,8 @@ export function dateColumn<T>(
 ): ColumnDef<T> {
   return {
     accessorKey,
+    minSize: 100,
+    maxSize: 150,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
@@ -120,6 +122,8 @@ export function statusColumn<T>(
 ): ColumnDef<T> {
   return {
     accessorKey,
+    minSize: 90,
+    maxSize: 140,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
@@ -137,6 +141,8 @@ export function numericColumn<T>(
 ): ColumnDef<T> {
   return {
     accessorKey,
+    minSize: 80,
+    maxSize: 150,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
