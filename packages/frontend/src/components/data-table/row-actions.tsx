@@ -34,7 +34,7 @@ export function RowActions({ actions }: RowActionsProps) {
   const menuActions = actions.filter(a => !a.inline)
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex w-full items-center justify-end gap-1">
       {inlineActions.map(action => (
         <Tooltip key={action.label}>
           <TooltipTrigger asChild>
