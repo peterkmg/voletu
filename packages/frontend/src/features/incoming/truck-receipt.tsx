@@ -39,14 +39,14 @@ const DataTableRowActions = createRowActions<TruckReceiptPipelineResponse>({
 
 function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
   return [
-    textColumn<TruckReceiptPipelineResponse>('basisDocumentNumber', t('common:table.waybillNumber')),
+    textColumn<TruckReceiptPipelineResponse>('basisDocumentNumber', t('common:table.waybillNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<TruckReceiptPipelineResponse>('basisDate', t('common:table.date')),
     textColumn<TruckReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
     textColumn<TruckReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
-    textColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty'), { primary: false }),
+    textColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty'), { primary: false, sizing: 'capped', maxSize: 150 }),
     statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
-    textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false }),
-    textColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false }),
+    textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
+    textColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false, sizing: 'capped', maxSize: 150 }),
     actionsColumn<TruckReceiptPipelineResponse>(DataTableRowActions, 1),
   ]
 }

@@ -36,11 +36,11 @@ const DataTableRowActions = createRowActions<TruckDispatchPipelineResponse>({
 
 function getColumns(t: TFunction): ColumnDef<TruckDispatchPipelineResponse>[] {
   return [
-    textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber')),
+    textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')),
     textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
     textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }),
-    textColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity'), { primary: false }),
+    textColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity'), { primary: false, sizing: 'capped', maxSize: 150 }),
     statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
     actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions, 1),
   ]

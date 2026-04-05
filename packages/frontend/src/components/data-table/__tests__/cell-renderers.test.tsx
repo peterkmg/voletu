@@ -72,9 +72,9 @@ describe('numericCell', () => {
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('renders a number as text', () => {
+  it('renders a number formatted with 2 decimal places', () => {
     render(<NumericCell value={42} />)
-    expect(screen.getByText('42')).toBeInTheDocument()
+    expect(screen.getByText('42.00')).toBeInTheDocument()
   })
 
   it('renders a zero-padded number when padWidth is provided', () => {
@@ -82,9 +82,9 @@ describe('numericCell', () => {
     expect(screen.getByText('007')).toBeInTheDocument()
   })
 
-  it('renders a string value directly', () => {
+  it('renders a string value formatted with 2 decimal places', () => {
     render(<NumericCell value="99" />)
-    expect(screen.getByText('99')).toBeInTheDocument()
+    expect(screen.getByText('99.00')).toBeInTheDocument()
   })
 })
 

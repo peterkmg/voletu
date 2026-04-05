@@ -19,6 +19,7 @@ function mockColumn(overrides: {
   size?: number
   minSize?: number | undefined
   maxSize?: number | undefined
+  meta?: { sizingCategory?: 'fixed' | 'capped' | 'flex' }
 } = {}): Column<unknown, unknown> {
   const {
     id = 'col',
@@ -28,6 +29,7 @@ function mockColumn(overrides: {
     size = 150,
     minSize,
     maxSize,
+    meta,
   } = overrides
 
   return {
@@ -36,7 +38,7 @@ function mockColumn(overrides: {
     getStart: vi.fn(() => start),
     getAfter: vi.fn(() => after),
     getSize: vi.fn(() => size),
-    columnDef: { minSize, maxSize },
+    columnDef: { minSize, maxSize, meta },
   } as unknown as Column<unknown, unknown>
 }
 
@@ -208,5 +210,58 @@ describe('getGridTemplate', () => {
     const table = mockTable({ visibleLeafColumns: [col], columnSizing: {} })
 
     expect(getGridTemplate(table)).toBe('minmax(80px, 1fr)')
+  })
+
+  // --- sizingCategory tests ---
+
+  it('returns exact px for sizingCategory=fixed', () => {
+    const col = mockColumn({ id: 'a', size: 36, minSize: 36, maxSize: 36, meta: { sizingCategory: 'fixed' } })
+    const table = mockTable({ visibleLeafColumns: [col], columnSizing: {} })
+
+    expect(getGridTemplate(table)).toBe('36px')
+  })
+
+  it('returns minmax with px max for sizingCategory=capped', () => {
+    const col = mockColumn({ id: 'a', size: 150, minSize: 100, maxSize: 130, meta: { sizingCategory: 'capped' } })
+    const table = mockTable({ visibleLeafColumns: [col], columnSizing: {} })
+
+    expect(getGridTemplate(table)).toBe('minmax(100px, 130px)')
+  })
+
+  it('defaults capped max to 150 when maxSize is undefined', () => {
+    const col = mockColumn({ id: 'a', size: 150, minSize: 90, maxSize: undefined, meta: { sizingCategory: 'capped' } })
+    const table = mockTable({ visibleLeafColumns: [col], columnSizing: {} })
+
+    expect(getGridTemplate(table)).toBe('minmax(90px, 150px)')
+  })
+
+  it('returns minmax with 1fr for sizingCategory=flex', () => {
+    const col = mockColumn({ id: 'a', size: 200, minSize: 120, maxSize: undefined, meta: { sizingCategory: 'flex' } })
+    const table = mockTable({ visibleLeafColumns: [col], columnSizing: {} })
+
+    expect(getGridTemplate(table)).toBe('minmax(120px, 1fr)')
+  })
+
+  it('defaults flex min to 120 when minSize is undefined', () => {
+    const col = mockColumn({ id: 'a', size: 200, minSize: undefined, maxSize: undefined, meta: { sizingCategory: 'flex' } })
+    const table = mockTable({ visibleLeafColumns: [col], columnSizing: {} })
+
+    expect(getGridTemplate(table)).toBe('minmax(120px, 1fr)')
+  })
+
+  it('manual resize takes priority over sizingCategory', () => {
+    const col = mockColumn({ id: 'resized', size: 300, minSize: 100, maxSize: 130, meta: { sizingCategory: 'capped' } })
+    const table = mockTable({ visibleLeafColumns: [col], columnSizing: { resized: 300 } })
+
+    expect(getGridTemplate(table)).toBe('300px')
+  })
+
+  it('handles mixed sizing categories correctly', () => {
+    const fixed = mockColumn({ id: 'sel', size: 36, minSize: 36, maxSize: 36, meta: { sizingCategory: 'fixed' } })
+    const capped = mockColumn({ id: 'date', size: 130, minSize: 100, maxSize: 130, meta: { sizingCategory: 'capped' } })
+    const flex = mockColumn({ id: 'name', size: 200, minSize: 120, meta: { sizingCategory: 'flex' } })
+    const table = mockTable({ visibleLeafColumns: [fixed, capped, flex], columnSizing: {} })
+
+    expect(getGridTemplate(table)).toBe('36px minmax(100px, 130px) minmax(120px, 1fr)')
   })
 })

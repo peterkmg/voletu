@@ -55,13 +55,13 @@ const cargoFlowStatusColors = { ...documentStatusColors, ...pipelineStatusColors
 
 function getColumns(t: TFunction): ColumnDef<CargoFlowRow>[] {
   return [
-    textColumn<CargoFlowRow>('type', 'Type', { primary: false }),
-    textColumn<CargoFlowRow>('operation', 'Operation', { primary: false }),
-    textColumn<CargoFlowRow>('documentNumber', t('common:table.documentNumber')),
+    textColumn<CargoFlowRow>('type', 'Type', { primary: false, sizing: 'capped', maxSize: 120 }),
+    textColumn<CargoFlowRow>('operation', 'Operation', { primary: false, sizing: 'capped', maxSize: 180 }),
+    textColumn<CargoFlowRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<CargoFlowRow>('date', t('common:table.date')),
     textColumn<CargoFlowRow>('contractorName', t('common:table.contractor'), { primary: false }),
     statusColumn<CargoFlowRow>('status', t('common:table.status'), cargoFlowStatusColors),
-    { id: 'actions', cell: ({ row }) => <CargoFlowRowActions row={row} />, size: 48, enableHiding: false },
+    { id: 'actions', cell: ({ row }) => <CargoFlowRowActions row={row} />, size: 48, minSize: 48, maxSize: 48, enableHiding: false, enableResizing: false, meta: { sizingCategory: 'fixed' as const } },
   ]
 }
 

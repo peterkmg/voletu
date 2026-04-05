@@ -34,8 +34,8 @@ const DataTableRowActions = createRowActions<PortResponse>({ useEntity: usePorts
 
 function getPortColumns(t: TFunction): ColumnDef<PortResponse>[] {
   return [
-    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName')),
-    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false }),
+    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
+    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false, sizing: 'capped', maxSize: 180 }),
     dateColumn<PortResponse>('createdAt', t('common:table.createdAt')),
     actionsColumn<PortResponse>(DataTableRowActions, 2),
   ]

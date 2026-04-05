@@ -34,7 +34,7 @@ const DataTableRowActions = createRowActions<DispatchResponse>({ useEntity, life
 
 function getColumns(t: TFunction): ColumnDef<DispatchResponse>[] {
   return [
-    textColumn<DispatchResponse>('documentNumber', t('common:table.documentNumber')),
+    textColumn<DispatchResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<DispatchResponse>('date', t('common:table.date')),
     resolvedColumn<DispatchResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
     statusColumn<DispatchResponse>('status', t('common:table.status'), documentStatusColors),

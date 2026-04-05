@@ -13,6 +13,7 @@ export function selectColumn<T>(): ColumnDef<T> {
     enableResizing: false,
     enableSorting: false,
     enableHiding: false,
+    meta: { sizingCategory: 'fixed' },
     header: ({ table }) => (
       <Checkbox
         checked={
@@ -49,6 +50,7 @@ export function actionsColumn<T>(
     maxSize: width,
     enableResizing: false,
     enableHiding: false,
+    meta: { sizingCategory: 'fixed' },
     cell: ({ row }) => <Actions row={row} />,
   }
 }
@@ -61,12 +63,20 @@ export function dateColumn<T>(
   return {
     accessorKey,
     minSize: 100,
-    maxSize: 150,
+    maxSize: 130,
+    filterFn: (row, columnId, filterValue: string[] | undefined) => {
+      if (filterValue === undefined) return true
+      if (filterValue.length === 0) return false
+      const val = row.getValue<string>(columnId)
+      if (!val) return false
+      return filterValue.includes(val.slice(0, 10))
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
     meta: {
       label: title,
+      sizingCategory: 'capped' as const,
       align: opts?.align ?? 'left' as const,
       ...(opts?.className ? { className: opts.className } : {}),
     },
@@ -77,16 +87,27 @@ export function dateColumn<T>(
 export function textColumn<T>(
   accessorKey: keyof T & string,
   title: string,
-  opts?: { primary?: boolean, className?: string },
+  opts?: {
+    primary?: boolean
+    className?: string
+    /** Override sizing category. Defaults to 'flex'. Use 'capped' for bounded fields like document numbers. */
+    sizing?: 'capped' | 'flex'
+    minSize?: number
+    maxSize?: number
+  },
 ): ColumnDef<T> {
   const primary = opts?.primary ?? true
+  const sizing = opts?.sizing ?? 'flex'
   return {
     accessorKey,
+    minSize: opts?.minSize ?? 120,
+    ...(sizing === 'capped' ? { maxSize: opts?.maxSize ?? 160 } : {}),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
     meta: {
       label: title,
+      sizingCategory: sizing,
       ...(opts?.className ? { className: opts.className } : {}),
     },
     cell: ({ row }) =>
@@ -109,10 +130,11 @@ export function resolvedColumn<T>(
 ): ColumnDef<T> {
   return {
     accessorKey,
+    minSize: 120,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    meta: { label: title },
+    meta: { label: title, sizingCategory: 'flex' as const },
     cell: ({ row }) => (
       <ResolvedCell value={(row.original as Record<string, unknown>)[resolvedKey] as string} />
     ),
@@ -127,11 +149,11 @@ export function statusColumn<T>(
   return {
     accessorKey,
     minSize: 90,
-    maxSize: 140,
+    maxSize: 130,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    meta: { label: title },
+    meta: { label: title, sizingCategory: 'capped' as const },
     cell: ({ row }) => (
       <StatusBadge value={row.getValue(accessorKey)} colorMap={colorMap} />
     ),
@@ -145,12 +167,12 @@ export function numericColumn<T>(
 ): ColumnDef<T> {
   return {
     accessorKey,
-    minSize: 80,
+    minSize: 90,
     maxSize: 150,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    meta: { label: title, align: opts?.align ?? 'right' as const },
+    meta: { label: title, sizingCategory: 'capped' as const, align: opts?.align ?? 'right' as const },
     cell: ({ row }) => (
       <NumericCell value={row.getValue(accessorKey)} padWidth={opts?.padWidth} unit={opts?.unit} />
     ),

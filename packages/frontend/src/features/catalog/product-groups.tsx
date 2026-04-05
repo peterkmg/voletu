@@ -37,7 +37,7 @@ const DataTableRowActions = createRowActions<ProductGroupResponse>({ useEntity: 
 
 function getProductGroupColumns(t: TFunction): ColumnDef<ProductGroupResponse>[] {
   return [
-    textColumn<ProductGroupResponse>('commonName', t('catalog:productGroup.columns.commonName')),
+    textColumn<ProductGroupResponse>('commonName', t('catalog:productGroup.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
     resolvedColumn<ProductGroupResponse>('productTypeId', t('catalog:productGroup.columns.productType'), 'productTypeIdName'),
     dateColumn<ProductGroupResponse>('createdAt', t('common:table.createdAt')),
     actionsColumn<ProductGroupResponse>(DataTableRowActions, 2),

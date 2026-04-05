@@ -34,8 +34,8 @@ const DataTableRowActions = createRowActions<BaseResponse>({ useEntity: useBases
 
 function getBaseColumns(t: TFunction): ColumnDef<BaseResponse>[] {
   return [
-    textColumn<BaseResponse>('commonName', t('catalog:base.columns.commonName')),
-    textColumn<BaseResponse>('longName', t('catalog:base.columns.longName'), { primary: false }),
+    textColumn<BaseResponse>('commonName', t('catalog:base.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
+    textColumn<BaseResponse>('longName', t('catalog:base.columns.longName'), { primary: false, sizing: 'capped', maxSize: 300 }),
     dateColumn<BaseResponse>('createdAt', t('common:table.createdAt')),
     actionsColumn<BaseResponse>(DataTableRowActions, 2),
   ]

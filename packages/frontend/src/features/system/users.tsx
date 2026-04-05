@@ -57,7 +57,7 @@ const DataTableRowActions = createRowActions<UserResponse>({ useEntity: useUsers
 
 function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
   return [
-    textColumn<UserResponse>('username', t('system:users.columns.username')),
+    textColumn<UserResponse>('username', t('system:users.columns.username'), { sizing: 'capped', maxSize: 180 }),
     textColumn<UserResponse>('fullname', t('system:users.columns.fullname'), { primary: false }),
     {
       accessorKey: 'role',
@@ -67,6 +67,9 @@ function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
           title={t('system:users.columns.role')}
         />
       ),
+      minSize: 80,
+      maxSize: 150,
+      meta: { sizingCategory: 'capped' as const },
       cell: ({ row }) => (
         <Badge variant="outline" className="text-xs">
           {row.getValue('role')}

@@ -32,7 +32,7 @@ const DataTableRowActions = createRowActions<PhysicalTransferResponse>({ useEnti
 
 function getColumns(t: TFunction): ColumnDef<PhysicalTransferResponse>[] {
   return [
-    textColumn<PhysicalTransferResponse>('documentNumber', t('common:table.documentNumber')),
+    textColumn<PhysicalTransferResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<PhysicalTransferResponse>('date', t('common:table.date')),
     statusColumn<PhysicalTransferResponse>('status', t('common:table.status'), documentStatusColors),
     { ...dateColumn<PhysicalTransferResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },

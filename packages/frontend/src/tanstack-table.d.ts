@@ -13,5 +13,11 @@ declare module '@tanstack/react-table' {
     enableHeaderFilter?: boolean
     /** Role required to see this column in view-options dropdown. */
     requiresRole?: string
+    /** Controls how CSS Grid distributes width to this column.
+     *  - 'fixed': exact px (select, actions) — never grows or shrinks
+     *  - 'capped': grows from minSize to maxSize then stops (dates, status, numbers)
+     *  - 'flex': absorbs remaining space via 1fr (names, descriptions)
+     *  When omitted, getGridTemplate falls back to the legacy minSize/maxSize heuristic. */
+    sizingCategory?: 'fixed' | 'capped' | 'flex'
   }
 }

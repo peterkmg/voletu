@@ -42,7 +42,7 @@ const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useB
 
 function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
   return [
-    textColumn<BlendingResponse>('documentNumber', t('common:table.documentNumber')),
+    textColumn<BlendingResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<BlendingResponse>('date', t('common:table.date')),
     resolvedColumn<BlendingResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
     resolvedColumn<BlendingResponse>('targetProductId', t('common:table.product'), 'targetProductIdName'),

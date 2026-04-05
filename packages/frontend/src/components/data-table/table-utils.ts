@@ -42,18 +42,36 @@ export function createGlobalFilter<T>(...fields: (keyof T & string)[]) {
   }
 }
 
-/** Compute CSS Grid column template from visible columns */
+/** Compute CSS Grid column template from visible columns.
+ *
+ *  Priority: manual resize > explicit sizingCategory > legacy min/max heuristic.
+ *  See ColumnMeta.sizingCategory for the three categories. */
 export function getGridTemplate<TData>(table: TanstackTable<TData>): string {
   const sizing = table.getState().columnSizing
   return table.getVisibleLeafColumns().map((col) => {
     const { minSize, maxSize } = col.columnDef
-    // Fixed-width column (e.g. select, actions): minSize === maxSize
-    if (minSize != null && maxSize != null && minSize === maxSize)
-      return `${col.getSize()}px`
-    // Manually resized column: use exact size
+    const category = col.columnDef.meta?.sizingCategory
+
+    // 1. Manually resized column: user intent always wins
     if (sizing[col.id] != null)
       return `${col.getSize()}px`
-    // Flexible column: grows to fill available space, respects maxSize cap
+
+    // 2. Explicit sizing category (preferred path)
+    if (category === 'fixed')
+      return `${col.getSize()}px`
+    if (category === 'capped') {
+      const min = minSize ?? 80
+      const max = maxSize ?? 150
+      return `minmax(${min}px, ${max}px)`
+    }
+    if (category === 'flex') {
+      const min = minSize ?? 120
+      return `minmax(${min}px, 1fr)`
+    }
+
+    // 3. Legacy fallback: infer from minSize/maxSize (backward compat)
+    if (minSize != null && maxSize != null && minSize === maxSize)
+      return `${col.getSize()}px`
     const min = minSize ?? 80
     const max = maxSize ? `${maxSize}px` : '1fr'
     return `minmax(${min}px, ${max})`

@@ -40,6 +40,9 @@ function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
     {
       id: 'roles',
       header: t('common:table.status'),
+      minSize: 90,
+      maxSize: 180,
+      meta: { sizingCategory: 'capped' as const },
       cell: ({ row }) => {
         const flags = [
           { key: 'isContractor', label: t('catalog:company.columns.isContractor') },

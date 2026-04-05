@@ -32,9 +32,9 @@ const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity, li
 
 function getColumns(t: TFunction): ColumnDef<AcceptanceResponse>[] {
   return [
-    textColumn<AcceptanceResponse>('documentNumber', t('common:table.documentNumber')),
+    textColumn<AcceptanceResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
     dateColumn<AcceptanceResponse>('dateAccepted', t('common:table.date')),
-    textColumn<AcceptanceResponse>('sourceEntity', t('common:table.source'), { primary: false }),
+    textColumn<AcceptanceResponse>('sourceEntity', t('common:table.source'), { primary: false, sizing: 'capped', maxSize: 180 }),
     statusColumn<AcceptanceResponse>('status', t('common:table.status'), documentStatusColors),
     { ...dateColumn<AcceptanceResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
     { ...dateColumn<AcceptanceResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
