@@ -43,6 +43,8 @@ interface EntityTableProps<T> {
   tableId?: string
   /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
   groupKey?: keyof T & string
+  /** Optional action buttons rendered in the toolbar (e.g. Create button). */
+  actions?: React.ReactNode
 }
 
 export function EntityTable<T>({
@@ -55,6 +57,7 @@ export function EntityTable<T>({
   bulkActions,
   tableId,
   groupKey,
+  actions,
 }: EntityTableProps<T>) {
   const { t } = useTranslation(i18nNamespaces)
   const columns = useMemo(() => getColumns(t), [t, getColumns])
@@ -133,6 +136,7 @@ export function EntityTable<T>({
         filters={[]}
         tableMode={tableMode}
         onTableModeChange={handleModeChange}
+        actions={actions}
       />
       <div className="flex-1 min-h-0">
         <DataTable

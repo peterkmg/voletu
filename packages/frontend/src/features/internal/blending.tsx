@@ -47,13 +47,13 @@ function getBlendingColumns(t: TFunction): ColumnDef<BlendingFlatRow>[] {
     { ...textColumn<BlendingFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<BlendingFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<BlendingFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...textColumn<BlendingFlatRow>('targetProductIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...statusColumn<BlendingFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...textColumn<BlendingFlatRow>('targetProductIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<BlendingFlatRow>('itemType', t('common:columns.type')), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
-    { ...textColumn<BlendingFlatRow>('productIdName', t('common:table.product')), id: 'itemProduct', meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<BlendingFlatRow>('storageIdName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<BlendingFlatRow>('itemType', t('common:columns.type'), { primary: false }), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
+    { ...textColumn<BlendingFlatRow>('productIdName', t('common:table.product'), { primary: false }), id: 'itemProduct', meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<BlendingFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<BlendingFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    { ...statusColumn<BlendingFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<BlendingFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -65,7 +65,7 @@ const blendingRoute = getRouteApi('/_authenticated/internal/blending/')
 const blendingDetailRoute = getRouteApi('/_authenticated/internal/blending/$id')
 const blendingGlobalFilterFn = createGlobalFilter<BlendingFlatRow>('documentNumber', 'productIdName')
 
-function BlendingTable({ data }: { data: BlendingFlatRow[] }) {
+function BlendingTable({ data, actions }: { data: BlendingFlatRow[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="blending"
@@ -75,6 +75,7 @@ function BlendingTable({ data }: { data: BlendingFlatRow[] }) {
       globalFilterFn={blendingGlobalFilterFn}
       i18nNamespaces={['common']}
       groupKey="documentId"
+      actions={actions}
     />
   )
 }
@@ -180,6 +181,7 @@ function BlendingLifecycleDialog({
   currentRow: BlendingFlatRow | null
   variant: 'execute' | 'revert'
 }) {
+  const { t } = useTranslation(['common'])
   return (
     <LifecycleDialog
       open={open}
@@ -189,7 +191,7 @@ function BlendingLifecycleDialog({
       executeFn={blendingDocumentExecute}
       revertFn={blendingDocumentRevert}
       queryKey={flowBlendingFlatQueryQueryKey()}
-      entityLabel="Blending Document"
+      entityLabel={t('common:document.blending')}
     />
   )
 }
@@ -242,7 +244,7 @@ export function BlendingDetail() {
     <DocumentDetailPage
       config={{
         title: t('common:nav.blending'),
-        entityLabel: 'Blending Document',
+        entityLabel: t('common:document.blending'),
         backTo: '/internal/blending',
         executeFn: blendingDocumentExecute,
         revertFn: blendingDocumentRevert,

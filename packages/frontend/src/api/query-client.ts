@@ -3,7 +3,10 @@ import { toast } from 'sonner'
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error) => {
+    onError: (error, query) => {
+      // Skip toast for queries that opted out (e.g. "try both" patterns where 404 is expected)
+      if (query.meta?.suppressErrorToast)
+        return
       toast.error(error.message)
     },
   }),

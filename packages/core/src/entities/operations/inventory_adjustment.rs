@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   dtos::CreateInventoryAdjustmentRequest,
-  entities::{company, inventory_reconciliation, product, storage},
+  entities::{inventory_reconciliation, product, storage},
   enums,
 };
 
@@ -24,9 +24,6 @@ pub struct Model {
   pub product_id: Uuid,
   #[sea_orm(belongs_to, from = "product_id", to = "id")]
   pub product: HasOne<product::Entity>,
-  pub contractor_id: Uuid,
-  #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
-  pub contractor: HasOne<company::Entity>,
   pub adjustment_type: enums::AdjustmentType,
   pub amount: Decimal,
   pub reason: Option<String>,
@@ -38,7 +35,6 @@ impl From<&CreateInventoryAdjustmentRequest> for ActiveModel {
       reconciliation_id: Set(dto.reconciliation_id),
       storage_id: Set(dto.storage_id),
       product_id: Set(dto.product_id),
-      contractor_id: Set(dto.contractor_id),
       adjustment_type: Set(dto.adjustment_type),
       amount: Set(dto.amount),
       reason: Set(dto.reason.clone()),

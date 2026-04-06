@@ -35,7 +35,7 @@ const DataTableRowActions = createRowActions<BaseResponse>({ useEntity: useBases
 function getBaseColumns(t: TFunction): ColumnDef<BaseResponse>[] {
   return [
     textColumn<BaseResponse>('commonName', t('catalog:base.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
-    textColumn<BaseResponse>('longName', t('catalog:base.columns.longName'), { primary: false, sizing: 'capped', maxSize: 300 }),
+    textColumn<BaseResponse>('longName', t('catalog:base.columns.longName'), { primary: false }),
     { ...dateColumn<BaseResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<BaseResponse>(DataTableRowActions, 2),
   ]
@@ -48,9 +48,10 @@ const basesGlobalFilterFn = createGlobalFilter<BaseResponse>('commonName', 'long
 
 interface BasesTableProps {
   data: BaseResponse[]
+  actions?: React.ReactNode
 }
 
-function BasesTable({ data }: BasesTableProps) {
+function BasesTable({ data, actions }: BasesTableProps) {
   return (
     <EntityTable
       tableId="bases"
@@ -59,6 +60,7 @@ function BasesTable({ data }: BasesTableProps) {
       routeApi={basesRoute}
       globalFilterFn={basesGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

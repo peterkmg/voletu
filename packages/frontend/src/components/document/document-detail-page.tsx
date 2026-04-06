@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { usePageTitle } from '~/hooks/use-page-title'
 import { DocumentForm } from './document-form'
 import { DocumentHeader } from './document-header'
 
@@ -41,6 +42,7 @@ export function DocumentDetailPage({
 }: DocumentDetailPageProps) {
   const { t } = useTranslation(['common'])
   const isLocked = document.status === 'EXECUTED'
+  usePageTitle(`${config.title} ${document.documentNumber}`)
 
   return (
     <div data-layout="fixed" className="flex h-full flex-col">

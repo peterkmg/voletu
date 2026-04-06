@@ -135,6 +135,32 @@ impl DocumentService {
     })
   }
 
+  pub async fn rail_waybill_composite_get(
+    &self,
+    id: Uuid,
+  ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
+    let doc = rail_waybill::Entity::load()
+      .filter_by_id(id)
+      .filter(rail_waybill::Column::DeletedAt.is_null())
+      .with(rail_wagon_manifest::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Rail waybill '{}' not found", id)))?;
+
+    let manifests: Vec<dtos::RailWagonManifestResponse> = doc
+      .wagon_manifests
+      .iter()
+      .map(|m| dtos::RailWagonManifestResponse::from(rail_wagon_manifest::Model::from(m.clone())))
+      .collect();
+
+    let waybill = dtos::RailWaybillResponse::from(rail_waybill::Model::from(doc));
+
+    Ok(dtos::RailWaybillCompositeResponse {
+      waybill,
+      wagon_manifests: if manifests.is_empty() { None } else { Some(manifests) },
+    })
+  }
+
   pub async fn rail_receipt_pipeline_query(
     &self,
     pipeline_status: Option<PipelineStatus>,

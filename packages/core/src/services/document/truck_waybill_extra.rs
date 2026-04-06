@@ -116,6 +116,33 @@ impl DocumentService {
     })
   }
 
+  pub async fn truck_waybill_composite_get(
+    &self,
+    id: Uuid,
+  ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
+    let doc = truck_waybill::Entity::load()
+      .filter_by_id(id)
+      .filter(truck_waybill::Column::DeletedAt.is_null())
+      .with(truck_waybill_item::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Truck waybill '{}' not found", id)))?;
+
+    let items: Vec<dtos::TruckWaybillItemResponse> = doc
+      .items
+      .iter()
+      .map(|item| dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone())))
+      .collect();
+
+    let waybill = dtos::TruckWaybillResponse::from(truck_waybill::Model::from(doc));
+
+    Ok(dtos::TruckWaybillCompositeResponse {
+      waybill,
+      items: if items.is_empty() { None } else { Some(items) },
+      weight_docs: None,
+    })
+  }
+
   pub async fn truck_receipt_pipeline_query(
     &self,
     pipeline_status: Option<PipelineStatus>,

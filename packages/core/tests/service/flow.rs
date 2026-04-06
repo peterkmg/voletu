@@ -68,7 +68,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       status: Set(enums::DocumentStatus::Draft),
       version: Set(1),
       arrival_type: Set(enums::ArrivalType::Truck),
-      contractor_id: Set(Some(fix.contractor_a_id)),
+      contractor_id: Set(fix.contractor_a_id),
       truck_waybill_id: Set(Some(wb2.id)),
       ..Default::default()
     }
@@ -93,7 +93,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       status: Set(enums::DocumentStatus::Executed),
       version: Set(1),
       arrival_type: Set(enums::ArrivalType::Truck),
-      contractor_id: Set(Some(fix.contractor_a_id)),
+      contractor_id: Set(fix.contractor_a_id),
       truck_waybill_id: Set(Some(wb3.id)),
       ..Default::default()
     }
@@ -105,7 +105,6 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       acceptance_doc_id: Set(acc3.id),
       product_id: Set(fix.product_a_id),
       storage_id: Set(fix.storage_a_id),
-      contractor_id: Set(fix.contractor_a_id),
       accepted_amount: Set(Decimal::new(24900, 0)),
       ..Default::default()
     }
@@ -217,7 +216,7 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
       version: Set(1),
       arrival_type: Set(enums::ArrivalType::External),
       source_entity: Set(Some("Test Source".into())),
-      contractor_id: Set(Some(fix.contractor_a_id)),
+      contractor_id: Set(fix.contractor_a_id),
       ..Default::default()
     }
     .insert(&*db)
@@ -228,7 +227,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
       acceptance_doc_id: Set(doc.id),
       product_id: Set(fix.product_a_id),
       storage_id: Set(fix.storage_a_id),
-      contractor_id: Set(fix.contractor_a_id),
       accepted_amount: Set(Decimal::new(1000, 0)),
       ..Default::default()
     }
@@ -240,7 +238,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
       acceptance_doc_id: Set(doc.id),
       product_id: Set(fix.product_b_id),
       storage_id: Set(fix.storage_b_id),
-      contractor_id: Set(fix.contractor_b_id),
       accepted_amount: Set(Decimal::new(2000, 0)),
       ..Default::default()
     }
@@ -255,7 +252,7 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
       status: Set(enums::DocumentStatus::Executed),
       version: Set(1),
       arrival_type: Set(enums::ArrivalType::External),
-      contractor_id: Set(Some(fix.contractor_a_id)),
+      contractor_id: Set(fix.contractor_a_id),
       ..Default::default()
     }
     .insert(&*db)
@@ -266,7 +263,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
       acceptance_doc_id: Set(doc2.id),
       product_id: Set(fix.product_a_id),
       storage_id: Set(fix.storage_a_id),
-      contractor_id: Set(fix.contractor_a_id),
       accepted_amount: Set(Decimal::new(500, 0)),
       ..Default::default()
     }

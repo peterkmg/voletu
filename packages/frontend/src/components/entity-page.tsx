@@ -1,13 +1,14 @@
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
 import { Skeleton } from '~/components/ui/skeleton'
+import { usePageTitle } from '~/hooks/use-page-title'
 
 interface EntityPageProps<TRow> {
   provider: React.ComponentType<{ children: React.ReactNode }>
   title: string
   queryResult: { data?: { data?: TRow[] }, isLoading: boolean }
   primaryButtons: React.ComponentType
-  table: React.ComponentType<{ data: TRow[] }>
+  table: React.ComponentType<{ data: TRow[], actions?: React.ReactNode }>
   dialogs: React.ComponentType
 }
 
@@ -20,20 +21,13 @@ export function EntityPage<TRow>({
   dialogs: Dialogs,
 }: EntityPageProps<TRow>) {
   const data = queryResult.data?.data ?? []
+  usePageTitle(title)
 
   return (
     <Provider>
       <Header fixed />
 
-      <Main fixed className="flex flex-1 flex-col gap-4 sm:gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {title}
-            </h2>
-          </div>
-          <PrimaryButtons />
-        </div>
+      <Main fixed className="flex flex-1 flex-col gap-4">
         {queryResult.isLoading
           ? (
               <div className="flex flex-1 flex-col gap-4">
@@ -52,7 +46,7 @@ export function EntityPage<TRow>({
             )
           : (
               <div className="flex flex-1 flex-col min-h-0">
-                <Table data={data} />
+                <Table data={data} actions={<PrimaryButtons />} />
               </div>
             )}
       </Main>

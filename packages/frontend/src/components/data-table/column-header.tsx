@@ -20,6 +20,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { useTranslation } from 'react-i18next'
 import { cn } from '~/lib/utils'
 import { ColumnFilterInline } from './column-filter'
 
@@ -136,6 +137,7 @@ function HeaderDropdownContent<TData, TValue>({
   canHide: boolean
 }) {
   const hasColumnMgmt = canPin || canHide
+  const { t } = useTranslation('common')
 
   return (
     <DropdownMenuContent align="start" className="w-40 text-xs">
@@ -144,11 +146,11 @@ function HeaderDropdownContent<TData, TValue>({
         <>
           <DropdownMenuItem onSelect={() => column.toggleSorting(false)}>
             <ArrowUp className="size-3.5 text-muted-foreground/70" />
-            Ascending
+            {t('dataTable.ascending')}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => column.toggleSorting(true)}>
             <ArrowDown className="size-3.5 text-muted-foreground/70" />
-            Descending
+            {t('dataTable.descending')}
           </DropdownMenuItem>
           {(canFilter || hasColumnMgmt) && <DropdownMenuSeparator />}
         </>
@@ -160,7 +162,7 @@ function HeaderDropdownContent<TData, TValue>({
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Filter className="size-3.5 text-muted-foreground/70" />
-              Filter
+              {t('dataTable.filter')}
               {filterActive && (
                 <span className="ms-auto size-2 rounded-full bg-primary" />
               )}
@@ -183,7 +185,7 @@ function HeaderDropdownContent<TData, TValue>({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Columns3 className="size-3.5 text-muted-foreground/70" />
-            Column
+            {t('dataTable.column')}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             {canPin && (
@@ -191,18 +193,18 @@ function HeaderDropdownContent<TData, TValue>({
                 ? (
                     <DropdownMenuItem onSelect={() => column.pin(false)}>
                       <PinOff className="size-3.5 text-muted-foreground/70" />
-                      Unpin
+                      {t('dataTable.unpin')}
                     </DropdownMenuItem>
                   )
                 : (
                     <>
                       <DropdownMenuItem onSelect={() => column.pin('left')}>
                         <PinIcon className="size-3.5 text-muted-foreground/70" />
-                        Pin left
+                        {t('dataTable.pinLeft')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => column.pin('right')}>
                         <PinIcon className="size-3.5 rotate-90 text-muted-foreground/70" />
-                        Pin right
+                        {t('dataTable.pinRight')}
                       </DropdownMenuItem>
                     </>
                   )
@@ -210,7 +212,7 @@ function HeaderDropdownContent<TData, TValue>({
             {canHide && (
               <DropdownMenuItem onSelect={() => column.toggleVisibility(false)}>
                 <EyeOff className="size-3.5 text-muted-foreground/70" />
-                Hide
+                {t('dataTable.hide')}
               </DropdownMenuItem>
             )}
           </DropdownMenuSubContent>

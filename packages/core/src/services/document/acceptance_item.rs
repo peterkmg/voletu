@@ -16,7 +16,6 @@ fn apply_acceptance_item_update(
   req: &dtos::UpdateAcceptanceItemRequest,
 ) {
   set_if_some(&mut model.product_id, req.product_id);
-  set_if_some(&mut model.contractor_id, req.contractor_id);
   set_if_some(&mut model.storage_id, req.storage_id);
   set_if_some(&mut model.accepted_amount, req.accepted_amount);
 }

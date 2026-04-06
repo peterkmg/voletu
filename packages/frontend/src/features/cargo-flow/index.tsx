@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { CargoFlowFlatRow } from '~/generated/types'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, ChevronDown, Plus, Search } from 'lucide-react'
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, ArrowUpRight, ChevronDown, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { actionsColumn, createGlobalFilter, DataTableColumnHeader, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
@@ -13,6 +13,7 @@ import { Button } from '~/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Skeleton } from '~/components/ui/skeleton'
 import { useFlowCargoFlowFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowCargoFlowFlatQuery'
+import { usePageTitle } from '~/hooks/use-page-title'
 import { flowTypeColors, statusColors } from '~/lib/badge-colors'
 import { cn } from '~/lib/utils'
 
@@ -25,7 +26,7 @@ function CargoFlowRowActions({ row }: { row: { original: CargoFlowFlatRow } }) {
       actions={[
         {
           label: t('actions.viewDetails'),
-          icon: Search,
+          icon: ArrowUpRight,
           inline: true,
           onClick: () => navigate({ to: `${row.original.flowRoute}/${row.original.documentId}` }),
         },
@@ -41,10 +42,10 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
     // Document-level columns (groupRole: 'doc' — shown only on first row of group)
     {
       accessorKey: 'type',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('common:columns.type')} />,
       minSize: 130,
       maxSize: 130,
-      meta: { label: 'Type', sizingCategory: 'capped', groupRole: 'doc' as const },
+      meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'doc' as const },
       cell: ({ row }) => {
         const type = row.getValue('type') as string
         const Icon = type === 'Incoming' ? ArrowDownToLine : type === 'Outgoing' ? ArrowUpFromLine : ArrowLeftRight
@@ -56,15 +57,16 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         )
       },
     },
-    { ...textColumn<CargoFlowFlatRow>('operation', 'Operation', { primary: false, sizing: 'capped', maxSize: 180 }), meta: { label: 'Operation', sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...textColumn<CargoFlowFlatRow>('operation', t('common:columns.operation'), { primary: false, sizing: 'capped', maxSize: 180 }), meta: { label: t('common:columns.operation'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...textColumn<CargoFlowFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<CargoFlowFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<CargoFlowFlatRow>('contractorName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...statusColumn<CargoFlowFlatRow>('status', t('common:table.status'), cargoFlowStatusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<CargoFlowFlatRow>('productName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<CargoFlowFlatRow>('storageName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<CargoFlowFlatRow>('productName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<CargoFlowFlatRow>('storageName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<CargoFlowFlatRow>('quantity', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    // Status last before actions (doc-level)
+    { ...statusColumn<CargoFlowFlatRow>('status', t('common:table.status'), cargoFlowStatusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<CargoFlowFlatRow>(CargoFlowRowActions, 1), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -73,7 +75,7 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
 const route = getRouteApi('/_authenticated/cargo-flow/')
 const globalFilterFn = createGlobalFilter<CargoFlowFlatRow>('documentNumber', 'contractorName', 'operation', 'productName', 'storageName')
 
-function CargoFlowTable({ data }: { data: CargoFlowFlatRow[] }) {
+function CargoFlowTable({ data, actions }: { data: CargoFlowFlatRow[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="cargo-flow"
@@ -83,6 +85,7 @@ function CargoFlowTable({ data }: { data: CargoFlowFlatRow[] }) {
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
       groupKey="documentId"
+      actions={actions}
     />
   )
 }
@@ -128,17 +131,14 @@ function CreateDropdown() {
 }
 
 export function CargoFlowPage() {
-  const { t } = useTranslation(['common'])
+  const { t } = useTranslation('common')
   const { data, isLoading } = useFlowCargoFlowFlatQuery()
+  usePageTitle(t('nav.cargoFlow'))
 
   return (
     <>
       <Header fixed />
-      <Main fixed className="flex flex-1 flex-col gap-4 sm:gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <h2 className="text-2xl font-bold tracking-tight">{t('common:nav.cargoFlow')}</h2>
-          <CreateDropdown />
-        </div>
+      <Main fixed className="flex flex-1 flex-col gap-4">
         {isLoading
           ? (
               <div className="flex flex-1 flex-col gap-4">
@@ -152,7 +152,7 @@ export function CargoFlowPage() {
             )
           : (
               <div className="flex flex-1 flex-col min-h-0">
-                <CargoFlowTable data={data?.data ?? []} />
+                <CargoFlowTable data={data?.data ?? []} actions={<CreateDropdown />} />
               </div>
             )}
       </Main>

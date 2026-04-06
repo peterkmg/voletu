@@ -40,13 +40,16 @@ const DataTableRowActions = createRowActions<StorageResponse>({ useEntity: useSt
 
 function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
   return [
-    textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName')),
-    resolvedColumn<StorageResponse>('warehouseId', t('catalog:storage.columns.warehouseId'), 'warehouseIdName'),
+    textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName'), { sizing: 'capped', maxSize: 180 }),
+    resolvedColumn<StorageResponse>('warehouseId', t('catalog:storage.columns.warehouse'), 'warehouseIdName'),
     numericColumn<StorageResponse>('capacity', t('catalog:storage.columns.capacity')),
-    resolvedColumn<StorageResponse>('productTypeId', t('catalog:storage.columns.productTypeId'), 'productTypeIdName'),
+    resolvedColumn<StorageResponse>('productTypeId', t('catalog:storage.columns.productType'), 'productTypeIdName'),
     {
       accessorKey: 'isTypeSpecific',
+      minSize: 90,
+      maxSize: 130,
       header: t('catalog:storage.columns.isTypeSpecific'),
+      meta: { sizingCategory: 'capped' as const, align: 'right' as const },
       cell: ({ row }) => {
         const value = row.getValue<boolean>('isTypeSpecific')
         return (
@@ -71,9 +74,10 @@ const storagesGlobalFilterFn = createGlobalFilter<StorageResponse>('commonName')
 
 interface StoragesTableProps {
   data: StorageResponse[]
+  actions?: React.ReactNode
 }
 
-function StoragesTable({ data }: StoragesTableProps) {
+function StoragesTable({ data, actions }: StoragesTableProps) {
   return (
     <EntityTable
       tableId="storages"
@@ -82,6 +86,7 @@ function StoragesTable({ data }: StoragesTableProps) {
       routeApi={storagesRoute}
       globalFilterFn={storagesGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

@@ -51,9 +51,10 @@ const productGroupsGlobalFilterFn = createGlobalFilter<ProductGroupResponse>('co
 
 interface ProductGroupsTableProps {
   data: ProductGroupResponse[]
+  actions?: React.ReactNode
 }
 
-function ProductGroupsTable({ data }: ProductGroupsTableProps) {
+function ProductGroupsTable({ data, actions }: ProductGroupsTableProps) {
   return (
     <EntityTable
       tableId="product-groups"
@@ -62,6 +63,7 @@ function ProductGroupsTable({ data }: ProductGroupsTableProps) {
       routeApi={productGroupsRoute}
       globalFilterFn={productGroupsGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

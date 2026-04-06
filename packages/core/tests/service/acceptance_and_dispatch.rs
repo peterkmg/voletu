@@ -52,7 +52,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
         date_accepted: ts("2026-01-01T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: None,
+        contractor_id: fixture.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -65,7 +65,6 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
           product_id: fixture.product_a_id,
-          contractor_id: fixture.contractor_a_id,
           storage_id: fixture.storage_a_id,
           accepted_amount: dec("42.5"),
         },
@@ -171,7 +170,7 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
         date_accepted: ts("2026-01-01T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: None,
+        contractor_id: fixture.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -183,7 +182,6 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
           product_id: fixture.product_a_id,
-          contractor_id: fixture.contractor_a_id,
           storage_id: mismatched_storage.id,
           accepted_amount: dec("10.0"),
         },
@@ -215,7 +213,7 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
         date_accepted: ts("2026-01-01T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: None,
+        contractor_id: fixture.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -227,7 +225,6 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
           product_id: fixture.product_a_id,
-          contractor_id: fixture.contractor_a_id,
           storage_id: fixture.storage_a_id,
           accepted_amount: dec("10.0"),
         },
@@ -240,7 +237,6 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
           product_id: fixture.product_a_id,
-          contractor_id: fixture.contractor_a_id,
           storage_id: fixture.storage_b_id,
           accepted_amount: dec("6.0"),
         },
@@ -294,7 +290,7 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
         date_accepted: ts("2026-01-07T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: None,
+        contractor_id: fixture.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -307,7 +303,6 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
           product_id: fixture.product_a_id,
-          contractor_id: fixture.contractor_a_id,
           storage_id: fixture.storage_a_id,
           accepted_amount: dec("10.0"),
         },
@@ -325,7 +320,6 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
           product_id: fixture.product_a_id,
-          contractor_id: fixture.contractor_a_id,
           storage_id: fixture.storage_a_id,
           accepted_amount: dec("1.0"),
         },

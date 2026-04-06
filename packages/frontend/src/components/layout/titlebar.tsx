@@ -143,6 +143,26 @@ function WindowControls() {
   )
 }
 
+function PageTitleDisplay() {
+  const [title, setTitle] = useState(document.title)
+
+  useEffect(() => {
+    // Observe document.title changes via MutationObserver on <title> element
+    const titleEl = document.querySelector('title')
+    if (!titleEl) return
+
+    const observer = new MutationObserver(() => setTitle(document.title))
+    observer.observe(titleEl, { childList: true })
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <span className="pointer-events-none text-xs text-muted-foreground" data-tauri-drag-region>
+      {title}
+    </span>
+  )
+}
+
 export function Titlebar() {
   return (
     <div
@@ -159,8 +179,10 @@ export function Titlebar() {
         <TitlebarMenu />
       </div>
 
-      {/* Drag zone: empty space between menus and window controls */}
-      <div className="flex-1 self-stretch" data-tauri-drag-region />
+      {/* Center: dynamic page title + drag zone */}
+      <div className="flex flex-1 items-center justify-center self-stretch" data-tauri-drag-region>
+        <PageTitleDisplay />
+      </div>
 
       {/* Right: window controls */}
       <WindowControls />

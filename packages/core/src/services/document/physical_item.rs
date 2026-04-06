@@ -38,7 +38,6 @@ fn apply_physical_item_update(
   model: &mut physical_transfer_item::ActiveModel,
   req: &dtos::UpdatePhysicalTransferItemRequest,
 ) {
-  set_if_some(&mut model.contractor_id, req.contractor_id);
   set_if_some(&mut model.product_id, req.product_id);
   set_if_some(&mut model.from_storage_id, req.from_storage_id);
   set_if_some(&mut model.to_storage_id, req.to_storage_id);

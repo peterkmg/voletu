@@ -1,12 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { RelatedDocument } from '~/components/document/related-documents'
-import type { AcceptanceItemResponse, RailReceiptPipelineResponse } from '~/generated/types'
+import type { AcceptanceItemResponse, RailReceiptPipelineResponse, RailWagonManifestResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DocumentDetailPage } from '~/components/document'
+import { formatDate } from '~/lib/formatters'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { RelatedDocuments } from '~/components/document/related-documents'
 import { EntityPage } from '~/components/entity-page'
@@ -18,7 +19,7 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { acceptanceDocumentExecute, acceptanceDocumentRevert, transportRailWaybillCreate } from '~/generated/client'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
-import { useTransportRailWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillGet'
+import { useTransportRailWaybillCompositeGet } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillCompositeGet'
 import { railReceiptPipelineQueryQueryKey, useRailReceiptPipelineQuery } from '~/generated/hooks/FlowsHooks/useRailReceiptPipelineQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
@@ -44,9 +45,9 @@ function getColumns(t: TFunction): ColumnDef<RailReceiptPipelineResponse>[] {
     textColumn<RailReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
     textColumn<RailReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
     numericColumn<RailReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty')),
-    statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
     textColumn<RailReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
     numericColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
+    statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
     actionsColumn<RailReceiptPipelineResponse>(DataTableRowActions, 1),
   ]
 }
@@ -55,8 +56,8 @@ const routeApi = getRouteApi('/_authenticated/incoming/rail/')
 const detailRoute = getRouteApi('/_authenticated/incoming/rail/$id')
 const globalFilterFn = createGlobalFilter<RailReceiptPipelineResponse>('basisDocumentNumber', 'contractorName')
 
-function RailReceiptTable({ data }: { data: RailReceiptPipelineResponse[] }) {
-  return <EntityTable tableId="rail-receipt" data={data} getColumns={getColumns} routeApi={routeApi} globalFilterFn={globalFilterFn} i18nNamespaces={['common']} />
+function RailReceiptTable({ data, actions }: { data: RailReceiptPipelineResponse[], actions?: React.ReactNode }) {
+  return <EntityTable tableId="rail-receipt" data={data} getColumns={getColumns} routeApi={routeApi} globalFilterFn={globalFilterFn} i18nNamespaces={['common']} actions={actions} />
 }
 
 const waybillSchema = z.object({
@@ -83,7 +84,7 @@ function WaybillMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChan
   })
 
   return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description="Rail Waybill" formId="rail-waybill-form" isSubmitting={form.formState.isSubmitting}>
+    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description={t('common:document.railWaybill')} formId="rail-waybill-form" isSubmitting={form.formState.isSubmitting}>
       <Form {...form}>
         <form id="rail-waybill-form" onSubmit={handleSubmit} className="space-y-5">
           <TextField<WaybillFormValues> name="documentNumber" label={t('common:table.documentNumber')} />
@@ -109,8 +110,8 @@ export function RailReceiptPage() {
 export function RailReceiptDetail() {
   const { id } = detailRoute.useParams()
   const { t } = useTranslation(['common'])
-  const waybillQuery = useTransportRailWaybillGet(id)
-  const acceptanceQuery = useAcceptanceCompositeGet(id)
+  const waybillQuery = useTransportRailWaybillCompositeGet(id, { embed: 'names' }, { query: { retry: false, meta: { suppressErrorToast: true } } })
+  const acceptanceQuery = useAcceptanceCompositeGet(id, { embed: 'names' }, { query: { retry: false, meta: { suppressErrorToast: true } } })
   const isLoading = waybillQuery.isLoading && acceptanceQuery.isLoading
 
   if (isLoading)
@@ -120,13 +121,13 @@ export function RailReceiptDetail() {
     const doc = acceptanceQuery.data.data
     return (
       <DocumentDetailPage
-        config={{ title: 'Acceptance Document', entityLabel: 'Acceptance', backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: statusColors }}
+        config={{ title: t('common:document.acceptance'), entityLabel: t('common:document.acceptance'), backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: statusColors }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.railReceipt')}
         relatedContent={(() => {
           const docs: RelatedDocument[] = []
           if (doc.railWaybillId) {
-            docs.push({ type: 'basis', label: 'Rail Waybill', documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: 'Pending', statusColorMap: statusColors, to: `/incoming/rail/${doc.railWaybillId}` })
+            docs.push({ type: 'basis', label: t('common:document.railWaybill'), documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: t('common:document.pendingAcceptance'), statusColorMap: statusColors, to: `/incoming/rail/${doc.railWaybillId}` })
           }
           return <RelatedDocuments documents={docs} />
         })()}
@@ -134,7 +135,11 @@ export function RailReceiptDetail() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-              <p>{doc.dateAccepted}</p>
+              <p>{formatDate(doc.dateAccepted)}</p>
+            </div>
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+              <p>{doc.contractorIdName ?? '—'}</p>
             </div>
             <div>
               <span className="text-sm text-muted-foreground">{t('common:table.source')}</span>
@@ -148,7 +153,6 @@ export function RailReceiptDetail() {
             columns={[
               textColumn<AcceptanceItemResponse>('productIdName', t('common:table.product')),
               textColumn<AcceptanceItemResponse>('storageIdName', t('common:columns.storage')),
-              textColumn<AcceptanceItemResponse>('contractorIdName', t('common:table.contractor')),
               numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
             ]}
             isLocked={doc.status === 'EXECUTED'}
@@ -169,27 +173,39 @@ export function RailReceiptDetail() {
   }
 
   if (waybillQuery.data?.data) {
-    const wb = waybillQuery.data.data
+    const composite = waybillQuery.data.data
+    const wb = composite.waybill
+    const noOp = async () => {}
     return (
-      <div className="mx-auto max-w-4xl space-y-6 p-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold">
-            Rail Waybill
-            <span className="text-muted-foreground">{wb.documentNumber}</span>
-          </h1>
-          <span className="rounded-full bg-amber-100/30 px-3 py-1 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Pending Acceptance</span>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{wb.date}</p>
+      <DocumentDetailPage
+        config={{ title: t('common:document.railWaybill'), entityLabel: t('common:document.railWaybill'), backTo: '/incoming/rail', executeFn: noOp, revertFn: noOp, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: statusColors }}
+        document={{ id: wb.id, documentNumber: wb.documentNumber, status: 'PENDING' }}
+        subtitle={t('common:nav.railReceipt')}
+        formContent={(
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+              <p>{formatDate(wb.date)}</p>
+            </div>
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+              <p>{wb.senderIdName ?? wb.senderId}</p>
+            </div>
           </div>
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
-            <p>{wb.senderIdName ?? wb.senderId}</p>
-          </div>
-        </div>
-      </div>
+        )}
+        itemsContent={composite.wagonManifests?.length ? (
+          <ChildItemsTable
+            items={composite.wagonManifests}
+            columns={[
+              textColumn<RailWagonManifestResponse>('productIdName', t('common:table.product')),
+              textColumn<RailWagonManifestResponse>('wagonNumber', t('common:columns.wagonNumber')),
+              numericColumn<RailWagonManifestResponse>('declaredMass', t('common:table.declaredQty')),
+            ]}
+            isLocked={false}
+            sectionTitle={t('common:sections.wagonManifests')}
+          />
+        ) : undefined}
+      />
     )
   }
 

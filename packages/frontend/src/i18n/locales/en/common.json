@@ -109,7 +109,8 @@
     "fromStorage": "From Storage",
     "toStorage": "To Storage",
     "fromContractor": "From Contractor",
-    "toContractor": "To Contractor"
+    "toContractor": "To Contractor",
+    "declaredQty": "Declared Qty"
   },
   "error": {
     "title": "Something went wrong",
@@ -180,7 +181,20 @@
     "relatedDocuments": "Related Documents",
     "noRelatedDocuments": "No related documents",
     "executionMetadata": "Execution Metadata",
-    "lineItems": "Line Items"
+    "lineItems": "Line Items",
+    "executedWarning": "This document is executed and locked. Only Senior Supervisors can revert it to draft.",
+    "truckWaybill": "Truck Waybill",
+    "railWaybill": "Rail Waybill",
+    "acceptance": "Acceptance Document",
+    "dispatch": "Dispatch",
+    "truckDispatch": "Truck Dispatch",
+    "bunkering": "Bunkering",
+    "directDispatch": "Direct Dispatch",
+    "blending": "Blending Document",
+    "physicalTransfer": "Physical Transfer",
+    "ownershipTransfer": "Ownership Transfer",
+    "reconciliation": "Reconciliation",
+    "pendingAcceptance": "Pending Acceptance"
   },
   "sections": {
     "acceptanceItems": "Acceptance Items",
@@ -188,7 +202,9 @@
     "componentInputs": "Components (Inputs)",
     "resultOutputs": "Results (Outputs)",
     "transferItems": "Transfer Items",
-    "adjustments": "Adjustments"
+    "adjustments": "Adjustments",
+    "waybillItems": "Waybill Items",
+    "wagonManifests": "Wagon Manifests"
   },
   "metadata": {
     "executedAt": "Executed at"
@@ -200,8 +216,25 @@
     "fromContractor": "From Contractor",
     "toContractor": "To Contractor",
     "type": "Type",
+    "operation": "Operation",
     "bunkerType": "Bunker Type",
-    "warehouse": "Warehouse"
+    "warehouse": "Warehouse",
+    "wagonNumber": "Wagon #"
+  },
+  "dataTable": {
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "filter": "Filter",
+    "column": "Column",
+    "unpin": "Unpin",
+    "pinLeft": "Pin left",
+    "pinRight": "Pin right",
+    "hide": "Hide",
+    "selectAll": "Select All",
+    "clearFilter": "Clear filter",
+    "search": "Search...",
+    "noValues": "No values found.",
+    "noDates": "No dates found."
   },
   "debug": {
     "seedDatabase": "Seed Database",

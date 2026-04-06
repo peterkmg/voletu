@@ -15,7 +15,7 @@ use crate::{
   entities::{inventory_adjustment, inventory_reconciliation},
   enums,
   services::{
-    common::{ensure_doc_mod_allowed, set_if_some, set_if_some_mapped},
+    common::{ensure_doc_mod_allowed, set_if_some},
     DocumentService,
   },
 };
@@ -26,7 +26,7 @@ fn apply_reconciliation_update(
 ) {
   set_if_some(&mut model.document_number, req.document_number.clone());
   set_if_some(&mut model.date, req.date);
-  set_if_some_mapped(&mut model.contractor_id, req.contractor_id, Some);
+  set_if_some(&mut model.contractor_id, req.contractor_id);
   set_if_some(&mut model.warehouse_id, req.warehouse_id);
 }
 
@@ -81,7 +81,7 @@ async fn before_reconciliation_execute<C: ConnectionTrait>(
         conn,
         adjustment.storage_id,
         adjustment.product_id,
-        adjustment.contractor_id,
+        existing.contractor_id,
         adjustment_delta(&adjustment.adjustment_type, &adjustment.amount),
       )
       .await?;
@@ -116,7 +116,7 @@ async fn before_reconciliation_revert<C: ConnectionTrait>(
         conn,
         adjustment.storage_id,
         adjustment.product_id,
-        adjustment.contractor_id,
+        existing.contractor_id,
         -adjustment_delta(&adjustment.adjustment_type, &adjustment.amount),
       )
       .await?;

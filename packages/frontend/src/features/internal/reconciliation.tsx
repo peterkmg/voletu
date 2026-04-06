@@ -40,14 +40,14 @@ function getColumns(t: TFunction): ColumnDef<ReconciliationFlatRow>[] {
     { ...textColumn<ReconciliationFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<ReconciliationFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<ReconciliationFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...textColumn<ReconciliationFlatRow>('warehouseIdName', t('common:columns.warehouse')), meta: { label: t('common:columns.warehouse'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...statusColumn<ReconciliationFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...textColumn<ReconciliationFlatRow>('warehouseIdName', t('common:columns.warehouse'), { primary: false }), meta: { label: t('common:columns.warehouse'), sizingCategory: 'flex', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<ReconciliationFlatRow>('productIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<ReconciliationFlatRow>('storageIdName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<ReconciliationFlatRow>('adjustmentType', t('common:columns.type')), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
+    { ...textColumn<ReconciliationFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<ReconciliationFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<ReconciliationFlatRow>('adjustmentType', t('common:columns.type'), { primary: false }), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
     { ...numericColumn<ReconciliationFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
     { ...textColumn<ReconciliationFlatRow>('reason', t('common:columns.reason'), { primary: false }), meta: { label: t('common:columns.reason'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...statusColumn<ReconciliationFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<ReconciliationFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -57,7 +57,7 @@ const route = getRouteApi('/_authenticated/internal/reconciliation/')
 const detailRoute = getRouteApi('/_authenticated/internal/reconciliation/$id')
 const globalFilterFn = createGlobalFilter<ReconciliationFlatRow>('documentNumber', 'productIdName')
 
-function ReconciliationTable({ data }: { data: ReconciliationFlatRow[] }) {
+function ReconciliationTable({ data, actions }: { data: ReconciliationFlatRow[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="reconciliation"
@@ -67,6 +67,7 @@ function ReconciliationTable({ data }: { data: ReconciliationFlatRow[] }) {
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
       groupKey="documentId"
+      actions={actions}
     />
   )
 }
@@ -103,7 +104,7 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
         <form id="reconciliation-form" onSubmit={handleSubmit} className="space-y-5">
           <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
           <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
-          <EntityPickerField<FormValues> name="warehouseId" label="Warehouse" queryResult={warehousesQuery} />
+          <EntityPickerField<FormValues> name="warehouseId" label={t('common:columns.warehouse')} queryResult={warehousesQuery} />
         </form>
       </Form>
     </FormDialog>
@@ -113,7 +114,8 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
 const DeleteDialog = createDeleteDialog({ useEntity, hardDeleteFn: reconciliationHardDelete, softDeleteFn: reconciliationSoftDelete, queryKey: flowReconciliationFlatQueryQueryKey, entityLabel: 'common:nav.reconciliation', i18nNamespaces: ['common'] })
 
 function ReconciliationLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: ReconciliationFlatRow | null, variant: 'execute' | 'revert' }) {
-  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={reconciliationExecute} revertFn={reconciliationRevert} queryKey={flowReconciliationFlatQueryQueryKey()} entityLabel="Reconciliation" />
+  const { t } = useTranslation(['common'])
+  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={reconciliationExecute} revertFn={reconciliationRevert} queryKey={flowReconciliationFlatQueryQueryKey()} entityLabel={t('common:document.reconciliation')} />
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: ReconciliationLifecycleDialog, lifecyclePropName: 'variant' })
@@ -140,13 +142,17 @@ export function ReconciliationDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.reconciliation'), entityLabel: 'Reconciliation', backTo: '/internal/reconciliation', executeFn: reconciliationExecute, revertFn: reconciliationRevert, queryKey: flowReconciliationFlatQueryQueryKey(), statusColorMap: statusColors }}
+      config={{ title: t('common:nav.reconciliation'), entityLabel: t('common:document.reconciliation'), backTo: '/internal/reconciliation', executeFn: reconciliationExecute, revertFn: reconciliationRevert, queryKey: flowReconciliationFlatQueryQueryKey(), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
             <p>{formatDate(doc.date)}</p>
+          </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+            <p>{doc.contractorIdName ?? '—'}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">{t('common:columns.warehouse')}</span>
@@ -160,7 +166,6 @@ export function ReconciliationDetail() {
           columns={[
             textColumn<InventoryAdjustmentResponse>('productIdName', t('common:table.product')),
             textColumn<InventoryAdjustmentResponse>('storageIdName', t('common:columns.storage')),
-            textColumn<InventoryAdjustmentResponse>('contractorIdName', t('common:table.contractor')),
             textColumn<InventoryAdjustmentResponse>('adjustmentType', t('common:columns.type')),
             numericColumn<InventoryAdjustmentResponse>('amount', t('common:table.quantity')),
           ]}

@@ -1,11 +1,12 @@
 use serde_json::json;
 use uuid::Uuid;
 
-pub fn acceptance_save_truck(document_number: &str, date_accepted: &str) -> String {
+pub fn acceptance_save_truck(document_number: &str, date_accepted: &str, contractor_id: Uuid) -> String {
   json!({
     "documentNumber": document_number,
     "dateAccepted": date_accepted,
     "arrivalType": "TRUCK",
+    "contractorId": contractor_id,
   })
   .to_string()
 }
@@ -13,14 +14,12 @@ pub fn acceptance_save_truck(document_number: &str, date_accepted: &str) -> Stri
 pub fn acceptance_item(
   acceptance_doc_id: Uuid,
   product_id: Uuid,
-  contractor_id: Uuid,
   storage_id: Uuid,
   accepted_amount: &str,
 ) -> String {
   json!({
     "acceptanceDocId": acceptance_doc_id,
     "productId": product_id,
-    "contractorId": contractor_id,
     "storageId": storage_id,
     "acceptedAmount": accepted_amount,
   })
@@ -137,10 +136,10 @@ pub fn operations_physical_transfer(
   json!({
     "documentNumber": document_number,
     "date": date,
+    "contractorId": contractor_id,
     "startCargoOps": start_cargo_ops,
     "endCargoOps": end_cargo_ops,
     "items": [{
-      "contractorId": contractor_id,
       "productId": product_id,
       "fromStorageId": from_storage_id,
       "toStorageId": to_storage_id,
@@ -174,11 +173,13 @@ pub fn operations_ownership_transfer(
 pub fn operations_reconciliation_save(
   document_number: &str,
   date: &str,
+  contractor_id: Uuid,
   warehouse_id: Uuid,
 ) -> String {
   json!({
     "documentNumber": document_number,
     "date": date,
+    "contractorId": contractor_id,
     "warehouseId": warehouse_id,
   })
   .to_string()
@@ -188,7 +189,6 @@ pub fn operations_reconciliation_adjustment(
   reconciliation_id: Uuid,
   storage_id: Uuid,
   product_id: Uuid,
-  contractor_id: Uuid,
   adjustment_type: &str,
   amount: &str,
   reason: &str,
@@ -197,7 +197,6 @@ pub fn operations_reconciliation_adjustment(
     "reconciliationId": reconciliation_id,
     "storageId": storage_id,
     "productId": product_id,
-    "contractorId": contractor_id,
     "adjustmentType": adjustment_type,
     "amount": amount,
     "reason": reason,
@@ -217,10 +216,10 @@ pub fn acceptance_composite_save_and_execute(
     "documentNumber": document_number,
     "dateAccepted": date_accepted,
     "arrivalType": "TRUCK",
+    "contractorId": contractor_id,
     "items": [
       {
         "productId": product_id,
-        "contractorId": contractor_id,
         "storageId": storage_id,
         "acceptedAmount": accepted_amount,
       }

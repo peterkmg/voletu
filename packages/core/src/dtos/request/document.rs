@@ -14,7 +14,7 @@ pub struct CreateAcceptanceRequest {
   pub arrival_type: ArrivalType,
   #[validate(length(min = 1))]
   pub source_entity: Option<String>,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   pub truck_waybill_id: Option<Uuid>,
   pub rail_waybill_id: Option<Uuid>,
   pub transit_dispatch_id: Option<Uuid>,
@@ -54,7 +54,6 @@ impl CreateAcceptanceItemRequest {
 #[request_dto]
 pub struct UpdateAcceptanceItemRequest {
   pub product_id: Option<Uuid>,
-  pub contractor_id: Option<Uuid>,
   pub storage_id: Option<Uuid>,
   pub accepted_amount: Option<Decimal>,
 }
@@ -62,7 +61,6 @@ pub struct UpdateAcceptanceItemRequest {
 #[request_dto]
 pub struct AcceptanceItemCompositeRequest {
   pub product_id: Uuid,
-  pub contractor_id: Uuid,
   pub storage_id: Uuid,
   pub accepted_amount: Decimal,
 }
@@ -207,7 +205,7 @@ pub struct CreatePhysicalTransferRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
   pub date: DateTime<Utc>,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   pub start_cargo_ops: DateTime<Utc>,
   pub end_cargo_ops: DateTime<Utc>,
   #[validate(length(min = 1), nested)]
@@ -238,7 +236,6 @@ pub struct UpdateOwnershipTransferRequest {
 
 #[request_dto]
 pub struct PhysicalTransferItemCompositeRequest {
-  pub contractor_id: Uuid,
   pub product_id: Uuid,
   pub from_storage_id: Uuid,
   pub to_storage_id: Uuid,
@@ -255,7 +252,6 @@ pub struct CreatePhysicalTransferItemRequest {
 
 #[request_dto]
 pub struct UpdatePhysicalTransferItemRequest {
-  pub contractor_id: Option<Uuid>,
   pub product_id: Option<Uuid>,
   pub from_storage_id: Option<Uuid>,
   pub to_storage_id: Option<Uuid>,
@@ -374,7 +370,7 @@ pub struct CreateInventoryReconciliationRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
   pub date: DateTime<Utc>,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   pub warehouse_id: Uuid,
 }
 
@@ -392,7 +388,6 @@ pub struct CreateInventoryAdjustmentRequest {
   pub reconciliation_id: Uuid,
   pub storage_id: Uuid,
   pub product_id: Uuid,
-  pub contractor_id: Uuid,
   pub adjustment_type: AdjustmentType,
   pub amount: Decimal,
   #[validate(length(min = 1))]
@@ -403,7 +398,6 @@ pub struct CreateInventoryAdjustmentRequest {
 pub struct UpdateInventoryAdjustmentRequest {
   pub storage_id: Option<Uuid>,
   pub product_id: Option<Uuid>,
-  pub contractor_id: Option<Uuid>,
   pub adjustment_type: Option<AdjustmentType>,
   pub amount: Option<Decimal>,
   #[validate(length(min = 1))]

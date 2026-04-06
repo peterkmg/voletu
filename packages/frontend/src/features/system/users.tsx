@@ -86,7 +86,7 @@ function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
 const route = getRouteApi('/_authenticated/system/users/')
 const globalFilterFn = createGlobalFilter<UserResponse>('username', 'fullname')
 
-function UsersTable({ data }: { data: UserResponse[] }) {
+function UsersTable({ data, actions }: { data: UserResponse[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="users"
@@ -95,6 +95,7 @@ function UsersTable({ data }: { data: UserResponse[] }) {
       routeApi={route}
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['system', 'common']}
+      actions={actions}
     />
   )
 }

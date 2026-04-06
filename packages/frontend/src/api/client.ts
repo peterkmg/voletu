@@ -75,7 +75,20 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
   const { accessToken } = useAuthStore.getState()
   const isMutating = MUTATING_METHODS.has(config.method.toUpperCase())
 
-  const response = await fetch(`${getBaseUrl()}${config.url}`, {
+  // Serialize params as query string
+  let url = `${getBaseUrl()}${config.url}`
+  if (config.params && typeof config.params === 'object') {
+    const searchParams = new URLSearchParams()
+    for (const [key, value] of Object.entries(config.params)) {
+      if (value !== undefined && value !== null)
+        searchParams.set(key, String(value))
+    }
+    const qs = searchParams.toString()
+    if (qs)
+      url += `${url.includes('?') ? '&' : '?'}${qs}`
+  }
+
+  const response = await fetch(url, {
     method: config.method.toUpperCase(),
     body: config.data instanceof FormData
       ? config.data

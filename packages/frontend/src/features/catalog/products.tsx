@@ -40,8 +40,8 @@ const DataTableRowActions = createRowActions<ProductResponse>({ useEntity: usePr
 function getProductColumns(t: TFunction): ColumnDef<ProductResponse>[] {
   return [
     textColumn<ProductResponse>('commonName', t('catalog:product.columns.commonName')),
-    resolvedColumn<ProductResponse>('productGroupId', t('catalog:product.columns.productGroupId'), 'productGroupIdName'),
-    resolvedColumn<ProductResponse>('manufacturerId', t('catalog:product.columns.manufacturerId'), 'manufacturerIdName'),
+    resolvedColumn<ProductResponse>('productGroupId', t('catalog:product.columns.productGroup'), 'productGroupIdName'),
+    resolvedColumn<ProductResponse>('manufacturerId', t('catalog:product.columns.manufacturer'), 'manufacturerIdName'),
     textColumn<ProductResponse>('addIdentification', t('catalog:product.columns.identification'), { primary: false, sizing: 'capped', maxSize: 200 }),
     { ...dateColumn<ProductResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductResponse>(DataTableRowActions, 2),
@@ -55,9 +55,10 @@ const productsGlobalFilterFn = createGlobalFilter<ProductResponse>('commonName',
 
 interface ProductsTableProps {
   data: ProductResponse[]
+  actions?: React.ReactNode
 }
 
-function ProductsTable({ data }: ProductsTableProps) {
+function ProductsTable({ data, actions }: ProductsTableProps) {
   return (
     <EntityTable
       tableId="products"
@@ -66,6 +67,7 @@ function ProductsTable({ data }: ProductsTableProps) {
       routeApi={productsRoute}
       globalFilterFn={productsGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

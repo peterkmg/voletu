@@ -82,7 +82,7 @@ impl DocumentService {
         flow_route: flow_route.to_string(),
         product_name: r.product_id_name.clone(),
         storage_name: r.storage_id_name.clone(),
-        quantity: r.dispatched_amount.to_string(),
+        quantity: format!("-{}", r.dispatched_amount),
         item_type: None,
       });
     }
@@ -148,6 +148,12 @@ impl DocumentService {
 
     // --- Blending items → Internal ---
     for r in &blending {
+      // Components (consumed) are negative, results (produced) are positive
+      let quantity = if r.item_type == "component" {
+        format!("-{}", r.amount)
+      } else {
+        r.amount.to_string()
+      };
       rows.push(CargoFlowFlatRow {
         id: r.item_id,
         document_id: r.document_id,
@@ -160,13 +166,19 @@ impl DocumentService {
         flow_route: "/internal/blending".to_string(),
         product_name: r.product_id_name.clone(),
         storage_name: r.storage_id_name.clone(),
-        quantity: r.amount.to_string(),
+        quantity,
         item_type: Some(r.item_type.clone()),
       });
     }
 
     // --- Reconciliation adjustments → Internal ---
     for r in &reconciliation {
+      // Loss is negative (inventory decreased), Surplus is positive (inventory increased)
+      let quantity = if r.adjustment_type == enums::AdjustmentType::Loss {
+        format!("-{}", r.amount)
+      } else {
+        r.amount.to_string()
+      };
       rows.push(CargoFlowFlatRow {
         id: r.item_id,
         document_id: r.document_id,
@@ -179,7 +191,7 @@ impl DocumentService {
         flow_route: "/internal/reconciliation".to_string(),
         product_name: r.product_id_name.clone(),
         storage_name: r.storage_id_name.clone(),
-        quantity: r.amount.to_string(),
+        quantity,
         item_type: Some(format!("{:?}", r.adjustment_type)),
       });
     }

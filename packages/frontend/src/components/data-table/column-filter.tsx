@@ -1,6 +1,7 @@
 import type { Column } from '@tanstack/react-table'
 import { ChevronRight, Filter } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
 import {
@@ -76,13 +77,16 @@ function commitFilter<TData, TValue>(column: Column<TData, TValue>, next: Set<st
 
 export function TextEnumFilterContent<TData, TValue>({
   column,
-  searchPlaceholder = 'Search...',
-  emptyMessage = 'No values found.',
+  searchPlaceholder,
+  emptyMessage,
 }: {
   column: Column<TData, TValue>
   searchPlaceholder?: string
   emptyMessage?: string
 }) {
+  const { t } = useTranslation('common')
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('dataTable.search')
+  const resolvedEmptyMessage = emptyMessage ?? t('dataTable.noValues')
   const facets = column.getFacetedUniqueValues()
   const filterValue = column.getFilterValue() as string[] | undefined
 
@@ -117,9 +121,9 @@ export function TextEnumFilterContent<TData, TValue>({
 
   return (
     <Command>
-      <CommandInput placeholder={searchPlaceholder} className="h-8 text-xs" />
+      <CommandInput placeholder={resolvedSearchPlaceholder} className="h-8 text-xs" />
       <CommandList>
-        <CommandEmpty className="text-xs py-4">{emptyMessage}</CommandEmpty>
+        <CommandEmpty className="text-xs py-4">{resolvedEmptyMessage}</CommandEmpty>
         <CommandGroup>
           {/* Select All */}
           <CommandItem onSelect={toggleSelectAll} className="text-xs font-medium">
@@ -128,7 +132,7 @@ export function TextEnumFilterContent<TData, TValue>({
               className="size-3.5 pointer-events-none"
               tabIndex={-1}
             />
-            <span>Select All</span>
+            <span>{t('dataTable.selectAll')}</span>
           </CommandItem>
           <CommandSeparator className="my-1" />
           {sortedOptions.map(option => (
@@ -153,7 +157,7 @@ export function TextEnumFilterContent<TData, TValue>({
                 onSelect={() => column.setFilterValue(undefined)}
                 className="justify-center text-center text-xs"
               >
-                Clear filter
+                {t('dataTable.clearFilter')}
               </CommandItem>
             </CommandGroup>
           </>
@@ -218,6 +222,7 @@ export function DateGroupFilterContent<TData, TValue>({
 }: {
   column: Column<TData, TValue>
 }) {
+  const { t } = useTranslation('common')
   const facets = column.getFacetedUniqueValues()
   const filterValue = column.getFilterValue() as string[] | undefined
   const [search, setSearch] = useState('')
@@ -283,9 +288,9 @@ export function DateGroupFilterContent<TData, TValue>({
 
   return (
     <Command shouldFilter={false}>
-      <CommandInput placeholder="Search..." value={search} onValueChange={setSearch} className="h-8 text-xs" />
+      <CommandInput placeholder={t('dataTable.search')} value={search} onValueChange={setSearch} className="h-8 text-xs" />
       <CommandList>
-        <CommandEmpty className="text-xs py-4">No dates found.</CommandEmpty>
+        <CommandEmpty className="text-xs py-4">{t('dataTable.noDates')}</CommandEmpty>
         <CommandGroup>
           {/* Select All */}
           <CommandItem onSelect={toggleSelectAll} className="text-xs font-medium">
@@ -294,7 +299,7 @@ export function DateGroupFilterContent<TData, TValue>({
               className="size-3.5 pointer-events-none"
               tabIndex={-1}
             />
-            <span>Select All</span>
+            <span>{t('dataTable.selectAll')}</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator className="my-0.5" />
@@ -388,7 +393,7 @@ export function DateGroupFilterContent<TData, TValue>({
                 onSelect={() => column.setFilterValue(undefined)}
                 className="justify-center text-center text-xs"
               >
-                Clear filter
+                {t('dataTable.clearFilter')}
               </CommandItem>
             </CommandGroup>
           </>

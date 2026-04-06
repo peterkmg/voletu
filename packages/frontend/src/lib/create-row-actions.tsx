@@ -1,7 +1,7 @@
 import type { Row } from '@tanstack/react-table'
 import type { RowAction } from '~/components/data-table'
 import { useNavigate } from '@tanstack/react-router'
-import { Archive, Pencil, Play, Search, Trash2, Undo2 } from 'lucide-react'
+import { Archive, ArrowUpRight, Pencil, Play, Trash2, Undo2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RowActions } from '~/components/data-table'
 import { useAuthStore } from '~/stores/auth-store'
@@ -39,7 +39,7 @@ export function createRowActions<TRow extends { id: string }>(
     if (config.getDetailPath) {
       actions.push({
         label: t('common:actions.viewDetails'),
-        icon: Search,
+        icon: ArrowUpRight,
         inline: true,
         onClick: () => navigate({ to: config.getDetailPath!(row.original) }),
       })

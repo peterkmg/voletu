@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   dtos::{CreatePhysicalTransferItemRequest, PhysicalTransferItemCompositeRequest},
-  entities::{company, physical_storage_transfer, product, storage},
+  entities::{physical_storage_transfer, product, storage},
 };
 
 #[voletu_core_macros::handle_audit]
@@ -17,9 +17,6 @@ pub struct Model {
   pub physical_transfer_id: Uuid,
   #[sea_orm(belongs_to, from = "physical_transfer_id", to = "id")]
   pub physical_transfer: HasOne<physical_storage_transfer::Entity>,
-  pub contractor_id: Uuid,
-  #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
-  pub contractor: HasOne<company::Entity>,
   pub product_id: Uuid,
   #[sea_orm(belongs_to, from = "product_id", to = "id")]
   pub product: HasOne<product::Entity>,
@@ -33,7 +30,6 @@ pub struct Model {
 impl From<&PhysicalTransferItemCompositeRequest> for ActiveModel {
   fn from(dto: &PhysicalTransferItemCompositeRequest) -> Self {
     Self {
-      contractor_id: Set(dto.contractor_id),
       product_id: Set(dto.product_id),
       from_storage_id: Set(dto.from_storage_id),
       to_storage_id: Set(dto.to_storage_id),

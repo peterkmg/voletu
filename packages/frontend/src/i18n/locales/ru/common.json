@@ -108,7 +108,8 @@
     "fromStorage": "Из ёмкости",
     "toStorage": "В ёмкость",
     "fromContractor": "От контрагента",
-    "toContractor": "К контрагенту"
+    "toContractor": "К контрагенту",
+    "declaredQty": "Заявленное кол-во"
   },
   "error": {
     "title": "Что-то пошло не так",
@@ -173,6 +174,66 @@
     "aboutDescription": "Система управления запасами",
     "aboutVersion": "Версия {{version}}",
     "keyboardShortcuts": "Горячие клавиши"
+  },
+  "sections": {
+    "acceptanceItems": "Позиции приёмки",
+    "dispatchItems": "Позиции отгрузки",
+    "componentInputs": "Компоненты (вход)",
+    "resultOutputs": "Результат (выход)",
+    "transferItems": "Позиции перемещения",
+    "adjustments": "Корректировки",
+    "waybillItems": "Позиции накладной",
+    "wagonManifests": "Вагонные манифесты"
+  },
+  "metadata": {
+    "executedAt": "Проведён"
+  },
+  "columns": {
+    "storage": "Ёмкость",
+    "fromStorage": "Из ёмкости",
+    "toStorage": "В ёмкость",
+    "fromContractor": "От контрагента",
+    "toContractor": "К контрагенту",
+    "type": "Тип",
+    "operation": "Операция",
+    "bunkerType": "Тип бункера",
+    "warehouse": "Склад",
+    "wagonNumber": "Вагон №"
+  },
+  "document": {
+    "information": "Информация о документе",
+    "relatedDocuments": "Связанные документы",
+    "noRelatedDocuments": "Нет связанных документов",
+    "executionMetadata": "Данные проведения",
+    "lineItems": "Позиции",
+    "executedWarning": "Документ проведён и заблокирован. Только старшие диспетчеры могут вернуть его в черновик.",
+    "truckWaybill": "Автонакладная",
+    "railWaybill": "Ж/Д накладная",
+    "acceptance": "Документ приёмки",
+    "dispatch": "Отгрузка",
+    "truckDispatch": "Автоотгрузка",
+    "bunkering": "Бункеровка",
+    "directDispatch": "Прямая отгрузка",
+    "blending": "Смешивание",
+    "physicalTransfer": "Физическое перемещение",
+    "ownershipTransfer": "Передача собственности",
+    "reconciliation": "Инвентаризация",
+    "pendingAcceptance": "Ожидает приёмки"
+  },
+  "dataTable": {
+    "ascending": "По возрастанию",
+    "descending": "По убыванию",
+    "filter": "Фильтр",
+    "column": "Столбец",
+    "unpin": "Открепить",
+    "pinLeft": "Закрепить слева",
+    "pinRight": "Закрепить справа",
+    "hide": "Скрыть",
+    "selectAll": "Выбрать всё",
+    "clearFilter": "Сбросить фильтр",
+    "search": "Поиск...",
+    "noValues": "Значений не найдено.",
+    "noDates": "Дат не найдено."
   },
   "debug": {
     "seedDatabase": "Заполнить базу данных",

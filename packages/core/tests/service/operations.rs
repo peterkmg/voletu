@@ -63,19 +63,17 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .physical_transfer_composite_create(&CreatePhysicalTransferRequest {
         document_number: "PT-1".to_string(),
         date: ts("2026-01-01T00:00:00Z"),
-        contractor_id: None,
+        contractor_id: fixture.contractor_a_id,
         start_cargo_ops: ts("2026-01-01T01:00:00Z"),
         end_cargo_ops: ts("2026-01-01T02:00:00Z"),
         items: vec![
           PhysicalTransferItemCompositeRequest {
-            contractor_id: fixture.contractor_a_id,
             product_id: fixture.product_a_id,
             from_storage_id: fixture.storage_a_id,
             to_storage_id: fixture.storage_b_id,
             amount: dec("30.0"),
           },
           PhysicalTransferItemCompositeRequest {
-            contractor_id: fixture.contractor_a_id,
             product_id: fixture.product_a_id,
             from_storage_id: fixture.storage_a_id,
             to_storage_id: fixture.storage_b_id,
@@ -374,7 +372,7 @@ async fn reconciliation_adjustments_apply_on_execute_and_reverse_on_revert() {
       .reconciliation_create(&CreateInventoryReconciliationRequest {
         document_number: "REC-1".to_string(),
         date: ts("2026-01-03T00:00:00Z"),
-        contractor_id: None,
+        contractor_id: fixture.contractor_a_id,
         warehouse_id: fixture.warehouse_id,
       })
       .await
@@ -385,7 +383,6 @@ async fn reconciliation_adjustments_apply_on_execute_and_reverse_on_revert() {
         reconciliation_id: reconciliation.id,
         storage_id: fixture.storage_a_id,
         product_id: fixture.product_a_id,
-        contractor_id: fixture.contractor_a_id,
         adjustment_type: AdjustmentType::Surplus,
         amount: dec("3.0"),
         reason: Some("Counted extra".to_string()),
@@ -397,7 +394,6 @@ async fn reconciliation_adjustments_apply_on_execute_and_reverse_on_revert() {
         reconciliation_id: reconciliation.id,
         storage_id: fixture.storage_a_id,
         product_id: fixture.product_a_id,
-        contractor_id: fixture.contractor_a_id,
         adjustment_type: AdjustmentType::Loss,
         amount: dec("2.0"),
         reason: Some("Evaporation".to_string()),
@@ -466,11 +462,10 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
         &CreatePhysicalTransferRequest {
           document_number: "PT-EXEC".to_string(),
           date: ts("2026-01-05T00:00:00Z"),
-          contractor_id: None,
+          contractor_id: fixture.contractor_a_id,
           start_cargo_ops: ts("2026-01-05T01:00:00Z"),
           end_cargo_ops: ts("2026-01-05T02:00:00Z"),
           items: vec![PhysicalTransferItemCompositeRequest {
-            contractor_id: fixture.contractor_a_id,
             product_id: fixture.product_a_id,
             from_storage_id: fixture.storage_a_id,
             to_storage_id: fixture.storage_b_id,

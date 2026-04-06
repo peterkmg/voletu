@@ -35,7 +35,7 @@ const DataTableRowActions = createRowActions<ProductTypeResponse>({ useEntity: u
 function getProductTypeColumns(t: TFunction): ColumnDef<ProductTypeResponse>[] {
   return [
     textColumn<ProductTypeResponse>('commonName', t('catalog:productType.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
-    textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false, sizing: 'capped', maxSize: 300 }),
+    textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false }),
     { ...dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductTypeResponse>(DataTableRowActions, 2),
   ]
@@ -48,9 +48,10 @@ const productTypesGlobalFilterFn = createGlobalFilter<ProductTypeResponse>('comm
 
 interface ProductTypesTableProps {
   data: ProductTypeResponse[]
+  actions?: React.ReactNode
 }
 
-function ProductTypesTable({ data }: ProductTypesTableProps) {
+function ProductTypesTable({ data, actions }: ProductTypesTableProps) {
   return (
     <EntityTable
       tableId="product-types"
@@ -59,6 +60,7 @@ function ProductTypesTable({ data }: ProductTypesTableProps) {
       routeApi={productTypesRoute}
       globalFilterFn={productTypesGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

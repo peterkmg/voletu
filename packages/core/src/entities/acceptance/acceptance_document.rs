@@ -26,7 +26,7 @@ pub struct Model {
   pub reverted_by: Option<Uuid>,
   pub arrival_type: enums::ArrivalType,
   pub source_entity: Option<String>,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
   pub contractor: HasOne<company::Entity>,
   pub truck_waybill_id: Option<Uuid>,

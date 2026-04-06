@@ -34,8 +34,8 @@ const DataTableRowActions = createRowActions<PortResponse>({ useEntity: usePorts
 
 function getPortColumns(t: TFunction): ColumnDef<PortResponse>[] {
   return [
-    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
-    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false, sizing: 'capped', maxSize: 180 }),
+    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName')),
+    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false, sizing: 'capped', maxSize: 200 }),
     { ...dateColumn<PortResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<PortResponse>(DataTableRowActions, 2),
   ]
@@ -48,9 +48,10 @@ const portsGlobalFilterFn = createGlobalFilter<PortResponse>('commonName', 'coun
 
 interface PortsTableProps {
   data: PortResponse[]
+  actions?: React.ReactNode
 }
 
-function PortsTable({ data }: PortsTableProps) {
+function PortsTable({ data, actions }: PortsTableProps) {
   return (
     <EntityTable
       tableId="ports"
@@ -59,6 +60,7 @@ function PortsTable({ data }: PortsTableProps) {
       routeApi={portsRoute}
       globalFilterFn={portsGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

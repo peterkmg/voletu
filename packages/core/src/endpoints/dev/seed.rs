@@ -616,7 +616,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       truck_waybill_id: Set(truck_waybill_id),
       rail_waybill_id: Set(rail_waybill_id),
       transit_dispatch_id: Set(transit_dispatch_id),
-      contractor_id: Set(Some(contractor_id)),
+      contractor_id: Set(contractor_id),
       ..Default::default()
     }
     .insert(db)
@@ -631,7 +631,6 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       acceptance_item::ActiveModel {
         acceptance_doc_id: Set(doc.id),
         product_id: Set(product_id),
-        contractor_id: Set(contractor_id),
         storage_id: Set(storage_id),
         accepted_amount: Set(Decimal::from(amount)),
         ..Default::default()
@@ -774,7 +773,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       reverted_by: Set(None),
       start_cargo_ops: Set(start_ops),
       end_cargo_ops: Set(end_ops),
-      contractor_id: Set(Some(contractor_id)),
+      contractor_id: Set(contractor_id),
       ..Default::default()
     }
     .insert(db)
@@ -791,7 +790,6 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
 
       physical_transfer_item::ActiveModel {
         physical_transfer_id: Set(doc.id),
-        contractor_id: Set(contractor_id),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
         from_storage_id: Set(from_storage_id),
         to_storage_id: Set(to_storage_id),
@@ -822,7 +820,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       reverted_at: Set(None),
       reverted_by: Set(None),
       warehouse_id: Set(*pick(&mut rng, &warehouse_ids)),
-      contractor_id: Set(Some(contractor_id)),
+      contractor_id: Set(contractor_id),
       ..Default::default()
     }
     .insert(db)
@@ -835,7 +833,6 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
         reconciliation_id: Set(doc.id),
         storage_id: Set(*pick(&mut rng, &storage_ids)),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
-        contractor_id: Set(contractor_id),
         adjustment_type: Set(*pick(&mut rng, &adjustment_types)),
         amount: Set(Decimal::from(rng.random_range(1u64..=900u64))),
         reason: Set(maybe(&mut rng, 0.45, |_rng| fake_fragment(4..8))),

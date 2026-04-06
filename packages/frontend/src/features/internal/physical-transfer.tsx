@@ -37,12 +37,12 @@ function getColumns(t: TFunction): ColumnDef<PhysicalTransferFlatRow>[] {
     { ...textColumn<PhysicalTransferFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<PhysicalTransferFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<PhysicalTransferFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...statusColumn<PhysicalTransferFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<PhysicalTransferFlatRow>('productIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<PhysicalTransferFlatRow>('fromStorageIdName', t('common:columns.fromStorage')), meta: { label: t('common:columns.fromStorage'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<PhysicalTransferFlatRow>('toStorageIdName', t('common:columns.toStorage')), meta: { label: t('common:columns.toStorage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<PhysicalTransferFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<PhysicalTransferFlatRow>('fromStorageIdName', t('common:columns.fromStorage'), { primary: false }), meta: { label: t('common:columns.fromStorage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<PhysicalTransferFlatRow>('toStorageIdName', t('common:columns.toStorage'), { primary: false }), meta: { label: t('common:columns.toStorage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<PhysicalTransferFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    { ...statusColumn<PhysicalTransferFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<PhysicalTransferFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -52,7 +52,7 @@ const route = getRouteApi('/_authenticated/internal/physical-transfer/')
 const detailRoute = getRouteApi('/_authenticated/internal/physical-transfer/$id')
 const globalFilterFn = createGlobalFilter<PhysicalTransferFlatRow>('documentNumber', 'productIdName')
 
-function PhysicalTransferTable({ data }: { data: PhysicalTransferFlatRow[] }) {
+function PhysicalTransferTable({ data, actions }: { data: PhysicalTransferFlatRow[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="physical-transfer"
@@ -62,6 +62,7 @@ function PhysicalTransferTable({ data }: { data: PhysicalTransferFlatRow[] }) {
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
       groupKey="documentId"
+      actions={actions}
     />
   )
 }
@@ -105,7 +106,8 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
 const DeleteDialog = createDeleteDialog({ useEntity, hardDeleteFn: physicalDocumentHardDelete, softDeleteFn: physicalDocumentSoftDelete, queryKey: flowPhysicalTransferFlatQueryQueryKey, entityLabel: 'common:nav.physicalTransfer', i18nNamespaces: ['common'] })
 
 function PhysicalLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: PhysicalTransferFlatRow | null, variant: 'execute' | 'revert' }) {
-  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={physicalDocumentExecute} revertFn={physicalDocumentRevert} queryKey={flowPhysicalTransferFlatQueryQueryKey()} entityLabel="Physical Transfer" />
+  const { t } = useTranslation(['common'])
+  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={physicalDocumentExecute} revertFn={physicalDocumentRevert} queryKey={flowPhysicalTransferFlatQueryQueryKey()} entityLabel={t('common:document.physicalTransfer')} />
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: PhysicalLifecycleDialog, lifecyclePropName: 'variant' })
@@ -131,7 +133,7 @@ export function PhysicalTransferDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.physicalTransfer'), entityLabel: 'Physical Transfer', backTo: '/internal/physical-transfer', executeFn: physicalDocumentExecute, revertFn: physicalDocumentRevert, queryKey: flowPhysicalTransferFlatQueryQueryKey(), statusColorMap: statusColors }}
+      config={{ title: t('common:nav.physicalTransfer'), entityLabel: t('common:document.physicalTransfer'), backTo: '/internal/physical-transfer', executeFn: physicalDocumentExecute, revertFn: physicalDocumentRevert, queryKey: flowPhysicalTransferFlatQueryQueryKey(), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
@@ -139,13 +141,16 @@ export function PhysicalTransferDetail() {
             <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
             <p>{formatDate(doc.date)}</p>
           </div>
+          <div>
+            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+            <p>{doc.contractorIdName ?? '—'}</p>
+          </div>
         </div>
       )}
       itemsContent={(
         <ChildItemsTable
           items={items}
           columns={[
-            textColumn<PhysicalTransferItemResponse>('contractorIdName', t('common:table.contractor')),
             textColumn<PhysicalTransferItemResponse>('productIdName', t('common:table.product')),
             textColumn<PhysicalTransferItemResponse>('fromStorageIdName', t('common:columns.fromStorage')),
             textColumn<PhysicalTransferItemResponse>('toStorageIdName', t('common:columns.toStorage')),

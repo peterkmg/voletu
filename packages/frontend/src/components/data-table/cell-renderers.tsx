@@ -52,7 +52,7 @@ export const NumericCell = memo(({
       ? 'text-red-600 dark:text-red-400'
       : 'text-green-700 dark:text-green-400'
   return (
-    <span className={cn('text-sm tabular-nums', colorClass)}>{display}</span>
+    <span className={cn('text-sm font-medium tabular-nums', colorClass)}>{display}</span>
   )
 })
 

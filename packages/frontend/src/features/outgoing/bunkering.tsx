@@ -39,11 +39,11 @@ function getColumns(t: TFunction): ColumnDef<DispatchFlatRow>[] {
     { ...textColumn<DispatchFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<DispatchFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<DispatchFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...statusColumn<DispatchFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<DispatchFlatRow>('productIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<DispatchFlatRow>('storageIdName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<DispatchFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<DispatchFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<DispatchFlatRow>('dispatchedAmount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    { ...statusColumn<DispatchFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<DispatchFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -53,7 +53,7 @@ const route = getRouteApi('/_authenticated/outgoing/bunkering/')
 const detailRoute = getRouteApi('/_authenticated/outgoing/bunkering/$id')
 const globalFilterFn = createGlobalFilter<DispatchFlatRow>('documentNumber', 'productIdName', 'storageIdName')
 
-function BunkeringTable({ data }: { data: DispatchFlatRow[] }) {
+function BunkeringTable({ data, actions }: { data: DispatchFlatRow[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="bunkering"
@@ -63,6 +63,7 @@ function BunkeringTable({ data }: { data: DispatchFlatRow[] }) {
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
       groupKey="documentId"
+      actions={actions}
     />
   )
 }
@@ -102,7 +103,7 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
           <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
           <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
           <EntityPickerField<FormValues> name="contractorId" label={t('common:table.contractor')} queryResult={companiesQuery} />
-          <TextField<FormValues> name="bunkerType" label="Bunker Type" />
+          <TextField<FormValues> name="bunkerType" label={t('common:columns.bunkerType')} />
         </form>
       </Form>
     </FormDialog>
@@ -112,7 +113,8 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
 const DeleteDialog = createDeleteDialog({ useEntity, hardDeleteFn: dispatchDocumentHardDelete, softDeleteFn: dispatchDocumentSoftDelete, queryKey: () => flowDispatchFlatQueryQueryKey({ dispatchMethod: 'BUNKERING' }), entityLabel: 'common:nav.bunkering', i18nNamespaces: ['common'] })
 
 function BunkeringLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: DispatchFlatRow | null, variant: 'execute' | 'revert' }) {
-  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={dispatchDocumentExecute} revertFn={dispatchDocumentRevert} queryKey={flowDispatchFlatQueryQueryKey({ dispatchMethod: 'BUNKERING' })} entityLabel="Bunkering Document" />
+  const { t } = useTranslation(['common'])
+  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={dispatchDocumentExecute} revertFn={dispatchDocumentRevert} queryKey={flowDispatchFlatQueryQueryKey({ dispatchMethod: 'BUNKERING' })} entityLabel={t('common:document.bunkering')} />
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: BunkeringLifecycleDialog, lifecyclePropName: 'variant' })
@@ -137,7 +139,7 @@ export function BunkeringDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.bunkering'), entityLabel: 'Bunkering', backTo: '/outgoing/bunkering', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: flowDispatchFlatQueryQueryKey({ dispatchMethod: 'BUNKERING' }), statusColorMap: statusColors }}
+      config={{ title: t('common:nav.bunkering'), entityLabel: t('common:document.bunkering'), backTo: '/outgoing/bunkering', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: flowDispatchFlatQueryQueryKey({ dispatchMethod: 'BUNKERING' }), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">

@@ -41,10 +41,10 @@ function getColumns(t: TFunction): ColumnDef<TruckDispatchPipelineResponse>[] {
     { ...textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    { ...statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
     { ...textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    { ...statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions, 1), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -54,7 +54,7 @@ const routeApi = getRouteApi('/_authenticated/outgoing/truck/')
 const detailRoute = getRouteApi('/_authenticated/outgoing/truck/$id')
 const globalFilterFn = createGlobalFilter<TruckDispatchPipelineResponse>('documentNumber', 'contractorName')
 
-function TruckDispatchTable({ data }: { data: TruckDispatchPipelineResponse[] }) {
+function TruckDispatchTable({ data, actions }: { data: TruckDispatchPipelineResponse[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="truck-dispatch"
@@ -64,6 +64,7 @@ function TruckDispatchTable({ data }: { data: TruckDispatchPipelineResponse[] })
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
       groupKey="id"
+      actions={actions}
     />
   )
 }
@@ -93,7 +94,7 @@ function DispatchMutateDialog({ open, onOpenChange }: { open: boolean, onOpenCha
   })
 
   return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description="Truck Dispatch" formId="truck-dispatch-form" isSubmitting={form.formState.isSubmitting}>
+    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description={t('common:document.truckDispatch')} formId="truck-dispatch-form" isSubmitting={form.formState.isSubmitting}>
       <Form {...form}>
         <form id="truck-dispatch-form" onSubmit={handleSubmit} className="space-y-5">
           <TextField<DispatchFormValues> name="documentNumber" label={t('common:table.documentNumber')} />
@@ -128,7 +129,7 @@ export function TruckDispatchDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.truckDispatch'), entityLabel: 'Dispatch', backTo: '/outgoing/truck', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: truckDispatchPipelineQueryQueryKey(), statusColorMap: statusColors }}
+      config={{ title: t('common:nav.truckDispatch'), entityLabel: t('common:document.truckDispatch'), backTo: '/outgoing/truck', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: truckDispatchPipelineQueryQueryKey(), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">

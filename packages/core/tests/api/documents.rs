@@ -119,7 +119,7 @@ async fn acceptance_document_endpoints_create_item_execute_and_return_expected_p
     let create_doc = post_json(
       &app,
       api_paths::acceptance::SAVE,
-      acceptance_save_truck(ACCEPTANCE_DOC_NUMBER, "2026-01-01T00:00:00Z"),
+      acceptance_save_truck(ACCEPTANCE_DOC_NUMBER, "2026-01-01T00:00:00Z", ctx.contractor_id),
     )
     .await;
     let create_doc_json = assert_api_success(create_doc).await;
@@ -143,7 +143,6 @@ async fn acceptance_document_endpoints_create_item_execute_and_return_expected_p
       acceptance_item(
         doc_id,
         ctx.product_id,
-        ctx.contractor_id,
         ctx.storage_a,
         "5.0",
       ),
@@ -341,6 +340,7 @@ async fn operations_endpoints_execute_core_workflows_and_report_invalid_blending
       operations_reconciliation_save(
         RECONCILIATION_DOC_NUMBER,
         "2026-01-02T00:00:00Z",
+        ctx.contractor_id,
         ctx.warehouse_id,
       ),
     )
@@ -366,7 +366,6 @@ async fn operations_endpoints_execute_core_workflows_and_report_invalid_blending
         reconciliation_id,
         ctx.storage_b,
         ctx.product_id,
-        ctx.contractor_id,
         "SURPLUS",
         "2.0",
         "count",
@@ -702,7 +701,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     let acceptance_1 = post_json(
       &app,
       api_paths::acceptance::SAVE,
-      acceptance_save_truck(ACCEPTANCE_QUERY_DOC_NUMBER_1, "2026-01-08T00:00:00Z"),
+      acceptance_save_truck(ACCEPTANCE_QUERY_DOC_NUMBER_1, "2026-01-08T00:00:00Z", ctx.contractor_id),
     )
     .await;
     let _ = assert_api_success(acceptance_1).await;
@@ -710,7 +709,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     let acceptance_2 = post_json(
       &app,
       api_paths::acceptance::SAVE,
-      acceptance_save_truck(ACCEPTANCE_QUERY_DOC_NUMBER_2, "2026-01-08T01:00:00Z"),
+      acceptance_save_truck(ACCEPTANCE_QUERY_DOC_NUMBER_2, "2026-01-08T01:00:00Z", ctx.contractor_id),
     )
     .await;
     let _ = assert_api_success(acceptance_2).await;
@@ -729,7 +728,6 @@ async fn query_endpoints_filter_by_document_number_and_status() {
       acceptance_item(
         acceptance_2_id,
         ctx.product_id,
-        ctx.contractor_id,
         ctx.storage_a,
         "3.0",
       ),
@@ -1038,6 +1036,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
       operations_reconciliation_save(
         RECONCILIATION_QUERY_DOC_NUMBER_1,
         "2026-01-11T00:00:00Z",
+        ctx.contractor_id,
         ctx.warehouse_id,
       ),
     )
@@ -1050,6 +1049,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
       operations_reconciliation_save(
         RECONCILIATION_QUERY_DOC_NUMBER_2,
         "2026-01-11T01:00:00Z",
+        ctx.contractor_id,
         ctx.warehouse_id,
       ),
     )
@@ -1294,14 +1294,15 @@ async fn acceptance_and_ownership_query_reject_invalid_status_values() {
 
 #[tokio::test]
 async fn acceptance_query_supports_pagination_params_and_rejects_malformed_values() {
-  let (_db, app, token) = setup_seeded_app_with_admin_token().await;
+  let (db, app, token) = setup_seeded_app_with_admin_token().await;
+  let ctx = seed_inventory_context(&db).await;
 
   with_auth_token(token, async {
     let _ = assert_api_success(
       post_json(
         &app,
         api_paths::acceptance::SAVE,
-        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_1, "2026-01-13T00:00:00Z"),
+        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_1, "2026-01-13T00:00:00Z", ctx.contractor_id),
       )
       .await,
     )
@@ -1310,7 +1311,7 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
       post_json(
         &app,
         api_paths::acceptance::SAVE,
-        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_2, "2026-01-13T01:00:00Z"),
+        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_2, "2026-01-13T01:00:00Z", ctx.contractor_id),
       )
       .await,
     )
@@ -1319,7 +1320,7 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
       post_json(
         &app,
         api_paths::acceptance::SAVE,
-        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_3, "2026-01-13T02:00:00Z"),
+        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_3, "2026-01-13T02:00:00Z", ctx.contractor_id),
       )
       .await,
     )
@@ -1456,6 +1457,7 @@ async fn reconciliation_query_supports_pagination_params_and_rejects_malformed_v
         operations_reconciliation_save(
           RECONCILIATION_PAGINATION_DOC_NUMBER_1,
           "2026-01-13T06:00:00Z",
+          ctx.contractor_id,
           ctx.warehouse_id,
         ),
       )
@@ -1469,6 +1471,7 @@ async fn reconciliation_query_supports_pagination_params_and_rejects_malformed_v
         operations_reconciliation_save(
           RECONCILIATION_PAGINATION_DOC_NUMBER_2,
           "2026-01-13T07:00:00Z",
+          ctx.contractor_id,
           ctx.warehouse_id,
         ),
       )
@@ -1482,6 +1485,7 @@ async fn reconciliation_query_supports_pagination_params_and_rejects_malformed_v
         operations_reconciliation_save(
           RECONCILIATION_PAGINATION_DOC_NUMBER_3,
           "2026-01-13T08:00:00Z",
+          ctx.contractor_id,
           ctx.warehouse_id,
         ),
       )

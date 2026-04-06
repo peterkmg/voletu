@@ -38,7 +38,7 @@ const DataTableRowActions = createRowActions<WarehouseResponse>({ useEntity: use
 function getWarehouseColumns(t: TFunction): ColumnDef<WarehouseResponse>[] {
   return [
     textColumn<WarehouseResponse>('commonName', t('catalog:warehouse.columns.commonName')),
-    resolvedColumn<WarehouseResponse>('baseId', t('catalog:warehouse.columns.baseId'), 'baseIdName'),
+    resolvedColumn<WarehouseResponse>('baseId', t('catalog:warehouse.columns.base'), 'baseIdName'),
     { ...dateColumn<WarehouseResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<WarehouseResponse>(DataTableRowActions, 2),
   ]
@@ -51,9 +51,10 @@ const warehousesGlobalFilterFn = createGlobalFilter<WarehouseResponse>('commonNa
 
 interface WarehousesTableProps {
   data: WarehouseResponse[]
+  actions?: React.ReactNode
 }
 
-function WarehousesTable({ data }: WarehousesTableProps) {
+function WarehousesTable({ data, actions }: WarehousesTableProps) {
   return (
     <EntityTable
       tableId="warehouses"
@@ -62,6 +63,7 @@ function WarehousesTable({ data }: WarehousesTableProps) {
       routeApi={warehousesRoute}
       globalFilterFn={warehousesGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

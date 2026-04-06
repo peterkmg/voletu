@@ -76,9 +76,10 @@ const companiesGlobalFilterFn = createGlobalFilter<CompanyResponse>('commonName'
 
 interface CompaniesTableProps {
   data: CompanyResponse[]
+  actions?: React.ReactNode
 }
 
-function CompaniesTable({ data }: CompaniesTableProps) {
+function CompaniesTable({ data, actions }: CompaniesTableProps) {
   return (
     <EntityTable
       tableId="companies"
@@ -87,6 +88,7 @@ function CompaniesTable({ data }: CompaniesTableProps) {
       routeApi={companiesRoute}
       globalFilterFn={companiesGlobalFilterFn}
       i18nNamespaces={['catalog', 'common']}
+      actions={actions}
     />
   )
 }

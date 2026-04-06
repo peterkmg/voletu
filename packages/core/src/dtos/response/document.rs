@@ -39,7 +39,7 @@ pub struct AcceptanceResponse {
   pub date_accepted: String,
   pub arrival_type: ArrivalType,
   pub source_entity: Option<String>,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub contractor_id_name: Option<String>,
@@ -95,12 +95,8 @@ pub struct AcceptanceItemResponse {
   pub id: Uuid,
   pub acceptance_doc_id: Uuid,
   pub product_id: Uuid,
-  pub contractor_id: Uuid,
   pub storage_id: Uuid,
   pub accepted_amount: Decimal,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  #[schema(nullable)]
-  pub contractor_id_name: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub product_id_name: Option<String>,
@@ -243,10 +239,8 @@ impl From<acceptance_item::Model> for AcceptanceItemResponse {
       id: model.id,
       acceptance_doc_id: model.acceptance_doc_id,
       product_id: model.product_id,
-      contractor_id: model.contractor_id,
       storage_id: model.storage_id,
       accepted_amount: model.accepted_amount,
-      contractor_id_name: None,
       product_id_name: None,
       storage_id_name: None,
       created_at: model.created_at.to_rfc3339(),
@@ -349,7 +343,7 @@ pub struct PhysicalTransferResponse {
   pub id: Uuid,
   pub document_number: String,
   pub date: String,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub contractor_id_name: Option<String>,
@@ -447,14 +441,10 @@ impl
 #[response_dto(service_fields(common))]
 pub struct PhysicalTransferItemResponse {
   pub id: Uuid,
-  pub contractor_id: Uuid,
   pub product_id: Uuid,
   pub from_storage_id: Uuid,
   pub to_storage_id: Uuid,
   pub amount: Decimal,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  #[schema(nullable)]
-  pub contractor_id_name: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub product_id_name: Option<String>,
@@ -470,12 +460,10 @@ impl From<physical_transfer_item::Model> for PhysicalTransferItemResponse {
   fn from(row: physical_transfer_item::Model) -> Self {
     Self {
       id: row.id,
-      contractor_id: row.contractor_id,
       product_id: row.product_id,
       from_storage_id: row.from_storage_id,
       to_storage_id: row.to_storage_id,
       amount: row.amount,
-      contractor_id_name: None,
       product_id_name: None,
       from_storage_id_name: None,
       to_storage_id_name: None,
@@ -736,7 +724,7 @@ pub struct InventoryReconciliationResponse {
   pub id: Uuid,
   pub document_number: String,
   pub date: String,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub contractor_id_name: Option<String>,
@@ -779,7 +767,6 @@ pub struct InventoryAdjustmentResponse {
   pub reconciliation_id: Uuid,
   pub storage_id: Uuid,
   pub product_id: Uuid,
-  pub contractor_id: Uuid,
   pub adjustment_type: AdjustmentType,
   pub amount: Decimal,
   pub reason: Option<String>,
@@ -789,9 +776,6 @@ pub struct InventoryAdjustmentResponse {
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub product_id_name: Option<String>,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  #[schema(nullable)]
-  pub contractor_id_name: Option<String>,
 }
 
 impl From<inventory_adjustment::Model> for InventoryAdjustmentResponse {
@@ -801,13 +785,11 @@ impl From<inventory_adjustment::Model> for InventoryAdjustmentResponse {
       reconciliation_id: row.reconciliation_id,
       storage_id: row.storage_id,
       product_id: row.product_id,
-      contractor_id: row.contractor_id,
       adjustment_type: row.adjustment_type,
       amount: row.amount,
       reason: row.reason,
       storage_id_name: None,
       product_id_name: None,
-      contractor_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -1088,9 +1070,7 @@ pub struct RailWaybillCompositeResponse {
 
 impl ResolveFkNames for AcceptanceResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    if let Some(id) = self.contractor_id {
-      c.company_ids.insert(id);
-    }
+    c.company_ids.insert(self.contractor_id);
     if let Some(id) = self.truck_waybill_id {
       c.truck_waybill_ids.insert(id);
     }
@@ -1103,9 +1083,7 @@ impl ResolveFkNames for AcceptanceResponse {
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = self
-      .contractor_id
-      .and_then(|id| r.companies.get(&id).cloned());
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.truck_waybill_id_name = self
       .truck_waybill_id
       .and_then(|id| r.truck_waybills.get(&id).cloned());
@@ -1120,13 +1098,11 @@ impl ResolveFkNames for AcceptanceResponse {
 
 impl ResolveFkNames for AcceptanceItemResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
     c.product_ids.insert(self.product_id);
     c.storage_ids.insert(self.storage_id);
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
   }
@@ -1182,28 +1158,22 @@ impl ResolveFkNames for DispatchMeasurementResponse {
 
 impl ResolveFkNames for PhysicalTransferResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    if let Some(id) = self.contractor_id {
-      c.company_ids.insert(id);
-    }
+    c.company_ids.insert(self.contractor_id);
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = self
-      .contractor_id
-      .and_then(|id| r.companies.get(&id).cloned());
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
   }
 }
 
 impl ResolveFkNames for PhysicalTransferItemResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
     c.product_ids.insert(self.product_id);
     c.storage_ids.insert(self.from_storage_id);
     c.storage_ids.insert(self.to_storage_id);
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
     self.from_storage_id_name = r.storages.get(&self.from_storage_id).cloned();
     self.to_storage_id_name = r.storages.get(&self.to_storage_id).cloned();
@@ -1262,16 +1232,12 @@ impl ResolveFkNames for BlendingResultResponse {
 
 impl ResolveFkNames for InventoryReconciliationResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    if let Some(id) = self.contractor_id {
-      c.company_ids.insert(id);
-    }
+    c.company_ids.insert(self.contractor_id);
     c.warehouse_ids.insert(self.warehouse_id);
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = self
-      .contractor_id
-      .and_then(|id| r.companies.get(&id).cloned());
+    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
     self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
   }
 }
@@ -1280,13 +1246,11 @@ impl ResolveFkNames for InventoryAdjustmentResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.storage_ids.insert(self.storage_id);
     c.product_ids.insert(self.product_id);
-    c.company_ids.insert(self.contractor_id);
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
     self.storage_id_name = r.storages.get(&self.storage_id).cloned();
     self.product_id_name = r.products.get(&self.product_id).cloned();
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
   }
 }
 

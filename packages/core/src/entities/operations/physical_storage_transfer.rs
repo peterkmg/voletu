@@ -24,7 +24,7 @@ pub struct Model {
   pub executed_by: Option<Uuid>,
   pub reverted_at: Option<DateTimeUtc>,
   pub reverted_by: Option<Uuid>,
-  pub contractor_id: Option<Uuid>,
+  pub contractor_id: Uuid,
   #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
   pub contractor: HasOne<company::Entity>,
   pub start_cargo_ops: DateTimeUtc,

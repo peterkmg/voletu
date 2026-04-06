@@ -25,6 +25,8 @@ interface DataTableToolbarProps<TData> {
   }[]
   tableMode?: TableMode
   onTableModeChange?: (mode: TableMode) => void
+  /** Optional action buttons (e.g. Create) rendered in the toolbar's right section. */
+  actions?: React.ReactNode
 }
 
 export function DataTableToolbar<TData>({
@@ -34,6 +36,7 @@ export function DataTableToolbar<TData>({
   filters = [],
   tableMode,
   onTableModeChange,
+  actions,
 }: DataTableToolbarProps<TData>) {
   const { t } = useTranslation('common')
   const isFiltered
@@ -100,6 +103,7 @@ export function DataTableToolbar<TData>({
         )}
         <DensityToggle />
         <DataTableViewOptions table={table} />
+        {actions}
       </div>
     </div>
   )

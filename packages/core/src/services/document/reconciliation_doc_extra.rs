@@ -87,7 +87,6 @@ impl DocumentService {
       .with(warehouse::Entity) // doc-level warehouse
       .with((inventory_adjustment::Entity, product::Entity))
       .with((inventory_adjustment::Entity, storage::Entity))
-      .with((inventory_adjustment::Entity, company::Entity)) // adjustment-level contractor
       .order_by_desc(inventory_reconciliation::Column::Date)
       .paginate(db, per_page)
       .fetch_page(page - 1)

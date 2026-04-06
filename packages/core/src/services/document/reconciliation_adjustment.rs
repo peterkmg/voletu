@@ -38,7 +38,6 @@ fn apply_adjustment_update(
 ) {
   set_if_some(&mut model.storage_id, req.storage_id);
   set_if_some(&mut model.product_id, req.product_id);
-  set_if_some(&mut model.contractor_id, req.contractor_id);
   set_if_some(&mut model.adjustment_type, req.adjustment_type);
   set_if_some(&mut model.amount, req.amount);
   set_if_some_mapped(&mut model.reason, req.reason.clone(), Some);

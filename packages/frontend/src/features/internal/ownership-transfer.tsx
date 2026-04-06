@@ -35,13 +35,13 @@ function getColumns(t: TFunction): ColumnDef<OwnershipTransferFlatRow>[] {
   return [
     // Document-level columns (groupRole: 'doc' — shown only on first row of group)
     { ...dateColumn<OwnershipTransferFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
-    { ...statusColumn<OwnershipTransferFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<OwnershipTransferFlatRow>('productIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<OwnershipTransferFlatRow>('storageIdName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<OwnershipTransferFlatRow>('fromContractorIdName', t('common:columns.fromContractor')), meta: { label: t('common:columns.fromContractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<OwnershipTransferFlatRow>('toContractorIdName', t('common:columns.toContractor')), meta: { label: t('common:columns.toContractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<OwnershipTransferFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<OwnershipTransferFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<OwnershipTransferFlatRow>('fromContractorIdName', t('common:columns.fromContractor'), { primary: false }), meta: { label: t('common:columns.fromContractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<OwnershipTransferFlatRow>('toContractorIdName', t('common:columns.toContractor'), { primary: false }), meta: { label: t('common:columns.toContractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<OwnershipTransferFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    { ...statusColumn<OwnershipTransferFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     // Actions (doc-level)
     { ...actionsColumn<OwnershipTransferFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
@@ -51,7 +51,7 @@ const route = getRouteApi('/_authenticated/internal/ownership-transfer/')
 const detailRoute = getRouteApi('/_authenticated/internal/ownership-transfer/$id')
 const globalFilterFn = createGlobalFilter<OwnershipTransferFlatRow>('productIdName', 'fromContractorIdName', 'toContractorIdName')
 
-function OwnershipTransferTable({ data }: { data: OwnershipTransferFlatRow[] }) {
+function OwnershipTransferTable({ data, actions }: { data: OwnershipTransferFlatRow[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="ownership-transfer"
@@ -61,6 +61,7 @@ function OwnershipTransferTable({ data }: { data: OwnershipTransferFlatRow[] }) 
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
       groupKey="documentId"
+      actions={actions}
     />
   )
 }
@@ -102,7 +103,8 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
 const DeleteDialog = createDeleteDialog({ useEntity, hardDeleteFn: ownershipDocumentHardDelete, softDeleteFn: ownershipDocumentSoftDelete, queryKey: flowOwnershipTransferFlatQueryQueryKey, entityLabel: 'common:nav.ownershipTransfer', i18nNamespaces: ['common'] })
 
 function OwnershipLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: OwnershipTransferFlatRow | null, variant: 'execute' | 'revert' }) {
-  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={ownershipDocumentExecute} revertFn={ownershipDocumentRevert} queryKey={flowOwnershipTransferFlatQueryQueryKey()} entityLabel="Ownership Transfer" />
+  const { t } = useTranslation(['common'])
+  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={ownershipDocumentExecute} revertFn={ownershipDocumentRevert} queryKey={flowOwnershipTransferFlatQueryQueryKey()} entityLabel={t('common:document.ownershipTransfer')} />
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: OwnershipLifecycleDialog, lifecyclePropName: 'variant' })
@@ -128,7 +130,7 @@ export function OwnershipTransferDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.ownershipTransfer'), entityLabel: 'Ownership Transfer', backTo: '/internal/ownership-transfer', executeFn: ownershipDocumentExecute, revertFn: ownershipDocumentRevert, queryKey: flowOwnershipTransferFlatQueryQueryKey(), statusColorMap: statusColors }}
+      config={{ title: t('common:nav.ownershipTransfer'), entityLabel: t('common:document.ownershipTransfer'), backTo: '/internal/ownership-transfer', executeFn: ownershipDocumentExecute, revertFn: ownershipDocumentRevert, queryKey: flowOwnershipTransferFlatQueryQueryKey(), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.id, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">

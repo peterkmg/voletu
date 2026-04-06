@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { RelatedDocument } from '~/components/document/related-documents'
-import type { AcceptanceItemResponse, TruckReceiptPipelineResponse } from '~/generated/types'
+import type { AcceptanceItemResponse, TruckReceiptPipelineResponse, TruckWaybillItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
@@ -18,7 +18,7 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { acceptanceDocumentExecute, acceptanceDocumentRevert, transportTruckWaybillCreate } from '~/generated/client'
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
-import { useTransportTruckWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillGet'
+import { useTransportTruckWaybillCompositeGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillCompositeGet'
 import { flowTruckReceiptQueryQueryKey, useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
@@ -45,9 +45,9 @@ function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
     textColumn<TruckReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
     textColumn<TruckReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
     numericColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty')),
-    statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
     textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
     numericColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
+    statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
     actionsColumn<TruckReceiptPipelineResponse>(DataTableRowActions, 1),
   ]
 }
@@ -56,7 +56,7 @@ const route = getRouteApi('/_authenticated/incoming/truck/')
 const detailRoute = getRouteApi('/_authenticated/incoming/truck/$id')
 const globalFilterFn = createGlobalFilter<TruckReceiptPipelineResponse>('basisDocumentNumber', 'contractorName')
 
-function TruckReceiptTable({ data }: { data: TruckReceiptPipelineResponse[] }) {
+function TruckReceiptTable({ data, actions }: { data: TruckReceiptPipelineResponse[], actions?: React.ReactNode }) {
   return (
     <EntityTable
       tableId="truck-receipt"
@@ -65,6 +65,7 @@ function TruckReceiptTable({ data }: { data: TruckReceiptPipelineResponse[] }) {
       routeApi={route}
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
+      actions={actions}
     />
   )
 }
@@ -94,7 +95,7 @@ function WaybillMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChan
   })
 
   return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description="Truck Waybill" formId="truck-waybill-form" isSubmitting={form.formState.isSubmitting}>
+    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description={t('common:document.truckWaybill')} formId="truck-waybill-form" isSubmitting={form.formState.isSubmitting}>
       <Form {...form}>
         <form id="truck-waybill-form" onSubmit={handleSubmit} className="space-y-5">
           <TextField<WaybillFormValues> name="documentNumber" label={t('common:table.documentNumber')} />
@@ -130,9 +131,10 @@ export function TruckReceiptDetail() {
   const { id } = detailRoute.useParams()
   const { t } = useTranslation(['common'])
 
-  // Try both: waybill (pending) and acceptance (draft/executed)
-  const waybillQuery = useTransportTruckWaybillGet(id, { embed: 'names' })
-  const acceptanceQuery = useAcceptanceCompositeGet(id, { embed: 'names' })
+  // Try both: waybill (pending) and acceptance (draft/executed).
+  // One will 404 depending on which type the ID belongs to — suppress error toasts for expected 404s.
+  const waybillQuery = useTransportTruckWaybillCompositeGet(id, { embed: 'names' }, { query: { retry: false, meta: { suppressErrorToast: true } } })
+  const acceptanceQuery = useAcceptanceCompositeGet(id, { embed: 'names' }, { query: { retry: false, meta: { suppressErrorToast: true } } })
 
   const isLoading = waybillQuery.isLoading && acceptanceQuery.isLoading
 
@@ -145,8 +147,8 @@ export function TruckReceiptDetail() {
     return (
       <DocumentDetailPage
         config={{
-          title: 'Acceptance Document',
-          entityLabel: 'Acceptance',
+          title: t('common:document.acceptance'),
+          entityLabel: t('common:document.acceptance'),
           backTo: '/incoming/truck',
           executeFn: acceptanceDocumentExecute,
           revertFn: acceptanceDocumentRevert,
@@ -158,7 +160,7 @@ export function TruckReceiptDetail() {
         relatedContent={(() => {
           const docs: RelatedDocument[] = []
           if (doc.truckWaybillId) {
-            docs.push({ type: 'basis', label: 'Truck Waybill', documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: 'Pending', statusColorMap: statusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
+            docs.push({ type: 'basis', label: t('common:document.truckWaybill'), documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: t('common:document.pendingAcceptance'), statusColorMap: statusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
           }
           return <RelatedDocuments documents={docs} />
         })()}
@@ -167,6 +169,10 @@ export function TruckReceiptDetail() {
             <div>
               <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
               <p>{formatDate(doc.dateAccepted)}</p>
+            </div>
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+              <p>{doc.contractorIdName ?? '—'}</p>
             </div>
             <div>
               <span className="text-sm text-muted-foreground">{t('common:table.source')}</span>
@@ -180,7 +186,6 @@ export function TruckReceiptDetail() {
             columns={[
               textColumn<AcceptanceItemResponse>('productIdName', t('common:table.product')),
               textColumn<AcceptanceItemResponse>('storageIdName', t('common:columns.storage')),
-              textColumn<AcceptanceItemResponse>('contractorIdName', t('common:table.contractor')),
               numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
             ]}
             isLocked={doc.status === 'EXECUTED'}
@@ -202,28 +207,38 @@ export function TruckReceiptDetail() {
 
   // Otherwise show waybill detail (pending)
   if (waybillQuery.data?.data) {
-    const wb = waybillQuery.data.data
+    const composite = waybillQuery.data.data
+    const wb = composite.waybill
+    const noOp = async () => {}
     return (
-      <div className="mx-auto max-w-4xl space-y-6 p-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold">
-            Truck Waybill
-            {' '}
-            <span className="text-muted-foreground">{wb.documentNumber}</span>
-          </h1>
-          <span className="rounded-full bg-amber-100/30 px-3 py-1 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Pending Acceptance</span>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{formatDate(wb.date)}</p>
+      <DocumentDetailPage
+        config={{ title: t('common:document.truckWaybill'), entityLabel: t('common:document.truckWaybill'), backTo: '/incoming/truck', executeFn: noOp, revertFn: noOp, queryKey: flowTruckReceiptQueryQueryKey(), statusColorMap: statusColors }}
+        document={{ id: wb.id, documentNumber: wb.documentNumber, status: 'PENDING' }}
+        subtitle={t('common:nav.truckReceipt')}
+        formContent={(
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
+              <p>{formatDate(wb.date)}</p>
+            </div>
+            <div>
+              <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
+              <p>{wb.senderIdName ?? wb.senderId}</p>
+            </div>
           </div>
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
-            <p>{wb.senderIdName ?? wb.senderId}</p>
-          </div>
-        </div>
-      </div>
+        )}
+        itemsContent={composite.items?.length ? (
+          <ChildItemsTable
+            items={composite.items}
+            columns={[
+              textColumn<TruckWaybillItemResponse>('productIdName', t('common:table.product')),
+              numericColumn<TruckWaybillItemResponse>('declaredAmount', t('common:table.declaredQty')),
+            ]}
+            isLocked={false}
+            sectionTitle={t('common:sections.waybillItems')}
+          />
+        ) : undefined}
+      />
     )
   }
 
