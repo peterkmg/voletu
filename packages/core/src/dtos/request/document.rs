@@ -14,6 +14,7 @@ pub struct CreateAcceptanceRequest {
   pub arrival_type: ArrivalType,
   #[validate(length(min = 1))]
   pub source_entity: Option<String>,
+  pub contractor_id: Option<Uuid>,
   pub truck_waybill_id: Option<Uuid>,
   pub rail_waybill_id: Option<Uuid>,
   pub transit_dispatch_id: Option<Uuid>,
@@ -27,6 +28,7 @@ pub struct UpdateAcceptanceRequest {
   pub arrival_type: Option<ArrivalType>,
   #[validate(length(min = 1))]
   pub source_entity: Option<String>,
+  pub contractor_id: Option<Uuid>,
   pub truck_waybill_id: Option<Uuid>,
   pub rail_waybill_id: Option<Uuid>,
   pub transit_dispatch_id: Option<Uuid>,
@@ -205,6 +207,7 @@ pub struct CreatePhysicalTransferRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
   pub date: DateTime<Utc>,
+  pub contractor_id: Option<Uuid>,
   pub start_cargo_ops: DateTime<Utc>,
   pub end_cargo_ops: DateTime<Utc>,
   #[validate(length(min = 1), nested)]
@@ -216,6 +219,7 @@ pub struct UpdatePhysicalTransferRequest {
   #[validate(length(min = 1))]
   pub document_number: Option<String>,
   pub date: Option<DateTime<Utc>>,
+  pub contractor_id: Option<Uuid>,
   pub start_cargo_ops: Option<DateTime<Utc>>,
   pub end_cargo_ops: Option<DateTime<Utc>>,
 }
@@ -370,6 +374,7 @@ pub struct CreateInventoryReconciliationRequest {
   #[validate(length(min = 1))]
   pub document_number: String,
   pub date: DateTime<Utc>,
+  pub contractor_id: Option<Uuid>,
   pub warehouse_id: Uuid,
 }
 
@@ -378,6 +383,7 @@ pub struct UpdateInventoryReconciliationRequest {
   #[validate(length(min = 1))]
   pub document_number: Option<String>,
   pub date: Option<DateTime<Utc>>,
+  pub contractor_id: Option<Uuid>,
   pub warehouse_id: Option<Uuid>,
 }
 

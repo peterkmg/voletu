@@ -68,6 +68,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       status: Set(enums::DocumentStatus::Draft),
       version: Set(1),
       arrival_type: Set(enums::ArrivalType::Truck),
+      contractor_id: Set(Some(fix.contractor_a_id)),
       truck_waybill_id: Set(Some(wb2.id)),
       ..Default::default()
     }
@@ -89,9 +90,10 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
     let acc3 = acceptance_document::ActiveModel {
       document_number: Set("ACC-002".into()),
       date_accepted: Set(chrono::Utc::now()),
-      status: Set(enums::DocumentStatus::Posted),
+      status: Set(enums::DocumentStatus::Executed),
       version: Set(1),
       arrival_type: Set(enums::ArrivalType::Truck),
+      contractor_id: Set(Some(fix.contractor_a_id)),
       truck_waybill_id: Set(Some(wb3.id)),
       ..Default::default()
     }
@@ -189,6 +191,132 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       .await
       .unwrap();
     assert_eq!(page2.len(), 1);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn acceptance_flat_query_returns_one_row_per_item() {
+  let actor = Uuid::now_v7();
+  let origin = Uuid::now_v7();
+
+  with_audit_context(actor, origin, || async {
+    let db = Arc::new(setup_db().await);
+    let fix = seed_inventory_fixture(&db).await;
+    let mut cfg = crate::common::test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let svc = DocumentService::new(db.clone(), ledger, audit);
+
+    // Create acceptance doc with 2 items
+    let doc = acceptance_document::ActiveModel {
+      document_number: Set("ACC-FLAT-001".into()),
+      date_accepted: Set(chrono::Utc::now()),
+      status: Set(enums::DocumentStatus::Draft),
+      version: Set(1),
+      arrival_type: Set(enums::ArrivalType::External),
+      source_entity: Set(Some("Test Source".into())),
+      contractor_id: Set(Some(fix.contractor_a_id)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let _item1 = acceptance_item::ActiveModel {
+      acceptance_doc_id: Set(doc.id),
+      product_id: Set(fix.product_a_id),
+      storage_id: Set(fix.storage_a_id),
+      contractor_id: Set(fix.contractor_a_id),
+      accepted_amount: Set(Decimal::new(1000, 0)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let _item2 = acceptance_item::ActiveModel {
+      acceptance_doc_id: Set(doc.id),
+      product_id: Set(fix.product_b_id),
+      storage_id: Set(fix.storage_b_id),
+      contractor_id: Set(fix.contractor_b_id),
+      accepted_amount: Set(Decimal::new(2000, 0)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    // Create a second doc with 1 item
+    let doc2 = acceptance_document::ActiveModel {
+      document_number: Set("ACC-FLAT-002".into()),
+      date_accepted: Set(chrono::Utc::now()),
+      status: Set(enums::DocumentStatus::Executed),
+      version: Set(1),
+      arrival_type: Set(enums::ArrivalType::External),
+      contractor_id: Set(Some(fix.contractor_a_id)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    acceptance_item::ActiveModel {
+      acceptance_doc_id: Set(doc2.id),
+      product_id: Set(fix.product_a_id),
+      storage_id: Set(fix.storage_a_id),
+      contractor_id: Set(fix.contractor_a_id),
+      accepted_amount: Set(Decimal::new(500, 0)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    // --- All rows: should get 3 (2 items from doc1 + 1 item from doc2) ---
+    let all = svc
+      .acceptance_flat_query(None, Some(1), Some(50))
+      .await
+      .unwrap();
+    assert_eq!(all.len(), 3, "Expected 3 flat rows (2 + 1 items)");
+
+    // Check document fields are repeated for items in same group
+    let doc1_rows: Vec<_> = all.iter().filter(|r| r.document_number == "ACC-FLAT-001").collect();
+    assert_eq!(doc1_rows.len(), 2, "Doc1 should have 2 rows (2 items)");
+    assert_eq!(doc1_rows[0].document_id, doc1_rows[1].document_id, "Same document_id for grouped rows");
+    assert_eq!(doc1_rows[0].status, enums::DocumentStatus::Draft);
+
+    // Check resolved names
+    let has_product_a = doc1_rows.iter().any(|r| r.product_id_name == "Product A");
+    let has_product_b = doc1_rows.iter().any(|r| r.product_id_name == "Product B");
+    assert!(has_product_a, "Should resolve Product A name");
+    assert!(has_product_b, "Should resolve Product B name");
+
+    let has_tank_a = doc1_rows.iter().any(|r| r.storage_id_name == "Tank A");
+    let has_tank_b = doc1_rows.iter().any(|r| r.storage_id_name == "Tank B");
+    assert!(has_tank_a, "Should resolve Tank A name");
+    assert!(has_tank_b, "Should resolve Tank B name");
+
+    // Check doc2 rows
+    let doc2_rows: Vec<_> = all.iter().filter(|r| r.document_number == "ACC-FLAT-002").collect();
+    assert_eq!(doc2_rows.len(), 1, "Doc2 should have 1 row");
+    assert_eq!(doc2_rows[0].status, enums::DocumentStatus::Executed);
+
+    // --- Filter by status ---
+    let drafts = svc
+      .acceptance_flat_query(Some(enums::DocumentStatus::Draft), Some(1), Some(50))
+      .await
+      .unwrap();
+    assert_eq!(drafts.len(), 2, "Only draft doc's 2 items");
+    assert!(drafts.iter().all(|r| r.document_number == "ACC-FLAT-001"));
+
+    let posted = svc
+      .acceptance_flat_query(Some(enums::DocumentStatus::Executed), Some(1), Some(50))
+      .await
+      .unwrap();
+    assert_eq!(posted.len(), 1, "Only posted doc's 1 item");
+    assert_eq!(posted[0].document_number, "ACC-FLAT-002");
   })
   .await;
 }

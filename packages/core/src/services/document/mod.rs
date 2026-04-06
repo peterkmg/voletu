@@ -7,6 +7,7 @@ use crate::services::{audit::AuditService, ledger::LedgerService};
 pub mod acceptance_doc;
 pub mod acceptance_doc_extra;
 pub mod acceptance_item;
+pub mod cargo_flow;
 pub mod blending_component;
 pub mod blending_doc;
 pub mod blending_doc_extra;

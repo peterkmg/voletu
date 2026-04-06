@@ -4,6 +4,7 @@ import { useCallback, useRef } from 'react'
 import { TableBody } from '~/components/ui/table'
 import { DataRow } from './table-data-row'
 import { EmptyState, TableSkeleton } from './table-states'
+import { computeGroupInfo } from './table-utils'
 
 interface VirtualTableBodyProps<TData> {
   table: TanstackTable<TData>
@@ -18,6 +19,8 @@ interface VirtualTableBodyProps<TData> {
   emptyMessage?: string
   emptyIcon?: React.ReactNode
   onRowAction?: (row: TData) => void
+  /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
+  groupKey?: string
 }
 
 export function VirtualTableBody<TData>({
@@ -32,6 +35,7 @@ export function VirtualTableBody<TData>({
   emptyMessage,
   emptyIcon,
   onRowAction,
+  groupKey,
 }: VirtualTableBodyProps<TData>) {
   const { rows } = table.getRowModel()
 
@@ -151,6 +155,7 @@ export function VirtualTableBody<TData>({
             onRowAction={onRowAction}
             measureRef={virtualizer.measureElement}
             virtualStart={virtualRow.start}
+            groupInfo={groupKey ? computeGroupInfo(rows, virtualRow.index, groupKey) : undefined}
           />
         )
       })}

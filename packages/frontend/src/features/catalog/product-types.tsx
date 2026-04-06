@@ -36,7 +36,7 @@ function getProductTypeColumns(t: TFunction): ColumnDef<ProductTypeResponse>[] {
   return [
     textColumn<ProductTypeResponse>('commonName', t('catalog:productType.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
     textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false, sizing: 'capped', maxSize: 300 }),
-    dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')),
+    { ...dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductTypeResponse>(DataTableRowActions, 2),
   ]
 }

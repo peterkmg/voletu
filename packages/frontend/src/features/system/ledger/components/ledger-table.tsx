@@ -16,7 +16,7 @@ import {
 } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DataTableColumnHeader, DataTablePagination, DataTableToolbar, getGridTemplate } from '~/components/data-table'
+import { DataTableColumnHeader, DataTablePagination, DataTableToolbar, getGridTemplate, numericColumn } from '~/components/data-table'
 import {
   Table,
   TableBody,
@@ -72,20 +72,7 @@ function getLedgerColumns(t: TFunction): ColumnDef<LedgerEntryResponse>[] {
         </span>
       ),
     },
-    {
-      accessorKey: 'currentAmount',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('system:ledger.columns.quantity')}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.getValue('currentAmount')}
-        </span>
-      ),
-    },
+    numericColumn<LedgerEntryResponse>('currentAmount', t('system:ledger.columns.quantity')),
     {
       accessorKey: 'createdAt',
       header: ({ column }) => (

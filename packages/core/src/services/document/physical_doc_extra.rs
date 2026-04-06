@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use sea_orm::{
   ColumnTrait,
   Condition,
@@ -5,6 +7,7 @@ use sea_orm::{
   EntityTrait,
   PaginatorTrait,
   QueryFilter,
+  QueryOrder,
   TransactionTrait,
 };
 use uuid::Uuid;
@@ -15,8 +18,9 @@ use crate::{
     CreatePhysicalTransferItemRequest,
     CreatePhysicalTransferRequest,
     PhysicalTransferResponse,
+    response::pipeline::PhysicalTransferFlatRow,
   },
-  entities::{physical_storage_transfer, physical_transfer_item},
+  entities::{company, physical_storage_transfer, physical_transfer_item, product, storage},
   enums,
   services::document::DocumentService,
 };
@@ -52,7 +56,7 @@ impl DocumentService {
       .physical_transfer_execute_no_tx(&txn, response.id, actor_id)
       .await?;
 
-    response.status = crate::enums::DocumentStatus::Posted;
+    response.status = crate::enums::DocumentStatus::Executed;
 
     txn.commit().await?;
 
@@ -150,5 +154,105 @@ impl DocumentService {
     }
 
     Ok(out)
+  }
+
+  /// Returns one row per physical transfer item with document fields repeated.
+  /// Used by the grouped-row list table on the frontend.
+  ///
+  /// `from_storage` is resolved via the entity loader relationship.
+  /// `to_storage` has no `belongs_to` on the entity, so we resolve it
+  /// in-memory by batch-fetching storage records for all `to_storage_id` values.
+  pub async fn physical_transfer_flat_query(
+    &self,
+    status: Option<enums::DocumentStatus>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<PhysicalTransferFlatRow>, ApiError> {
+    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let db = self.db.as_ref();
+
+    let mut cond = Condition::all().add(physical_storage_transfer::Column::DeletedAt.is_null());
+    if let Some(s) = status {
+      cond = cond.add(physical_storage_transfer::Column::Status.eq(s));
+    }
+
+    let docs: Vec<physical_storage_transfer::ModelEx> = physical_storage_transfer::Entity::load()
+      .filter(cond)
+      .with(company::Entity)
+      .with((physical_transfer_item::Entity, product::Entity))
+      .with((physical_transfer_item::Entity, storage::Entity)) // from_storage
+      .order_by_desc(physical_storage_transfer::Column::Date)
+      .paginate(db, per_page)
+      .fetch_page(page - 1)
+      .await?;
+
+    // Collect all to_storage_id values and batch-fetch storage names.
+    let to_storage_ids: Vec<Uuid> = docs
+      .iter()
+      .flat_map(|d| d.items.iter().map(|i| i.to_storage_id))
+      .collect();
+
+    let to_storage_map: HashMap<Uuid, String> = if to_storage_ids.is_empty() {
+      HashMap::new()
+    } else {
+      let storages = storage::Entity::find()
+        .filter(storage::Column::Id.is_in(to_storage_ids))
+        .all(db)
+        .await?;
+      storages.into_iter().map(|s| (s.id, s.common_name)).collect()
+    };
+
+    let mut rows = Vec::new();
+    for doc in &docs {
+      let contractor_name = doc
+        .contractor
+        .as_ref()
+        .map(|c| c.common_name.clone())
+        .unwrap_or("\u{2014}".to_string());
+
+      if doc.items.is_empty() {
+        rows.push(PhysicalTransferFlatRow {
+          id: doc.id,
+          document_id: doc.id,
+          document_number: doc.document_number.clone(),
+          date: doc.date.to_string(),
+          status: doc.status,
+          contractor_id_name: contractor_name.clone(),
+          item_id: doc.id,
+          product_id_name: "\u{2014}".to_string(),
+          from_storage_id_name: "\u{2014}".to_string(),
+          to_storage_id_name: "\u{2014}".to_string(),
+          amount: Default::default(),
+        });
+      }
+      for item in &doc.items {
+        rows.push(PhysicalTransferFlatRow {
+          id: doc.id,
+          document_id: doc.id,
+          document_number: doc.document_number.clone(),
+          date: doc.date.to_string(),
+          status: doc.status,
+          contractor_id_name: contractor_name.clone(),
+          item_id: item.id,
+          product_id_name: item
+            .product
+            .as_ref()
+            .map(|p| p.common_name.clone())
+            .unwrap_or_default(),
+          from_storage_id_name: item
+            .from_storage
+            .as_ref()
+            .map(|s| s.common_name.clone())
+            .unwrap_or_default(),
+          to_storage_id_name: to_storage_map
+            .get(&item.to_storage_id)
+            .cloned()
+            .unwrap_or_default(),
+          amount: item.amount,
+        });
+      }
+    }
+
+    Ok(rows)
   }
 }

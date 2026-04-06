@@ -29,7 +29,7 @@ export function LifecycleActions({
   const [dialogAction, setDialogAction] = useState<'execute' | 'revert'>('execute')
 
   const isDraft = status === 'DRAFT'
-  const isPosted = status === 'POSTED'
+  const isPosted = status === 'EXECUTED'
 
   const canExecute = isDraft && isSupervisorOrHigher(user?.role)
   const canRevert = isPosted && isSeniorOrHigher(user?.role)

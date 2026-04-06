@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
 } from '~/components/ui/tooltip'
 import { formatAmount, formatDate, formatDateTime, truncateId } from '~/lib/formatters'
+import { cn } from '~/lib/utils'
 
 export const NullCell = memo(() => (
   <span className="text-muted-foreground">&mdash;</span>
@@ -41,11 +42,17 @@ export const NumericCell = memo(({
 }) => {
   if (value == null)
     return <NullCell />
+  const num = typeof value === 'string' ? Number.parseFloat(value) : value
   const display = padWidth
     ? String(value).padStart(padWidth, '0')
     : formatAmount(value, unit)
+  const colorClass = Number.isNaN(num) || num === 0
+    ? undefined
+    : num < 0
+      ? 'text-red-600 dark:text-red-400'
+      : 'text-green-700 dark:text-green-400'
   return (
-    <span className="text-sm tabular-nums">{display}</span>
+    <span className={cn('text-sm tabular-nums', colorClass)}>{display}</span>
   )
 })
 

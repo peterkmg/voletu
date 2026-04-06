@@ -1,39 +1,22 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
+import type { CargoFlowFlatRow } from '~/generated/types'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Plus, Search } from 'lucide-react'
-import { useMemo } from 'react'
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, ChevronDown, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, DataTableColumnHeader, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
+import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Skeleton } from '~/components/ui/skeleton'
-import { useAcceptanceDocumentQuery } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentQuery'
-import { useDispatchDocumentQuery } from '~/generated/hooks/DocumentDispatchHooks/useDispatchDocumentQuery'
-import { useBlendingDocumentList } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
-import { useOwnershipTransferList } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferList'
-import { usePhysicalTransferList } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferList'
-import { useReconciliationList } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationList'
-import { useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
-import { useRailReceiptPipelineQuery } from '~/generated/hooks/FlowsHooks/useRailReceiptPipelineQuery'
-import { useTruckDispatchPipelineQuery } from '~/generated/hooks/FlowsHooks/useTruckDispatchPipelineQuery'
-import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
+import { useFlowCargoFlowFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowCargoFlowFlatQuery'
+import { flowTypeColors, statusColors } from '~/lib/badge-colors'
+import { cn } from '~/lib/utils'
 
-interface CargoFlowRow {
-  id: string
-  documentNumber: string
-  date: string
-  type: string
-  operation: string
-  contractorName: string
-  status: string
-  flowRoute: string
-}
-
-function CargoFlowRowActions({ row }: { row: { original: CargoFlowRow } }) {
+function CargoFlowRowActions({ row }: { row: { original: CargoFlowFlatRow } }) {
   const navigate = useNavigate()
   const { t } = useTranslation('common')
 
@@ -44,86 +27,53 @@ function CargoFlowRowActions({ row }: { row: { original: CargoFlowRow } }) {
           label: t('actions.viewDetails'),
           icon: Search,
           inline: true,
-          onClick: () => navigate({ to: `${row.original.flowRoute}/${row.original.id}` }),
+          onClick: () => navigate({ to: `${row.original.flowRoute}/${row.original.documentId}` }),
         },
       ]}
     />
   )
 }
 
-const cargoFlowStatusColors = { ...documentStatusColors, ...pipelineStatusColors }
+const cargoFlowStatusColors = statusColors
 
-function getColumns(t: TFunction): ColumnDef<CargoFlowRow>[] {
+function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
   return [
-    textColumn<CargoFlowRow>('type', 'Type', { primary: false, sizing: 'capped', maxSize: 120 }),
-    textColumn<CargoFlowRow>('operation', 'Operation', { primary: false, sizing: 'capped', maxSize: 180 }),
-    textColumn<CargoFlowRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
-    dateColumn<CargoFlowRow>('date', t('common:table.date')),
-    textColumn<CargoFlowRow>('contractorName', t('common:table.contractor'), { primary: false }),
-    statusColumn<CargoFlowRow>('status', t('common:table.status'), cargoFlowStatusColors),
-    { id: 'actions', cell: ({ row }) => <CargoFlowRowActions row={row} />, size: 48, minSize: 48, maxSize: 48, enableHiding: false, enableResizing: false, meta: { sizingCategory: 'fixed' as const } },
+    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+    {
+      accessorKey: 'type',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      minSize: 130,
+      maxSize: 130,
+      meta: { label: 'Type', sizingCategory: 'capped', groupRole: 'doc' as const },
+      cell: ({ row }) => {
+        const type = row.getValue('type') as string
+        const Icon = type === 'Incoming' ? ArrowDownToLine : type === 'Outgoing' ? ArrowUpFromLine : ArrowLeftRight
+        return (
+          <Badge variant="outline" className={cn('shrink-0', flowTypeColors[type])}>
+            <Icon className="size-3" />
+            {type}
+          </Badge>
+        )
+      },
+    },
+    { ...textColumn<CargoFlowFlatRow>('operation', 'Operation', { primary: false, sizing: 'capped', maxSize: 180 }), meta: { label: 'Operation', sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...textColumn<CargoFlowFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...dateColumn<CargoFlowFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
+    { ...textColumn<CargoFlowFlatRow>('contractorName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
+    { ...statusColumn<CargoFlowFlatRow>('status', t('common:table.status'), cargoFlowStatusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    // Item-level columns (groupRole: 'item' — shown on every row)
+    { ...textColumn<CargoFlowFlatRow>('productName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<CargoFlowFlatRow>('storageName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...numericColumn<CargoFlowFlatRow>('quantity', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    // Actions (doc-level)
+    { ...actionsColumn<CargoFlowFlatRow>(CargoFlowRowActions, 1), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }
 
 const route = getRouteApi('/_authenticated/cargo-flow/')
-const globalFilterFn = createGlobalFilter<CargoFlowRow>('documentNumber', 'contractorName', 'operation')
+const globalFilterFn = createGlobalFilter<CargoFlowFlatRow>('documentNumber', 'contractorName', 'operation', 'productName', 'storageName')
 
-function useCargoFlowData(): { data: CargoFlowRow[], isLoading: boolean } {
-  const truckReceipt = useFlowTruckReceiptQuery()
-  const railReceipt = useRailReceiptPipelineQuery()
-  const truckDispatch = useTruckDispatchPipelineQuery()
-  const externalAcceptance = useAcceptanceDocumentQuery({ truckWaybillId: 'isNull' as any, railWaybillId: 'isNull' as any, transitDispatchId: 'isNull' as any })
-  const directDispatch = useDispatchDocumentQuery({ dispatchMethod: 'VESSEL_TERMINAL' as any, dispatchPurpose: 'EXTERNAL' as any, embed: 'names' })
-  const bunkering = useDispatchDocumentQuery({ dispatchMethod: 'BUNKERING' as any, embed: 'names' })
-  const blending = useBlendingDocumentList({ embed: 'names' })
-  const physical = usePhysicalTransferList()
-  const ownership = useOwnershipTransferList()
-  const reconciliation = useReconciliationList()
-
-  const isLoading = truckReceipt.isLoading || railReceipt.isLoading || truckDispatch.isLoading
-
-  const data = useMemo(() => {
-    const rows: CargoFlowRow[] = []
-
-    for (const r of truckReceipt.data?.data ?? []) {
-      rows.push({ id: r.pipelineStatus === 'PENDING' ? r.id : (r.actionId ?? r.id), documentNumber: r.actionDocumentNumber ?? r.basisDocumentNumber, date: r.basisDate, type: 'Incoming', operation: 'Truck Receipt', contractorName: r.contractorName, status: r.pipelineStatus, flowRoute: '/incoming/truck' })
-    }
-    for (const r of railReceipt.data?.data ?? []) {
-      rows.push({ id: r.pipelineStatus === 'PENDING' ? r.id : (r.actionId ?? r.id), documentNumber: r.actionDocumentNumber ?? r.basisDocumentNumber, date: r.basisDate, type: 'Incoming', operation: 'Rail Receipt', contractorName: r.contractorName, status: r.pipelineStatus, flowRoute: '/incoming/rail' })
-    }
-    for (const r of truckDispatch.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.date, type: 'Outgoing', operation: 'Truck Dispatch', contractorName: r.contractorName, status: r.pipelineStatus, flowRoute: '/outgoing/truck' })
-    }
-    for (const r of externalAcceptance.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.dateAccepted, type: 'Incoming', operation: 'External Acceptance', contractorName: '', status: r.status, flowRoute: '/incoming/external' })
-    }
-    for (const r of directDispatch.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.date, type: 'Outgoing', operation: 'Direct Dispatch', contractorName: r.contractorIdName ?? '', status: r.status, flowRoute: '/outgoing/direct' })
-    }
-    for (const r of bunkering.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.date, type: 'Outgoing', operation: 'Bunkering', contractorName: r.contractorIdName ?? '', status: r.status, flowRoute: '/outgoing/bunkering' })
-    }
-    for (const r of blending.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.date, type: 'Internal', operation: 'Blending', contractorName: r.contractorIdName ?? '', status: r.status, flowRoute: '/internal/blending' })
-    }
-    for (const r of physical.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.date, type: 'Internal', operation: 'Physical Transfer', contractorName: '', status: r.status, flowRoute: '/internal/physical-transfer' })
-    }
-    for (const r of ownership.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.id, date: r.date, type: 'Internal', operation: 'Ownership Transfer', contractorName: '', status: r.status, flowRoute: '/internal/ownership-transfer' })
-    }
-    for (const r of reconciliation.data?.data ?? []) {
-      rows.push({ id: r.id, documentNumber: r.documentNumber, date: r.date, type: 'Internal', operation: 'Reconciliation', contractorName: '', status: r.status, flowRoute: '/internal/reconciliation' })
-    }
-
-    rows.sort((a, b) => b.date.localeCompare(a.date))
-    return rows
-  }, [truckReceipt.data, railReceipt.data, truckDispatch.data, externalAcceptance.data, directDispatch.data, bunkering.data, blending.data, physical.data, ownership.data, reconciliation.data])
-
-  return { data, isLoading }
-}
-
-function CargoFlowTable({ data }: { data: CargoFlowRow[] }) {
+function CargoFlowTable({ data }: { data: CargoFlowFlatRow[] }) {
   return (
     <EntityTable
       tableId="cargo-flow"
@@ -132,6 +82,7 @@ function CargoFlowTable({ data }: { data: CargoFlowRow[] }) {
       routeApi={route}
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
+      groupKey="documentId"
     />
   )
 }
@@ -178,7 +129,7 @@ function CreateDropdown() {
 
 export function CargoFlowPage() {
   const { t } = useTranslation(['common'])
-  const { data, isLoading } = useCargoFlowData()
+  const { data, isLoading } = useFlowCargoFlowFlatQuery()
 
   return (
     <>
@@ -201,7 +152,7 @@ export function CargoFlowPage() {
             )
           : (
               <div className="flex flex-1 flex-col min-h-0">
-                <CargoFlowTable data={data} />
+                <CargoFlowTable data={data?.data ?? []} />
               </div>
             )}
       </Main>

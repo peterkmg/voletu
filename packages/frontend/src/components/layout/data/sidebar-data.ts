@@ -4,11 +4,11 @@ import {
   Anchor,
   ArrowDownToLine,
   ArrowLeftRight,
+  ArrowUpFromLine,
   BarChart3,
   Building2,
   LayoutDashboard,
   Package,
-  PackageOpen,
   RefreshCw,
   Users,
   Warehouse,
@@ -38,7 +38,7 @@ export function getSidebarData(t: TFunction): SidebarData {
           },
           {
             title: t('common:nav.outgoing'),
-            icon: PackageOpen,
+            icon: ArrowUpFromLine,
             items: [
               { title: t('common:nav.truckDispatch'), url: '/outgoing/truck' },
               { title: t('common:nav.directDispatch'), url: '/outgoing/direct' },

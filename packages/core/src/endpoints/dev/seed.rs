@@ -50,9 +50,11 @@ use crate::{
     product,
     product_group,
     product_type,
+    rail_wagon_manifest,
     rail_waybill,
     storage,
     truck_waybill,
+    truck_waybill_item,
     user,
     warehouse,
   },
@@ -421,6 +423,18 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     .insert(db)
     .await?;
     truck_ids.push(model.id);
+
+    let num_items = rng.random_range(1..=2);
+    for _ in 0..num_items {
+      truck_waybill_item::ActiveModel {
+        truck_waybill_id: Set(model.id),
+        product_id: Set(*pick(&mut rng, &target_product_ids)),
+        declared_amount: Set(Decimal::new(rng.random_range(5000..50000) as i64, 0)),
+        ..Default::default()
+      }
+      .insert(db)
+      .await?;
+    }
   }
 
   let mut rail_ids: Vec<Uuid> = Vec::new();
@@ -438,6 +452,24 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     .insert(db)
     .await?;
     rail_ids.push(model.id);
+
+    let num_wagons = rng.random_range(1..=3);
+    for _ in 0..num_wagons {
+      let volume = Decimal::new(rng.random_range(20_000..80_000) as i64, 0);
+      let density = Decimal::new(rng.random_range(700..950) as i64, 1);
+      let mass = volume * density / Decimal::new(10, 0);
+      rail_wagon_manifest::ActiveModel {
+        rail_waybill_id: Set(model.id),
+        wagon_number: Set(format!("{:08}", rng.random_range(10_000_000u32..99_999_999u32))),
+        product_id: Set(*pick(&mut rng, &target_product_ids)),
+        declared_volume: Set(volume),
+        declared_density: Set(density),
+        declared_mass: Set(mass),
+        ..Default::default()
+      }
+      .insert(db)
+      .await?;
+    }
   }
 
   let dispatch_purposes = [DispatchPurpose::External, DispatchPurpose::Internal];
@@ -485,7 +517,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let doc = dispatch_document::ActiveModel {
       document_number: Set(fake_document_number("DIS", idx, &mut rng, now)),
       date: Set(doc_date),
-      status: Set(DocumentStatus::Posted),
+      status: Set(DocumentStatus::Executed),
       version: Set(1),
       executed_at: Set(Some(
         end_ops + Duration::minutes(rng.random_range(15..=180)),
@@ -564,10 +596,11 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       None
     };
 
+    let contractor_id = *pick(&mut rng, &contractor_ids);
     let doc = acceptance_document::ActiveModel {
       document_number: Set(fake_document_number("ACC", idx, &mut rng, now)),
       date_accepted: Set(doc_date),
-      status: Set(DocumentStatus::Posted),
+      status: Set(DocumentStatus::Executed),
       version: Set(1),
       executed_at: Set(Some(
         doc_date + Duration::minutes(rng.random_range(20..=240)),
@@ -580,6 +613,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       truck_waybill_id: Set(truck_waybill_id),
       rail_waybill_id: Set(rail_waybill_id),
       transit_dispatch_id: Set(transit_dispatch_id),
+      contractor_id: Set(Some(contractor_id)),
       ..Default::default()
     }
     .insert(db)
@@ -590,7 +624,6 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     for _ in 0..item_count {
       let amount = rng.random_range(100u64..=11_500u64);
       let product_id = *pick(&mut rng, &target_product_ids);
-      let contractor_id = *pick(&mut rng, &contractor_ids);
       let storage_id = *pick(&mut rng, &storage_ids);
       acceptance_item::ActiveModel {
         acceptance_doc_id: Set(doc.id),
@@ -619,7 +652,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let doc = blending_document::ActiveModel {
       document_number: Set(fake_document_number("BLD", idx, &mut rng, now)),
       date: Set(doc_date),
-      status: Set(DocumentStatus::Posted),
+      status: Set(DocumentStatus::Executed),
       version: Set(1),
       executed_at: Set(Some(
         doc_date + Duration::minutes(rng.random_range(30..=180)),
@@ -681,7 +714,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let doc_date = now - Duration::days(days_ago);
     let doc = ownership_transfer::ActiveModel {
       date: Set(doc_date),
-      status: Set(DocumentStatus::Posted),
+      status: Set(DocumentStatus::Executed),
       version: Set(1),
       executed_at: Set(Some(
         doc_date + Duration::minutes(rng.random_range(15..=120)),
@@ -724,10 +757,11 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let doc_date = now - Duration::days(days_ago);
     let start_ops = doc_date - Duration::hours(rng.random_range(1..=6));
     let end_ops = start_ops + Duration::hours(rng.random_range(1..=6));
+    let contractor_id = *pick(&mut rng, &contractor_ids);
     let doc = physical_storage_transfer::ActiveModel {
       document_number: Set(fake_document_number("PST", idx, &mut rng, now)),
       date: Set(doc_date),
-      status: Set(DocumentStatus::Posted),
+      status: Set(DocumentStatus::Executed),
       version: Set(1),
       executed_at: Set(Some(
         end_ops + Duration::minutes(rng.random_range(10..=120)),
@@ -737,6 +771,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       reverted_by: Set(None),
       start_cargo_ops: Set(start_ops),
       end_cargo_ops: Set(end_ops),
+      contractor_id: Set(Some(contractor_id)),
       ..Default::default()
     }
     .insert(db)
@@ -753,7 +788,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
 
       physical_transfer_item::ActiveModel {
         physical_transfer_id: Set(doc.id),
-        contractor_id: Set(*pick(&mut rng, &contractor_ids)),
+        contractor_id: Set(contractor_id),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
         from_storage_id: Set(from_storage_id),
         to_storage_id: Set(to_storage_id),
@@ -771,10 +806,11 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
   for idx in 0..reconciliation_doc_count {
     let days_ago = rng.random_range(0..=730) as i64;
     let doc_date = now - Duration::days(days_ago);
+    let contractor_id = *pick(&mut rng, &contractor_ids);
     let doc = inventory_reconciliation::ActiveModel {
       document_number: Set(fake_document_number("REC", idx, &mut rng, now)),
       date: Set(doc_date),
-      status: Set(DocumentStatus::Posted),
+      status: Set(DocumentStatus::Executed),
       version: Set(1),
       executed_at: Set(Some(
         doc_date + Duration::minutes(rng.random_range(30..=240)),
@@ -783,6 +819,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       reverted_at: Set(None),
       reverted_by: Set(None),
       warehouse_id: Set(*pick(&mut rng, &warehouse_ids)),
+      contractor_id: Set(Some(contractor_id)),
       ..Default::default()
     }
     .insert(db)
@@ -795,7 +832,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
         reconciliation_id: Set(doc.id),
         storage_id: Set(*pick(&mut rng, &storage_ids)),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
-        contractor_id: Set(*pick(&mut rng, &contractor_ids)),
+        contractor_id: Set(contractor_id),
         adjustment_type: Set(*pick(&mut rng, &adjustment_types)),
         amount: Set(Decimal::from(rng.random_range(1u64..=900u64))),
         reason: Set(maybe(&mut rng, 0.45, |_rng| fake_fragment(4..8))),

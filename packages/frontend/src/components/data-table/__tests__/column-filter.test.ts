@@ -16,7 +16,7 @@ describe('detectFilterType', () => {
   })
 
   it('returns "text" for plain strings', () => {
-    const facets = new Map<unknown, number>([['DRAFT', 10], ['POSTED', 5]])
+    const facets = new Map<unknown, number>([['DRAFT', 10], ['EXECUTED', 5]])
     expect(detectFilterType(facets)).toBe('text')
   })
 

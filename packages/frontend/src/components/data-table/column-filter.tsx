@@ -93,7 +93,7 @@ export function TextEnumFilterContent<TData, TValue>({
         continue
       entries.push({ label: String(value), value: String(value), count })
     }
-    return entries.sort((a, b) => b.count - a.count)
+    return entries.sort((a, b) => a.label.localeCompare(b.label))
   }, [facets])
 
   const allValues = useMemo(() => sortedOptions.map(o => o.value), [sortedOptions])

@@ -19,7 +19,7 @@ interface DocumentFormProps {
 }
 
 export function DocumentForm({ status, children, className }: DocumentFormProps) {
-  const isLocked = status === 'POSTED'
+  const isLocked = status === 'EXECUTED'
 
   return (
     <DocumentFormContext value={{ isLocked }}>

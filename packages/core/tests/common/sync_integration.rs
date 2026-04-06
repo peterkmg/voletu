@@ -517,7 +517,7 @@ pub async fn create_local_transfer_and_ledger(
       let transfer = ownership_transfer::ActiveModel {
         id: Set(transfer_id),
         date: Set(chrono::Utc::now()),
-        status: Set(DocumentStatus::Posted),
+        status: Set(DocumentStatus::Executed),
         version: Set(1),
         executed_at: Set(Some(chrono::Utc::now())),
         executed_by: Set(Some(local_node_id)),

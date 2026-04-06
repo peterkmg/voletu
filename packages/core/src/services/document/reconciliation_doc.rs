@@ -15,7 +15,7 @@ use crate::{
   entities::{inventory_adjustment, inventory_reconciliation},
   enums,
   services::{
-    common::{ensure_doc_mod_allowed, set_if_some},
+    common::{ensure_doc_mod_allowed, set_if_some, set_if_some_mapped},
     DocumentService,
   },
 };
@@ -26,6 +26,7 @@ fn apply_reconciliation_update(
 ) {
   set_if_some(&mut model.document_number, req.document_number.clone());
   set_if_some(&mut model.date, req.date);
+  set_if_some_mapped(&mut model.contractor_id, req.contractor_id, Some);
   set_if_some(&mut model.warehouse_id, req.warehouse_id);
 }
 

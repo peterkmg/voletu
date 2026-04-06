@@ -283,6 +283,7 @@ impl DocumentService {
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
     let mut responses = self.physical_transfer_list(None).await?;
     for response in &mut responses {
+      resolve_names(self.db.as_ref(), std::slice::from_mut(response)).await?;
       resolve_names(self.db.as_ref(), &mut response.items).await?;
     }
     Ok(responses)
@@ -293,6 +294,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
     let mut response = self.physical_transfer_get(id).await?;
+    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut response)).await?;
     resolve_names(self.db.as_ref(), &mut response.items).await?;
     Ok(response)
   }
@@ -302,6 +304,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
     let mut response = self.physical_transfer_composite_get(id).await?;
+    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut response)).await?;
     resolve_names(self.db.as_ref(), &mut response.items).await?;
     Ok(response)
   }
@@ -311,6 +314,7 @@ impl DocumentService {
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
     let mut responses = self.physical_transfer_composite_list().await?;
     for response in &mut responses {
+      resolve_names(self.db.as_ref(), std::slice::from_mut(response)).await?;
       resolve_names(self.db.as_ref(), &mut response.items).await?;
     }
     Ok(responses)
@@ -327,6 +331,7 @@ impl DocumentService {
       .physical_transfer_composite_query(document_number, status, page, per_page)
       .await?;
     for response in &mut responses {
+      resolve_names(self.db.as_ref(), std::slice::from_mut(response)).await?;
       resolve_names(self.db.as_ref(), &mut response.items).await?;
     }
     Ok(responses)

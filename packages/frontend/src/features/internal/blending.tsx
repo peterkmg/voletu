@@ -1,10 +1,10 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { BlendingComponentResponse, BlendingResponse, BlendingResultResponse } from '~/generated/types'
+import type { BlendingComponentResponse, BlendingFlatRow, BlendingResultResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, resolvedColumn, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -18,9 +18,10 @@ import { blendingDocumentCreate, blendingDocumentExecute, blendingDocumentHardDe
 import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
 import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
 import { useBlendingCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useBlendingCompositeGet'
-import { blendingDocumentListQueryKey, useBlendingDocumentList } from '~/generated/hooks/DocumentOperationsHooks/useBlendingDocumentList'
+import { flowBlendingFlatQueryQueryKey, useFlowBlendingFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowBlendingFlatQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
-import { documentStatusColors } from '~/lib/badge-colors'
+import { statusColors } from '~/lib/badge-colors'
+import { formatDate, formatDateTime } from '~/lib/formatters'
 import { createDeleteDialog } from '~/lib/create-delete-dialog'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
@@ -32,24 +33,29 @@ import { createRowActions } from '~/lib/create-row-actions'
 type BlendingDialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | 'revert'
 
 const { Provider: BlendingProvider, useEntity: useBlending }
-  = createEntityProvider<BlendingResponse, BlendingDialogType>('Blending')
+  = createEntityProvider<BlendingFlatRow, BlendingDialogType>('Blending')
 
 // --- Row Actions ---
 
-const DataTableRowActions = createRowActions<BlendingResponse>({ useEntity: useBlending, lifecycle: true, getDetailPath: row => `/internal/blending/${row.id}` })
+const DataTableRowActions = createRowActions<BlendingFlatRow>({ useEntity: useBlending, lifecycle: true, getDetailPath: row => `/internal/blending/${row.documentId}` })
 
 // --- Columns ---
 
-function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
+function getBlendingColumns(t: TFunction): ColumnDef<BlendingFlatRow>[] {
   return [
-    textColumn<BlendingResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
-    dateColumn<BlendingResponse>('date', t('common:table.date')),
-    resolvedColumn<BlendingResponse>('contractorId', t('common:table.contractor'), 'contractorIdName'),
-    resolvedColumn<BlendingResponse>('targetProductId', t('common:table.product'), 'targetProductIdName'),
-    statusColumn<BlendingResponse>('status', t('common:table.status'), documentStatusColors),
-    { ...dateColumn<BlendingResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
-    { ...dateColumn<BlendingResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
-    actionsColumn<BlendingResponse>(DataTableRowActions),
+    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+    { ...textColumn<BlendingFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...dateColumn<BlendingFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
+    { ...textColumn<BlendingFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
+    { ...textColumn<BlendingFlatRow>('targetProductIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'doc' as const } },
+    { ...statusColumn<BlendingFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    // Item-level columns (groupRole: 'item' — shown on every row)
+    { ...textColumn<BlendingFlatRow>('itemType', t('common:columns.type')), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
+    { ...textColumn<BlendingFlatRow>('productIdName', t('common:table.product')), id: 'itemProduct', meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<BlendingFlatRow>('storageIdName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...numericColumn<BlendingFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    // Actions (doc-level)
+    { ...actionsColumn<BlendingFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }
 
@@ -57,9 +63,9 @@ function getBlendingColumns(t: TFunction): ColumnDef<BlendingResponse>[] {
 
 const blendingRoute = getRouteApi('/_authenticated/internal/blending/')
 const blendingDetailRoute = getRouteApi('/_authenticated/internal/blending/$id')
-const blendingGlobalFilterFn = createGlobalFilter<BlendingResponse>('documentNumber')
+const blendingGlobalFilterFn = createGlobalFilter<BlendingFlatRow>('documentNumber', 'productIdName')
 
-function BlendingTable({ data }: { data: BlendingResponse[] }) {
+function BlendingTable({ data }: { data: BlendingFlatRow[] }) {
   return (
     <EntityTable
       tableId="blending"
@@ -68,6 +74,7 @@ function BlendingTable({ data }: { data: BlendingResponse[] }) {
       routeApi={blendingRoute}
       globalFilterFn={blendingGlobalFilterFn}
       i18nNamespaces={['common']}
+      groupKey="documentId"
     />
   )
 }
@@ -90,7 +97,7 @@ function BlendingMutateDialog({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentRow?: BlendingResponse | null
+  currentRow?: BlendingFlatRow | null
 }) {
   const { t } = useTranslation(['common'])
   const companiesQuery = useCatalogCompanyList()
@@ -110,12 +117,12 @@ function BlendingMutateDialog({
     mapRowToForm: row => ({
       documentNumber: row.documentNumber,
       date: row.date?.split('T')[0] ?? '',
-      contractorId: row.contractorId,
-      targetProductId: row.targetProductId,
+      contractorId: '',
+      targetProductId: '',
     }),
     createFn: blendingDocumentCreate,
     updateFn: blendingDocumentUpdate,
-    queryKey: blendingDocumentListQueryKey(),
+    queryKey: flowBlendingFlatQueryQueryKey(),
     entityLabel: t('common:nav.blending'),
     formId: 'blending-form',
   })
@@ -155,7 +162,7 @@ const BlendingDeleteDialog = createDeleteDialog({
   useEntity: useBlending,
   hardDeleteFn: blendingDocumentHardDelete,
   softDeleteFn: blendingDocumentSoftDelete,
-  queryKey: blendingDocumentListQueryKey,
+  queryKey: flowBlendingFlatQueryQueryKey,
   entityLabel: 'common:nav.blending',
   i18nNamespaces: ['common'],
 })
@@ -170,7 +177,7 @@ function BlendingLifecycleDialog({
 }: {
   open: boolean
   onOpenChange: () => void
-  currentRow: BlendingResponse | null
+  currentRow: BlendingFlatRow | null
   variant: 'execute' | 'revert'
 }) {
   return (
@@ -181,7 +188,7 @@ function BlendingLifecycleDialog({
       action={variant}
       executeFn={blendingDocumentExecute}
       revertFn={blendingDocumentRevert}
-      queryKey={blendingDocumentListQueryKey()}
+      queryKey={flowBlendingFlatQueryQueryKey()}
       entityLabel="Blending Document"
     />
   )
@@ -205,7 +212,7 @@ const BlendingPrimaryButtons = createPrimaryButtons({ useEntity: useBlending })
 
 export function BlendingPage() {
   const { t } = useTranslation(['common'])
-  const queryResult = useBlendingDocumentList({ embed: 'names' })
+  const queryResult = useFlowBlendingFlatQuery()
 
   return (
     <EntityPage
@@ -222,7 +229,7 @@ export function BlendingPage() {
 export function BlendingDetail() {
   const { id } = blendingDetailRoute.useParams()
   const { t } = useTranslation(['common'])
-  const { data, isLoading } = useBlendingCompositeGet(id)
+  const { data, isLoading } = useBlendingCompositeGet(id, { embed: 'names' })
 
   if (isLoading || !data?.data) {
     return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
@@ -239,15 +246,15 @@ export function BlendingDetail() {
         backTo: '/internal/blending',
         executeFn: blendingDocumentExecute,
         revertFn: blendingDocumentRevert,
-        queryKey: blendingDocumentListQueryKey(),
-        statusColorMap: documentStatusColors,
+        queryKey: flowBlendingFlatQueryQueryKey(),
+        statusColorMap: statusColors,
       }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{doc.date}</p>
+            <p>{formatDate(doc.date)}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
@@ -266,18 +273,18 @@ export function BlendingDetail() {
             columns={[
               textColumn<BlendingComponentResponse>('sourceProductIdName', t('common:table.product')),
               textColumn<BlendingComponentResponse>('storageIdName', t('common:columns.storage')),
-              textColumn<BlendingComponentResponse>('amountUsed', t('common:table.quantity')),
+              numericColumn<BlendingComponentResponse>('amountUsed', t('common:table.quantity')),
             ]}
-            isLocked={doc.status === 'POSTED'}
+            isLocked={doc.status === 'EXECUTED'}
             sectionTitle={t('common:sections.componentInputs')}
           />
           <ChildItemsTable
             items={composite.results}
             columns={[
               textColumn<BlendingResultResponse>('storageIdName', t('common:columns.storage')),
-              textColumn<BlendingResultResponse>('producedAmount', t('common:table.quantity')),
+              numericColumn<BlendingResultResponse>('producedAmount', t('common:table.quantity')),
             ]}
-            isLocked={doc.status === 'POSTED'}
+            isLocked={doc.status === 'EXECUTED'}
             sectionTitle={t('common:sections.resultOutputs')}
           />
         </>
@@ -289,7 +296,7 @@ export function BlendingDetail() {
                 <div>
                   <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
                   {' '}
-                  {doc.executedAt}
+                  {formatDateTime(doc.executedAt)}
                 </div>
               </div>
             )

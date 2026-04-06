@@ -64,7 +64,7 @@ function getCompanyColumns(t: TFunction): ColumnDef<CompanyResponse>[] {
         )
       },
     },
-    dateColumn<CompanyResponse>('createdAt', t('common:table.createdAt')),
+    { ...dateColumn<CompanyResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<CompanyResponse>(DataTableRowActions, 2),
   ]
 }

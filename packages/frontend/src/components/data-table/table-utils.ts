@@ -2,9 +2,9 @@ import type { Column, Row, Table as TanstackTable } from '@tanstack/react-table'
 import type { CSSProperties } from 'react'
 
 export const alignClasses = {
-  left: 'text-left',
-  center: 'text-center',
-  right: 'text-right',
+  left: 'text-left justify-start',
+  center: 'text-center justify-center',
+  right: 'text-right justify-end',
 }
 
 /** Compute sticky positioning styles for pinned columns */
@@ -76,4 +76,34 @@ export function getGridTemplate<TData>(table: TanstackTable<TData>): string {
     const max = maxSize ? `${maxSize}px` : '1fr'
     return `minmax(${min}px, ${max})`
   }).join(' ')
+}
+
+// ---------------------------------------------------------------------------
+// Row grouping helpers (for visual merge in grouped tables)
+// ---------------------------------------------------------------------------
+
+export interface GroupInfo {
+  /** True if this row starts a new document group. */
+  isFirstOfGroup: boolean
+  /** True if this row ends a document group. */
+  isLastOfGroup: boolean
+  /** The group identifier (document ID). */
+  groupId: string
+}
+
+/** Compute group boundary info for a row by comparing adjacent rows' groupKey values. */
+export function computeGroupInfo<T>(
+  rows: Row<T>[],
+  index: number,
+  groupKey: string,
+): GroupInfo {
+  const currentVal = String((rows[index]!.original as Record<string, unknown>)[groupKey] ?? '')
+  const prevVal = index > 0 ? String((rows[index - 1]!.original as Record<string, unknown>)[groupKey] ?? '') : null
+  const nextVal = index < rows.length - 1 ? String((rows[index + 1]!.original as Record<string, unknown>)[groupKey] ?? '') : null
+
+  return {
+    isFirstOfGroup: prevVal !== currentVal,
+    isLastOfGroup: nextVal !== currentVal,
+    groupId: currentVal,
+  }
 }

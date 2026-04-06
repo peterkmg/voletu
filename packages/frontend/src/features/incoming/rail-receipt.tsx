@@ -5,7 +5,7 @@ import type { AcceptanceItemResponse, RailReceiptPipelineResponse } from '~/gene
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { RelatedDocuments } from '~/components/document/related-documents'
@@ -21,7 +21,7 @@ import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceH
 import { useTransportRailWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillGet'
 import { railReceiptPipelineQueryQueryKey, useRailReceiptPipelineQuery } from '~/generated/hooks/FlowsHooks/useRailReceiptPipelineQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
-import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
+import { statusColors } from '~/lib/badge-colors'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
@@ -43,10 +43,10 @@ function getColumns(t: TFunction): ColumnDef<RailReceiptPipelineResponse>[] {
     dateColumn<RailReceiptPipelineResponse>('basisDate', t('common:table.date')),
     textColumn<RailReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
     textColumn<RailReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
-    textColumn<RailReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty'), { primary: false, sizing: 'capped', maxSize: 150 }),
-    statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
+    numericColumn<RailReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty')),
+    statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
     textColumn<RailReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
-    textColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false, sizing: 'capped', maxSize: 150 }),
+    numericColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
     actionsColumn<RailReceiptPipelineResponse>(DataTableRowActions, 1),
   ]
 }
@@ -120,13 +120,13 @@ export function RailReceiptDetail() {
     const doc = acceptanceQuery.data.data
     return (
       <DocumentDetailPage
-        config={{ title: 'Acceptance Document', entityLabel: 'Acceptance', backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: documentStatusColors }}
+        config={{ title: 'Acceptance Document', entityLabel: 'Acceptance', backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: statusColors }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.railReceipt')}
         relatedContent={(() => {
           const docs: RelatedDocument[] = []
           if (doc.railWaybillId) {
-            docs.push({ type: 'basis', label: 'Rail Waybill', documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: 'Pending', statusColorMap: documentStatusColors, to: `/incoming/rail/${doc.railWaybillId}` })
+            docs.push({ type: 'basis', label: 'Rail Waybill', documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: 'Pending', statusColorMap: statusColors, to: `/incoming/rail/${doc.railWaybillId}` })
           }
           return <RelatedDocuments documents={docs} />
         })()}
@@ -149,9 +149,9 @@ export function RailReceiptDetail() {
               textColumn<AcceptanceItemResponse>('productIdName', t('common:table.product')),
               textColumn<AcceptanceItemResponse>('storageIdName', t('common:columns.storage')),
               textColumn<AcceptanceItemResponse>('contractorIdName', t('common:table.contractor')),
-              textColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
+              numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
             ]}
-            isLocked={doc.status === 'POSTED'}
+            isLocked={doc.status === 'EXECUTED'}
             sectionTitle={t('common:sections.acceptanceItems')}
           />
         )}

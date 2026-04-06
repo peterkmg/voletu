@@ -39,7 +39,7 @@ function getProductGroupColumns(t: TFunction): ColumnDef<ProductGroupResponse>[]
   return [
     textColumn<ProductGroupResponse>('commonName', t('catalog:productGroup.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
     resolvedColumn<ProductGroupResponse>('productTypeId', t('catalog:productGroup.columns.productType'), 'productTypeIdName'),
-    dateColumn<ProductGroupResponse>('createdAt', t('common:table.createdAt')),
+    { ...dateColumn<ProductGroupResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductGroupResponse>(DataTableRowActions, 2),
   ]
 }

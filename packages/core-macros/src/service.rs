@@ -521,7 +521,7 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
             )));
           }
 
-          if existing.status == crate::enums::DocumentStatus::Posted {
+          if existing.status == crate::enums::DocumentStatus::Executed {
             return Err(crate::api::ApiError::BadRequest(format!(
               "Attempted to execute already executed {}",
               #entity_name
@@ -531,7 +531,7 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
           #before_execute_call
 
           let mut active = existing.clone().into_active_model();
-          active.status = sea_orm::ActiveValue::Set(crate::enums::DocumentStatus::Posted);
+          active.status = sea_orm::ActiveValue::Set(crate::enums::DocumentStatus::Executed);
           active.executed_at = sea_orm::ActiveValue::Set(Some(chrono::Utc::now()));
           active.executed_by = sea_orm::ActiveValue::Set(Some(actor_id));
           active.reverted_at = sea_orm::ActiveValue::Set(None);

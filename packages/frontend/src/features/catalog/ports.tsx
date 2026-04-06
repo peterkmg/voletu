@@ -36,7 +36,7 @@ function getPortColumns(t: TFunction): ColumnDef<PortResponse>[] {
   return [
     textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
     textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false, sizing: 'capped', maxSize: 180 }),
-    dateColumn<PortResponse>('createdAt', t('common:table.createdAt')),
+    { ...dateColumn<PortResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<PortResponse>(DataTableRowActions, 2),
   ]
 }

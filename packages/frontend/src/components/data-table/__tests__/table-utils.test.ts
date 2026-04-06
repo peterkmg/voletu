@@ -72,9 +72,9 @@ function mockTable(overrides: {
 
 describe('alignClasses', () => {
   it('maps left/center/right to the correct tailwind classes', () => {
-    expect(alignClasses.left).toBe('text-left')
-    expect(alignClasses.center).toBe('text-center')
-    expect(alignClasses.right).toBe('text-right')
+    expect(alignClasses.left).toBe('text-left justify-start')
+    expect(alignClasses.center).toBe('text-center justify-center')
+    expect(alignClasses.right).toBe('text-right justify-end')
   })
 })
 

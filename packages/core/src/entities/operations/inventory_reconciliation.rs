@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   dtos::CreateInventoryReconciliationRequest,
-  entities::{inventory_adjustment, warehouse},
+  entities::{company, inventory_adjustment, warehouse},
   enums,
 };
 
@@ -24,6 +24,9 @@ pub struct Model {
   pub executed_by: Option<Uuid>,
   pub reverted_at: Option<DateTimeUtc>,
   pub reverted_by: Option<Uuid>,
+  pub contractor_id: Option<Uuid>,
+  #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
+  pub contractor: HasOne<company::Entity>,
   pub warehouse_id: Uuid,
   #[sea_orm(belongs_to, from = "warehouse_id", to = "id")]
   pub warehouse: HasOne<warehouse::Entity>,
@@ -41,6 +44,7 @@ impl From<&CreateInventoryReconciliationRequest> for ActiveModel {
       executed_by: Set(None),
       reverted_at: Set(None),
       reverted_by: Set(None),
+      contractor_id: Set(dto.contractor_id),
       warehouse_id: Set(dto.warehouse_id),
       ..Default::default()
     }

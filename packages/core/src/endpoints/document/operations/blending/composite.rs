@@ -58,7 +58,7 @@ async fn blending_composite_create(
   path = paths::blending::COMPOSITE_SAVE_AND_EXECUTE,
   request_body = CreateBlendingCompositeRequest,
   responses(
-    (status = 200, body = ApiResponse<BlendingCompositeResponse>, description = "Composite create+execute success envelope. Example: {\"success\":true,\"data\":{\"document\":{\"status\":\"Posted\"},\"components\":[...],\"results\":[...]}}"),
+    (status = 200, body = ApiResponse<BlendingCompositeResponse>, description = "Composite create+execute success envelope. Example: {\"success\":true,\"data\":{\"document\":{\"status\":\"Executed\"},\"components\":[...],\"results\":[...]}}"),
     (status = 400, description = "Validation or bad request envelope. Example: {\"success\":false,\"error\":{\"code\":\"BAD_REQUEST\",\"message\":\"Bad request: ...\"}}"),
     (status = 409, description = "Conflict envelope for domain constraints. Example: {\"success\":false,\"error\":{\"code\":\"CONFLICT\",\"message\":\"Conflict: ...\"}}")
   )

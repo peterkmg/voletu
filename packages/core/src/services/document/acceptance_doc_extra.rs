@@ -5,15 +5,16 @@ use sea_orm::{
   EntityTrait,
   PaginatorTrait,
   QueryFilter,
+  QueryOrder,
   TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos,
+  dtos::{self, response::pipeline::AcceptanceFlatRow},
   endpoints::query::NullableFilter,
-  entities::{acceptance_document, acceptance_item},
+  entities::{acceptance_document, acceptance_item, company, product, storage},
   enums,
   services::document::DocumentService,
 };
@@ -45,7 +46,7 @@ impl DocumentService {
       .acceptance_document_execute_no_tx(&txn, response.document.id, actor_id)
       .await?;
 
-    response.document.status = crate::enums::DocumentStatus::Posted;
+    response.document.status = crate::enums::DocumentStatus::Executed;
     txn.commit().await?;
 
     Ok(response)
@@ -161,5 +162,82 @@ impl DocumentService {
       .ok_or_else(|| ApiError::NotFound(format!("Acceptance document '{}' not found", id)))?;
 
     dtos::AcceptanceCompositeResponse::try_from(doc)
+  }
+
+  /// Returns one row per acceptance item with document fields repeated.
+  /// Used by the grouped-row list table on the frontend.
+  pub async fn acceptance_flat_query(
+    &self,
+    status: Option<enums::DocumentStatus>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<AcceptanceFlatRow>, ApiError> {
+    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let db = self.db.as_ref();
+
+    let mut cond = Condition::all().add(acceptance_document::Column::DeletedAt.is_null());
+    if let Some(s) = status {
+      cond = cond.add(acceptance_document::Column::Status.eq(s));
+    }
+
+    let docs: Vec<acceptance_document::ModelEx> = acceptance_document::Entity::load()
+      .filter(cond)
+      .with(company::Entity) // doc-level contractor
+      .with((acceptance_item::Entity, product::Entity))
+      .with((acceptance_item::Entity, storage::Entity))
+      .order_by_desc(acceptance_document::Column::DateAccepted)
+      .paginate(db, per_page)
+      .fetch_page(page - 1)
+      .await?;
+
+    let mut rows = Vec::new();
+    for doc in &docs {
+      let contractor_name = doc
+        .contractor
+        .as_ref()
+        .map(|c| c.common_name.clone())
+        .unwrap_or("\u{2014}".to_string());
+
+      if doc.items.is_empty() {
+        rows.push(AcceptanceFlatRow {
+          id: doc.id,
+          document_id: doc.id,
+          document_number: doc.document_number.clone(),
+          date_accepted: doc.date_accepted.to_string(),
+          status: doc.status,
+          source_entity: doc.source_entity.clone(),
+          item_id: doc.id,
+          product_id_name: "\u{2014}".to_string(),
+          storage_id_name: "\u{2014}".to_string(),
+          contractor_id_name: contractor_name.clone(),
+          accepted_amount: Default::default(),
+        });
+      }
+      for item in &doc.items {
+        rows.push(AcceptanceFlatRow {
+          id: doc.id,
+          document_id: doc.id,
+          document_number: doc.document_number.clone(),
+          date_accepted: doc.date_accepted.to_string(),
+          status: doc.status,
+          source_entity: doc.source_entity.clone(),
+          item_id: item.id,
+          product_id_name: item
+            .product
+            .as_ref()
+            .map(|p| p.common_name.clone())
+            .unwrap_or_default(),
+          storage_id_name: item
+            .storage
+            .as_ref()
+            .map(|s| s.common_name.clone())
+            .unwrap_or_default(),
+          contractor_id_name: contractor_name.clone(),
+          accepted_amount: item.accepted_amount,
+        });
+      }
+    }
+
+    Ok(rows)
   }
 }

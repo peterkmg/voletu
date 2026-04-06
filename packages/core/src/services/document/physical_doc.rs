@@ -13,7 +13,7 @@ use crate::{
   dtos,
   entities::{physical_storage_transfer, physical_transfer_item},
   services::{
-    common::{ensure_doc_mod_allowed, ensure_storage_accepts_product, set_if_some},
+    common::{ensure_doc_mod_allowed, ensure_storage_accepts_product, set_if_some, set_if_some_mapped},
     document::DocumentService,
   },
 };
@@ -37,6 +37,7 @@ fn apply_physical_transfer_update(
 ) {
   set_if_some(&mut model.document_number, req.document_number.clone());
   set_if_some(&mut model.date, req.date);
+  set_if_some_mapped(&mut model.contractor_id, req.contractor_id, Some);
   set_if_some(&mut model.start_cargo_ops, req.start_cargo_ops);
   set_if_some(&mut model.end_cargo_ops, req.end_cargo_ops);
 }

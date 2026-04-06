@@ -39,6 +39,10 @@ pub struct AcceptanceResponse {
   pub date_accepted: String,
   pub arrival_type: ArrivalType,
   pub source_entity: Option<String>,
+  pub contractor_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
   pub truck_waybill_id: Option<Uuid>,
   pub rail_waybill_id: Option<Uuid>,
   pub transit_dispatch_id: Option<Uuid>,
@@ -61,6 +65,8 @@ impl From<acceptance_document::Model> for AcceptanceResponse {
       date_accepted: model.date_accepted.to_rfc3339(),
       arrival_type: model.arrival_type,
       source_entity: model.source_entity,
+      contractor_id: model.contractor_id,
+      contractor_id_name: None,
       truck_waybill_id: model.truck_waybill_id,
       rail_waybill_id: model.rail_waybill_id,
       transit_dispatch_id: model.transit_dispatch_id,
@@ -343,6 +349,10 @@ pub struct PhysicalTransferResponse {
   pub id: Uuid,
   pub document_number: String,
   pub date: String,
+  pub contractor_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
   pub start_cargo_ops: String,
   pub end_cargo_ops: String,
   pub items: Vec<PhysicalTransferItemResponse>,
@@ -375,6 +385,8 @@ impl From<physical_storage_transfer::Model> for PhysicalTransferResponse {
       id: row.id,
       document_number: row.document_number,
       date: row.date.to_rfc3339(),
+      contractor_id: row.contractor_id,
+      contractor_id_name: None,
       start_cargo_ops: row.start_cargo_ops.to_rfc3339(),
       end_cargo_ops: row.end_cargo_ops.to_rfc3339(),
       items: Vec::new(),
@@ -410,6 +422,8 @@ impl
       id: row.id,
       document_number: row.document_number,
       date: row.date.to_rfc3339(),
+      contractor_id: row.contractor_id,
+      contractor_id_name: None,
       start_cargo_ops: row.start_cargo_ops.to_rfc3339(),
       end_cargo_ops: row.end_cargo_ops.to_rfc3339(),
       items,
@@ -722,6 +736,10 @@ pub struct InventoryReconciliationResponse {
   pub id: Uuid,
   pub document_number: String,
   pub date: String,
+  pub contractor_id: Option<Uuid>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub contractor_id_name: Option<String>,
   pub warehouse_id: Uuid,
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
@@ -734,6 +752,8 @@ impl From<inventory_reconciliation::Model> for InventoryReconciliationResponse {
       id: row.id,
       document_number: row.document_number,
       date: row.date.to_rfc3339(),
+      contractor_id: row.contractor_id,
+      contractor_id_name: None,
       warehouse_id: row.warehouse_id,
       warehouse_id_name: None,
       created_at: row.created_at.to_rfc3339(),
@@ -1068,6 +1088,9 @@ pub struct RailWaybillCompositeResponse {
 
 impl ResolveFkNames for AcceptanceResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    if let Some(id) = self.contractor_id {
+      c.company_ids.insert(id);
+    }
     if let Some(id) = self.truck_waybill_id {
       c.truck_waybill_ids.insert(id);
     }
@@ -1080,6 +1103,9 @@ impl ResolveFkNames for AcceptanceResponse {
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = self
+      .contractor_id
+      .and_then(|id| r.companies.get(&id).cloned());
     self.truck_waybill_id_name = self
       .truck_waybill_id
       .and_then(|id| r.truck_waybills.get(&id).cloned());
@@ -1154,6 +1180,20 @@ impl ResolveFkNames for DispatchMeasurementResponse {
   }
 }
 
+impl ResolveFkNames for PhysicalTransferResponse {
+  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    if let Some(id) = self.contractor_id {
+      c.company_ids.insert(id);
+    }
+  }
+
+  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = self
+      .contractor_id
+      .and_then(|id| r.companies.get(&id).cloned());
+  }
+}
+
 impl ResolveFkNames for PhysicalTransferItemResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
     c.company_ids.insert(self.contractor_id);
@@ -1222,10 +1262,16 @@ impl ResolveFkNames for BlendingResultResponse {
 
 impl ResolveFkNames for InventoryReconciliationResponse {
   fn collect_fk_ids(&self, c: &mut FkIdCollector) {
+    if let Some(id) = self.contractor_id {
+      c.company_ids.insert(id);
+    }
     c.warehouse_ids.insert(self.warehouse_id);
   }
 
   fn apply_resolved_names(&mut self, r: &ResolvedNames) {
+    self.contractor_id_name = self
+      .contractor_id
+      .and_then(|id| r.companies.get(&id).cloned());
     self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
   }
 }

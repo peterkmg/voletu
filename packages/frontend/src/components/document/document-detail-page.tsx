@@ -40,53 +40,63 @@ export function DocumentDetailPage({
   metadataContent,
 }: DocumentDetailPageProps) {
   const { t } = useTranslation(['common'])
-  const isLocked = document.status === 'POSTED'
+  const isLocked = document.status === 'EXECUTED'
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4">
-      <DocumentHeader
-        title={config.title}
-        documentNumber={document.documentNumber}
-        subtitle={subtitle}
-        status={document.status}
-        statusColorMap={config.statusColorMap}
-        backTo={config.backTo}
-        executeFn={config.executeFn}
-        revertFn={config.revertFn}
-        queryKey={config.queryKey}
-        entityLabel={config.entityLabel}
-        documentId={document.id}
-      />
+    <div data-layout="fixed" className="flex h-full flex-col">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 rounded-t-lg border-b bg-background px-4 py-3">
+        <div className="mx-auto max-w-5xl">
+          <DocumentHeader
+            title={config.title}
+            documentNumber={document.documentNumber}
+            subtitle={subtitle}
+            status={document.status}
+            statusColorMap={config.statusColorMap}
+            backTo={config.backTo}
+            executeFn={config.executeFn}
+            revertFn={config.revertFn}
+            queryKey={config.queryKey}
+            entityLabel={config.entityLabel}
+            documentId={document.id}
+          />
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            {t('common:document.information')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DocumentForm status={document.status}>
-            {formContent}
-          </DocumentForm>
-        </CardContent>
-      </Card>
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-5xl space-y-6 p-4 pb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                {t('common:document.information')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DocumentForm status={document.status}>
+                {formContent}
+              </DocumentForm>
+            </CardContent>
+          </Card>
 
-      {relatedContent}
+          {relatedContent}
 
-      {itemsContent}
+          {itemsContent}
 
-      {isLocked && metadataContent && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              {t('common:document.executionMetadata')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metadataContent}
-          </CardContent>
-        </Card>
-      )}
+          {isLocked && metadataContent && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                  {t('common:document.executionMetadata')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {metadataContent}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

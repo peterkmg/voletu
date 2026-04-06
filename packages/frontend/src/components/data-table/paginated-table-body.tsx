@@ -3,6 +3,7 @@ import { useCallback, useRef } from 'react'
 import { TableBody } from '~/components/ui/table'
 import { DataRow } from './table-data-row'
 import { EmptyState, TableSkeleton } from './table-states'
+import { computeGroupInfo } from './table-utils'
 
 interface PaginatedTableBodyProps<TData> {
   table: TanstackTable<TData>
@@ -13,6 +14,8 @@ interface PaginatedTableBodyProps<TData> {
   emptyMessage?: string
   emptyIcon?: React.ReactNode
   onRowAction?: (row: TData) => void
+  /** Field name for row grouping (visual merge). */
+  groupKey?: string
 }
 
 export function PaginatedTableBody<TData>({
@@ -24,6 +27,7 @@ export function PaginatedTableBody<TData>({
   emptyMessage,
   emptyIcon,
   onRowAction,
+  groupKey,
 }: PaginatedTableBodyProps<TData>) {
   const bodyRef = useRef<HTMLDivElement>(null)
   const rows = table.getRowModel().rows
@@ -90,6 +94,7 @@ export function PaginatedTableBody<TData>({
                   densityCls={densityCls}
                   onKeyDown={handleKeyDown}
                   onRowAction={onRowAction}
+                  groupInfo={groupKey ? computeGroupInfo(rows, rowIndex, groupKey) : undefined}
                 />
               ))}
     </TableBody>

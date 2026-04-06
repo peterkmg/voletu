@@ -6,9 +6,10 @@
 
 export type BadgeColorMap = Record<string, string>
 
-export const documentStatusColors: BadgeColorMap = {
+export const statusColors: BadgeColorMap = {
+  PENDING: 'bg-amber-100/30 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
   DRAFT: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
-  POSTED: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+  EXECUTED: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
 }
 
 export const companyRoleColors: BadgeColorMap = {
@@ -40,10 +41,12 @@ export const dispatchPurposeColors: BadgeColorMap = {
   INTERNAL: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
 }
 
-export const pipelineStatusColors: BadgeColorMap = {
-  PENDING: 'bg-amber-100/30 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
-  DRAFT: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
-  EXECUTED: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+
+
+export const flowTypeColors: Record<string, string> = {
+  Incoming: 'bg-blue-100/30 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300',
+  Outgoing: 'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300',
+  Internal: 'bg-amber-100/30 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300',
 }
 
 export const entityActiveColors: BadgeColorMap = {

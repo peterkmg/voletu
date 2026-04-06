@@ -63,6 +63,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .physical_transfer_composite_create(&CreatePhysicalTransferRequest {
         document_number: "PT-1".to_string(),
         date: ts("2026-01-01T00:00:00Z"),
+        contractor_id: None,
         start_cargo_ops: ts("2026-01-01T01:00:00Z"),
         end_cargo_ops: ts("2026-01-01T02:00:00Z"),
         items: vec![
@@ -373,6 +374,7 @@ async fn reconciliation_adjustments_apply_on_execute_and_reverse_on_revert() {
       .reconciliation_create(&CreateInventoryReconciliationRequest {
         document_number: "REC-1".to_string(),
         date: ts("2026-01-03T00:00:00Z"),
+        contractor_id: None,
         warehouse_id: fixture.warehouse_id,
       })
       .await
@@ -464,6 +466,7 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
         &CreatePhysicalTransferRequest {
           document_number: "PT-EXEC".to_string(),
           date: ts("2026-01-05T00:00:00Z"),
+          contractor_id: None,
           start_cargo_ops: ts("2026-01-05T01:00:00Z"),
           end_cargo_ops: ts("2026-01-05T02:00:00Z"),
           items: vec![PhysicalTransferItemCompositeRequest {
@@ -484,7 +487,7 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
       .await
       .unwrap()
       .unwrap();
-    assert_eq!(physical_model.status, DocumentStatus::Posted);
+    assert_eq!(physical_model.status, DocumentStatus::Executed);
 
     let ownership = service
       .ownership_transfer_composite_create_and_execute(
@@ -508,7 +511,7 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
       .await
       .unwrap()
       .unwrap();
-    assert_eq!(ownership_model.status, DocumentStatus::Posted);
+    assert_eq!(ownership_model.status, DocumentStatus::Executed);
 
     let source = ledger
       .by_dimensions(
@@ -597,7 +600,7 @@ async fn blending_component_creation_rejects_posted_document_mutation() {
       .await
       .unwrap()
       .unwrap();
-    assert_eq!(posted.status, DocumentStatus::Posted);
+    assert_eq!(posted.status, DocumentStatus::Executed);
 
     let err = service
       .blending_component_create(&CreateBlendingComponentRequest {

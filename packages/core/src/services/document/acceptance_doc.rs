@@ -86,6 +86,7 @@ fn apply_acceptance_document_update(
   set_if_some(&mut model.date_accepted, req.date_accepted);
   set_if_some(&mut model.arrival_type, req.arrival_type);
   set_if_some_mapped(&mut model.source_entity, req.source_entity.clone(), Some);
+  set_if_some_mapped(&mut model.contractor_id, req.contractor_id, Some);
   set_if_some_mapped(&mut model.truck_waybill_id, req.truck_waybill_id, Some);
   set_if_some_mapped(&mut model.rail_waybill_id, req.rail_waybill_id, Some);
   set_if_some_mapped(

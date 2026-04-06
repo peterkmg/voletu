@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   dtos::CreateAcceptanceRequest,
-  entities::{acceptance_item, dispatch_document, rail_waybill, truck_waybill},
+  entities::{acceptance_item, company, dispatch_document, rail_waybill, truck_waybill},
   enums,
 };
 
@@ -26,6 +26,9 @@ pub struct Model {
   pub reverted_by: Option<Uuid>,
   pub arrival_type: enums::ArrivalType,
   pub source_entity: Option<String>,
+  pub contractor_id: Option<Uuid>,
+  #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
+  pub contractor: HasOne<company::Entity>,
   pub truck_waybill_id: Option<Uuid>,
   #[sea_orm(belongs_to, from = "truck_waybill_id", to = "id")]
   pub truck_waybill: HasOne<truck_waybill::Entity>,
@@ -51,6 +54,7 @@ impl From<&CreateAcceptanceRequest> for ActiveModel {
       reverted_by: Set(None),
       arrival_type: Set(dto.arrival_type),
       source_entity: Set(dto.source_entity.clone()),
+      contractor_id: Set(dto.contractor_id),
       truck_waybill_id: Set(dto.truck_waybill_id),
       rail_waybill_id: Set(dto.rail_waybill_id),
       transit_dispatch_id: Set(dto.transit_dispatch_id),

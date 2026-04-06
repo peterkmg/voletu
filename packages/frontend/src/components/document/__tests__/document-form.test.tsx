@@ -18,9 +18,9 @@ describe('documentForm', () => {
     expect(fieldset).not.toBeDisabled()
   })
 
-  it('renders children as disabled when POSTED', () => {
+  it('renders children as disabled when EXECUTED', () => {
     const { container } = render(
-      <DocumentForm status="POSTED">
+      <DocumentForm status="EXECUTED">
         <input data-testid="field" />
       </DocumentForm>,
     )
@@ -47,9 +47,9 @@ describe('documentForm', () => {
     expect(screen.getByTestId('locked')).toHaveTextContent('false')
   })
 
-  it('provides isLocked=true via context when POSTED', () => {
+  it('provides isLocked=true via context when EXECUTED', () => {
     render(
-      <DocumentForm status="POSTED">
+      <DocumentForm status="EXECUTED">
         <LockStatus />
       </DocumentForm>,
     )

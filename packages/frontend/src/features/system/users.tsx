@@ -76,7 +76,7 @@ function getUserColumns(t: TFunction): ColumnDef<UserResponse>[] {
         </Badge>
       ),
     },
-    dateColumn<UserResponse>('createdAt', t('common:table.createdAt')),
+    { ...dateColumn<UserResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<UserResponse>(DataTableRowActions, 1),
   ]
 }

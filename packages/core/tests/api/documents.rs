@@ -477,7 +477,7 @@ async fn acceptance_composite_endpoint_executes_by_default() {
       ACCEPTANCE_COMPOSITE_DOC_NUMBER
     );
     assert_eq!(omitted_json["data"]["items"].as_array().unwrap().len(), 1);
-    assert_eq!(omitted_json["data"]["status"], "POSTED");
+    assert_eq!(omitted_json["data"]["status"], "EXECUTED");
 
     let provided = post_json(
       &app,
@@ -493,7 +493,7 @@ async fn acceptance_composite_endpoint_executes_by_default() {
     )
     .await;
     let provided_json = assert_api_success(provided).await;
-    assert_eq!(provided_json["data"]["status"], "POSTED");
+    assert_eq!(provided_json["data"]["status"], "EXECUTED");
     assert_eq!(provided_json["data"]["items"].as_array().unwrap().len(), 1);
 
     let ledger_entry = inventory_ledger_entry::Entity::find()
@@ -553,7 +553,7 @@ async fn dispatch_composite_endpoint_executes_by_default() {
         .len(),
       0
     );
-    assert_eq!(omitted_json["data"]["status"], "POSTED");
+    assert_eq!(omitted_json["data"]["status"], "EXECUTED");
 
     let provided = post_json(
       &app,
@@ -574,7 +574,7 @@ async fn dispatch_composite_endpoint_executes_by_default() {
     let provided_body = response_json(provided).await;
     assert_eq!(provided_status, StatusCode::OK, "{}", provided_body);
     let provided_json = provided_body;
-    assert_eq!(provided_json["data"]["status"], "POSTED");
+    assert_eq!(provided_json["data"]["status"], "EXECUTED");
     assert_eq!(provided_json["data"]["items"].as_array().unwrap().len(), 1);
     assert_eq!(
       provided_json["data"]["storageMeasurements"]
@@ -638,7 +638,7 @@ async fn blending_composite_endpoint_executes_by_default() {
       1
     );
     assert_eq!(omitted_json["data"]["results"].as_array().unwrap().len(), 1);
-    assert_eq!(omitted_json["data"]["document"]["status"], "POSTED");
+    assert_eq!(omitted_json["data"]["document"]["status"], "EXECUTED");
 
     let provided = post_json(
       &app,
@@ -657,7 +657,7 @@ async fn blending_composite_endpoint_executes_by_default() {
     )
     .await;
     let provided_json = assert_api_success(provided).await;
-    assert_eq!(provided_json["data"]["document"]["status"], "POSTED");
+    assert_eq!(provided_json["data"]["document"]["status"], "EXECUTED");
     assert_eq!(
       provided_json["data"]["components"]
         .as_array()
@@ -765,7 +765,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
 
     let acceptance_query_status = get(
       &app,
-      format!("{}?status=POSTED", api_paths::acceptance::QUERY),
+      format!("{}?status=EXECUTED", api_paths::acceptance::QUERY),
     )
     .await;
     let acceptance_query_status_json = assert_api_success(acceptance_query_status).await;
@@ -1055,7 +1055,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     )
     .await;
     let reconciliation_posted_json = assert_api_success(reconciliation_posted).await;
-    assert_eq!(reconciliation_posted_json["data"]["status"], "POSTED");
+    assert_eq!(reconciliation_posted_json["data"]["status"], "EXECUTED");
 
     let reconciliation_query_doc = get(
       &app,
@@ -1079,7 +1079,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     let reconciliation_query_status = get(
       &app,
       format!(
-        "{}?status=POSTED",
+        "{}?status=EXECUTED",
         api_paths::operations::RECONCILIATIONS_QUERY
       ),
     )
@@ -1178,7 +1178,7 @@ async fn blending_query_status_filter_returns_posted_only_and_rejects_invalid_st
 
     let posted_query = get(
       &app,
-      format!("{}?status=POSTED", api_paths::blending::QUERY),
+      format!("{}?status=EXECUTED", api_paths::blending::QUERY),
     )
     .await;
     let posted_query_json = assert_api_success(posted_query).await;

@@ -59,7 +59,7 @@ pub enum NodeType {
 #[enum_type]
 pub enum DocumentStatus {
   Draft,
-  Posted,
+  Executed,
 }
 
 /// Pipeline status for flow views.
@@ -79,12 +79,12 @@ impl PipelineStatus {
   /// Derive pipeline status from an optional linked document's status.
   ///
   /// If no document exists, the pipeline is `Pending`.
-  /// Otherwise, `Draft` maps to `Draft` and `Posted` maps to `Executed`.
+  /// Otherwise, `Draft` maps to `Draft` and `Executed` maps to `Executed`.
   pub fn from_doc_status(status: Option<&DocumentStatus>) -> Self {
     match status {
       None => Self::Pending,
       Some(DocumentStatus::Draft) => Self::Draft,
-      Some(DocumentStatus::Posted) => Self::Executed,
+      Some(DocumentStatus::Executed) => Self::Executed,
     }
   }
 }

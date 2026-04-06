@@ -46,9 +46,9 @@ export function formatAmount(value: number | string | null | undefined, unit?: s
   const num = typeof value === 'string' ? Number.parseFloat(value) : value
   if (Number.isNaN(num))
     return '\u2014'
-  const formatted = num.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  const formatted = num.toLocaleString('fr-FR', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   })
   return unit ? `${formatted} ${unit}` : formatted
 }

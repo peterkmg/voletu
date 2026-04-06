@@ -66,7 +66,7 @@ export function createRowActions<TRow extends { id: string }>(
         })
       }
       if (
-        status === 'POSTED'
+        status === 'EXECUTED'
         && (userRole === 'ADMIN' || userRole === 'SENIOR_SUPERVISOR')
       ) {
         actions.push({

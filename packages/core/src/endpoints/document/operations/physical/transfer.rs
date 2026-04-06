@@ -164,7 +164,7 @@ async fn physical_transfer_create(
   path = paths::operations::PHYSICAL_TRANSFERS_SAVE_AND_EXECUTE,
   request_body = CreatePhysicalTransferRequest,
   responses(
-    (status = 200, body = ApiResponse<PhysicalTransferResponse>, description = "Create+execute success envelope. Example: {\"success\":true,\"data\":{\"id\":\"...\",\"status\":\"Posted\",\"items\":[...]}}"),
+    (status = 200, body = ApiResponse<PhysicalTransferResponse>, description = "Create+execute success envelope. Example: {\"success\":true,\"data\":{\"id\":\"...\",\"status\":\"Executed\",\"items\":[...]}}"),
     (status = 400, description = "Validation or bad request envelope. Example: {\"success\":false,\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Validation error: ...\"}}"),
     (status = 403, description = "Forbidden envelope for insufficient role. Example: {\"success\":false,\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"Forbidden: ...\"}}"),
     (status = 409, description = "Conflict envelope for domain constraints. Example: {\"success\":false,\"error\":{\"code\":\"CONFLICT\",\"message\":\"Conflict: ...\"}}")

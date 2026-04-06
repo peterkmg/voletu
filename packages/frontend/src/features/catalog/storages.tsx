@@ -59,7 +59,7 @@ function getStorageColumns(t: TFunction): ColumnDef<StorageResponse>[] {
         )
       },
     },
-    dateColumn<StorageResponse>('createdAt', t('common:table.createdAt')),
+    { ...dateColumn<StorageResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<StorageResponse>(DataTableRowActions, 2),
   ]
 }

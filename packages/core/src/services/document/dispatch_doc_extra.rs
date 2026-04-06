@@ -13,8 +13,8 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, response::pipeline::TruckDispatchPipelineResponse},
-  entities::{company, dispatch_document, dispatch_item, dispatch_storage_measurement, product},
+  dtos::{self, response::pipeline::{DispatchFlatRow, TruckDispatchPipelineResponse}},
+  entities::{company, dispatch_document, dispatch_item, dispatch_storage_measurement, product, storage},
   enums::{self, DispatchMethod, DocumentStatus, PipelineStatus},
   services::document::DocumentService,
 };
@@ -44,7 +44,7 @@ impl DocumentService {
       .dispatch_document_execute_no_tx(&txn, response.document.id, actor_id)
       .await?;
 
-    response.document.status = crate::enums::DocumentStatus::Posted;
+    response.document.status = crate::enums::DocumentStatus::Executed;
     txn.commit().await?;
 
     Ok(response)
@@ -177,7 +177,7 @@ impl DocumentService {
           cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Draft))
         }
         PipelineStatus::Executed => {
-          cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Posted))
+          cond = cond.add(dispatch_document::Column::Status.eq(DocumentStatus::Executed))
         }
       }
     }
@@ -214,6 +214,93 @@ impl DocumentService {
         },
         pipeline_status: PipelineStatus::from_doc_status(Some(&dd.status)),
       });
+    }
+
+    Ok(rows)
+  }
+
+  /// Returns one row per dispatch item with document fields repeated.
+  /// Used by the grouped-row list table on the frontend.
+  pub async fn dispatch_flat_query(
+    &self,
+    status: Option<enums::DocumentStatus>,
+    dispatch_method: Option<enums::DispatchMethod>,
+    dispatch_purpose: Option<enums::DispatchPurpose>,
+    page: Option<u64>,
+    per_page: Option<u64>,
+  ) -> Result<Vec<DispatchFlatRow>, ApiError> {
+    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let db = self.db.as_ref();
+
+    let mut cond = Condition::all().add(dispatch_document::Column::DeletedAt.is_null());
+    if let Some(s) = status {
+      cond = cond.add(dispatch_document::Column::Status.eq(s));
+    }
+    if let Some(dm) = dispatch_method {
+      cond = cond.add(dispatch_document::Column::DispatchMethod.eq(dm));
+    }
+    if let Some(dp) = dispatch_purpose {
+      cond = cond.add(dispatch_document::Column::DispatchPurpose.eq(dp));
+    }
+
+    let docs: Vec<dispatch_document::ModelEx> = dispatch_document::Entity::load()
+      .filter(cond)
+      .with(company::Entity)
+      .with((dispatch_item::Entity, product::Entity))
+      .with((dispatch_item::Entity, storage::Entity))
+      .order_by_desc(dispatch_document::Column::Date)
+      .paginate(db, per_page)
+      .fetch_page(page - 1)
+      .await?;
+
+    let mut rows = Vec::new();
+    for doc in &docs {
+      let contractor_name = doc
+        .contractor
+        .as_ref()
+        .map(|c| c.common_name.clone())
+        .unwrap_or("\u{2014}".to_string());
+
+      if doc.items.is_empty() {
+        rows.push(DispatchFlatRow {
+          id: doc.id,
+          document_id: doc.id,
+          document_number: doc.document_number.clone(),
+          date: doc.date.to_string(),
+          status: doc.status,
+          dispatch_method: doc.dispatch_method,
+          dispatch_purpose: doc.dispatch_purpose,
+          contractor_id_name: contractor_name.clone(),
+          item_id: doc.id,
+          product_id_name: "\u{2014}".to_string(),
+          storage_id_name: "\u{2014}".to_string(),
+          dispatched_amount: Default::default(),
+        });
+      }
+      for item in &doc.items {
+        rows.push(DispatchFlatRow {
+          id: doc.id,
+          document_id: doc.id,
+          document_number: doc.document_number.clone(),
+          date: doc.date.to_string(),
+          status: doc.status,
+          dispatch_method: doc.dispatch_method,
+          dispatch_purpose: doc.dispatch_purpose,
+          contractor_id_name: contractor_name.clone(),
+          item_id: item.id,
+          product_id_name: item
+            .product
+            .as_ref()
+            .map(|p| p.common_name.clone())
+            .unwrap_or_default(),
+          storage_id_name: item
+            .storage
+            .as_ref()
+            .map(|s| s.common_name.clone())
+            .unwrap_or_default(),
+          dispatched_amount: item.dispatched_amount,
+        });
+      }
     }
 
     Ok(rows)

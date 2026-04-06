@@ -19,5 +19,8 @@ declare module '@tanstack/react-table' {
      *  - 'flex': absorbs remaining space via 1fr (names, descriptions)
      *  When omitted, getGridTemplate falls back to the legacy minSize/maxSize heuristic. */
     sizingCategory?: 'fixed' | 'capped' | 'flex'
+    /** For grouped tables: 'doc' columns show only on group's first row;
+     *  'item' columns show on every row. Unset = always show. */
+    groupRole?: 'doc' | 'item'
   }
 }

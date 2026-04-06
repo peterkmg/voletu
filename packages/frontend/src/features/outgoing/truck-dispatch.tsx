@@ -4,7 +4,7 @@ import type { DispatchItemResponse, TruckDispatchPipelineResponse } from '~/gene
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { EntityPage } from '~/components/entity-page'
@@ -18,7 +18,8 @@ import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalog
 import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { truckDispatchPipelineQueryQueryKey, useTruckDispatchPipelineQuery } from '~/generated/hooks/FlowsHooks/useTruckDispatchPipelineQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
-import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
+import { statusColors } from '~/lib/badge-colors'
+import { formatDate, formatDateTime } from '~/lib/formatters'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
@@ -36,13 +37,16 @@ const DataTableRowActions = createRowActions<TruckDispatchPipelineResponse>({
 
 function getColumns(t: TFunction): ColumnDef<TruckDispatchPipelineResponse>[] {
   return [
-    textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
-    dateColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')),
-    textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
-    textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }),
-    textColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity'), { primary: false, sizing: 'capped', maxSize: 150 }),
-    statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
-    actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions, 1),
+    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+    { ...textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...dateColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
+    { ...textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
+    { ...statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    // Item-level columns (groupRole: 'item' — shown on every row)
+    { ...textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...numericColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    // Actions (doc-level)
+    { ...actionsColumn<TruckDispatchPipelineResponse>(DataTableRowActions, 1), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }
 
@@ -51,7 +55,17 @@ const detailRoute = getRouteApi('/_authenticated/outgoing/truck/$id')
 const globalFilterFn = createGlobalFilter<TruckDispatchPipelineResponse>('documentNumber', 'contractorName')
 
 function TruckDispatchTable({ data }: { data: TruckDispatchPipelineResponse[] }) {
-  return <EntityTable tableId="truck-dispatch" data={data} getColumns={getColumns} routeApi={routeApi} globalFilterFn={globalFilterFn} i18nNamespaces={['common']} />
+  return (
+    <EntityTable
+      tableId="truck-dispatch"
+      data={data}
+      getColumns={getColumns}
+      routeApi={routeApi}
+      globalFilterFn={globalFilterFn}
+      i18nNamespaces={['common']}
+      groupKey="id"
+    />
+  )
 }
 
 const dispatchSchema = z.object({
@@ -105,7 +119,7 @@ export function TruckDispatchPage() {
 export function TruckDispatchDetail() {
   const { id } = detailRoute.useParams()
   const { t } = useTranslation(['common'])
-  const { data, isLoading } = useDispatchCompositeGet(id)
+  const { data, isLoading } = useDispatchCompositeGet(id, { embed: 'names' })
 
   if (isLoading || !data?.data)
     return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
@@ -114,13 +128,13 @@ export function TruckDispatchDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.truckDispatch'), entityLabel: 'Dispatch', backTo: '/outgoing/truck', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: truckDispatchPipelineQueryQueryKey(), statusColorMap: documentStatusColors }}
+      config={{ title: t('common:nav.truckDispatch'), entityLabel: 'Dispatch', backTo: '/outgoing/truck', executeFn: dispatchDocumentExecute, revertFn: dispatchDocumentRevert, queryKey: truckDispatchPipelineQueryQueryKey(), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{doc.date}</p>
+            <p>{formatDate(doc.date)}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
@@ -134,9 +148,9 @@ export function TruckDispatchDetail() {
           columns={[
             textColumn<DispatchItemResponse>('productIdName', t('common:table.product')),
             textColumn<DispatchItemResponse>('storageIdName', t('common:columns.storage')),
-            textColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
+            numericColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
           ]}
-          isLocked={doc.status === 'POSTED'}
+          isLocked={doc.status === 'EXECUTED'}
           sectionTitle={t('common:sections.dispatchItems')}
         />
       )}
@@ -145,7 +159,7 @@ export function TruckDispatchDetail() {
             <div className="text-sm">
               <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
               {' '}
-              {doc.executedAt}
+              {formatDateTime(doc.executedAt)}
             </div>
           )
         : null}

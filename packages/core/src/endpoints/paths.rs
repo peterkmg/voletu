@@ -229,6 +229,13 @@ pub mod flows {
   pub const TRUCK_RECEIPT_QUERY: &str = "/flows/truck-receipt/query";
   pub const RAIL_RECEIPT_QUERY: &str = "/flows/rail-receipt/query";
   pub const TRUCK_DISPATCH_QUERY: &str = "/flows/truck-dispatch/query";
+  pub const ACCEPTANCE_FLAT_QUERY: &str = "/flows/acceptance/query-flat";
+  pub const DISPATCH_FLAT_QUERY: &str = "/flows/dispatch/query-flat";
+  pub const PHYSICAL_TRANSFER_FLAT_QUERY: &str = "/flows/physical-transfer/query-flat";
+  pub const OWNERSHIP_TRANSFER_FLAT_QUERY: &str = "/flows/ownership-transfer/query-flat";
+  pub const BLENDING_FLAT_QUERY: &str = "/flows/blending/query-flat";
+  pub const RECONCILIATION_FLAT_QUERY: &str = "/flows/reconciliation/query-flat";
+  pub const CARGO_FLOW_FLAT_QUERY: &str = "/flows/cargo-flow/query-flat";
 }
 
 pub mod docs {

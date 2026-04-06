@@ -41,6 +41,8 @@ interface EntityTableProps<T> {
   bulkActions?: (t: TFunction) => BulkAction<T>[]
   /** Unique ID for persisting table preferences (e.g. 'companies'). */
   tableId?: string
+  /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
+  groupKey?: keyof T & string
 }
 
 export function EntityTable<T>({
@@ -52,6 +54,7 @@ export function EntityTable<T>({
   isLoading,
   bulkActions,
   tableId,
+  groupKey,
 }: EntityTableProps<T>) {
   const { t } = useTranslation(i18nNamespaces)
   const columns = useMemo(() => getColumns(t), [t, getColumns])
@@ -59,7 +62,16 @@ export function EntityTable<T>({
   const [tableMode, setTableMode] = useState<TableMode>(() => getStoredTableMode(tableId))
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
+    const defaults: VisibilityState = {}
+    for (const col of columns) {
+      if (col.meta?.requiresRole) {
+        const key = (col as { accessorKey?: string }).accessorKey ?? col.id
+        if (key) defaults[key] = false
+      }
+    }
+    return defaults
+  })
 
   const handleModeChange = useCallback((mode: TableMode) => {
     setTableMode(mode)
@@ -129,6 +141,7 @@ export function EntityTable<T>({
           mode={tableMode}
           isLoading={isLoading}
           height="100%"
+          groupKey={groupKey}
         />
       </div>
       {tableMode === 'paginated' && (

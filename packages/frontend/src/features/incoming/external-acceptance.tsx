@@ -1,10 +1,10 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { AcceptanceItemResponse, AcceptanceResponse } from '~/generated/types'
+import type { AcceptanceFlatRow, AcceptanceItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
@@ -15,9 +15,10 @@ import { Form } from '~/components/ui/form'
 import { Skeleton } from '~/components/ui/skeleton'
 import { acceptanceDocumentCreate, acceptanceDocumentExecute, acceptanceDocumentHardDelete, acceptanceDocumentRevert, acceptanceDocumentSoftDelete, acceptanceDocumentUpdate } from '~/generated/client'
 import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
-import { acceptanceDocumentQueryQueryKey, useAcceptanceDocumentQuery } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceDocumentQuery'
+import { flowAcceptanceFlatQueryQueryKey, useFlowAcceptanceFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowAcceptanceFlatQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
-import { documentStatusColors } from '~/lib/badge-colors'
+import { statusColors } from '~/lib/badge-colors'
+import { formatDate, formatDateTime } from '~/lib/formatters'
 import { createDeleteDialog } from '~/lib/create-delete-dialog'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
@@ -26,27 +27,32 @@ import { createRowActions } from '~/lib/create-row-actions'
 
 type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | 'revert'
 
-const { Provider, useEntity } = createEntityProvider<AcceptanceResponse, DialogType>('ExternalAcceptance')
+const { Provider, useEntity } = createEntityProvider<AcceptanceFlatRow, DialogType>('ExternalAcceptance')
 
-const DataTableRowActions = createRowActions<AcceptanceResponse>({ useEntity, lifecycle: true, getDetailPath: row => `/incoming/external/${row.id}` })
+const DataTableRowActions = createRowActions<AcceptanceFlatRow>({ useEntity, lifecycle: true, getDetailPath: row => `/incoming/external/${row.documentId}` })
 
-function getColumns(t: TFunction): ColumnDef<AcceptanceResponse>[] {
+function getColumns(t: TFunction): ColumnDef<AcceptanceFlatRow>[] {
   return [
-    textColumn<AcceptanceResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }),
-    dateColumn<AcceptanceResponse>('dateAccepted', t('common:table.date')),
-    textColumn<AcceptanceResponse>('sourceEntity', t('common:table.source'), { primary: false, sizing: 'capped', maxSize: 180 }),
-    statusColumn<AcceptanceResponse>('status', t('common:table.status'), documentStatusColors),
-    { ...dateColumn<AcceptanceResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), requiresRole: 'senior_supervisor' } },
-    { ...dateColumn<AcceptanceResponse>('updatedAt', t('common:table.updatedAt')), enableHiding: true, meta: { label: t('common:table.updatedAt'), requiresRole: 'senior_supervisor' } },
-    actionsColumn<AcceptanceResponse>(DataTableRowActions),
+    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+    { ...textColumn<AcceptanceFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...dateColumn<AcceptanceFlatRow>('dateAccepted', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
+    { ...textColumn<AcceptanceFlatRow>('sourceEntity', t('common:table.source'), { primary: false, sizing: 'capped', maxSize: 180 }), meta: { label: t('common:table.source'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    { ...statusColumn<AcceptanceFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    // Item-level columns (groupRole: 'item' — shown on every row)
+    { ...textColumn<AcceptanceFlatRow>('productIdName', t('common:table.product')), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<AcceptanceFlatRow>('storageIdName', t('common:columns.storage')), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...textColumn<AcceptanceFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
+    { ...numericColumn<AcceptanceFlatRow>('acceptedAmount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    // Actions (doc-level)
+    { ...actionsColumn<AcceptanceFlatRow>(DataTableRowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }
 
 const route = getRouteApi('/_authenticated/incoming/external/')
 const detailRoute = getRouteApi('/_authenticated/incoming/external/$id')
-const globalFilterFn = createGlobalFilter<AcceptanceResponse>('documentNumber')
+const globalFilterFn = createGlobalFilter<AcceptanceFlatRow>('documentNumber', 'productIdName', 'storageIdName')
 
-function ExternalAcceptanceTable({ data }: { data: AcceptanceResponse[] }) {
+function ExternalAcceptanceTable({ data }: { data: AcceptanceFlatRow[] }) {
   return (
     <EntityTable
       tableId="external-acceptance"
@@ -55,6 +61,7 @@ function ExternalAcceptanceTable({ data }: { data: AcceptanceResponse[] }) {
       routeApi={route}
       globalFilterFn={globalFilterFn}
       i18nNamespaces={['common']}
+      groupKey="documentId"
     />
   )
 }
@@ -67,7 +74,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: AcceptanceResponse | null }) {
+function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: AcceptanceFlatRow | null }) {
   const { t } = useTranslation(['common'])
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
@@ -84,7 +91,7 @@ function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpe
     transformPayload: v => ({ ...v, arrivalType: 'EXTERNAL' as const, sourceEntity: v.sourceEntity || null }),
     createFn: acceptanceDocumentCreate,
     updateFn: acceptanceDocumentUpdate,
-    queryKey: acceptanceDocumentQueryQueryKey(),
+    queryKey: flowAcceptanceFlatQueryQueryKey(),
     entityLabel: t('common:nav.externalAcceptance'),
     formId: 'external-acceptance-form',
   })
@@ -106,13 +113,13 @@ const DeleteDialog = createDeleteDialog({
   useEntity,
   hardDeleteFn: acceptanceDocumentHardDelete,
   softDeleteFn: acceptanceDocumentSoftDelete,
-  queryKey: acceptanceDocumentQueryQueryKey,
+  queryKey: flowAcceptanceFlatQueryQueryKey,
   entityLabel: 'common:nav.externalAcceptance',
   i18nNamespaces: ['common'],
 })
 
-function AcceptanceLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: AcceptanceResponse | null, variant: 'execute' | 'revert' }) {
-  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={acceptanceDocumentExecute} revertFn={acceptanceDocumentRevert} queryKey={acceptanceDocumentQueryQueryKey()} entityLabel="Acceptance Document" />
+function AcceptanceLifecycleDialog({ open, onOpenChange, currentRow, variant }: { open: boolean, onOpenChange: () => void, currentRow: AcceptanceFlatRow | null, variant: 'execute' | 'revert' }) {
+  return <LifecycleDialog open={open} onOpenChange={onOpenChange} currentRow={currentRow} action={variant} executeFn={acceptanceDocumentExecute} revertFn={acceptanceDocumentRevert} queryKey={flowAcceptanceFlatQueryQueryKey()} entityLabel="Acceptance Document" />
 }
 
 const Dialogs = createEntityDialogs({ useEntity, MutateDialog, DeleteDialog, LifecycleDialog: AcceptanceLifecycleDialog, lifecyclePropName: 'variant' })
@@ -120,7 +127,7 @@ const PrimaryButtons = createPrimaryButtons({ useEntity })
 
 export function ExternalAcceptancePage() {
   const { t } = useTranslation(['common'])
-  const queryResult = useAcceptanceDocumentQuery({ truckWaybillId: 'isNull' as any, railWaybillId: 'isNull' as any, transitDispatchId: 'isNull' as any })
+  const queryResult = useFlowAcceptanceFlatQuery()
 
   return <EntityPage provider={Provider} title={t('common:nav.externalAcceptance')} queryResult={queryResult} primaryButtons={PrimaryButtons} table={ExternalAcceptanceTable} dialogs={Dialogs} />
 }
@@ -128,7 +135,7 @@ export function ExternalAcceptancePage() {
 export function ExternalAcceptanceDetail() {
   const { id } = detailRoute.useParams()
   const { t } = useTranslation(['common'])
-  const { data, isLoading } = useAcceptanceCompositeGet(id)
+  const { data, isLoading } = useAcceptanceCompositeGet(id, { embed: 'names' })
 
   if (isLoading || !data?.data)
     return <div className="p-4"><Skeleton className="h-64 w-full" /></div>
@@ -137,13 +144,13 @@ export function ExternalAcceptanceDetail() {
 
   return (
     <DocumentDetailPage
-      config={{ title: t('common:nav.externalAcceptance'), entityLabel: 'Acceptance', backTo: '/incoming/external', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: acceptanceDocumentQueryQueryKey(), statusColorMap: documentStatusColors }}
+      config={{ title: t('common:nav.externalAcceptance'), entityLabel: 'Acceptance', backTo: '/incoming/external', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: flowAcceptanceFlatQueryQueryKey(), statusColorMap: statusColors }}
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{doc.dateAccepted}</p>
+            <p>{formatDate(doc.dateAccepted)}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.source')}</span>
@@ -158,9 +165,9 @@ export function ExternalAcceptanceDetail() {
             textColumn<AcceptanceItemResponse>('productIdName', t('common:table.product')),
             textColumn<AcceptanceItemResponse>('storageIdName', t('common:columns.storage')),
             textColumn<AcceptanceItemResponse>('contractorIdName', t('common:table.contractor')),
-            textColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
+            numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
           ]}
-          isLocked={doc.status === 'POSTED'}
+          isLocked={doc.status === 'EXECUTED'}
           sectionTitle={t('common:sections.acceptanceItems')}
         />
       )}
@@ -169,7 +176,7 @@ export function ExternalAcceptanceDetail() {
             <div className="text-sm">
               <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
               {' '}
-              {doc.executedAt}
+              {formatDateTime(doc.executedAt)}
             </div>
           )
         : null}

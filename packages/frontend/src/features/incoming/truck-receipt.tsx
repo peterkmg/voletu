@@ -5,7 +5,7 @@ import type { AcceptanceItemResponse, TruckReceiptPipelineResponse } from '~/gen
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, statusColumn, textColumn } from '~/components/data-table'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { RelatedDocuments } from '~/components/document/related-documents'
@@ -21,7 +21,8 @@ import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceH
 import { useTransportTruckWaybillGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillGet'
 import { flowTruckReceiptQueryQueryKey, useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
-import { documentStatusColors, pipelineStatusColors } from '~/lib/badge-colors'
+import { statusColors } from '~/lib/badge-colors'
+import { formatDate, formatDateTime } from '~/lib/formatters'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
@@ -43,10 +44,10 @@ function getColumns(t: TFunction): ColumnDef<TruckReceiptPipelineResponse>[] {
     dateColumn<TruckReceiptPipelineResponse>('basisDate', t('common:table.date')),
     textColumn<TruckReceiptPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }),
     textColumn<TruckReceiptPipelineResponse>('productName', t('common:table.product'), { primary: false }),
-    textColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty'), { primary: false, sizing: 'capped', maxSize: 150 }),
-    statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), pipelineStatusColors),
+    numericColumn<TruckReceiptPipelineResponse>('expectedQuantity', t('common:table.expectedQty')),
+    statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
     textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
-    textColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty'), { primary: false, sizing: 'capped', maxSize: 150 }),
+    numericColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
     actionsColumn<TruckReceiptPipelineResponse>(DataTableRowActions, 1),
   ]
 }
@@ -130,8 +131,8 @@ export function TruckReceiptDetail() {
   const { t } = useTranslation(['common'])
 
   // Try both: waybill (pending) and acceptance (draft/executed)
-  const waybillQuery = useTransportTruckWaybillGet(id)
-  const acceptanceQuery = useAcceptanceCompositeGet(id)
+  const waybillQuery = useTransportTruckWaybillGet(id, { embed: 'names' })
+  const acceptanceQuery = useAcceptanceCompositeGet(id, { embed: 'names' })
 
   const isLoading = waybillQuery.isLoading && acceptanceQuery.isLoading
 
@@ -150,14 +151,14 @@ export function TruckReceiptDetail() {
           executeFn: acceptanceDocumentExecute,
           revertFn: acceptanceDocumentRevert,
           queryKey: flowTruckReceiptQueryQueryKey(),
-          statusColorMap: documentStatusColors,
+          statusColorMap: statusColors,
         }}
         document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
         subtitle={t('common:nav.truckReceipt')}
         relatedContent={(() => {
           const docs: RelatedDocument[] = []
           if (doc.truckWaybillId) {
-            docs.push({ type: 'basis', label: 'Truck Waybill', documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: 'Pending', statusColorMap: documentStatusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
+            docs.push({ type: 'basis', label: 'Truck Waybill', documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: 'Pending', statusColorMap: statusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
           }
           return <RelatedDocuments documents={docs} />
         })()}
@@ -165,7 +166,7 @@ export function TruckReceiptDetail() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-              <p>{doc.dateAccepted}</p>
+              <p>{formatDate(doc.dateAccepted)}</p>
             </div>
             <div>
               <span className="text-sm text-muted-foreground">{t('common:table.source')}</span>
@@ -180,9 +181,9 @@ export function TruckReceiptDetail() {
               textColumn<AcceptanceItemResponse>('productIdName', t('common:table.product')),
               textColumn<AcceptanceItemResponse>('storageIdName', t('common:columns.storage')),
               textColumn<AcceptanceItemResponse>('contractorIdName', t('common:table.contractor')),
-              textColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
+              numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
             ]}
-            isLocked={doc.status === 'POSTED'}
+            isLocked={doc.status === 'EXECUTED'}
             sectionTitle={t('common:sections.acceptanceItems')}
           />
         )}
@@ -191,7 +192,7 @@ export function TruckReceiptDetail() {
               <div className="text-sm">
                 <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
                 {' '}
-                {doc.executedAt}
+                {formatDateTime(doc.executedAt)}
               </div>
             )
           : null}
@@ -215,7 +216,7 @@ export function TruckReceiptDetail() {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{wb.date}</p>
+            <p>{formatDate(wb.date)}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>

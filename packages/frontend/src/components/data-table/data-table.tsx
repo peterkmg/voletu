@@ -32,6 +32,8 @@ interface DataTableProps<TData> {
   emptyIcon?: React.ReactNode
   /** Called when a row receives Enter key or is double-clicked. */
   onRowAction?: (row: TData) => void
+  /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
+  groupKey?: string
 }
 
 export function DataTable<TData>({
@@ -46,6 +48,7 @@ export function DataTable<TData>({
   emptyMessage,
   emptyIcon,
   onRowAction,
+  groupKey,
 }: DataTableProps<TData>) {
   const { density } = useDensity()
   const densityCls = densityClasses[density]
@@ -84,6 +87,7 @@ export function DataTable<TData>({
                 emptyMessage={emptyMessage}
                 emptyIcon={emptyIcon}
                 onRowAction={onRowAction}
+                groupKey={groupKey}
               />
             )
           : (
@@ -96,6 +100,7 @@ export function DataTable<TData>({
                 emptyMessage={emptyMessage}
                 emptyIcon={emptyIcon}
                 onRowAction={onRowAction}
+                groupKey={groupKey}
               />
             )}
         {showFooter && (
