@@ -15,10 +15,10 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos::{
+    response::pipeline::OwnershipTransferFlatRow,
     CreateOwnershipTransferItemRequest,
     CreateOwnershipTransferRequest,
     OwnershipTransferResponse,
-    response::pipeline::OwnershipTransferFlatRow,
   },
   entities::{company, ownership_transfer, ownership_transfer_item, product, storage},
   enums,

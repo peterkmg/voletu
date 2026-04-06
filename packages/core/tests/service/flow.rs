@@ -282,9 +282,15 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     assert_eq!(all.len(), 3, "Expected 3 flat rows (2 + 1 items)");
 
     // Check document fields are repeated for items in same group
-    let doc1_rows: Vec<_> = all.iter().filter(|r| r.document_number == "ACC-FLAT-001").collect();
+    let doc1_rows: Vec<_> = all
+      .iter()
+      .filter(|r| r.document_number == "ACC-FLAT-001")
+      .collect();
     assert_eq!(doc1_rows.len(), 2, "Doc1 should have 2 rows (2 items)");
-    assert_eq!(doc1_rows[0].document_id, doc1_rows[1].document_id, "Same document_id for grouped rows");
+    assert_eq!(
+      doc1_rows[0].document_id, doc1_rows[1].document_id,
+      "Same document_id for grouped rows"
+    );
     assert_eq!(doc1_rows[0].status, enums::DocumentStatus::Draft);
 
     // Check resolved names
@@ -299,7 +305,10 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     assert!(has_tank_b, "Should resolve Tank B name");
 
     // Check doc2 rows
-    let doc2_rows: Vec<_> = all.iter().filter(|r| r.document_number == "ACC-FLAT-002").collect();
+    let doc2_rows: Vec<_> = all
+      .iter()
+      .filter(|r| r.document_number == "ACC-FLAT-002")
+      .collect();
     assert_eq!(doc2_rows.len(), 1, "Doc2 should have 1 row");
     assert_eq!(doc2_rows[0].status, enums::DocumentStatus::Executed);
 

@@ -460,7 +460,10 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       let mass = volume * density / Decimal::new(10, 0);
       rail_wagon_manifest::ActiveModel {
         rail_waybill_id: Set(model.id),
-        wagon_number: Set(format!("{:08}", rng.random_range(10_000_000u32..99_999_999u32))),
+        wagon_number: Set(format!(
+          "{:08}",
+          rng.random_range(10_000_000u32..99_999_999u32)
+        )),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
         declared_volume: Set(volume),
         declared_density: Set(density),

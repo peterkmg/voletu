@@ -15,10 +15,10 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos::{
+    response::pipeline::PhysicalTransferFlatRow,
     CreatePhysicalTransferItemRequest,
     CreatePhysicalTransferRequest,
     PhysicalTransferResponse,
-    response::pipeline::PhysicalTransferFlatRow,
   },
   entities::{company, physical_storage_transfer, physical_transfer_item, product, storage},
   enums,
@@ -199,7 +199,10 @@ impl DocumentService {
         .filter(storage::Column::Id.is_in(to_storage_ids))
         .all(db)
         .await?;
-      storages.into_iter().map(|s| (s.id, s.common_name)).collect()
+      storages
+        .into_iter()
+        .map(|s| (s.id, s.common_name))
+        .collect()
     };
 
     let mut rows = Vec::new();

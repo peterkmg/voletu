@@ -1,12 +1,25 @@
 use sea_orm::{
-  ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  EntityTrait,
+  PaginatorTrait,
+  QueryFilter,
+  QueryOrder,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{response::pipeline::ReconciliationFlatRow, InventoryReconciliationResponse},
-  entities::{company, inventory_adjustment, inventory_reconciliation, product, storage, warehouse},
+  entities::{
+    company,
+    inventory_adjustment,
+    inventory_reconciliation,
+    product,
+    storage,
+    warehouse,
+  },
   enums::DocumentStatus,
   services::DocumentService,
 };

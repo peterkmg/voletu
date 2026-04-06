@@ -13,8 +13,18 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, response::pipeline::{DispatchFlatRow, TruckDispatchPipelineResponse}},
-  entities::{company, dispatch_document, dispatch_item, dispatch_storage_measurement, product, storage},
+  dtos::{
+    self,
+    response::pipeline::{DispatchFlatRow, TruckDispatchPipelineResponse},
+  },
+  entities::{
+    company,
+    dispatch_document,
+    dispatch_item,
+    dispatch_storage_measurement,
+    product,
+    storage,
+  },
   enums::{self, DispatchMethod, DocumentStatus, PipelineStatus},
   services::document::DocumentService,
 };

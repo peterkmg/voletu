@@ -16,8 +16,7 @@ impl DocumentService {
     page: Option<u64>,
     per_page: Option<u64>,
   ) -> Result<Vec<CargoFlowFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
 
     // Fetch all document types in parallel (no filters, large page to get all).
     let big_page = Some(1u64);
@@ -190,7 +189,11 @@ impl DocumentService {
 
     // In-memory pagination
     let start = ((page - 1) * per_page) as usize;
-    let paginated = rows.into_iter().skip(start).take(per_page as usize).collect();
+    let paginated = rows
+      .into_iter()
+      .skip(start)
+      .take(per_page as usize)
+      .collect();
 
     Ok(paginated)
   }

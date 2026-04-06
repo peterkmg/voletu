@@ -3,7 +3,11 @@ use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
 use crate::enums::{
-  AdjustmentType, DocumentStatus, DispatchMethod, DispatchPurpose, PipelineStatus,
+  AdjustmentType,
+  DispatchMethod,
+  DispatchPurpose,
+  DocumentStatus,
+  PipelineStatus,
 };
 
 #[response_dto]
@@ -206,7 +210,7 @@ pub struct CargoFlowFlatRow {
   pub flow_type: String, // "Incoming" | "Outgoing" | "Internal"
   pub operation: String, // "Truck Receipt" | "Blending" | etc.
   pub contractor_name: String,
-  pub status: String, // Keep as string for mixed status types
+  pub status: String,     // Keep as string for mixed status types
   pub flow_route: String, // Frontend navigation path
   // Item-level fields
   pub product_name: String,

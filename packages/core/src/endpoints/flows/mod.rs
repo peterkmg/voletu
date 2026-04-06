@@ -22,8 +22,12 @@ pub fn flow_routes(state: Arc<ApiState>) -> OpenApiRouter {
     .merge(truck_dispatch::truck_dispatch_routes(state.clone()))
     .merge(acceptance::acceptance_flat_routes(state.clone()))
     .merge(dispatch::dispatch_flat_routes(state.clone()))
-    .merge(physical_transfer::physical_transfer_flat_routes(state.clone()))
-    .merge(ownership_transfer::ownership_transfer_flat_routes(state.clone()))
+    .merge(physical_transfer::physical_transfer_flat_routes(
+      state.clone(),
+    ))
+    .merge(ownership_transfer::ownership_transfer_flat_routes(
+      state.clone(),
+    ))
     .merge(blending::blending_flat_routes(state.clone()))
     .merge(reconciliation::reconciliation_flat_routes(state.clone()))
     .merge(cargo_flow::cargo_flow_routes(state))
