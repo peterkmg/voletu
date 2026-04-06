@@ -20,7 +20,11 @@ async fn truck_waybill_composite_get(
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<TruckWaybillCompositeResponse> {
   let row = if embed.wants_names() {
-    state.svc.document.truck_waybill_composite_get_with_names(id).await?
+    state
+      .svc
+      .document
+      .truck_waybill_composite_get_with_names(id)
+      .await?
   } else {
     state.svc.document.truck_waybill_composite_get(id).await?
   };
@@ -53,6 +57,9 @@ async fn truck_waybill_composite_create(
 
 pub(super) fn composite_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
-    .routes(routes!(truck_waybill_composite_get, truck_waybill_composite_create))
+    .routes(routes!(
+      truck_waybill_composite_get,
+      truck_waybill_composite_create
+    ))
     .with_state(state)
 }

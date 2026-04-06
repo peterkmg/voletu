@@ -157,7 +157,11 @@ impl DocumentService {
 
     Ok(dtos::RailWaybillCompositeResponse {
       waybill,
-      wagon_manifests: if manifests.is_empty() { None } else { Some(manifests) },
+      wagon_manifests: if manifests.is_empty() {
+        None
+      } else {
+        Some(manifests)
+      },
     })
   }
 

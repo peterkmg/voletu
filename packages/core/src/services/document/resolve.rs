@@ -248,7 +248,11 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
     let mut composite = self.truck_waybill_composite_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut composite.waybill)).await?;
+    resolve_names(
+      self.db.as_ref(),
+      std::slice::from_mut(&mut composite.waybill),
+    )
+    .await?;
     if let Some(ref mut items) = composite.items {
       resolve_names(self.db.as_ref(), items).await?;
     }
@@ -293,7 +297,11 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
     let mut composite = self.rail_waybill_composite_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut composite.waybill)).await?;
+    resolve_names(
+      self.db.as_ref(),
+      std::slice::from_mut(&mut composite.waybill),
+    )
+    .await?;
     if let Some(ref mut manifests) = composite.wagon_manifests {
       resolve_names(self.db.as_ref(), manifests).await?;
     }

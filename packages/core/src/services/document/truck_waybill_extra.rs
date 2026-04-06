@@ -131,7 +131,9 @@ impl DocumentService {
     let items: Vec<dtos::TruckWaybillItemResponse> = doc
       .items
       .iter()
-      .map(|item| dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone())))
+      .map(|item| {
+        dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone()))
+      })
       .collect();
 
     let waybill = dtos::TruckWaybillResponse::from(truck_waybill::Model::from(doc));

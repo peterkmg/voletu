@@ -1,7 +1,11 @@
 use serde_json::json;
 use uuid::Uuid;
 
-pub fn acceptance_save_truck(document_number: &str, date_accepted: &str, contractor_id: Uuid) -> String {
+pub fn acceptance_save_truck(
+  document_number: &str,
+  date_accepted: &str,
+  contractor_id: Uuid,
+) -> String {
   json!({
     "documentNumber": document_number,
     "dateAccepted": date_accepted,

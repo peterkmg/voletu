@@ -13,11 +13,7 @@ use crate::{
   dtos,
   entities::{physical_storage_transfer, physical_transfer_item},
   services::{
-    common::{
-      ensure_doc_mod_allowed,
-      ensure_storage_accepts_product,
-      set_if_some,
-    },
+    common::{ensure_doc_mod_allowed, ensure_storage_accepts_product, set_if_some},
     document::DocumentService,
   },
 };

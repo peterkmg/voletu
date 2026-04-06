@@ -119,7 +119,11 @@ async fn acceptance_document_endpoints_create_item_execute_and_return_expected_p
     let create_doc = post_json(
       &app,
       api_paths::acceptance::SAVE,
-      acceptance_save_truck(ACCEPTANCE_DOC_NUMBER, "2026-01-01T00:00:00Z", ctx.contractor_id),
+      acceptance_save_truck(
+        ACCEPTANCE_DOC_NUMBER,
+        "2026-01-01T00:00:00Z",
+        ctx.contractor_id,
+      ),
     )
     .await;
     let create_doc_json = assert_api_success(create_doc).await;
@@ -140,12 +144,7 @@ async fn acceptance_document_endpoints_create_item_execute_and_return_expected_p
     let create_item = post_json(
       &app,
       api_paths::acceptance::ITEMS,
-      acceptance_item(
-        doc_id,
-        ctx.product_id,
-        ctx.storage_a,
-        "5.0",
-      ),
+      acceptance_item(doc_id, ctx.product_id, ctx.storage_a, "5.0"),
     )
     .await;
     let create_item_json = assert_api_success(create_item).await;
@@ -701,7 +700,11 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     let acceptance_1 = post_json(
       &app,
       api_paths::acceptance::SAVE,
-      acceptance_save_truck(ACCEPTANCE_QUERY_DOC_NUMBER_1, "2026-01-08T00:00:00Z", ctx.contractor_id),
+      acceptance_save_truck(
+        ACCEPTANCE_QUERY_DOC_NUMBER_1,
+        "2026-01-08T00:00:00Z",
+        ctx.contractor_id,
+      ),
     )
     .await;
     let _ = assert_api_success(acceptance_1).await;
@@ -709,7 +712,11 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     let acceptance_2 = post_json(
       &app,
       api_paths::acceptance::SAVE,
-      acceptance_save_truck(ACCEPTANCE_QUERY_DOC_NUMBER_2, "2026-01-08T01:00:00Z", ctx.contractor_id),
+      acceptance_save_truck(
+        ACCEPTANCE_QUERY_DOC_NUMBER_2,
+        "2026-01-08T01:00:00Z",
+        ctx.contractor_id,
+      ),
     )
     .await;
     let _ = assert_api_success(acceptance_2).await;
@@ -725,12 +732,7 @@ async fn query_endpoints_filter_by_document_number_and_status() {
     let item_for_execute = post_json(
       &app,
       api_paths::acceptance::ITEMS,
-      acceptance_item(
-        acceptance_2_id,
-        ctx.product_id,
-        ctx.storage_a,
-        "3.0",
-      ),
+      acceptance_item(acceptance_2_id, ctx.product_id, ctx.storage_a, "3.0"),
     )
     .await;
     let _ = assert_api_success(item_for_execute).await;
@@ -1302,7 +1304,11 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
       post_json(
         &app,
         api_paths::acceptance::SAVE,
-        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_1, "2026-01-13T00:00:00Z", ctx.contractor_id),
+        acceptance_save_truck(
+          ACCEPTANCE_PAGINATION_DOC_NUMBER_1,
+          "2026-01-13T00:00:00Z",
+          ctx.contractor_id,
+        ),
       )
       .await,
     )
@@ -1311,7 +1317,11 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
       post_json(
         &app,
         api_paths::acceptance::SAVE,
-        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_2, "2026-01-13T01:00:00Z", ctx.contractor_id),
+        acceptance_save_truck(
+          ACCEPTANCE_PAGINATION_DOC_NUMBER_2,
+          "2026-01-13T01:00:00Z",
+          ctx.contractor_id,
+        ),
       )
       .await,
     )
@@ -1320,7 +1330,11 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
       post_json(
         &app,
         api_paths::acceptance::SAVE,
-        acceptance_save_truck(ACCEPTANCE_PAGINATION_DOC_NUMBER_3, "2026-01-13T02:00:00Z", ctx.contractor_id),
+        acceptance_save_truck(
+          ACCEPTANCE_PAGINATION_DOC_NUMBER_3,
+          "2026-01-13T02:00:00Z",
+          ctx.contractor_id,
+        ),
       )
       .await,
     )

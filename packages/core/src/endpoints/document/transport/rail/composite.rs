@@ -20,7 +20,11 @@ async fn rail_waybill_composite_get(
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<RailWaybillCompositeResponse> {
   let row = if embed.wants_names() {
-    state.svc.document.rail_waybill_composite_get_with_names(id).await?
+    state
+      .svc
+      .document
+      .rail_waybill_composite_get_with_names(id)
+      .await?
   } else {
     state.svc.document.rail_waybill_composite_get(id).await?
   };
@@ -53,6 +57,9 @@ async fn rail_waybill_composite_create(
 
 pub(super) fn composite_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
-    .routes(routes!(rail_waybill_composite_get, rail_waybill_composite_create))
+    .routes(routes!(
+      rail_waybill_composite_get,
+      rail_waybill_composite_create
+    ))
     .with_state(state)
 }
