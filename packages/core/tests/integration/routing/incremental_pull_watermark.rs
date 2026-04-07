@@ -4,6 +4,7 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Incremental pull returns only data created after the previous cursor; count is smaller than initial pull
 
+use super::parse_doc_id;
 use crate::common::integration::{
   create_acceptance_via_api,
   get_acceptance_composite_json,
@@ -14,8 +15,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn incremental_pull_advances_watermark_correctly() {

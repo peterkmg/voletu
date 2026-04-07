@@ -5,6 +5,7 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Both INSERT and UPDATE audit logs target the correct base; peripheral sees EXECUTED status
 
+use super::parse_doc_id;
 use crate::common::integration::{
   create_acceptance_via_api,
   execute_document_via_api,
@@ -16,8 +17,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn execute_produces_routed_update_audit_log() {

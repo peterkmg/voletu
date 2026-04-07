@@ -4,6 +4,7 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Document status transitions (DRAFT -> EXECUTED -> DRAFT -> EXECUTED) are faithfully replicated via sync
 
+use super::{parse_doc_id, pull_all};
 use crate::common::integration::{
   create_acceptance_via_api,
   execute_document_via_api,
@@ -14,8 +15,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::{parse_doc_id, pull_all};
 
 #[tokio::test]
 async fn full_document_lifecycle_syncs_correctly() {

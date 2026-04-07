@@ -15,9 +15,17 @@ use uuid::Uuid;
 use voletu_core::enums::NodeType;
 
 use crate::common::integration::{
-  has_audit_record, inject_targeted_idempotency_log, prepare_node_db,
-  pull_from_central_to_target, push_outbound_to_central, register_remote_node_on_central,
-  reserve_port, shutdown_server, spawn_server, temp_db_path, wait_for_health,
+  has_audit_record,
+  inject_targeted_idempotency_log,
+  prepare_node_db,
+  pull_from_central_to_target,
+  push_outbound_to_central,
+  register_remote_node_on_central,
+  reserve_port,
+  shutdown_server,
+  spawn_server,
+  temp_db_path,
+  wait_for_health,
   wait_for_login_token,
 };
 

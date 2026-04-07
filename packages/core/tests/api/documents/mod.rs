@@ -13,7 +13,9 @@ pub(crate) struct InventoryContext {
   pub warehouse_id: Uuid,
 }
 
-pub(crate) async fn seed_inventory_context(db: &Arc<sea_orm::DatabaseConnection>) -> InventoryContext {
+pub(crate) async fn seed_inventory_context(
+  db: &Arc<sea_orm::DatabaseConnection>,
+) -> InventoryContext {
   let catalog = seed_inventory_catalog(db).await;
   InventoryContext {
     contractor_id: catalog.contractor_a_id,
@@ -28,6 +30,6 @@ pub(crate) async fn seed_inventory_context(db: &Arc<sea_orm::DatabaseConnection>
 mod acceptance_crud;
 mod dispatch_crud;
 mod operations_and_blending_crud;
-mod query_filters;
 mod pagination;
+mod query_filters;
 mod validation;

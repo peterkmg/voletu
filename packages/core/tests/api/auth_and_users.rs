@@ -15,12 +15,7 @@ use crate::common::{
     setup_seeded_app_with_admin_token,
     with_auth_token,
   },
-  payloads::{
-    auth_change_password,
-    auth_login,
-    auth_refresh,
-    user_create,
-  },
+  payloads::{auth_change_password, auth_login, auth_refresh, user_create},
 };
 
 const OPERATOR_USERNAME: &str = "endpoint-operator";

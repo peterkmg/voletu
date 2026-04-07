@@ -16,11 +16,23 @@ use uuid::Uuid;
 use voletu_core::enums::NodeType;
 
 use crate::common::integration::{
-  create_local_transfer_and_ledger, ensure_shared_transfer_catalog, get_highest_audit_log_id,
-  get_ledger_entry_json, get_ownership_transfer_json, inject_targeted_sync_log, prepare_node_db,
-  pull_from_central_to_target, pull_from_central_to_target_after, push_outbound_to_central,
-  register_remote_node_on_central, reserve_port, shutdown_server, spawn_server, temp_db_path,
-  wait_for_health, wait_for_login_token,
+  create_local_transfer_and_ledger,
+  ensure_shared_transfer_catalog,
+  get_highest_audit_log_id,
+  get_ledger_entry_json,
+  get_ownership_transfer_json,
+  inject_targeted_sync_log,
+  prepare_node_db,
+  pull_from_central_to_target,
+  pull_from_central_to_target_after,
+  push_outbound_to_central,
+  register_remote_node_on_central,
+  reserve_port,
+  shutdown_server,
+  spawn_server,
+  temp_db_path,
+  wait_for_health,
+  wait_for_login_token,
 };
 
 #[tokio::test]
@@ -132,15 +144,11 @@ async fn sync_integration_ledger_affected_transfer_targets_shared_then_local_sco
   .await;
   assert!(pushed_wave_1 >= 2);
 
-  let pulled_wave_1_for_c = pull_from_central_to_target(
-    &client,
-    &central_url,
-    &central_token,
-    &c_url,
-    &c_token,
-    &[base_c],
-  )
-  .await;
+  let pulled_wave_1_for_c =
+    pull_from_central_to_target(&client, &central_url, &central_token, &c_url, &c_token, &[
+      base_c,
+    ])
+    .await;
   assert!(pulled_wave_1_for_c.0 >= 2);
 
   let transfer_1_a = get_ownership_transfer_json(&client, &a_url, &a_token, transfer_1_id)

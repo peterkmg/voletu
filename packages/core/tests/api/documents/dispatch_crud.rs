@@ -3,19 +3,24 @@ use sea_orm::{prelude::Decimal, ColumnTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
 use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entry};
 
+use super::seed_inventory_context;
 use crate::common::{
   catalog_seed::seed_ledger_balance,
   http::{
-    assert_api_success, post_empty, post_json, response_json, setup_seeded_app_with_admin_token,
+    assert_api_success,
+    post_empty,
+    post_json,
+    response_json,
+    setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{
-    dispatch_composite_save, dispatch_composite_save_and_execute,
-    dispatch_composite_save_and_execute_with_measurement, dispatch_storage_measurement,
+    dispatch_composite_save,
+    dispatch_composite_save_and_execute,
+    dispatch_composite_save_and_execute_with_measurement,
+    dispatch_storage_measurement,
   },
 };
-
-use super::seed_inventory_context;
 
 const DISPATCH_DOC_NUMBER: &str = "DISP-EP-1";
 const DISPATCH_COMPOSITE_DOC_NUMBER: &str = "DISP-COMP-1";

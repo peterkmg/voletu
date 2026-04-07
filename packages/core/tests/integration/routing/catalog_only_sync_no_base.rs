@@ -4,6 +4,7 @@
 //! **Topology:** Central + 1 Peripheral (no base assignments)
 //! **Verifies:** Pull with empty base_ids syncs global catalog but excludes routed documents
 
+use super::parse_doc_id;
 use crate::common::integration::{
   create_acceptance_via_api,
   get_acceptance_composite_json,
@@ -14,8 +15,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn catalog_only_sync_with_no_base_assignment() {

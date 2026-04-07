@@ -4,6 +4,7 @@
 //! **Topology:** Central + 2 Peripherals (one base each)
 //! **Verifies:** Audit log targets both source and destination bases; both peripherals receive the dispatch
 
+use super::parse_doc_id;
 use crate::common::integration::{
   api_post,
   create_dispatch_via_api,
@@ -15,8 +16,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn dispatch_routing_includes_destination_base() {

@@ -6,6 +6,7 @@
 
 use serde_json::Value;
 
+use super::parse_doc_id;
 use crate::common::integration::{
   assert_audit_log_targets,
   create_acceptance_via_api,
@@ -14,8 +15,6 @@ use crate::common::integration::{
   setup_central_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn routing_envelope_populated_on_composite_document_create() {

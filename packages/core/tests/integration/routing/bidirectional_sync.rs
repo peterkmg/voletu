@@ -6,6 +6,7 @@
 
 use uuid::Uuid;
 
+use super::parse_doc_id;
 use crate::common::integration::{
   create_acceptance_via_api,
   get_acceptance_composite_json,
@@ -16,8 +17,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 const INITIAL_AUDIT_CURSOR: Uuid = Uuid::from_u128(1);
 

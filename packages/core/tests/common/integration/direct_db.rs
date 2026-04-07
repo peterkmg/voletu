@@ -5,17 +5,21 @@ use voletu_core::{
   context::audit::with_audit_context,
   db::init_database,
   entities::{
-    base, company, inventory_ledger_entry, ownership_transfer, ownership_transfer_item, product,
-    product_group, product_type, storage, warehouse,
+    base,
+    company,
+    inventory_ledger_entry,
+    ownership_transfer,
+    ownership_transfer_item,
+    product,
+    product_group,
+    product_type,
+    storage,
+    warehouse,
   },
   enums::DocumentStatus,
 };
 
-use super::{
-  api_client::ensure_shared_memory_db_alive,
-  api_post,
-  server::db_cfg,
-};
+use super::{api_client::ensure_shared_memory_db_alive, api_post, server::db_cfg};
 
 #[derive(Clone, Copy)]
 pub struct TransferCatalogRefs {

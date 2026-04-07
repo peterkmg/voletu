@@ -6,6 +6,7 @@
 
 use uuid::Uuid;
 
+use super::parse_doc_id;
 use crate::common::integration::{
   create_acceptance_via_api,
   create_physical_transfer_via_api,
@@ -17,8 +18,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn data_parity_after_full_sync_cycle() {

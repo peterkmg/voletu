@@ -6,20 +6,26 @@ use voletu_core::{
   entities::{inventory_ledger_entry, inventory_reconciliation},
 };
 
+use super::seed_inventory_context;
 use crate::common::{
   catalog_seed::seed_ledger_balance,
   http::{
-    assert_api_error, assert_api_success, post_empty, post_json, setup_seeded_app_with_admin_token,
+    assert_api_error,
+    assert_api_success,
+    post_empty,
+    post_json,
+    setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{
-    blending_composite_save, blending_composite_save_and_execute, operations_ownership_transfer,
-    operations_physical_transfer, operations_reconciliation_adjustment,
+    blending_composite_save,
+    blending_composite_save_and_execute,
+    operations_ownership_transfer,
+    operations_physical_transfer,
+    operations_reconciliation_adjustment,
     operations_reconciliation_save,
   },
 };
-
-use super::seed_inventory_context;
 
 const PHYSICAL_TRANSFER_DOC_NUMBER: &str = "PT-EP-1";
 const RECONCILIATION_DOC_NUMBER: &str = "REC-EP-1";

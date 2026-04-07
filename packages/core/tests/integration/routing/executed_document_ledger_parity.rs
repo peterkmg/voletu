@@ -4,6 +4,7 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Ledger entry (storage + product + contractor + amount) on peripheral matches Central after syncing an executed document
 
+use super::pull_all;
 use crate::common::integration::{
   api_post,
   get_all_ledger_entries,
@@ -12,8 +13,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::pull_all;
 
 #[tokio::test]
 async fn executed_document_syncs_with_ledger_parity() {

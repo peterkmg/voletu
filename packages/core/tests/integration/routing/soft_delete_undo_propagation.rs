@@ -6,6 +6,7 @@
 
 use uuid::Uuid;
 
+use super::pull_all;
 use crate::common::integration::{
   api_post,
   has_catalog_entity,
@@ -15,8 +16,6 @@ use crate::common::integration::{
   soft_delete_via_api,
   temp_db_path,
 };
-
-use super::pull_all;
 
 #[tokio::test]
 async fn soft_delete_undo_propagates_via_sync() {

@@ -6,6 +6,7 @@
 
 use uuid::Uuid;
 
+use super::{parse_doc_id, pull_all};
 use crate::common::integration::{
   add_base_assignment_via_api,
   create_acceptance_via_api,
@@ -17,8 +18,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::{parse_doc_id, pull_all};
 
 #[tokio::test]
 async fn three_peripheral_convergence_with_overlapping_bases() {

@@ -6,6 +6,7 @@
 
 use uuid::Uuid;
 
+use super::parse_doc_id;
 use crate::common::integration::{
   add_base_assignment_via_api,
   api_post,
@@ -17,8 +18,6 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-use super::parse_doc_id;
 
 #[tokio::test]
 async fn multi_base_node_pulls_all_assigned_bases() {
