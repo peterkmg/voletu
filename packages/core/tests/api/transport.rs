@@ -6,7 +6,7 @@ use voletu_core::{
 };
 
 use crate::common::{
-  fixtures::seed_inventory_fixture,
+  catalog_seed::seed_inventory_catalog,
   http::{
     assert_api_error,
     assert_api_success,
@@ -34,7 +34,7 @@ const RAIL_DOC_NUMBER: &str = "RW-100";
 async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_expected_response_data(
 ) {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let waybill_res = post_json(
@@ -43,8 +43,8 @@ async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_
       transport_truck_waybill(
         TRUCK_DOC_NUMBER,
         "2026-01-01",
-        fixture.sender_id,
-        fixture.base_id,
+        catalog.sender_id,
+        catalog.base_id,
       ),
     )
     .await;
@@ -52,7 +52,7 @@ async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_
     assert_eq!(waybill_json["data"]["documentNumber"], TRUCK_DOC_NUMBER);
     assert_eq!(
       waybill_json["data"]["senderId"],
-      fixture.sender_id.to_string()
+      catalog.sender_id.to_string()
     );
 
     let truck_waybill_id = truck_waybill::Entity::find()
@@ -66,7 +66,7 @@ async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_
     let item_res = post_json(
       &app,
       api_paths::transport::truck::ITEMS,
-      transport_truck_item(truck_waybill_id, fixture.product_a_id, "12.5"),
+      transport_truck_item(truck_waybill_id, catalog.product_a_id, "12.5"),
     )
     .await;
     let item_json = assert_api_success(item_res).await;
@@ -76,7 +76,7 @@ async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_
     );
     assert_eq!(
       item_json["data"]["productId"],
-      fixture.product_a_id.to_string()
+      catalog.product_a_id.to_string()
     );
 
     let weight_res = post_json(
@@ -99,7 +99,7 @@ async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_
 async fn rail_transport_endpoints_create_waybill_manifest_measurement_and_weight_with_expected_response_data(
 ) {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let waybill_res = post_json(
@@ -108,8 +108,8 @@ async fn rail_transport_endpoints_create_waybill_manifest_measurement_and_weight
       transport_rail_waybill(
         RAIL_DOC_NUMBER,
         "2026-01-01",
-        fixture.sender_id,
-        fixture.base_id,
+        catalog.sender_id,
+        catalog.base_id,
       ),
     )
     .await;
@@ -130,7 +130,7 @@ async fn rail_transport_endpoints_create_waybill_manifest_measurement_and_weight
       transport_rail_manifest(
         rail_waybill_id,
         "WG-1",
-        fixture.product_a_id,
+        catalog.product_a_id,
         "20.0",
         "0.8",
         "16.0",
@@ -184,7 +184,7 @@ async fn rail_transport_endpoints_create_waybill_manifest_measurement_and_weight
 #[tokio::test]
 async fn truck_intake_complete_endpoint_supports_optional_nested_sections_being_omitted() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let response = post_json(
@@ -193,9 +193,9 @@ async fn truck_intake_complete_endpoint_supports_optional_nested_sections_being_
       transport_truck_intake_save(
         "TW-COMP-1",
         "2026-01-02",
-        fixture.sender_id,
-        fixture.base_id,
-        fixture.product_a_id,
+        catalog.sender_id,
+        catalog.base_id,
+        catalog.product_a_id,
         "12.5",
       ),
     )
@@ -213,7 +213,7 @@ async fn truck_intake_complete_endpoint_supports_optional_nested_sections_being_
 #[tokio::test]
 async fn rail_intake_save_endpoint_persists_nested_manifest_measurements_and_weights() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let response = post_json(
@@ -222,13 +222,13 @@ async fn rail_intake_save_endpoint_persists_nested_manifest_measurements_and_wei
       transport_rail_intake_with_acceptance(
         "RW-COMP-1",
         "2026-01-02",
-        fixture.sender_id,
-        fixture.base_id,
+        catalog.sender_id,
+        catalog.base_id,
         "WAGON-C1",
         "AC-RAIL-1",
-        fixture.product_a_id,
-        fixture.contractor_a_id,
-        fixture.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
+        catalog.storage_a_id,
         true,
       ),
     )
@@ -250,9 +250,9 @@ async fn rail_intake_save_endpoint_persists_nested_manifest_measurements_and_wei
       .unwrap()
       .id;
     let ledger_row = inventory_ledger_entry::Entity::find()
-      .filter(inventory_ledger_entry::Column::StorageId.eq(fixture.storage_a_id))
-      .filter(inventory_ledger_entry::Column::ProductId.eq(fixture.product_a_id))
-      .filter(inventory_ledger_entry::Column::ContractorId.eq(fixture.contractor_a_id))
+      .filter(inventory_ledger_entry::Column::StorageId.eq(catalog.storage_a_id))
+      .filter(inventory_ledger_entry::Column::ProductId.eq(catalog.product_a_id))
+      .filter(inventory_ledger_entry::Column::ContractorId.eq(catalog.contractor_a_id))
       .one(&*db)
       .await
       .unwrap();
@@ -264,7 +264,7 @@ async fn rail_intake_save_endpoint_persists_nested_manifest_measurements_and_wei
 #[tokio::test]
 async fn rail_intake_save_endpoint_ignores_nested_acceptance_payload() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let response = post_json(
@@ -273,13 +273,13 @@ async fn rail_intake_save_endpoint_ignores_nested_acceptance_payload() {
       transport_rail_intake_with_acceptance(
         "RW-COMP-DRAFT-1",
         "2026-01-02",
-        fixture.sender_id,
-        fixture.base_id,
+        catalog.sender_id,
+        catalog.base_id,
         "WAGON-D1",
         "AC-RAIL-DRAFT-1",
-        fixture.product_a_id,
-        fixture.contractor_a_id,
-        fixture.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
+        catalog.storage_a_id,
         false,
       ),
     )
@@ -289,9 +289,9 @@ async fn rail_intake_save_endpoint_ignores_nested_acceptance_payload() {
     assert!(body["data"]["acceptance"].is_null());
 
     let ledger_row = inventory_ledger_entry::Entity::find()
-      .filter(inventory_ledger_entry::Column::StorageId.eq(fixture.storage_a_id))
-      .filter(inventory_ledger_entry::Column::ProductId.eq(fixture.product_a_id))
-      .filter(inventory_ledger_entry::Column::ContractorId.eq(fixture.contractor_a_id))
+      .filter(inventory_ledger_entry::Column::StorageId.eq(catalog.storage_a_id))
+      .filter(inventory_ledger_entry::Column::ProductId.eq(catalog.product_a_id))
+      .filter(inventory_ledger_entry::Column::ContractorId.eq(catalog.contractor_a_id))
       .one(&*db)
       .await
       .unwrap();
@@ -303,13 +303,13 @@ async fn rail_intake_save_endpoint_ignores_nested_acceptance_payload() {
 #[tokio::test]
 async fn truck_waybill_create_endpoint_rejects_invalid_date_format_with_validation_error_payload() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let invalid = post_json(
       &app,
       api_paths::transport::truck::WAYBILLS,
-      transport_truck_waybill("TW-BAD", "2026-99-99", fixture.sender_id, fixture.base_id),
+      transport_truck_waybill("TW-BAD", "2026-99-99", catalog.sender_id, catalog.base_id),
     )
     .await;
     let err_json = assert_api_error(
@@ -327,13 +327,13 @@ async fn truck_waybill_create_endpoint_rejects_invalid_date_format_with_validati
 #[tokio::test]
 async fn rail_waybill_create_endpoint_rejects_invalid_date_format_with_validation_error_payload() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let catalog = seed_inventory_catalog(&db).await;
 
   with_auth_token(token, async {
     let invalid = post_json(
       &app,
       api_paths::transport::rail::WAYBILLS,
-      transport_rail_waybill("RW-BAD", "bad-date", fixture.sender_id, fixture.base_id),
+      transport_rail_waybill("RW-BAD", "bad-date", catalog.sender_id, catalog.base_id),
     )
     .await;
     let err_json = assert_api_error(

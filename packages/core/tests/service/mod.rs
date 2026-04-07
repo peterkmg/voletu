@@ -1,8 +1,11 @@
 mod acceptance_and_dispatch;
 mod audit_and_ledger;
 mod flow;
-mod operations;
+mod operations_blending;
+mod operations_reconciliation;
+mod operations_transfer;
 mod references_and_transport;
 mod security;
-mod sync;
+mod sync_pull;
+mod sync_push;
 mod system_auth_and_users;

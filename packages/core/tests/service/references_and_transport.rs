@@ -36,7 +36,7 @@ use voletu_core::{
   },
 };
 
-use crate::common::{fixtures::seed_inventory_fixture, setup_db, test_config};
+use crate::common::{catalog_seed::seed_inventory_catalog, setup_db, test_config};
 
 fn date(value: &str) -> NaiveDate {
   NaiveDate::parse_from_str(value, "%Y-%m-%d").unwrap()
@@ -168,7 +168,7 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
 async fn transport_services_create_truck_and_rail_documents_and_list_them() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let mut cfg = test_config();
     cfg.node.db_id = Uuid::now_v7();
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
@@ -179,8 +179,8 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
       .truck_waybill_create(&CreateTruckWaybillRequest {
         document_number: "TW-1".to_string(),
         date: date("2026-01-01"),
-        sender_id: fixture.sender_id,
-        base_id: fixture.base_id,
+        sender_id: catalog.sender_id,
+        base_id: catalog.base_id,
       })
       .await
       .unwrap();
@@ -188,7 +188,7 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
       .truck_waybill_item_create(&CreateTruckWaybillItemRequest {
         truck_waybill_id: truck_waybill_row.id,
         item: TruckWaybillItemCompositeRequest {
-          product_id: fixture.product_a_id,
+          product_id: catalog.product_a_id,
           declared_amount: dec("12.5"),
         },
       })
@@ -208,8 +208,8 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
       .rail_waybill_create(&CreateRailWaybillRequest {
         document_number: "RW-1".to_string(),
         date: date("2026-01-01"),
-        sender_id: fixture.sender_id,
-        base_id: fixture.base_id,
+        sender_id: catalog.sender_id,
+        base_id: catalog.base_id,
       })
       .await
       .unwrap();
@@ -218,7 +218,7 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
         rail_waybill_id: rail_waybill_row.id,
         manifest: RailWagonManifestCompositeRequest {
           wagon_number: "WAGON-001".to_string(),
-          product_id: fixture.product_a_id,
+          product_id: catalog.product_a_id,
           declared_volume: dec("20.0"),
           declared_density: dec("0.8"),
           declared_mass: dec("16.0"),
@@ -287,12 +287,12 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
       .await
       .unwrap()
       .unwrap();
-    let saved_group = product_group::Entity::find_by_id(fixture.product_group_id)
+    let saved_group = product_group::Entity::find_by_id(catalog.product_group_id)
       .one(&*db)
       .await
       .unwrap();
-    assert_eq!(saved_truck_waybill.sender_id, fixture.sender_id);
-    assert_eq!(saved_manifest.product_id, fixture.product_a_id);
+    assert_eq!(saved_truck_waybill.sender_id, catalog.sender_id);
+    assert_eq!(saved_manifest.product_id, catalog.product_a_id);
     assert!(saved_group.is_some());
 
     let logs = audit_log::Entity::find().all(&*db).await.unwrap();

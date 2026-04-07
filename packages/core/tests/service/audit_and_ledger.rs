@@ -17,7 +17,7 @@ use voletu_core::{
   services::{audit::AuditService, ledger::LedgerService},
 };
 
-use crate::common::{fixtures::seed_inventory_fixture, setup_db, test_config};
+use crate::common::{catalog_seed::seed_inventory_catalog, setup_db, test_config};
 
 fn dec(value: &str) -> Decimal {
   Decimal::from_str(value).unwrap()
@@ -181,24 +181,24 @@ async fn audit_service_model_methods_capture_full_inserts_and_field_level_update
 async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let service = LedgerService::new(db.clone());
 
     // Positive delta creates a new entry.
     service
       .apply_delta(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
         Decimal::new(5, 0),
       )
       .await
       .unwrap();
     let after_create = service
       .by_dimensions(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()
@@ -208,18 +208,18 @@ async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances
     // Delta update on existing entry.
     service
       .apply_delta(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
         Decimal::new(-2, 0),
       )
       .await
       .unwrap();
     let after_update = service
       .by_dimensions(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()
@@ -229,18 +229,18 @@ async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances
     // Negative deltas are allowed (balance can go below zero).
     service
       .apply_delta(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
         Decimal::new(-4, 0),
       )
       .await
       .unwrap();
     let after_negative = service
       .by_dimensions(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()
@@ -250,18 +250,18 @@ async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances
     // Creating a missing entry with a negative delta is also allowed.
     service
       .apply_delta(
-        fixture.storage_b_id,
-        fixture.product_b_id,
-        fixture.contractor_b_id,
+        catalog.storage_b_id,
+        catalog.product_b_id,
+        catalog.contractor_b_id,
         Decimal::new(-1, 0),
       )
       .await
       .unwrap();
     let negative_new = service
       .by_dimensions(
-        fixture.storage_b_id,
-        fixture.product_b_id,
-        fixture.contractor_b_id,
+        catalog.storage_b_id,
+        catalog.product_b_id,
+        catalog.contractor_b_id,
       )
       .await
       .unwrap()
@@ -271,18 +271,18 @@ async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances
     // Delta update can move an existing entry to an exact target.
     service
       .apply_delta(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
         Decimal::new(8, 0),
       )
       .await
       .unwrap();
     let after_target = service
       .by_dimensions(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()

@@ -20,7 +20,7 @@ use voletu_core::{
 };
 
 use crate::common::{
-  fixtures::{seed_inventory_fixture, seed_ledger_balance},
+  catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
   setup_db,
   test_config,
 };
@@ -39,7 +39,7 @@ fn dec(value: &str) -> Decimal {
 async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let mut cfg = test_config();
     cfg.node.db_id = Uuid::now_v7();
@@ -52,7 +52,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
         date_accepted: ts("2026-01-01T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: fixture.contractor_a_id,
+        contractor_id: catalog.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -64,15 +64,15 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
       .acceptance_item_create(&CreateAcceptanceItemRequest {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_a_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_a_id,
           accepted_amount: dec("42.5"),
         },
       })
       .await
       .unwrap();
 
-    assert_eq!(item.storage_id, fixture.storage_a_id);
+    assert_eq!(item.storage_id, catalog.storage_a_id);
 
     let created_doc_model = acceptance_document::Entity::find_by_id(doc.id)
       .one(&*db)
@@ -87,9 +87,9 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
 
     let entry = ledger
       .by_dimensions(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()
@@ -135,7 +135,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
 async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let other_product_type = product_type::ActiveModel {
       common_name: Set("Lubes".to_string()),
       long_name: Set(None),
@@ -146,7 +146,7 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
     .unwrap();
 
     let mismatched_storage = storage::ActiveModel {
-      warehouse_id: Set(fixture.warehouse_id),
+      warehouse_id: Set(catalog.warehouse_id),
       common_name: Set("Restricted Tank".to_string()),
       long_name: Set(None),
       capacity: Set(None),
@@ -170,7 +170,7 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
         date_accepted: ts("2026-01-01T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: fixture.contractor_a_id,
+        contractor_id: catalog.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -181,7 +181,7 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
       .acceptance_item_create(&CreateAcceptanceItemRequest {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
-          product_id: fixture.product_a_id,
+          product_id: catalog.product_a_id,
           storage_id: mismatched_storage.id,
           accepted_amount: dec("10.0"),
         },
@@ -200,7 +200,7 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
 async fn acceptance_execution_applies_multiple_items_to_corresponding_storages() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let mut cfg = test_config();
     cfg.node.db_id = Uuid::now_v7();
@@ -213,7 +213,7 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
         date_accepted: ts("2026-01-01T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: fixture.contractor_a_id,
+        contractor_id: catalog.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -224,8 +224,8 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
       .acceptance_item_create(&CreateAcceptanceItemRequest {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_a_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_a_id,
           accepted_amount: dec("10.0"),
         },
       })
@@ -236,8 +236,8 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
       .acceptance_item_create(&CreateAcceptanceItemRequest {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_b_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_b_id,
           accepted_amount: dec("6.0"),
         },
       })
@@ -251,18 +251,18 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
 
     let storage_a = ledger
       .by_dimensions(
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()
       .unwrap();
     let storage_b = ledger
       .by_dimensions(
-        fixture.storage_b_id,
-        fixture.product_a_id,
-        fixture.contractor_a_id,
+        catalog.storage_b_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
       )
       .await
       .unwrap()
@@ -277,7 +277,7 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
 async fn acceptance_item_creation_rejects_posted_document_mutation() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let mut cfg = test_config();
     cfg.node.db_id = Uuid::now_v7();
@@ -290,7 +290,7 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
         date_accepted: ts("2026-01-07T00:00:00Z"),
         arrival_type: ArrivalType::Truck,
         source_entity: None,
-        contractor_id: fixture.contractor_a_id,
+        contractor_id: catalog.contractor_a_id,
         truck_waybill_id: None,
         rail_waybill_id: None,
         transit_dispatch_id: None,
@@ -302,8 +302,8 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
       .acceptance_item_create(&CreateAcceptanceItemRequest {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_a_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_a_id,
           accepted_amount: dec("10.0"),
         },
       })
@@ -319,8 +319,8 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
       .acceptance_item_create(&CreateAcceptanceItemRequest {
         acceptance_doc_id: doc.id,
         item: AcceptanceItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_a_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_a_id,
           accepted_amount: dec("1.0"),
         },
       })
@@ -338,7 +338,7 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
 async fn dispatch_item_creation_rejects_posted_document_mutation() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
-    let fixture = seed_inventory_fixture(&db).await;
+    let catalog = seed_inventory_catalog(&db).await;
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let mut cfg = test_config();
     cfg.node.db_id = Uuid::now_v7();
@@ -347,9 +347,9 @@ async fn dispatch_item_creation_rejects_posted_document_mutation() {
 
     seed_ledger_balance(
       &db,
-      fixture.storage_a_id,
-      fixture.product_a_id,
-      fixture.contractor_a_id,
+      catalog.storage_a_id,
+      catalog.product_a_id,
+      catalog.contractor_a_id,
       Decimal::from(5),
     )
     .await;
@@ -360,7 +360,7 @@ async fn dispatch_item_creation_rejects_posted_document_mutation() {
         date: ts("2026-01-07T00:00:00Z"),
         dispatch_purpose: DispatchPurpose::External,
         dispatch_method: DispatchMethod::Truck,
-        contractor_id: fixture.contractor_a_id,
+        contractor_id: catalog.contractor_a_id,
         destination_base_id: None,
         receiver_entity: None,
         start_cargo_ops: None,
@@ -376,8 +376,8 @@ async fn dispatch_item_creation_rejects_posted_document_mutation() {
       .dispatch_item_create(&CreateDispatchItemRequest {
         dispatch_doc_id: doc.id,
         item: DispatchItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_a_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_a_id,
           dispatched_amount: dec("1.0"),
         },
       })
@@ -393,8 +393,8 @@ async fn dispatch_item_creation_rejects_posted_document_mutation() {
       .dispatch_item_create(&CreateDispatchItemRequest {
         dispatch_doc_id: doc.id,
         item: DispatchItemCompositeRequest {
-          product_id: fixture.product_a_id,
-          storage_id: fixture.storage_a_id,
+          product_id: catalog.product_a_id,
+          storage_id: catalog.storage_a_id,
           dispatched_amount: dec("1.0"),
         },
       })

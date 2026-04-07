@@ -1,0 +1,79 @@
+//! **Reconciliation routing via warehouse**: A reconciliation referencing warehouse_alpha
+//! routes to base_alpha and is visible on the alpha peripheral.
+//!
+//! **Topology:** Central + 1 Peripheral (base_alpha)
+//! **Verifies:** Reconciliation audit log targets the warehouse's base; peripheral receives the reconciliation
+
+use uuid::Uuid;
+
+use crate::common::integration::{
+  api_get,
+  assert_audit_log_targets,
+  create_reconciliation_via_api,
+  pull_from_central_to_target,
+  query_audit_logs,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
+};
+
+#[tokio::test]
+async fn reconciliation_routing_via_warehouse() {
+  let client = reqwest::Client::new();
+  let central = setup_central_via_api(&client, &temp_db_path("r12-central")).await;
+  let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("r12-pa"), &central, &[
+    catalog.base_alpha
+  ])
+  .await;
+
+  let recon = create_reconciliation_via_api(
+    &client,
+    &central.url,
+    &central.token,
+    "RECON-001",
+    catalog.contractor,
+    catalog.warehouse_alpha,
+  )
+  .await;
+  let recon_id = Uuid::parse_str(recon["id"].as_str().unwrap()).unwrap();
+
+  let logs = query_audit_logs(
+    &client,
+    &central.url,
+    &central.token,
+    Some("inventory_reconciliations"),
+    Some(recon_id),
+  )
+  .await;
+  assert!(!logs.is_empty());
+  assert_audit_log_targets(
+    &logs,
+    "inventory_reconciliations",
+    recon_id,
+    catalog.base_alpha,
+  );
+
+  let _ = pull_from_central_to_target(
+    &client,
+    &central.url,
+    &central.token,
+    &pa.url,
+    &pa.token,
+    &[catalog.base_alpha],
+  )
+  .await;
+  let recons = api_get(&client, &format!("{}/reconciliations", pa.url), &pa.token).await;
+  assert!(
+    recons
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|r| r["id"] == recon_id.to_string()),
+    "PA should have reconciliation"
+  );
+
+  central.shutdown().await;
+  pa.shutdown().await;
+}

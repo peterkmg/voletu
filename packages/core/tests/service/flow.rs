@@ -10,7 +10,7 @@ use voletu_core::{
   services::{audit::AuditService, document::DocumentService, ledger::LedgerService},
 };
 
-use crate::common::{fixtures::seed_inventory_fixture, setup_db};
+use crate::common::{catalog_seed::seed_inventory_catalog, setup_db};
 
 fn date(s: &str) -> NaiveDate {
   NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
@@ -23,7 +23,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
 
   with_audit_context(actor, origin, || async {
     let db = Arc::new(setup_db().await);
-    let fix = seed_inventory_fixture(&db).await;
+    let fix = seed_inventory_catalog(&db).await;
     let mut cfg = crate::common::test_config();
     cfg.node.db_id = Uuid::now_v7();
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
@@ -204,7 +204,7 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
 
   with_audit_context(actor, origin, || async {
     let db = Arc::new(setup_db().await);
-    let fix = seed_inventory_fixture(&db).await;
+    let fix = seed_inventory_catalog(&db).await;
     let mut cfg = crate::common::test_config();
     cfg.node.db_id = Uuid::now_v7();
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));

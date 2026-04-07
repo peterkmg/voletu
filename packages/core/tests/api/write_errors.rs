@@ -3,7 +3,7 @@ use uuid::Uuid;
 use voletu_core::endpoints::paths as api_paths;
 
 use crate::common::{
-  fixtures::seed_inventory_fixture,
+  catalog_seed::seed_inventory_catalog,
   http::{
     assert_api_error,
     assert_api_success,
@@ -106,7 +106,7 @@ async fn execute_and_delete_routes_reject_malformed_path_ids_with_structured_val
 #[tokio::test]
 async fn write_routes_surface_expected_404_and_409_domain_errors_in_matrix() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
-  let fixture = seed_inventory_fixture(&db).await;
+  let _catalog = seed_inventory_catalog(&db).await;
 
   // Standalone item endpoints (dispatch/items, blending/components, blending/results)
   // have been removed — items are managed through composite endpoints only.
