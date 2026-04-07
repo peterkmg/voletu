@@ -13,7 +13,7 @@ use crate::common::{
     setup_seeded_app_with_admin_token,
     with_auth_token,
   },
-  payloads::{blending_component, blending_result, dispatch_item, user_create},
+  payloads::user_create,
 };
 
 #[tokio::test]
@@ -40,15 +40,11 @@ async fn write_routes_reject_empty_payload_with_structured_validation_error_enve
     api_paths::transport::rail::MEASUREMENTS,
     api_paths::transport::rail::WEIGHTS,
     api_paths::acceptance::SAVE,
-    api_paths::acceptance::ITEMS,
     api_paths::dispatch::SAVE,
-    api_paths::dispatch::ITEMS,
     api_paths::dispatch::STORAGE_MEASUREMENTS,
     api_paths::operations::PHYSICAL_TRANSFERS_SAVE,
     api_paths::operations::OWNERSHIP_TRANSFERS_SAVE,
     api_paths::blending::SAVE,
-    api_paths::blending::COMPONENTS,
-    api_paths::blending::RESULTS,
     api_paths::operations::RECONCILIATIONS_SAVE,
     api_paths::operations::RECONCILIATION_ADJUSTMENTS_SAVE,
     api_paths::ledger::QUERY,
@@ -112,42 +108,11 @@ async fn write_routes_surface_expected_404_and_409_domain_errors_in_matrix() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let fixture = seed_inventory_fixture(&db).await;
 
-  // 404 matrix
-  let not_found_cases = [
-    (
-      api_paths::dispatch::ITEMS.to_string(),
-      dispatch_item(
-        Uuid::now_v7(),
-        fixture.product_a_id,
-        fixture.storage_a_id,
-        "1.0",
-      ),
-      "Dispatch document",
-    ),
-    (
-      api_paths::blending::COMPONENTS.to_string(),
-      blending_component(
-        Uuid::now_v7(),
-        fixture.storage_a_id,
-        fixture.product_a_id,
-        "1.0",
-      ),
-      "Blending document",
-    ),
-    (
-      api_paths::blending::RESULTS.to_string(),
-      blending_result(Uuid::now_v7(), fixture.storage_b_id, "1.0"),
-      "Blending document",
-    ),
-  ];
+  // Standalone item endpoints (dispatch/items, blending/components, blending/results)
+  // have been removed — items are managed through composite endpoints only.
+  // The 404 tests for those endpoints are no longer applicable.
 
   with_auth_token(token, async {
-    for (route, payload, msg) in not_found_cases {
-      let response = post_json(&app, route, payload).await;
-      let json = assert_api_error(response, StatusCode::NOT_FOUND, "NOT_FOUND", Some(msg)).await;
-      assert_eq!(json["error"]["code"], "NOT_FOUND");
-    }
-
     // execute endpoints with unknown IDs -> 404 for these two routes
     let dispatch_execute_missing = post_empty(
       &app,

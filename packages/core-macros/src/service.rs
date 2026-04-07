@@ -213,13 +213,9 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
         ) -> Result<#response, crate::api::ApiError> {
           #before_create_call
 
-          let saved = crate::services::common::insert_with_audit(
-            conn,
-            self.audit.as_ref(),
-            #entity_mod::ActiveModel::from(req),
-            |row| row.id,
-          )
-          .await?;
+          let saved = sea_orm::ActiveModelTrait::insert(
+            #entity_mod::ActiveModel::from(req), conn,
+          ).await?;
           Ok(saved.into())
         }
       });
@@ -455,13 +451,9 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
 
           #before_create_txn_call
 
-          let created = crate::services::common::insert_with_audit(
-            &txn,
-            self.audit.as_ref(),
-            #entity_mod::ActiveModel::from(req),
-            |row| row.id,
-          )
-          .await?;
+          let created = sea_orm::ActiveModelTrait::insert(
+            #entity_mod::ActiveModel::from(req), &txn,
+          ).await?;
 
           self
             .#execute_no_tx_name(&txn, created.id, actor_id)

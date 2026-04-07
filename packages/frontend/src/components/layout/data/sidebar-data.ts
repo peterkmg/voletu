@@ -7,6 +7,7 @@ import {
   ArrowUpFromLine,
   BarChart3,
   Building2,
+  FileText,
   LayoutDashboard,
   Package,
   RefreshCw,
@@ -87,6 +88,7 @@ export function getSidebarData(t: TFunction): SidebarData {
         items: [
           { title: t('common:nav.users'), url: '/system/users', icon: Users, roles: ['ADMIN'] },
           { title: t('common:nav.syncStatus'), url: '/system/sync', icon: RefreshCw, roles: ['ADMIN'] },
+          { title: t('common:nav.auditLogs'), url: '/system/audit-logs', icon: FileText, roles: ['ADMIN'] },
         ],
       },
     ],

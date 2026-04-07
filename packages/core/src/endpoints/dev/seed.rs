@@ -104,7 +104,7 @@ async fn dev_seed(State(state): State<Arc<ApiState>>) -> ApiResult<SeedResult> {
   let origin_db_id = local_cfg.local_db_id;
 
   let result = with_audit_context(actor_id, origin_db_id, || async {
-    do_seed(&state.db).await
+    do_seed(&state.db, &state.svc.audit).await
   })
   .await?;
 
@@ -139,7 +139,10 @@ const STORAGE_LABELS: &[&str] = &["Tank", "Cell", "Bay", "Reservoir", "Line"];
 const COMPANY_ROLE_TAILS: &[&str] = &["Trading", "Logistics", "Terminal", "Energy", "Supply"];
 const LEGAL_SUFFIXES: &[&str] = &["LLC", "Ltd.", "Inc.", "GmbH", "Zrt."];
 
-async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
+async fn do_seed(
+  db: &DatabaseConnection,
+  audit: &crate::services::audit::AuditService,
+) -> Result<SeedResult, ApiError> {
   let mut rng = {
     let mut os_rng = rand::rng();
     rand::rngs::StdRng::from_rng(&mut os_rng)
@@ -315,6 +318,10 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
   let mut base_ids: Vec<Uuid> = Vec::new();
   let mut warehouse_ids: Vec<Uuid> = Vec::new();
   let mut storage_ids: Vec<Uuid> = Vec::new();
+  let mut storage_to_base: HashMap<Uuid, Uuid> = HashMap::new();
+  let mut storages_by_base: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
+  let mut storages_by_warehouse: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
+  let mut warehouse_to_base: HashMap<Uuid, Uuid> = HashMap::new();
 
   let base_count = rng.random_range(5..=9);
   for _ in 0..base_count {
@@ -357,6 +364,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       .insert(db)
       .await?;
       warehouse_ids.push(warehouse_model.id);
+      warehouse_to_base.insert(warehouse_model.id, base_model.id);
 
       let storage_count = rng.random_range(3..=7);
       for _ in 0..storage_count {
@@ -383,6 +391,15 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
         }
         .insert(db)
         .await?;
+        storage_to_base.insert(storage_model.id, base_model.id);
+        storages_by_base
+          .entry(base_model.id)
+          .or_default()
+          .push(storage_model.id);
+        storages_by_warehouse
+          .entry(warehouse_model.id)
+          .or_default()
+          .push(storage_model.id);
         storage_ids.push(storage_model.id);
       }
     }
@@ -409,6 +426,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
   }
 
   let mut truck_ids: Vec<Uuid> = Vec::new();
+  let mut truck_by_base: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
   let truck_count = rng.random_range(180..=360);
   for idx in 0..truck_count {
     let days_ago = rng.random_range(0..=730) as i64;
@@ -418,11 +436,16 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       document_number: Set(fake_document_number("TW", idx, &mut rng, now)),
       date: Set(date),
       sender_id: Set(sender_id),
+      base_id: Set(*pick(&mut rng, &base_ids)),
       ..Default::default()
     }
     .insert(db)
     .await?;
     truck_ids.push(model.id);
+    truck_by_base
+      .entry(model.base_id)
+      .or_default()
+      .push(model.id);
 
     let num_items = rng.random_range(1..=2);
     for _ in 0..num_items {
@@ -438,6 +461,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
   }
 
   let mut rail_ids: Vec<Uuid> = Vec::new();
+  let mut rail_by_base: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
   let rail_count = rng.random_range(120..=260);
   for idx in 0..rail_count {
     let days_ago = rng.random_range(0..=730) as i64;
@@ -447,11 +471,16 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       document_number: Set(fake_document_number("RW", idx, &mut rng, now)),
       date: Set(date),
       sender_id: Set(sender_id),
+      base_id: Set(*pick(&mut rng, &base_ids)),
       ..Default::default()
     }
     .insert(db)
     .await?;
     rail_ids.push(model.id);
+    rail_by_base
+      .entry(model.base_id)
+      .or_default()
+      .push(model.id);
 
     let num_wagons = rng.random_range(1..=3);
     for _ in 0..num_wagons {
@@ -545,10 +574,14 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     dispatch_ids.push(doc.id);
     dispatch_count += 1;
 
+    let dispatch_base = *pick(&mut rng, &base_ids);
+    let dispatch_storages = storages_by_base.get(&dispatch_base);
     let item_count = rng.random_range(1..=4);
     for _ in 0..item_count {
       let product_id = *pick(&mut rng, &target_product_ids);
-      let storage_id = *pick(&mut rng, &storage_ids);
+      let storage_id = dispatch_storages
+        .map(|ids| *pick(&mut rng, ids))
+        .unwrap_or(*pick(&mut rng, &storage_ids));
       let amount = rng.random_range(80u64..=12_500u64);
 
       dispatch_item::ActiveModel {
@@ -565,6 +598,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
         .entry((storage_id, product_id, contractor_id))
         .or_default() -= Decimal::from(amount);
     }
+    audit
+      .backfill_document_routing(db, "dispatch_documents", doc.id)
+      .await?;
   }
 
   let arrival_types = [ArrivalType::Truck, ArrivalType::Rail, ArrivalType::External];
@@ -575,24 +611,41 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let doc_date = now - Duration::days(days_ago);
     let arrival_type = *pick(&mut rng, &arrival_types);
 
+    // Pre-determine the first item's storage to know the acceptance base,
+    // so we can pick a waybill from the same base (FK consistency for sync).
+    let first_storage_id = *pick(&mut rng, &storage_ids);
+    let acceptance_base_id = storage_to_base.get(&first_storage_id).copied();
+
     let truck_waybill_id = if matches!(arrival_type, ArrivalType::Truck) {
-      Some(*pick(&mut rng, &truck_ids))
+      acceptance_base_id
+        .and_then(|bid| truck_by_base.get(&bid))
+        .and_then(|ids| {
+          if ids.is_empty() {
+            None
+          } else {
+            Some(*pick(&mut rng, ids))
+          }
+        })
     } else {
       None
     };
     let rail_waybill_id = if matches!(arrival_type, ArrivalType::Rail) {
-      Some(*pick(&mut rng, &rail_ids))
+      acceptance_base_id
+        .and_then(|bid| rail_by_base.get(&bid))
+        .and_then(|ids| {
+          if ids.is_empty() {
+            None
+          } else {
+            Some(*pick(&mut rng, ids))
+          }
+        })
     } else {
       None
     };
-    let transit_dispatch_id = if matches!(arrival_type, ArrivalType::External)
-      && rng.random_bool(0.2)
-      && !dispatch_ids.is_empty()
-    {
-      Some(*pick(&mut rng, &dispatch_ids))
-    } else {
-      None
-    };
+    // transit_dispatch_id links acceptance to a dispatch from another base (transit scenario).
+    // For sync consistency, we skip this for now — the dispatch may be routed to a
+    // different base, causing FK violations during peripheral restore.
+    let transit_dispatch_id: Option<Uuid> = None;
     let source_entity = if matches!(arrival_type, ArrivalType::External) || rng.random_bool(0.15) {
       Some(CompanyName().fake::<String>())
     } else {
@@ -624,10 +677,18 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     acceptance_count += 1;
 
     let item_count = rng.random_range(1..=4);
-    for _ in 0..item_count {
+    for item_idx in 0..item_count {
       let amount = rng.random_range(100u64..=11_500u64);
       let product_id = *pick(&mut rng, &target_product_ids);
-      let storage_id = *pick(&mut rng, &storage_ids);
+      // All items must use storages from the same base for sync consistency
+      let storage_id = if item_idx == 0 {
+        first_storage_id
+      } else {
+        acceptance_base_id
+          .and_then(|bid| storages_by_base.get(&bid))
+          .map(|ids| *pick(&mut rng, ids))
+          .unwrap_or(first_storage_id)
+      };
       acceptance_item::ActiveModel {
         acceptance_doc_id: Set(doc.id),
         product_id: Set(product_id),
@@ -642,6 +703,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
         .entry((storage_id, product_id, contractor_id))
         .or_default() += Decimal::from(amount);
     }
+    audit
+      .backfill_document_routing(db, "acceptance_documents", doc.id)
+      .await?;
   }
 
   let mut blending_count = 0usize;
@@ -670,10 +734,14 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     .await?;
     blending_count += 1;
 
+    let blend_base = *pick(&mut rng, &base_ids);
+    let blend_storages = storages_by_base.get(&blend_base);
     let component_count = rng.random_range(2..=4);
     for _ in 0..component_count {
       let amount = rng.random_range(50u64..=6_000u64);
-      let storage_id = *pick(&mut rng, &storage_ids);
+      let storage_id = blend_storages
+        .map(|ids| *pick(&mut rng, ids))
+        .unwrap_or(*pick(&mut rng, &storage_ids));
       let source_product_id = *pick(&mut rng, &component_product_ids);
       blending_component::ActiveModel {
         blending_doc_id: Set(doc.id),
@@ -693,7 +761,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let result_count = rng.random_range(1..=2);
     for _ in 0..result_count {
       let produced = rng.random_range(80u64..=9_500u64);
-      let storage_id = *pick(&mut rng, &storage_ids);
+      let storage_id = blend_storages
+        .map(|ids| *pick(&mut rng, ids))
+        .unwrap_or(*pick(&mut rng, &storage_ids));
       blending_result::ActiveModel {
         blending_doc_id: Set(doc.id),
         storage_id: Set(storage_id),
@@ -707,6 +777,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
         .entry((storage_id, blend_target_product_id, blend_contractor_id))
         .or_default() += Decimal::from(produced);
     }
+    audit
+      .backfill_document_routing(db, "blending_documents", doc.id)
+      .await?;
   }
 
   let mut ownership_count = 0usize;
@@ -730,6 +803,8 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     .await?;
     ownership_count += 1;
 
+    let own_base = *pick(&mut rng, &base_ids);
+    let own_storages = storages_by_base.get(&own_base);
     let item_count = rng.random_range(1..=4);
     for _ in 0..item_count {
       let from_id = *pick(&mut rng, &contractor_ids);
@@ -740,7 +815,11 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
 
       ownership_transfer_item::ActiveModel {
         ownership_transfer_id: Set(doc.id),
-        storage_id: Set(*pick(&mut rng, &storage_ids)),
+        storage_id: Set(
+          own_storages
+            .map(|ids| *pick(&mut rng, ids))
+            .unwrap_or(*pick(&mut rng, &storage_ids)),
+        ),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
         from_contractor_id: Set(from_id),
         to_contractor_id: Set(to_id),
@@ -750,6 +829,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       .insert(db)
       .await?;
     }
+    audit
+      .backfill_document_routing(db, "ownership_transfers", doc.id)
+      .await?;
   }
 
   let mut physical_count = 0usize;
@@ -780,12 +862,20 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     .await?;
     physical_count += 1;
 
+    let phys_base = *pick(&mut rng, &base_ids);
+    let phys_storages = storages_by_base.get(&phys_base);
     let item_count = rng.random_range(1..=4);
     for _ in 0..item_count {
-      let from_storage_id = *pick(&mut rng, &storage_ids);
-      let mut to_storage_id = *pick(&mut rng, &storage_ids);
+      let from_storage_id = phys_storages
+        .map(|ids| *pick(&mut rng, ids))
+        .unwrap_or(*pick(&mut rng, &storage_ids));
+      let mut to_storage_id = phys_storages
+        .map(|ids| *pick(&mut rng, ids))
+        .unwrap_or(*pick(&mut rng, &storage_ids));
       while to_storage_id == from_storage_id {
-        to_storage_id = *pick(&mut rng, &storage_ids);
+        to_storage_id = phys_storages
+          .map(|ids| *pick(&mut rng, ids))
+          .unwrap_or(*pick(&mut rng, &storage_ids));
       }
 
       physical_transfer_item::ActiveModel {
@@ -799,6 +889,9 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       .insert(db)
       .await?;
     }
+    audit
+      .backfill_document_routing(db, "physical_storage_transfers", doc.id)
+      .await?;
   }
 
   let adjustment_types = [AdjustmentType::Surplus, AdjustmentType::Loss];
@@ -808,6 +901,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     let days_ago = rng.random_range(0..=730) as i64;
     let doc_date = now - Duration::days(days_ago);
     let contractor_id = *pick(&mut rng, &contractor_ids);
+    let recon_warehouse_id = *pick(&mut rng, &warehouse_ids);
     let doc = inventory_reconciliation::ActiveModel {
       document_number: Set(fake_document_number("REC", idx, &mut rng, now)),
       date: Set(doc_date),
@@ -819,7 +913,7 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
       executed_by: Set(None),
       reverted_at: Set(None),
       reverted_by: Set(None),
-      warehouse_id: Set(*pick(&mut rng, &warehouse_ids)),
+      warehouse_id: Set(recon_warehouse_id),
       contractor_id: Set(contractor_id),
       ..Default::default()
     }
@@ -827,11 +921,16 @@ async fn do_seed(db: &DatabaseConnection) -> Result<SeedResult, ApiError> {
     .await?;
     recon_count += 1;
 
+    // Adjustments must use storages from the reconciliation's warehouse
+    let recon_storages = storages_by_warehouse.get(&recon_warehouse_id);
     let adjustment_count = rng.random_range(1..=5);
     for _ in 0..adjustment_count {
+      let adj_storage_id = recon_storages
+        .map(|ids| *pick(&mut rng, ids))
+        .unwrap_or(*pick(&mut rng, &storage_ids));
       inventory_adjustment::ActiveModel {
         reconciliation_id: Set(doc.id),
-        storage_id: Set(*pick(&mut rng, &storage_ids)),
+        storage_id: Set(adj_storage_id),
         product_id: Set(*pick(&mut rng, &target_product_ids)),
         adjustment_type: Set(*pick(&mut rng, &adjustment_types)),
         amount: Set(Decimal::from(rng.random_range(1u64..=900u64))),

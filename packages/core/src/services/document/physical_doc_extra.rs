@@ -81,6 +81,11 @@ impl DocumentService {
       );
     }
 
+    self
+      .audit
+      .backfill_document_routing(conn, "physical_storage_transfers", response.id)
+      .await?;
+
     Ok(response)
   }
 

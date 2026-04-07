@@ -96,6 +96,11 @@ impl DocumentService {
       }
     }
 
+    self
+      .audit
+      .backfill_document_routing(conn, "dispatch_documents", document.id)
+      .await?;
+
     Ok(dtos::DispatchCompositeResponse {
       document,
       items,

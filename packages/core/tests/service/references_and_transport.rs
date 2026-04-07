@@ -180,6 +180,7 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
         document_number: "TW-1".to_string(),
         date: date("2026-01-01"),
         sender_id: fixture.sender_id,
+        base_id: fixture.base_id,
       })
       .await
       .unwrap();
@@ -208,6 +209,7 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
         document_number: "RW-1".to_string(),
         date: date("2026-01-01"),
         sender_id: fixture.sender_id,
+        base_id: fixture.base_id,
       })
       .await
       .unwrap();

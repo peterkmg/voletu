@@ -36,6 +36,7 @@
     "ledger": "Inventory Ledger",
     "users": "Users",
     "syncStatus": "Sync Status",
+    "auditLogs": "Audit Logs",
     "overview": "Overview",
     "settings": "Settings",
     "operations": "Operations"

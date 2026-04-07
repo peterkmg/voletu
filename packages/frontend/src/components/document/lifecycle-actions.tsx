@@ -39,7 +39,10 @@ export function LifecycleActions({
       {canExecute && (
         <Button
           size="sm"
-          onClick={() => { setDialogAction('execute'); setDialogOpen(true) }}
+          onClick={() => {
+            setDialogAction('execute')
+            setDialogOpen(true)
+          }}
         >
           {t('actions.execute')}
         </Button>
@@ -48,7 +51,10 @@ export function LifecycleActions({
         <Button
           variant="destructive"
           size="sm"
-          onClick={() => { setDialogAction('revert'); setDialogOpen(true) }}
+          onClick={() => {
+            setDialogAction('revert')
+            setDialogOpen(true)
+          }}
         >
           {t('actions.revertToDraft')}
         </Button>

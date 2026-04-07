@@ -74,6 +74,11 @@ impl DocumentService {
       );
     }
 
+    self
+      .audit
+      .backfill_document_routing(conn, "acceptance_documents", document.id)
+      .await?;
+
     Ok(dtos::AcceptanceCompositeResponse { document, items })
   }
 

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useState } from 'react'
 
 /**
  * Returns a stable idempotency key (UUID v4) for the lifetime of the component.
@@ -12,6 +12,6 @@ import { useRef } from 'react'
  *   await someCreate(data, { headers: { 'Idempotency-Key': idempotencyKey } })
  */
 export function useIdempotencyKey(): string {
-  const ref = useRef<string>(crypto.randomUUID())
-  return ref.current
+  const [key] = useState(() => crypto.randomUUID())
+  return key
 }

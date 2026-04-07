@@ -106,7 +106,7 @@ export function DataTablePagination<TData>({
           </Button>
 
           {pageNumbers.map((pageNumber, index) => (
-            <div key={`${pageNumber}-${index}`} className="flex items-center">
+            <div key={pageNumber === '...' ? (index < 3 ? 'ellipsis-start' : 'ellipsis-end') : pageNumber} className="flex items-center">
               {pageNumber === '...'
                 ? (
                     <span className="px-1 text-sm text-muted-foreground">...</span>

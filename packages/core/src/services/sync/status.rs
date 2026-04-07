@@ -109,30 +109,21 @@ impl SyncService {
     )
   }
 
+  /// Pull audit logs for a requesting node.
+  /// `base_ids` is provided by the requesting peripheral — Central filters accordingly.
+  /// Empty `base_ids` = catalog-only sync (global tables only).
   pub async fn pull_logs(
     &self,
-    node_id: Uuid,
     last_audit_log_id: Uuid,
+    base_ids: &[Uuid],
     limit: Option<u64>,
   ) -> Result<PullAuditLogsResponse, ApiError> {
-    let node_row = database_instance::Entity::find_by_id(node_id)
-      .one(self.db.as_ref())
-      .await?;
-    let node = match node_row {
-      Some(node) => node,
-      None => {
-        return Err(ApiError::NotFound(format!(
-          "Database instance '{}' not found",
-          node_id
-        )));
-      }
-    };
-    let requesting_base_id = match node.base_id {
-      Some(id) => id.to_string(),
-      None => String::new(),
-    };
     let max_limit = limit.unwrap_or(1000).min(1000);
-    let excluded_tables = vec!["roles".to_string(), "local".to_string()];
+    let excluded_tables = vec![
+      "roles".to_string(),
+      "local".to_string(),
+      "node_base_assignments".to_string(),
+    ];
     let global_tables = vec![
       "companies".to_string(),
       "products".to_string(),
@@ -143,14 +134,19 @@ impl SyncService {
       "storages".to_string(),
       "ports".to_string(),
       "users".to_string(),
+      "database_instances".to_string(),
     ];
 
-    let scope_condition = if requesting_base_id.is_empty() {
+    let scope_condition = if base_ids.is_empty() {
+      // No base IDs provided → catalog-only sync (global tables)
       Condition::any().add(audit_log::Column::TableName.is_in(global_tables))
     } else {
-      Condition::any()
-        .add(audit_log::Column::TableName.is_in(global_tables))
-        .add(targeted_base_condition(&requesting_base_id))
+      // Peripheral requesting specific bases → global + targeted for each base
+      let mut cond = Condition::any().add(audit_log::Column::TableName.is_in(global_tables));
+      for base_id in base_ids {
+        cond = cond.add(targeted_base_condition(&base_id.to_string()));
+      }
+      cond
     };
 
     let logs = audit_log::Entity::find()

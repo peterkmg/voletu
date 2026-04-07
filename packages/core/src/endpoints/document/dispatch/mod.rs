@@ -14,11 +14,9 @@ use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
     CreateDispatchCompositeRequest,
-    CreateDispatchItemRequest,
     CreateDispatchMeasurementRequest,
     CreateDispatchRequest,
     DispatchCompositeResponse,
-    DispatchItemResponse,
     DispatchMeasurementResponse,
     DispatchResponse,
   },
@@ -33,13 +31,12 @@ use crate::{
 
 mod composite;
 mod document;
-mod item;
 mod measurement;
 
 pub fn dispatch_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .merge(document::document_routes(state.clone()))
     .merge(composite::composite_routes(state.clone()))
-    .merge(item::item_routes(state.clone()))
+    // Standalone item CRUD disabled — items managed through composite endpoints.
     .merge(measurement::measurement_routes(state))
 }

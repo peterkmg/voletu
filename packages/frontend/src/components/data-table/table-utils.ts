@@ -42,10 +42,12 @@ export function createGlobalFilter<T>(...fields: (keyof T & string)[]) {
   }
 }
 
-/** Compute CSS Grid column template from visible columns.
+/**
+ * Compute CSS Grid column template from visible columns.
  *
  *  Priority: manual resize > explicit sizingCategory > legacy min/max heuristic.
- *  See ColumnMeta.sizingCategory for the three categories. */
+ *  See ColumnMeta.sizingCategory for the three categories.
+ */
 export function getGridTemplate<TData>(table: TanstackTable<TData>): string {
   const sizing = table.getState().columnSizing
   return table.getVisibleLeafColumns().map((col) => {

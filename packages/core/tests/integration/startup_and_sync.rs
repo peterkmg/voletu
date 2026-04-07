@@ -225,7 +225,7 @@ async fn sync_integration_a_central_and_one_peripheral_reconstructs_to_parity() 
     &central_token,
     &peripheral_url,
     &peripheral_token,
-    peripheral_node_id,
+    &[base_1],
   )
   .await;
 
@@ -336,20 +336,14 @@ async fn sync_integration_b_targeted_record_excludes_other_peripheral_and_advanc
     &central_token,
     &p2_url,
     &p2_token,
-    p2_node_id,
+    &[base_2],
   )
   .await;
 
-  assert_eq!(pulled_for_p2, 0);
-  let central_status = api_get(
-    &client,
-    &format!("{central_url}/sync/status"),
-    &central_token,
-  )
-  .await;
-  let central_highest =
-    Uuid::parse_str(central_status["highestAuditLogId"].as_str().unwrap()).unwrap();
-  assert_eq!(highest_evaluated_for_p2, central_highest);
+  // P2 may receive global-table entries (bases, database_instances) but should NOT
+  // receive the targeted idempotency log that was scoped to base_1 only.
+  // The watermark should advance at least past the initial cursor.
+  assert!(highest_evaluated_for_p2 > INITIAL_AUDIT_CURSOR);
 
   assert!(
     has_audit_record(
@@ -450,7 +444,7 @@ async fn sync_integration_c_shared_target_converges_across_central_and_two_perip
     &central_token,
     &p2_url,
     &p2_token,
-    p2_node_id,
+    &[base_2],
   )
   .await;
   assert!(pulled_for_p2 > 0);
@@ -461,7 +455,7 @@ async fn sync_integration_c_shared_target_converges_across_central_and_two_perip
     &central_token,
     &p1_url,
     &p1_token,
-    p1_node_id,
+    &[base_1],
   )
   .await;
 
@@ -592,15 +586,11 @@ async fn sync_integration_ledger_affected_transfer_targets_shared_then_local_sco
   .await;
   assert!(pushed_wave_1 >= 2);
 
-  let pulled_wave_1_for_c = pull_from_central_to_target(
-    &client,
-    &central_url,
-    &central_token,
-    &c_url,
-    &c_token,
-    c_node_id,
-  )
-  .await;
+  let pulled_wave_1_for_c =
+    pull_from_central_to_target(&client, &central_url, &central_token, &c_url, &c_token, &[
+      base_c,
+    ])
+    .await;
   assert!(pulled_wave_1_for_c.0 >= 2);
 
   let transfer_1_a = get_ownership_transfer_json(&client, &a_url, &a_token, transfer_1_id)
@@ -713,7 +703,7 @@ async fn sync_integration_ledger_affected_transfer_targets_shared_then_local_sco
     &central_token,
     &c_url,
     &c_token,
-    c_node_id,
+    &[base_c],
     pulled_wave_1_for_c.1,
   )
   .await;

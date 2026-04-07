@@ -846,6 +846,10 @@ pub struct TruckWaybillResponse {
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub sender_id_name: Option<String>,
+  pub base_id: Uuid,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub base_id_name: Option<String>,
 }
 
 impl From<truck_waybill::Model> for TruckWaybillResponse {
@@ -856,6 +860,8 @@ impl From<truck_waybill::Model> for TruckWaybillResponse {
       date: row.date.to_string(),
       sender_id: row.sender_id,
       sender_id_name: None,
+      base_id: row.base_id,
+      base_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -933,6 +939,10 @@ pub struct RailWaybillResponse {
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub sender_id_name: Option<String>,
+  pub base_id: Uuid,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[schema(nullable)]
+  pub base_id_name: Option<String>,
 }
 
 impl From<rail_waybill::Model> for RailWaybillResponse {
@@ -943,6 +953,8 @@ impl From<rail_waybill::Model> for RailWaybillResponse {
       date: row.date.to_string(),
       sender_id: row.sender_id,
       sender_id_name: None,
+      base_id: row.base_id,
+      base_id_name: None,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),

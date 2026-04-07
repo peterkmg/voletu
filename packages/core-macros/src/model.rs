@@ -255,6 +255,25 @@ fn expand_before_save(
     }
   };
 
+  let after_save_hook = if matches!(mode, HookMode::UuidTimestamps) && has_id {
+    quote! {
+      async fn after_save<C: sea_orm::ConnectionTrait>(
+        model: <Entity as sea_orm::EntityTrait>::Model,
+        db: &C,
+        insert: bool,
+      ) -> Result<<Entity as sea_orm::EntityTrait>::Model, sea_orm::DbErr> {
+        if insert {
+          let _ = crate::services::audit::register::entity_after_insert_hook(
+            db, model.id, &model,
+          ).await;
+        }
+        Ok(model)
+      }
+    }
+  } else {
+    quote! {}
+  };
+
   TokenStream::from(quote! {
     #item_struct
 
@@ -269,6 +288,8 @@ fn expand_before_save(
         #hook_call
         Ok(self)
       }
+
+      #after_save_hook
     }
   })
 }

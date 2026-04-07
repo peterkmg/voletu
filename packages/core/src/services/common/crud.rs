@@ -77,22 +77,6 @@ where
   Ok(row)
 }
 
-pub async fn insert_with_audit<AM, F>(
-  txn: &impl ConnectionTrait,
-  audit: &AuditService,
-  active_model: AM,
-  id_of: F,
-) -> Result<<AM::Entity as EntityTrait>::Model, ApiError>
-where
-  AM: ActiveModelTrait + ActiveModelBehavior + Send,
-  F: Fn(&<AM::Entity as EntityTrait>::Model) -> Uuid,
-  <AM::Entity as EntityTrait>::Model: ModelTrait + Serialize + IntoActiveModel<AM>,
-{
-  let saved = active_model.insert(txn).await?;
-  audit.register_insert(txn, id_of(&saved), &saved).await?;
-  Ok(saved)
-}
-
 pub async fn update_with_audit<AM, F>(
   txn: &impl ConnectionTrait,
   audit: &AuditService,

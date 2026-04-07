@@ -1,4 +1,4 @@
-import { detectFilterType } from '~/components/data-table/column-filter'
+import { detectFilterType } from '~/components/data-table/filter-utils'
 
 // ---------------------------------------------------------------------------
 // detectFilterType
@@ -37,11 +37,11 @@ describe('detectFilterType', () => {
 // ---------------------------------------------------------------------------
 
 describe('date filter value semantics', () => {
-  it('YYYY-MM-DD normalization slices ISO datetime correctly', () => {
+  it('yYYY-MM-DD normalization slices ISO datetime correctly', () => {
     expect('2026-03-31T18:50:22'.slice(0, 10)).toBe('2026-03-31')
   })
 
-  it('YYYY-MM-DD normalization handles date-only strings', () => {
+  it('yYYY-MM-DD normalization handles date-only strings', () => {
     expect('2026-03-31'.slice(0, 10)).toBe('2026-03-31')
   })
 
@@ -110,10 +110,13 @@ describe('all-selected-by-default logic', () => {
 
 describe('selectAllState logic', () => {
   function selectAllState(allValues: string[], selectedSet: Set<string>): boolean | 'indeterminate' {
-    if (allValues.length === 0) return false
+    if (allValues.length === 0)
+      return false
     const count = allValues.filter(v => selectedSet.has(v)).length
-    if (count === 0) return false
-    if (count === allValues.length) return true
+    if (count === 0)
+      return false
+    if (count === allValues.length)
+      return true
     return 'indeterminate'
   }
 

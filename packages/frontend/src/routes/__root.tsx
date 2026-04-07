@@ -10,6 +10,33 @@ import { useDevToolsVisible } from '~/lib/devtools'
 import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
 
+function RootComponent() {
+  const startupState = useStartupStore(s => s.startupState)
+  const isTauri = startupState !== null
+  const showDebugTools = startupState?.isDebugBuild ?? false
+  const devToolsVisible = useDevToolsVisible()
+
+  return (
+    <div
+      className="flex h-svh flex-col overflow-hidden"
+      style={{ '--titlebar-h': isTauri ? '2rem' : '0px' } as React.CSSProperties}
+    >
+      {isTauri && <Titlebar />}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <Outlet />
+      </div>
+      <Toaster duration={5000} />
+      {showDebugTools && <DebugTrigger />}
+      {showDebugTools && devToolsVisible && (
+        <>
+          <ReactQueryDevtools buttonPosition="bottom-left" />
+          <TanStackRouterDevtools position="bottom-right" />
+        </>
+      )}
+    </div>
+  )
+}
+
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
@@ -25,32 +52,7 @@ export const Route = createRootRouteWithContext<{
     if (status === 'unknown')
       await boot()
   },
-  component: () => {
-    const startupState = useStartupStore(s => s.startupState)
-    const isTauri = startupState !== null
-    const showDebugTools = startupState?.isDebugBuild ?? false
-    const devToolsVisible = useDevToolsVisible()
-
-    return (
-      <div
-        className="flex h-svh flex-col overflow-hidden"
-        style={{ '--titlebar-h': isTauri ? '2rem' : '0px' } as React.CSSProperties}
-      >
-        {isTauri && <Titlebar />}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <Outlet />
-        </div>
-        <Toaster duration={5000} />
-        {showDebugTools && <DebugTrigger />}
-        {showDebugTools && devToolsVisible && (
-          <>
-            <ReactQueryDevtools buttonPosition="bottom-left" />
-            <TanStackRouterDevtools position="bottom-right" />
-          </>
-        )}
-      </div>
-    )
-  },
+  component: RootComponent,
   notFoundComponent: NotFound,
   errorComponent: GeneralError,
 })

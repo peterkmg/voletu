@@ -81,6 +81,23 @@ export function useNodeStatus() {
     enabled: isInitialized && !!accessToken,
   })
 
+  // Also fetch base assignments for peripheral nodes
+  const nodeType = useNodeStore(s => s.status.nodeType)
+  const basesQuery = useQuery<{ success: true, data: Array<{ baseId: string }> }>({
+    queryKey: ['node', 'bases'],
+    queryFn: async () => {
+      const token = useAuthStore.getState().accessToken
+      const res = await fetch(`${getBaseUrl()}/node/bases`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok)
+        throw new Error('Failed to fetch node bases')
+      return res.json()
+    },
+    refetchInterval: 30_000,
+    enabled: isInitialized && !!accessToken && nodeType === 'PERIPHERAL',
+  })
+
   useEffect(() => {
     if (query.data?.success) {
       const { isInitialized, nodeType, nodeName, workerState, lastSyncAt } = query.data.data
@@ -93,6 +110,14 @@ export function useNodeStatus() {
       })
     }
   }, [query.data])
+
+  useEffect(() => {
+    if (basesQuery.data?.success) {
+      useNodeStore.getState().setStatus({
+        assignedBaseIds: basesQuery.data.data.map(b => b.baseId),
+      })
+    }
+  }, [basesQuery.data])
 
   return query
 }

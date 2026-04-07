@@ -149,7 +149,8 @@ function PageTitleDisplay() {
   useEffect(() => {
     // Observe document.title changes via MutationObserver on <title> element
     const titleEl = document.querySelector('title')
-    if (!titleEl) return
+    if (!titleEl)
+      return
 
     const observer = new MutationObserver(() => setTitle(document.title))
     observer.observe(titleEl, { childList: true })

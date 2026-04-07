@@ -15,21 +15,6 @@ pub fn acceptance_save_truck(
   .to_string()
 }
 
-pub fn acceptance_item(
-  acceptance_doc_id: Uuid,
-  product_id: Uuid,
-  storage_id: Uuid,
-  accepted_amount: &str,
-) -> String {
-  json!({
-    "acceptanceDocId": acceptance_doc_id,
-    "productId": product_id,
-    "storageId": storage_id,
-    "acceptedAmount": accepted_amount,
-  })
-  .to_string()
-}
-
 pub fn dispatch_save_external_truck(
   document_number: &str,
   date: &str,
@@ -41,21 +26,6 @@ pub fn dispatch_save_external_truck(
     "dispatchPurpose": "EXTERNAL",
     "dispatchMethod": "TRUCK",
     "contractorId": contractor_id,
-  })
-  .to_string()
-}
-
-pub fn dispatch_item(
-  dispatch_doc_id: Uuid,
-  product_id: Uuid,
-  storage_id: Uuid,
-  dispatched_amount: &str,
-) -> String {
-  json!({
-    "dispatchDocId": dispatch_doc_id,
-    "productId": product_id,
-    "storageId": storage_id,
-    "dispatchedAmount": dispatched_amount,
   })
   .to_string()
 }
@@ -83,30 +53,6 @@ pub fn dispatch_storage_measurement(
     "afterVolume": after_volume,
     "afterDensity": after_density,
     "afterMass": after_mass,
-  })
-  .to_string()
-}
-
-pub fn blending_component(
-  blending_doc_id: Uuid,
-  storage_id: Uuid,
-  source_product_id: Uuid,
-  amount_used: &str,
-) -> String {
-  json!({
-    "blendingDocId": blending_doc_id,
-    "storageId": storage_id,
-    "sourceProductId": source_product_id,
-    "amountUsed": amount_used,
-  })
-  .to_string()
-}
-
-pub fn blending_result(blending_doc_id: Uuid, storage_id: Uuid, produced_amount: &str) -> String {
-  json!({
-    "blendingDocId": blending_doc_id,
-    "storageId": storage_id,
-    "producedAmount": produced_amount,
   })
   .to_string()
 }
@@ -208,6 +154,30 @@ pub fn operations_reconciliation_adjustment(
   .to_string()
 }
 
+pub fn acceptance_composite_save(
+  document_number: &str,
+  date_accepted: &str,
+  contractor_id: Uuid,
+  product_id: Uuid,
+  storage_id: Uuid,
+  accepted_amount: &str,
+) -> String {
+  json!({
+    "documentNumber": document_number,
+    "dateAccepted": date_accepted,
+    "arrivalType": "TRUCK",
+    "contractorId": contractor_id,
+    "items": [
+      {
+        "productId": product_id,
+        "storageId": storage_id,
+        "acceptedAmount": accepted_amount,
+      }
+    ]
+  })
+  .to_string()
+}
+
 pub fn acceptance_composite_save_and_execute(
   document_number: &str,
   date_accepted: &str,
@@ -226,6 +196,31 @@ pub fn acceptance_composite_save_and_execute(
         "productId": product_id,
         "storageId": storage_id,
         "acceptedAmount": accepted_amount,
+      }
+    ]
+  })
+  .to_string()
+}
+
+pub fn dispatch_composite_save(
+  document_number: &str,
+  date: &str,
+  contractor_id: Uuid,
+  product_id: Uuid,
+  storage_id: Uuid,
+  dispatched_amount: &str,
+) -> String {
+  json!({
+    "documentNumber": document_number,
+    "date": date,
+    "dispatchPurpose": "EXTERNAL",
+    "dispatchMethod": "TRUCK",
+    "contractorId": contractor_id,
+    "items": [
+      {
+        "productId": product_id,
+        "storageId": storage_id,
+        "dispatchedAmount": dispatched_amount,
       }
     ]
   })
@@ -291,6 +286,39 @@ pub fn dispatch_composite_save_and_execute_with_measurement(
         "afterVolume": "0.0",
         "afterDensity": "0.0",
         "afterMass": after_mass,
+      }
+    ]
+  })
+  .to_string()
+}
+
+pub fn blending_composite_save(
+  document_number: &str,
+  date: &str,
+  contractor_id: Uuid,
+  target_product_id: Uuid,
+  source_storage_id: Uuid,
+  source_product_id: Uuid,
+  amount_used: &str,
+  result_storage_id: Uuid,
+  produced_amount: &str,
+) -> String {
+  json!({
+    "documentNumber": document_number,
+    "date": date,
+    "contractorId": contractor_id,
+    "targetProductId": target_product_id,
+    "components": [
+      {
+        "storageId": source_storage_id,
+        "sourceProductId": source_product_id,
+        "amountUsed": amount_used,
+      }
+    ],
+    "results": [
+      {
+        "storageId": result_storage_id,
+        "producedAmount": produced_amount,
       }
     ]
   })
@@ -587,11 +615,17 @@ pub fn node_initialize_replace_with_node_type(
   .to_string()
 }
 
-pub fn transport_truck_waybill(document_number: &str, date: &str, sender_id: Uuid) -> String {
+pub fn transport_truck_waybill(
+  document_number: &str,
+  date: &str,
+  sender_id: Uuid,
+  base_id: Uuid,
+) -> String {
   json!({
     "documentNumber": document_number,
     "date": date,
     "senderId": sender_id,
+    "baseId": base_id,
   })
   .to_string()
 }
@@ -621,6 +655,7 @@ pub fn transport_truck_intake_save(
   document_number: &str,
   date: &str,
   sender_id: Uuid,
+  base_id: Uuid,
   product_id: Uuid,
   declared_amount: &str,
 ) -> String {
@@ -628,6 +663,7 @@ pub fn transport_truck_intake_save(
     "documentNumber": document_number,
     "date": date,
     "senderId": sender_id,
+    "baseId": base_id,
     "items": [
       {
         "productId": product_id,
@@ -638,11 +674,17 @@ pub fn transport_truck_intake_save(
   .to_string()
 }
 
-pub fn transport_rail_waybill(document_number: &str, date: &str, sender_id: Uuid) -> String {
+pub fn transport_rail_waybill(
+  document_number: &str,
+  date: &str,
+  sender_id: Uuid,
+  base_id: Uuid,
+) -> String {
   json!({
     "documentNumber": document_number,
     "date": date,
     "senderId": sender_id,
+    "baseId": base_id,
   })
   .to_string()
 }
@@ -700,6 +742,7 @@ pub fn transport_rail_intake_with_acceptance(
   document_number: &str,
   date: &str,
   sender_id: Uuid,
+  base_id: Uuid,
   wagon_number: &str,
   acceptance_document_number: &str,
   product_id: Uuid,
@@ -711,6 +754,7 @@ pub fn transport_rail_intake_with_acceptance(
     "documentNumber": document_number,
     "date": date,
     "senderId": sender_id,
+    "baseId": base_id,
     "manifests": [
       {
         "wagonNumber": wagon_number,

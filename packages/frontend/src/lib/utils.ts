@@ -6,6 +6,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Matches one or more trailing slashes. Shared across API client, auth, and setup. */
+export const TRAILING_SLASHES = /\/+$/
+
 export function getPageNumbers(currentPage: number, totalPages: number) {
   const pages: (number | '...')[] = []
   if (totalPages <= 7) {

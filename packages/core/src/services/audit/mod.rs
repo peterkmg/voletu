@@ -1,4 +1,5 @@
-mod register;
+pub mod register;
+pub mod routing;
 
 use std::sync::Arc;
 

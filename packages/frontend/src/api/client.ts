@@ -1,4 +1,5 @@
 import { isTokenExpiringSoon } from '~/auth/session'
+import { TRAILING_SLASHES } from '~/lib/utils'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 
@@ -25,7 +26,7 @@ export type ResponseErrorConfig<TError = unknown> = TError
 // ---------------------------------------------------------------------------
 
 function normalizeBaseUrl(value: string): string {
-  return value.replace(/\/+$/, '')
+  return value.replace(TRAILING_SLASHES, '')
 }
 
 export function getBaseUrl(): string {

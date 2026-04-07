@@ -48,10 +48,7 @@ async fn audit_service_insert_and_update_persist_expected_fields_and_payloads() 
     .await
     .unwrap();
 
-    service
-      .register_insert(&*db, saved.id, &saved)
-      .await
-      .unwrap();
+    // INSERT audit log is created automatically by the entity's after_save hook.
 
     let updated = company::ActiveModel {
       id: Set(saved.id),
@@ -119,10 +116,7 @@ async fn audit_service_model_methods_capture_full_inserts_and_field_level_update
     .await
     .unwrap();
 
-    service
-      .register_insert(&*db, saved.id, &saved)
-      .await
-      .unwrap();
+    // INSERT audit log is created automatically by the entity's after_save hook.
 
     let updated = company::ActiveModel {
       id: Set(saved.id),

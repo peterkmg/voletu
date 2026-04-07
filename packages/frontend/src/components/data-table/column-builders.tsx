@@ -36,7 +36,10 @@ export function selectColumn<T>(): ColumnDef<T> {
   }
 }
 
-/** @param slots Number of visible button slots (1=details only, 2=edit+more, 3=details+edit+more) */
+/**
+ * @param Actions Row actions component to render in the actions cell
+ * @param slots Number of visible button slots (1=details only, 2=edit+more, 3=details+edit+more)
+ */
 export function actionsColumn<T>(
   Actions: React.ComponentType<{ row: Row<T> }>,
   slots: 1 | 2 | 3 = 3,
@@ -65,10 +68,13 @@ export function dateColumn<T>(
     minSize: 100,
     maxSize: 130,
     filterFn: (row, columnId, filterValue: string[] | undefined) => {
-      if (filterValue === undefined) return true
-      if (filterValue.length === 0) return false
+      if (filterValue === undefined)
+        return true
+      if (filterValue.length === 0)
+        return false
       const val = row.getValue<string>(columnId)
-      if (!val) return false
+      if (!val)
+        return false
       return filterValue.includes(val.slice(0, 10))
     },
     header: ({ column }) => (

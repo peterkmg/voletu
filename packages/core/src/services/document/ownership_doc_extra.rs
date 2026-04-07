@@ -81,6 +81,11 @@ impl DocumentService {
       );
     }
 
+    self
+      .audit
+      .backfill_document_routing(conn, "ownership_transfers", response.id)
+      .await?;
+
     Ok(response)
   }
 

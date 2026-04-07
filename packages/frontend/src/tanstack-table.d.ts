@@ -13,14 +13,18 @@ declare module '@tanstack/react-table' {
     enableHeaderFilter?: boolean
     /** Role required to see this column in view-options dropdown. */
     requiresRole?: string
-    /** Controls how CSS Grid distributes width to this column.
+    /**
+     * Controls how CSS Grid distributes width to this column.
      *  - 'fixed': exact px (select, actions) — never grows or shrinks
      *  - 'capped': grows from minSize to maxSize then stops (dates, status, numbers)
      *  - 'flex': absorbs remaining space via 1fr (names, descriptions)
-     *  When omitted, getGridTemplate falls back to the legacy minSize/maxSize heuristic. */
+     *  When omitted, getGridTemplate falls back to the legacy minSize/maxSize heuristic.
+     */
     sizingCategory?: 'fixed' | 'capped' | 'flex'
-    /** For grouped tables: 'doc' columns show only on group's first row;
-     *  'item' columns show on every row. Unset = always show. */
+    /**
+     * For grouped tables: 'doc' columns show only on group's first row;
+     *  'item' columns show on every row. Unset = always show.
+     */
     groupRole?: 'doc' | 'item'
   }
 }

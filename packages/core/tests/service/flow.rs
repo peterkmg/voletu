@@ -35,6 +35,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       document_number: Set("TWB-001".into()),
       date: Set(date("2026-04-01")),
       sender_id: Set(fix.sender_id),
+      base_id: Set(fix.base_id),
       ..Default::default()
     }
     .insert(&*db)
@@ -56,6 +57,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       document_number: Set("TWB-002".into()),
       date: Set(date("2026-03-31")),
       sender_id: Set(fix.sender_id),
+      base_id: Set(fix.base_id),
       ..Default::default()
     }
     .insert(&*db)
@@ -81,6 +83,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
       document_number: Set("TWB-003".into()),
       date: Set(date("2026-03-30")),
       sender_id: Set(fix.sender_id),
+      base_id: Set(fix.base_id),
       ..Default::default()
     }
     .insert(&*db)

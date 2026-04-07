@@ -40,7 +40,12 @@ async fn truck_transport_endpoints_create_waybill_item_and_weight_document_with_
     let waybill_res = post_json(
       &app,
       api_paths::transport::truck::WAYBILLS,
-      transport_truck_waybill(TRUCK_DOC_NUMBER, "2026-01-01", fixture.sender_id),
+      transport_truck_waybill(
+        TRUCK_DOC_NUMBER,
+        "2026-01-01",
+        fixture.sender_id,
+        fixture.base_id,
+      ),
     )
     .await;
     let waybill_json = assert_api_success(waybill_res).await;
@@ -100,7 +105,12 @@ async fn rail_transport_endpoints_create_waybill_manifest_measurement_and_weight
     let waybill_res = post_json(
       &app,
       api_paths::transport::rail::WAYBILLS,
-      transport_rail_waybill(RAIL_DOC_NUMBER, "2026-01-01", fixture.sender_id),
+      transport_rail_waybill(
+        RAIL_DOC_NUMBER,
+        "2026-01-01",
+        fixture.sender_id,
+        fixture.base_id,
+      ),
     )
     .await;
     let waybill_json = assert_api_success(waybill_res).await;
@@ -184,6 +194,7 @@ async fn truck_intake_complete_endpoint_supports_optional_nested_sections_being_
         "TW-COMP-1",
         "2026-01-02",
         fixture.sender_id,
+        fixture.base_id,
         fixture.product_a_id,
         "12.5",
       ),
@@ -212,6 +223,7 @@ async fn rail_intake_save_endpoint_persists_nested_manifest_measurements_and_wei
         "RW-COMP-1",
         "2026-01-02",
         fixture.sender_id,
+        fixture.base_id,
         "WAGON-C1",
         "AC-RAIL-1",
         fixture.product_a_id,
@@ -262,6 +274,7 @@ async fn rail_intake_save_endpoint_ignores_nested_acceptance_payload() {
         "RW-COMP-DRAFT-1",
         "2026-01-02",
         fixture.sender_id,
+        fixture.base_id,
         "WAGON-D1",
         "AC-RAIL-DRAFT-1",
         fixture.product_a_id,
@@ -296,7 +309,7 @@ async fn truck_waybill_create_endpoint_rejects_invalid_date_format_with_validati
     let invalid = post_json(
       &app,
       api_paths::transport::truck::WAYBILLS,
-      transport_truck_waybill("TW-BAD", "2026-99-99", fixture.sender_id),
+      transport_truck_waybill("TW-BAD", "2026-99-99", fixture.sender_id, fixture.base_id),
     )
     .await;
     let err_json = assert_api_error(
@@ -320,7 +333,7 @@ async fn rail_waybill_create_endpoint_rejects_invalid_date_format_with_validatio
     let invalid = post_json(
       &app,
       api_paths::transport::rail::WAYBILLS,
-      transport_rail_waybill("RW-BAD", "bad-date", fixture.sender_id),
+      transport_rail_waybill("RW-BAD", "bad-date", fixture.sender_id, fixture.base_id),
     )
     .await;
     let err_json = assert_api_error(

@@ -39,7 +39,10 @@ pub fn build_router(state: Arc<ApiState>) -> Router {
     .merge(endpoints::catalog::catalog_routes(state.clone()))
     .merge(endpoints::document::document_routes(state.clone()))
     .merge(endpoints::flows::flow_routes(state.clone()))
-    .merge(endpoints::ledger::ledger_routes(state.clone()));
+    .merge(endpoints::ledger::ledger_routes(state.clone()))
+    .merge(endpoints::system::node_bases::node_base_routes(
+      state.clone(),
+    ));
 
   let (router, api) = OpenApiRouter::new()
     .merge(public)

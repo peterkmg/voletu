@@ -26,6 +26,7 @@ use voletu_core::{
     database_instance,
     inventory_ledger_entry,
     local,
+    node_base_assignment,
     ownership_transfer,
     ownership_transfer_item,
     product,
@@ -79,7 +80,7 @@ pub struct TransferFixtureRefs {
   pub storage_id: Uuid,
 }
 
-fn db_cfg(db_name: &str) -> DbConfig {
+pub fn db_cfg(db_name: &str) -> DbConfig {
   DbConfig::new(
     DbParams::sqlite_shared_memory(db_name.to_string()),
     "integrationtestpass",
@@ -220,6 +221,18 @@ pub async fn prepare_node_db(
     let mut local_am = local_row.into_active_model();
     local_am.is_initialized = Set(true);
     local_am.update(&db).await.unwrap();
+
+    // Create node_base_assignment for multi-base pull filtering
+    if let Some(base_id) = base_id {
+      node_base_assignment::ActiveModel {
+        node_id: Set(local_db_id),
+        base_id: Set(base_id),
+        ..Default::default()
+      }
+      .insert(&db)
+      .await
+      .unwrap();
+    }
   })
   .await;
 
@@ -315,8 +328,13 @@ pub async fn api_post(client: &Client, url: &str, token: &str, payload: Value) -
     .send()
     .await
     .unwrap();
-  assert_eq!(response.status(), StatusCode::OK);
+  let status = response.status();
   let body: Value = response.json().await.unwrap();
+  assert_eq!(
+    status,
+    StatusCode::OK,
+    "POST {url} returned {status}; body: {body}"
+  );
   assert_eq!(body["success"], Value::Bool(true));
   body["data"].clone()
 }
@@ -675,7 +693,7 @@ pub async fn pull_from_central_to_target(
   central_token: &str,
   target_url: &str,
   target_token: &str,
-  target_node_id: Uuid,
+  base_ids: &[Uuid],
 ) -> (usize, Uuid) {
   pull_from_central_to_target_after(
     client,
@@ -683,7 +701,7 @@ pub async fn pull_from_central_to_target(
     central_token,
     target_url,
     target_token,
-    target_node_id,
+    base_ids,
     INITIAL_AUDIT_CURSOR,
   )
   .await
@@ -695,14 +713,18 @@ pub async fn pull_from_central_to_target_after(
   central_token: &str,
   target_url: &str,
   target_token: &str,
-  target_node_id: Uuid,
+  base_ids: &[Uuid],
   last_audit_log_id: Uuid,
 ) -> (usize, Uuid) {
+  let base_ids_param = base_ids
+    .iter()
+    .map(|id| id.to_string())
+    .collect::<Vec<_>>()
+    .join(",");
   let data = api_get(
     client,
     &format!(
-      "{central_url}/sync/pull?nodeId={target_node_id}&lastAuditLogId={}&limit=1000",
-      last_audit_log_id
+      "{central_url}/sync/pull?lastAuditLogId={last_audit_log_id}&baseIds={base_ids_param}&limit=1000"
     ),
     central_token,
   )
@@ -796,4 +818,865 @@ pub async fn shutdown_server(
     .expect("server task should shut down in time")
     .expect("server task join should succeed");
   join_result.expect("serve_api should return Ok on shutdown");
+}
+
+/// Add a base assignment to a peripheral node's DB.
+/// Creates the base entity if it doesn't exist, then inserts a node_base_assignment row.
+pub async fn add_base_assignment(db_name: &str, node_id: Uuid, base_id: Uuid, base_name: &str) {
+  ensure_shared_memory_db_alive(db_name).await;
+  let (db, _) = init_database(&db_cfg(db_name)).await.unwrap();
+  with_audit_context(Uuid::now_v7(), node_id, || async {
+    if base::Entity::find_by_id(base_id)
+      .one(&db)
+      .await
+      .unwrap()
+      .is_none()
+    {
+      base::ActiveModel {
+        id: Set(base_id),
+        common_name: Set(base_name.to_string()),
+        long_name: Set(None),
+        ..Default::default()
+      }
+      .insert(&db)
+      .await
+      .unwrap();
+    }
+    node_base_assignment::ActiveModel {
+      node_id: Set(node_id),
+      base_id: Set(base_id),
+      ..Default::default()
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+  })
+  .await;
+}
+
+// ---------------------------------------------------------------------------
+// Routing integration test helpers — catalog + document creation via HTTP API
+// ---------------------------------------------------------------------------
+
+/// IDs returned after seeding a two-base catalog via HTTP API.
+#[derive(Clone, Copy, Debug)]
+pub struct RoutingCatalog {
+  pub base_alpha: Uuid,
+  pub base_beta: Uuid,
+  pub warehouse_alpha: Uuid,
+  pub warehouse_beta: Uuid,
+  pub storage_alpha: Uuid,
+  pub storage_beta: Uuid,
+  pub product_type: Uuid,
+  pub product_group: Uuid,
+  pub product: Uuid,
+  pub product_b: Uuid,
+  pub contractor: Uuid,
+  pub contractor_b: Uuid,
+}
+
+/// Seed catalog entities on a running node via HTTP API.
+/// Creates two bases (alpha/beta), each with a warehouse + storage, plus products and companies.
+pub async fn seed_catalog_via_api(client: &Client, base_url: &str, token: &str) -> RoutingCatalog {
+  let base_alpha = api_post(
+    client,
+    &format!("{base_url}/catalog/bases"),
+    token,
+    json!({
+      "commonName": "Base Alpha",
+      "longName": null,
+    }),
+  )
+  .await;
+  let base_alpha_id = parse_uuid(&base_alpha, "id");
+
+  let base_beta = api_post(
+    client,
+    &format!("{base_url}/catalog/bases"),
+    token,
+    json!({
+      "commonName": "Base Beta",
+      "longName": null,
+    }),
+  )
+  .await;
+  let base_beta_id = parse_uuid(&base_beta, "id");
+
+  let wh_alpha = api_post(
+    client,
+    &format!("{base_url}/catalog/warehouses"),
+    token,
+    json!({
+      "baseId": base_alpha_id,
+      "commonName": "Warehouse Alpha",
+      "longName": null,
+    }),
+  )
+  .await;
+  let warehouse_alpha_id = parse_uuid(&wh_alpha, "id");
+
+  let wh_beta = api_post(
+    client,
+    &format!("{base_url}/catalog/warehouses"),
+    token,
+    json!({
+      "baseId": base_beta_id,
+      "commonName": "Warehouse Beta",
+      "longName": null,
+    }),
+  )
+  .await;
+  let warehouse_beta_id = parse_uuid(&wh_beta, "id");
+
+  let st_alpha = api_post(
+    client,
+    &format!("{base_url}/catalog/storages"),
+    token,
+    json!({
+      "warehouseId": warehouse_alpha_id,
+      "commonName": "Tank Alpha",
+      "longName": null,
+      "capacity": null,
+      "isTypeSpecific": false,
+      "productTypeId": null,
+    }),
+  )
+  .await;
+  let storage_alpha_id = parse_uuid(&st_alpha, "id");
+
+  let st_beta = api_post(
+    client,
+    &format!("{base_url}/catalog/storages"),
+    token,
+    json!({
+      "warehouseId": warehouse_beta_id,
+      "commonName": "Tank Beta",
+      "longName": null,
+      "capacity": null,
+      "isTypeSpecific": false,
+      "productTypeId": null,
+    }),
+  )
+  .await;
+  let storage_beta_id = parse_uuid(&st_beta, "id");
+
+  let pt = api_post(
+    client,
+    &format!("{base_url}/catalog/product-types"),
+    token,
+    json!({
+      "commonName": "Test Fuel",
+      "longName": null,
+    }),
+  )
+  .await;
+  let product_type_id = parse_uuid(&pt, "id");
+
+  let pg = api_post(
+    client,
+    &format!("{base_url}/catalog/product-groups"),
+    token,
+    json!({
+      "productTypeId": product_type_id,
+      "commonName": "Test Diesel",
+      "longName": null,
+    }),
+  )
+  .await;
+  let product_group_id = parse_uuid(&pg, "id");
+
+  let prod = api_post(
+    client,
+    &format!("{base_url}/catalog/products"),
+    token,
+    json!({
+      "productGroupId": product_group_id,
+      "manufacturerId": null,
+      "commonName": "Product A",
+      "longName": null,
+      "addIdentification": null,
+      "isComponent": true,
+    }),
+  )
+  .await;
+  let product_id = parse_uuid(&prod, "id");
+
+  let prod_b = api_post(
+    client,
+    &format!("{base_url}/catalog/products"),
+    token,
+    json!({
+      "productGroupId": product_group_id,
+      "manufacturerId": null,
+      "commonName": "Product B",
+      "longName": null,
+      "addIdentification": null,
+      "isComponent": false,
+    }),
+  )
+  .await;
+  let product_b_id = parse_uuid(&prod_b, "id");
+
+  let company = api_post(
+    client,
+    &format!("{base_url}/catalog/companies"),
+    token,
+    json!({
+      "commonName": "Test Contractor",
+      "legalName": null,
+      "isContractor": true,
+      "isExporter": false,
+      "isManufacturer": false,
+      "isSender": false,
+    }),
+  )
+  .await;
+  let contractor_id = parse_uuid(&company, "id");
+
+  let company_b = api_post(
+    client,
+    &format!("{base_url}/catalog/companies"),
+    token,
+    json!({
+      "commonName": "Test Contractor B",
+      "legalName": null,
+      "isContractor": true,
+      "isExporter": false,
+      "isManufacturer": false,
+      "isSender": false,
+    }),
+  )
+  .await;
+  let contractor_b_id = parse_uuid(&company_b, "id");
+
+  RoutingCatalog {
+    base_alpha: base_alpha_id,
+    base_beta: base_beta_id,
+    warehouse_alpha: warehouse_alpha_id,
+    warehouse_beta: warehouse_beta_id,
+    storage_alpha: storage_alpha_id,
+    storage_beta: storage_beta_id,
+    product_type: product_type_id,
+    product_group: product_group_id,
+    product: product_id,
+    product_b: product_b_id,
+    contractor: contractor_id,
+    contractor_b: contractor_b_id,
+  }
+}
+
+/// Create an acceptance document via composite HTTP endpoint. Returns the response JSON.
+pub async fn create_acceptance_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_number: &str,
+  contractor_id: Uuid,
+  product_id: Uuid,
+  storage_id: Uuid,
+  amount: &str,
+) -> Value {
+  api_post(
+    client,
+    &format!("{base_url}/acceptance/composite/save"),
+    token,
+    json!({
+      "documentNumber": doc_number,
+      "dateAccepted": "2026-01-15T10:00:00Z",
+      "arrivalType": "TRUCK",
+      "sourceEntity": null,
+      "contractorId": contractor_id,
+      "truckWaybillId": null,
+      "railWaybillId": null,
+      "transitDispatchId": null,
+      "items": [{
+        "productId": product_id,
+        "storageId": storage_id,
+        "acceptedAmount": amount,
+      }]
+    }),
+  )
+  .await
+}
+
+/// Create a physical transfer via composite HTTP endpoint. Returns the response JSON.
+pub async fn create_physical_transfer_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_number: &str,
+  contractor_id: Uuid,
+  product_id: Uuid,
+  from_storage_id: Uuid,
+  to_storage_id: Uuid,
+  amount: &str,
+) -> Value {
+  api_post(
+    client,
+    &format!("{base_url}/physical-transfers/save"),
+    token,
+    json!({
+      "documentNumber": doc_number,
+      "date": "2026-01-15T10:00:00Z",
+      "contractorId": contractor_id,
+      "startCargoOps": "2026-01-15T08:00:00Z",
+      "endCargoOps": "2026-01-15T16:00:00Z",
+      "items": [{
+        "productId": product_id,
+        "fromStorageId": from_storage_id,
+        "toStorageId": to_storage_id,
+        "amount": amount,
+      }]
+    }),
+  )
+  .await
+}
+
+/// Query audit logs, optionally filtered by table name and/or record ID (client-side filter).
+pub async fn query_audit_logs(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  table_name: Option<&str>,
+  record_id: Option<Uuid>,
+) -> Vec<Value> {
+  let data = api_get(client, &format!("{base_url}/audit-logs"), token).await;
+  let all = data.as_array().cloned().unwrap_or_default();
+  all
+    .into_iter()
+    .filter(|log| {
+      if let Some(tn) = table_name {
+        if log["tableName"] != tn {
+          return false;
+        }
+      }
+      if let Some(rid) = record_id {
+        if log["recordId"] != rid.to_string() {
+          return false;
+        }
+      }
+      true
+    })
+    .collect()
+}
+
+/// Find audit logs for a specific record and assert target_base_ids contains the expected base.
+pub fn assert_audit_log_targets(
+  logs: &[Value],
+  table_name: &str,
+  record_id: Uuid,
+  expected_base_id: Uuid,
+) {
+  let matching: Vec<&Value> = logs
+    .iter()
+    .filter(|l| l["tableName"] == table_name && l["recordId"] == record_id.to_string())
+    .collect();
+
+  assert!(
+    !matching.is_empty(),
+    "expected audit log for {table_name}/{record_id}, found none"
+  );
+
+  let base_str = expected_base_id.to_string();
+  for log in &matching {
+    let target = log["targetBaseIds"].as_str().unwrap_or("");
+    assert!(
+      target.contains(&base_str),
+      "audit log for {table_name}/{record_id} has target_base_ids='{}', expected to contain '{}'",
+      target,
+      base_str,
+    );
+  }
+}
+
+/// Parse a UUID from a JSON value field.
+fn parse_uuid(json: &Value, field: &str) -> Uuid {
+  Uuid::parse_str(
+    json[field]
+      .as_str()
+      .unwrap_or_else(|| panic!("missing {field} in response: {json}")),
+  )
+  .unwrap()
+}
+
+/// Retrieve an acceptance composite document by ID.
+pub async fn get_acceptance_composite_json(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_id: Uuid,
+) -> Option<Value> {
+  let response = client
+    .get(format!("{base_url}/acceptance/composite/{doc_id}"))
+    .bearer_auth(token)
+    .send()
+    .await
+    .unwrap();
+  if response.status() == StatusCode::NOT_FOUND {
+    return None;
+  }
+  assert_eq!(response.status(), StatusCode::OK);
+  let body: Value = response.json().await.unwrap();
+  assert_eq!(body["success"], Value::Bool(true));
+  Some(body["data"].clone())
+}
+
+/// Retrieve a physical transfer composite document by ID.
+pub async fn get_physical_transfer_composite_json(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_id: Uuid,
+) -> Option<Value> {
+  let response = client
+    .get(format!("{base_url}/physical-transfers/composite/{doc_id}"))
+    .bearer_auth(token)
+    .send()
+    .await
+    .unwrap();
+  if response.status() == StatusCode::NOT_FOUND {
+    return None;
+  }
+  assert_eq!(response.status(), StatusCode::OK);
+  let body: Value = response.json().await.unwrap();
+  assert_eq!(body["success"], Value::Bool(true));
+  Some(body["data"].clone())
+}
+
+/// Check that a catalog entity exists on a node by querying the list endpoint.
+pub async fn has_catalog_entity(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  endpoint: &str,
+  entity_id: Uuid,
+) -> bool {
+  let data = api_get(client, &format!("{base_url}{endpoint}"), token).await;
+  data
+    .as_array()
+    .unwrap()
+    .iter()
+    .any(|e| e["id"] == entity_id.to_string())
+}
+
+/// Create a dispatch composite document via HTTP API.
+pub async fn create_dispatch_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_number: &str,
+  contractor_id: Uuid,
+  product_id: Uuid,
+  storage_id: Uuid,
+  amount: &str,
+  destination_base_id: Option<Uuid>,
+) -> Value {
+  api_post(
+    client,
+    &format!("{base_url}/dispatch/composite/save"),
+    token,
+    json!({
+      "documentNumber": doc_number,
+      "date": "2026-01-15T10:00:00Z",
+      "dispatchPurpose": "EXTERNAL",
+      "dispatchMethod": "TRUCK",
+      "contractorId": contractor_id,
+      "destinationBaseId": destination_base_id,
+      "receiverEntity": null,
+      "startCargoOps": null,
+      "endCargoOps": null,
+      "bunkerType": null,
+      "exporterId": null,
+      "portId": null,
+      "items": [{
+        "productId": product_id,
+        "storageId": storage_id,
+        "dispatchedAmount": amount,
+      }],
+      "storageMeasurements": null,
+    }),
+  )
+  .await
+}
+
+/// Create a blending composite document via HTTP API.
+pub async fn create_blending_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_number: &str,
+  contractor_id: Uuid,
+  target_product_id: Uuid,
+  component_storage_id: Uuid,
+  source_product_id: Uuid,
+  component_amount: &str,
+  result_storage_id: Uuid,
+  result_amount: &str,
+) -> Value {
+  api_post(
+    client,
+    &format!("{base_url}/blending/composite/save"),
+    token,
+    json!({
+      "documentNumber": doc_number,
+      "date": "2026-01-15T10:00:00Z",
+      "contractorId": contractor_id,
+      "targetProductId": target_product_id,
+      "components": [{
+        "storageId": component_storage_id,
+        "sourceProductId": source_product_id,
+        "amountUsed": component_amount,
+      }],
+      "results": [{
+        "storageId": result_storage_id,
+        "producedAmount": result_amount,
+      }]
+    }),
+  )
+  .await
+}
+
+/// Create an ownership transfer composite document via HTTP API.
+pub async fn create_ownership_transfer_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  storage_id: Uuid,
+  product_id: Uuid,
+  from_contractor_id: Uuid,
+  to_contractor_id: Uuid,
+  amount: &str,
+) -> Value {
+  api_post(
+    client,
+    &format!("{base_url}/ownership-transfers/save"),
+    token,
+    json!({
+      "date": "2026-01-15T10:00:00Z",
+      "items": [{
+        "storageId": storage_id,
+        "productId": product_id,
+        "fromContractorId": from_contractor_id,
+        "toContractorId": to_contractor_id,
+        "amount": amount,
+      }]
+    }),
+  )
+  .await
+}
+
+/// Create a reconciliation document via HTTP API.
+pub async fn create_reconciliation_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  doc_number: &str,
+  contractor_id: Uuid,
+  warehouse_id: Uuid,
+) -> Value {
+  api_post(
+    client,
+    &format!("{base_url}/reconciliations/save"),
+    token,
+    json!({
+      "documentNumber": doc_number,
+      "date": "2026-01-15T10:00:00Z",
+      "contractorId": contractor_id,
+      "warehouseId": warehouse_id,
+    }),
+  )
+  .await
+}
+
+/// Execute a document via HTTP API (POST to execute/{id}).
+pub async fn execute_document_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  execute_path: &str,
+  doc_id: Uuid,
+) -> Value {
+  let url = format!(
+    "{base_url}{}",
+    execute_path.replace("{id}", &doc_id.to_string())
+  );
+  let response = client
+    .post(&url)
+    .bearer_auth(token)
+    .header("idempotency-key", Uuid::now_v7().to_string())
+    .send()
+    .await
+    .unwrap();
+  let status = response.status();
+  let body: Value = response.json().await.unwrap();
+  assert_eq!(
+    status,
+    StatusCode::OK,
+    "POST {url} returned {status}; body: {body}"
+  );
+  assert_eq!(body["success"], Value::Bool(true));
+  body["data"].clone()
+}
+
+/// Add a base assignment to a running node via HTTP API (POST /node/bases).
+pub async fn add_base_assignment_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  base_id: Uuid,
+) {
+  api_post(
+    client,
+    &format!("{base_url}/node/bases"),
+    token,
+    json!({ "baseId": base_id }),
+  )
+  .await;
+}
+
+/// Retrieve a generic composite document by ID. Returns None if 404.
+pub async fn get_composite_json(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  path_template: &str,
+  doc_id: Uuid,
+) -> Option<Value> {
+  let url = format!(
+    "{base_url}{}",
+    path_template.replace("{id}", &doc_id.to_string())
+  );
+  let response = client.get(&url).bearer_auth(token).send().await.unwrap();
+  if response.status() == StatusCode::NOT_FOUND {
+    return None;
+  }
+  assert_eq!(response.status(), StatusCode::OK);
+  let body: Value = response.json().await.unwrap();
+  assert_eq!(body["success"], Value::Bool(true));
+  Some(body["data"].clone())
+}
+
+// ===========================================================================
+// API-only node setup helpers — no direct DB access for business logic
+// ===========================================================================
+
+/// Holds the running state of a node after API-only setup.
+pub struct NodeHandle {
+  pub url: String,
+  pub token: String,
+  pub shutdown_tx: oneshot::Sender<()>,
+  pub task: tokio::task::JoinHandle<anyhow::Result<()>>,
+}
+
+impl NodeHandle {
+  pub async fn shutdown(self) {
+    shutdown_server(self.shutdown_tx, self.task).await;
+  }
+}
+
+/// Spawn a server and initialize it as Central via API only.
+pub async fn setup_central_via_api(client: &Client, db_name: &str) -> NodeHandle {
+  let port = reserve_port();
+  let (shutdown_tx, mut task) = spawn_server(db_name, port).await;
+  let url = format!("http://127.0.0.1:{port}");
+  wait_for_health(client, &url, Duration::from_secs(10), &mut task).await;
+
+  let bootstrap_token =
+    wait_for_login_token(client, &url, "admin", "admin", Duration::from_secs(5)).await;
+
+  api_post(
+    client,
+    &format!("{url}/node/initialize"),
+    &bootstrap_token,
+    json!({
+      "nodeType": "CENTRAL",
+      "nodeName": "Central",
+      "centralApiUrl": null,
+      "newUsername": "root",
+      "newPassword": "rootpass",
+      "fullname": "Root Admin",
+    }),
+  )
+  .await;
+
+  wait_for_health(client, &url, Duration::from_secs(20), &mut task).await;
+  let token = wait_for_login_token(client, &url, "root", "rootpass", Duration::from_secs(10)).await;
+
+  NodeHandle {
+    url,
+    token,
+    shutdown_tx,
+    task,
+  }
+}
+
+/// Spawn a server and initialize it as a Peripheral via API only.
+/// Pulls catalog from Central, then adds base assignments.
+pub async fn setup_peripheral_via_api(
+  client: &Client,
+  db_name: &str,
+  central: &NodeHandle,
+  base_ids: &[Uuid],
+) -> NodeHandle {
+  let port = reserve_port();
+  let (shutdown_tx, mut task) = spawn_server(db_name, port).await;
+  let url = format!("http://127.0.0.1:{port}");
+  wait_for_health(client, &url, Duration::from_secs(10), &mut task).await;
+
+  let bootstrap_token =
+    wait_for_login_token(client, &url, "admin", "admin", Duration::from_secs(5)).await;
+
+  api_post(
+    client,
+    &format!("{url}/node/initialize"),
+    &bootstrap_token,
+    json!({
+      "nodeType": "PERIPHERAL",
+      "nodeName": null,
+      "centralApiUrl": central.url,
+      "newUsername": "root",
+      "newPassword": "rootpass",
+      "fullname": "Root Admin",
+    }),
+  )
+  .await;
+
+  wait_for_health(client, &url, Duration::from_secs(20), &mut task).await;
+  let token = wait_for_login_token(client, &url, "root", "rootpass", Duration::from_secs(10)).await;
+
+  // Pull catalog from Central so base entities exist on this peripheral.
+  // Loop until all catalog audit logs are consumed (large seeds may exceed single batch).
+  let mut cursor = INITIAL_AUDIT_CURSOR;
+  loop {
+    let (pulled, new_cursor) = pull_from_central_to_target_after(
+      client,
+      &central.url,
+      &central.token,
+      &url,
+      &token,
+      &[],
+      cursor,
+    )
+    .await;
+    if pulled == 0 || new_cursor == cursor {
+      break;
+    }
+    cursor = new_cursor;
+  }
+
+  // Add base assignments via API
+  for base_id in base_ids {
+    add_base_assignment_via_api(client, &url, &token, *base_id).await;
+  }
+
+  NodeHandle {
+    url,
+    token,
+    shutdown_tx,
+    task,
+  }
+}
+
+/// Soft-delete an entity via HTTP DELETE /{path}/{id}.
+pub async fn soft_delete_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  path: &str,
+  id: Uuid,
+) {
+  let url = format!("{base_url}{}", path.replace("{id}", &id.to_string()));
+  let response = client
+    .delete(&url)
+    .bearer_auth(token)
+    .header("idempotency-key", Uuid::now_v7().to_string())
+    .send()
+    .await
+    .unwrap();
+  let status = response.status();
+  let body: Value = response.json().await.unwrap();
+  assert_eq!(
+    status,
+    StatusCode::OK,
+    "DELETE {url} returned {status}; body: {body}"
+  );
+}
+
+/// Hard-delete an entity via HTTP DELETE /{path}/{id}/hard.
+pub async fn hard_delete_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  path: &str,
+  id: Uuid,
+) {
+  let url = format!("{base_url}{}", path.replace("{id}", &id.to_string()));
+  let response = client
+    .delete(&url)
+    .bearer_auth(token)
+    .header("idempotency-key", Uuid::now_v7().to_string())
+    .send()
+    .await
+    .unwrap();
+  let status = response.status();
+  let body: Value = response.json().await.unwrap();
+  assert_eq!(
+    status,
+    StatusCode::OK,
+    "DELETE {url} returned {status}; body: {body}"
+  );
+}
+
+/// Revert a document via HTTP POST /{revert_path}/{id}.
+pub async fn revert_document_via_api(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  revert_path: &str,
+  doc_id: Uuid,
+) {
+  execute_document_via_api(client, base_url, token, revert_path, doc_id).await;
+}
+
+/// Call POST /dev/seed on a running node. Returns the seed result.
+pub async fn dev_seed_via_api(client: &Client, base_url: &str, token: &str) -> Value {
+  api_post(client, &format!("{base_url}/dev/seed"), token, json!({})).await
+}
+
+/// Get all ledger entries from a node via GET /ledger.
+pub async fn get_all_ledger_entries(client: &Client, base_url: &str, token: &str) -> Vec<Value> {
+  let data = api_get(client, &format!("{base_url}/ledger"), token).await;
+  data.as_array().cloned().unwrap_or_default()
+}
+
+/// Get all storages belonging to a specific base via warehouse→base chain.
+pub async fn get_storages_for_base(
+  client: &Client,
+  base_url: &str,
+  token: &str,
+  base_id: Uuid,
+) -> Vec<Uuid> {
+  let warehouses = api_get(client, &format!("{base_url}/catalog/warehouses"), token).await;
+  let base_warehouse_ids: Vec<Uuid> = warehouses
+    .as_array()
+    .unwrap()
+    .iter()
+    .filter(|w| w["baseId"].as_str() == Some(&base_id.to_string()))
+    .filter_map(|w| w["id"].as_str().and_then(|s| Uuid::parse_str(s).ok()))
+    .collect();
+
+  let storages = api_get(client, &format!("{base_url}/catalog/storages"), token).await;
+  storages
+    .as_array()
+    .unwrap()
+    .iter()
+    .filter(|s| {
+      s["warehouseId"]
+        .as_str()
+        .and_then(|wid| Uuid::parse_str(wid).ok())
+        .map(|wid| base_warehouse_ids.contains(&wid))
+        .unwrap_or(false)
+    })
+    .filter_map(|s| s["id"].as_str().and_then(|id| Uuid::parse_str(id).ok()))
+    .collect()
 }

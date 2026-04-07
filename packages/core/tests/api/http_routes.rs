@@ -99,15 +99,14 @@ async fn list_endpoints_return_ok_for_empty_database_state_and_wrap_payload_in_a
     api_paths::transport::rail::MEASUREMENTS,
     api_paths::transport::rail::WEIGHTS,
     api_paths::acceptance::ROOT,
-    api_paths::acceptance::ITEMS,
+    // acceptance::ITEMS removed — items managed via composite endpoints
     api_paths::dispatch::ROOT,
-    api_paths::dispatch::ITEMS,
+    // dispatch::ITEMS removed — items managed via composite endpoints
     api_paths::dispatch::STORAGE_MEASUREMENTS,
     api_paths::operations::PHYSICAL_TRANSFERS,
     api_paths::operations::OWNERSHIP_TRANSFERS,
     api_paths::blending::ROOT,
-    api_paths::blending::COMPONENTS,
-    api_paths::blending::RESULTS,
+    // blending::COMPONENTS and ::RESULTS removed — managed via composite endpoints
     api_paths::operations::RECONCILIATIONS,
     api_paths::operations::RECONCILIATION_ADJUSTMENTS,
     api_paths::ledger::ROOT,
@@ -807,7 +806,7 @@ async fn openapi_sync_query_parameter_contract_enforces_pull_and_outbound_params
   }
 
   let pull_params = param_names_for(api_paths::sync::PULL, "get");
-  for expected in ["nodeId", "lastAuditLogId", "limit"] {
+  for expected in ["lastAuditLogId", "baseIds", "limit"] {
     assert!(
       pull_params.contains(expected),
       "missing query parameter {expected} for GET {}",

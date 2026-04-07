@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
-import { DocumentDetailPage } from '~/components/document'
+import { DetailField, DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { EntityPage } from '~/components/entity-page'
 import { FormDialog } from '~/components/forms/form-dialog'
@@ -18,12 +18,12 @@ import { useOwnershipTransferCompositeGet } from '~/generated/hooks/DocumentOper
 import { flowOwnershipTransferFlatQueryQueryKey, useFlowOwnershipTransferFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowOwnershipTransferFlatQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
-import { formatDate, formatDateTime } from '~/lib/formatters'
 import { createDeleteDialog } from '~/lib/create-delete-dialog'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
 import { createRowActions } from '~/lib/create-row-actions'
+import { formatDate, formatDateTime } from '~/lib/formatters'
 
 type DialogType = 'create' | 'update' | 'delete' | 'hard-delete' | 'execute' | 'revert'
 
@@ -134,10 +134,7 @@ export function OwnershipTransferDetail() {
       document={{ id: doc.id, documentNumber: doc.id, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{formatDate(doc.date)}</p>
-          </div>
+          <DetailField label={t('common:table.date')}>{formatDate(doc.date)}</DetailField>
         </div>
       )}
       itemsContent={(
@@ -157,7 +154,10 @@ export function OwnershipTransferDetail() {
       metadataContent={doc.executedAt
         ? (
             <div className="text-sm">
-              <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
+              <span className="text-muted-foreground">
+                {t('common:metadata.executedAt')}
+                :
+              </span>
               {' '}
               {formatDateTime(doc.executedAt)}
             </div>

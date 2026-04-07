@@ -28,16 +28,15 @@ use crate::common::{
     with_auth_token,
   },
   payloads::{
+    acceptance_composite_save,
     acceptance_composite_save_and_execute,
-    acceptance_item,
     acceptance_save_truck,
-    blending_component,
+    blending_composite_save,
     blending_composite_save_and_execute,
-    blending_result,
     blending_save,
+    dispatch_composite_save,
     dispatch_composite_save_and_execute,
     dispatch_composite_save_and_execute_with_measurement,
-    dispatch_item,
     dispatch_save_external_truck,
     dispatch_storage_measurement,
     operations_ownership_transfer,
@@ -116,52 +115,31 @@ async fn acceptance_document_endpoints_create_item_execute_and_return_expected_p
   let ctx = seed_inventory_context(&db).await;
 
   with_auth_token(token, async {
-    let create_doc = post_json(
+    // Create acceptance document + item via composite endpoint
+    let create_composite = post_json(
       &app,
-      api_paths::acceptance::SAVE,
-      acceptance_save_truck(
+      api_paths::acceptance::COMPOSITE_SAVE,
+      acceptance_composite_save(
         ACCEPTANCE_DOC_NUMBER,
         "2026-01-01T00:00:00Z",
         ctx.contractor_id,
+        ctx.product_id,
+        ctx.storage_a,
+        "5.0",
       ),
     )
     .await;
-    let create_doc_json = assert_api_success(create_doc).await;
+    let composite_json = assert_api_success(create_composite).await;
     assert_eq!(
-      create_doc_json["data"]["documentNumber"],
+      composite_json["data"]["documentNumber"],
       ACCEPTANCE_DOC_NUMBER
     );
-    assert_eq!(create_doc_json["data"]["arrivalType"], "TRUCK");
+    assert_eq!(composite_json["data"]["items"].as_array().unwrap().len(), 1);
+    assert_eq!(composite_json["data"]["items"][0]["acceptedAmount"], "5");
 
-    let doc_id = acceptance_document::Entity::find()
-      .filter(acceptance_document::Column::DocumentNumber.eq(ACCEPTANCE_DOC_NUMBER))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
+    let doc_id = Uuid::parse_str(composite_json["data"]["id"].as_str().unwrap()).unwrap();
 
-    let create_item = post_json(
-      &app,
-      api_paths::acceptance::ITEMS,
-      acceptance_item(doc_id, ctx.product_id, ctx.storage_a, "5.0"),
-    )
-    .await;
-    let create_item_json = assert_api_success(create_item).await;
-    assert_eq!(
-      create_item_json["data"]["acceptanceDocId"],
-      doc_id.to_string()
-    );
-    assert_eq!(
-      create_item_json["data"]["productId"],
-      ctx.product_id.to_string()
-    );
-    assert_eq!(
-      create_item_json["data"]["storageId"],
-      ctx.storage_a.to_string()
-    );
-    assert_eq!(create_item_json["data"]["acceptedAmount"], "5");
-
+    // Execute
     let execute = post_empty(
       &app,
       api_paths::acceptance::EXECUTE_BY_ID.replace("{id}", &doc_id.to_string()),
@@ -170,6 +148,7 @@ async fn acceptance_document_endpoints_create_item_execute_and_return_expected_p
     let execute_json = assert_api_success(execute).await;
     assert!(execute_json["data"].is_null());
 
+    // Verify ledger entry
     let entry = inventory_ledger_entry::Entity::find()
       .filter(inventory_ledger_entry::Column::StorageId.eq(ctx.storage_a))
       .filter(inventory_ledger_entry::Column::ProductId.eq(ctx.product_id))
@@ -189,34 +168,7 @@ async fn dispatch_endpoints_create_measure_and_execute_successfully() {
   let ctx = seed_inventory_context(&db).await;
 
   with_auth_token(token, async {
-    let create_doc = post_json(
-      &app,
-      api_paths::dispatch::SAVE,
-      dispatch_save_external_truck(
-        DISPATCH_DOC_NUMBER,
-        "2026-01-01T00:00:00Z",
-        ctx.contractor_id,
-      ),
-    )
-    .await;
-    let create_doc_json = assert_api_success(create_doc).await;
-    assert_eq!(
-      create_doc_json["data"]["documentNumber"],
-      DISPATCH_DOC_NUMBER
-    );
-    assert_eq!(
-      create_doc_json["data"]["contractorId"],
-      ctx.contractor_id.to_string()
-    );
-
-    let dispatch_doc_id = dispatch_document::Entity::find()
-      .filter(dispatch_document::Column::DocumentNumber.eq(DISPATCH_DOC_NUMBER))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
-
+    // Seed ledger balance first (dispatch validation checks balance)
     seed_ledger_balance(
       &db,
       ctx.storage_a,
@@ -226,19 +178,30 @@ async fn dispatch_endpoints_create_measure_and_execute_successfully() {
     )
     .await;
 
-    let create_item = post_json(
+    // Create dispatch document + item via composite endpoint
+    let create_composite = post_json(
       &app,
-      api_paths::dispatch::ITEMS,
-      dispatch_item(dispatch_doc_id, ctx.product_id, ctx.storage_a, "3.0"),
+      api_paths::dispatch::COMPOSITE_SAVE,
+      dispatch_composite_save(
+        DISPATCH_DOC_NUMBER,
+        "2026-01-01T00:00:00Z",
+        ctx.contractor_id,
+        ctx.product_id,
+        ctx.storage_a,
+        "3.0",
+      ),
     )
     .await;
-    let create_item_json = assert_api_success(create_item).await;
+    let composite_json = assert_api_success(create_composite).await;
     assert_eq!(
-      create_item_json["data"]["dispatchDocId"],
-      dispatch_doc_id.to_string()
+      composite_json["data"]["documentNumber"],
+      DISPATCH_DOC_NUMBER
     );
-    assert_eq!(create_item_json["data"]["dispatchedAmount"], "3");
+    assert_eq!(composite_json["data"]["items"].as_array().unwrap().len(), 1);
 
+    let dispatch_doc_id = Uuid::parse_str(composite_json["data"]["id"].as_str().unwrap()).unwrap();
+
+    // Add measurement (kept as standalone — linked to doc)
     let measure = post_json(
       &app,
       api_paths::dispatch::STORAGE_MEASUREMENTS,
@@ -257,12 +220,9 @@ async fn dispatch_endpoints_create_measure_and_execute_successfully() {
     )
     .await;
     let measure_json = assert_api_success(measure).await;
-    assert_eq!(
-      measure_json["data"]["dispatchDocId"],
-      dispatch_doc_id.to_string()
-    );
     assert_eq!(measure_json["data"]["afterMass"], "7");
 
+    // Execute
     let execute = post_empty(
       &app,
       api_paths::dispatch::EXECUTE_BY_ID.replace("{id}", &dispatch_doc_id.to_string()),
@@ -378,60 +338,31 @@ async fn operations_endpoints_execute_core_workflows_and_report_invalid_blending
     );
     assert_eq!(adjustment_json["data"]["adjustmentType"], "SURPLUS");
 
-    let blend_doc = post_json(
+    // Create blending document with unbalanced component/result via composite
+    let blend_composite = post_json(
       &app,
-      api_paths::blending::SAVE,
-      blending_save(
+      api_paths::blending::COMPOSITE_SAVE,
+      blending_composite_save(
         BLENDING_DOC_NUMBER,
         "2026-01-03T00:00:00Z",
         ctx.contractor_id,
         ctx.second_product_id,
+        ctx.storage_a,
+        ctx.product_id,
+        "4.0",
+        ctx.storage_b,
+        "1.0",
       ),
     )
     .await;
-    let blend_doc_json = assert_api_success(blend_doc).await;
+    let blend_json = assert_api_success(blend_composite).await;
     assert_eq!(
-      blend_doc_json["data"]["documentNumber"],
+      blend_json["data"]["document"]["documentNumber"],
       BLENDING_DOC_NUMBER
     );
-    assert_eq!(
-      blend_doc_json["data"]["targetProductId"],
-      ctx.second_product_id.to_string()
-    );
 
-    let blend_doc_id = blending_document::Entity::find()
-      .filter(blending_document::Column::DocumentNumber.eq(BLENDING_DOC_NUMBER))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
-
-    let blend_component = post_json(
-      &app,
-      api_paths::blending::COMPONENTS,
-      blending_component(blend_doc_id, ctx.storage_a, ctx.product_id, "4.0"),
-    )
-    .await;
-    let blend_component_json = assert_api_success(blend_component).await;
-    assert_eq!(
-      blend_component_json["data"]["blendingDocId"],
-      blend_doc_id.to_string()
-    );
-    assert_eq!(blend_component_json["data"]["amountUsed"], "4");
-
-    let blend_result = post_json(
-      &app,
-      api_paths::blending::RESULTS,
-      blending_result(blend_doc_id, ctx.storage_b, "1.0"),
-    )
-    .await;
-    let blend_result_json = assert_api_success(blend_result).await;
-    assert_eq!(
-      blend_result_json["data"]["blendingDocId"],
-      blend_doc_id.to_string()
-    );
-    assert_eq!(blend_result_json["data"]["producedAmount"], "1");
+    let blend_doc_id =
+      Uuid::parse_str(blend_json["data"]["document"]["id"].as_str().unwrap()).unwrap();
 
     let execute_unbalanced = post_empty(
       &app,
@@ -711,31 +642,20 @@ async fn query_endpoints_filter_by_document_number_and_status() {
 
     let acceptance_2 = post_json(
       &app,
-      api_paths::acceptance::SAVE,
-      acceptance_save_truck(
+      api_paths::acceptance::COMPOSITE_SAVE,
+      acceptance_composite_save(
         ACCEPTANCE_QUERY_DOC_NUMBER_2,
         "2026-01-08T01:00:00Z",
         ctx.contractor_id,
+        ctx.product_id,
+        ctx.storage_a,
+        "3.0",
       ),
     )
     .await;
-    let _ = assert_api_success(acceptance_2).await;
-
-    let acceptance_2_id = acceptance_document::Entity::find()
-      .filter(acceptance_document::Column::DocumentNumber.eq(ACCEPTANCE_QUERY_DOC_NUMBER_2))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
-
-    let item_for_execute = post_json(
-      &app,
-      api_paths::acceptance::ITEMS,
-      acceptance_item(acceptance_2_id, ctx.product_id, ctx.storage_a, "3.0"),
-    )
-    .await;
-    let _ = assert_api_success(item_for_execute).await;
+    let acceptance_2_json = assert_api_success(acceptance_2).await;
+    let acceptance_2_id =
+      Uuid::parse_str(acceptance_2_json["data"]["id"].as_str().unwrap()).unwrap();
 
     let execute_acceptance_2 = post_empty(
       &app,
@@ -1125,27 +1045,6 @@ async fn blending_query_status_filter_returns_posted_only_and_rejects_invalid_st
     .await;
     let _ = assert_api_success(draft_doc).await;
 
-    let posted_doc = post_json(
-      &app,
-      api_paths::blending::SAVE,
-      blending_save(
-        BLENDING_STATUS_QUERY_DOC_NUMBER_2,
-        "2026-01-12T01:00:00Z",
-        ctx.contractor_id,
-        ctx.second_product_id,
-      ),
-    )
-    .await;
-    let _ = assert_api_success(posted_doc).await;
-
-    let posted_doc_id = blending_document::Entity::find()
-      .filter(blending_document::Column::DocumentNumber.eq(BLENDING_STATUS_QUERY_DOC_NUMBER_2))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
-
     seed_ledger_balance(
       &db,
       ctx.storage_a,
@@ -1155,21 +1054,26 @@ async fn blending_query_status_filter_returns_posted_only_and_rejects_invalid_st
     )
     .await;
 
-    let add_component = post_json(
+    // Create blending doc_2 via composite (with balanced components/results for execution)
+    let posted_doc = post_json(
       &app,
-      api_paths::blending::COMPONENTS,
-      blending_component(posted_doc_id, ctx.storage_a, ctx.product_id, "5.0"),
+      api_paths::blending::COMPOSITE_SAVE,
+      blending_composite_save(
+        BLENDING_STATUS_QUERY_DOC_NUMBER_2,
+        "2026-01-12T01:00:00Z",
+        ctx.contractor_id,
+        ctx.second_product_id,
+        ctx.storage_a,
+        ctx.product_id,
+        "5.0",
+        ctx.storage_b,
+        "5.0",
+      ),
     )
     .await;
-    let _ = assert_api_success(add_component).await;
-
-    let add_result = post_json(
-      &app,
-      api_paths::blending::RESULTS,
-      blending_result(posted_doc_id, ctx.storage_b, "5.0"),
-    )
-    .await;
-    let _ = assert_api_success(add_result).await;
+    let posted_doc_json = assert_api_success(posted_doc).await;
+    let posted_doc_id =
+      Uuid::parse_str(posted_doc_json["data"]["document"]["id"].as_str().unwrap()).unwrap();
 
     let execute_posted = post_empty(
       &app,

@@ -34,6 +34,26 @@
     "nodeType": "Node Type",
     "syncNow": "Sync Now",
     "neverSynced": "Never",
+    "readiness": {
+      "title": "Sync Configuration",
+      "description": "Complete these steps to enable full data synchronization",
+      "initialized": "Node initialized",
+      "centralConnected": "Central connection verified",
+      "catalogSynced": "Catalog synced",
+      "basesAssigned": "Bases assigned",
+      "fullSyncActive": "Full sync active",
+      "assignBases": "Assign bases",
+      "manageBases": "Manage bases",
+      "triggerSync": "Sync now",
+      "allConfigured": "Sync fully configured"
+    },
+    "bases": {
+      "title": "Base Assignments",
+      "description": "Select which bases this node handles for data synchronization",
+      "noBases": "No bases available. Sync catalog from Central first.",
+      "assigned": "Assigned",
+      "notAssigned": "Not assigned"
+    },
     "states": {
       "sleeping": "Sleeping",
       "offline": "Offline",
@@ -52,6 +72,13 @@
     "status": {
       "online": "Online",
       "offline": "Offline"
+    },
+    "syncState": {
+      "central": "Central",
+      "syncing": "Syncing",
+      "setupNeeded": "Setup needed",
+      "offline": "Offline",
+      "notSyncing": "Not syncing"
     },
     "init": {
       "pageTitle": "Initialize Node",

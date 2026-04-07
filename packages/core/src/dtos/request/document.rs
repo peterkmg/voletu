@@ -434,6 +434,7 @@ pub struct CreateTruckWaybillRequest {
   pub document_number: String,
   pub date: NaiveDate,
   pub sender_id: Uuid,
+  pub base_id: Uuid,
 }
 
 #[request_dto]
@@ -442,6 +443,7 @@ pub struct UpdateTruckWaybillRequest {
   pub document_number: Option<String>,
   pub date: Option<NaiveDate>,
   pub sender_id: Option<Uuid>,
+  pub base_id: Option<Uuid>,
 }
 
 #[request_dto]
@@ -498,6 +500,7 @@ pub struct CreateRailWaybillRequest {
   pub document_number: String,
   pub date: NaiveDate,
   pub sender_id: Uuid,
+  pub base_id: Uuid,
 }
 
 #[request_dto]
@@ -506,6 +509,7 @@ pub struct UpdateRailWaybillRequest {
   pub document_number: Option<String>,
   pub date: Option<NaiveDate>,
   pub sender_id: Option<Uuid>,
+  pub base_id: Option<Uuid>,
 }
 
 #[request_dto]
@@ -621,6 +625,7 @@ pub struct TruckWaybillCompositeRequest {
   pub document_number: String,
   pub date: NaiveDate,
   pub sender_id: Uuid,
+  pub base_id: Uuid,
   #[validate(length(min = 1), nested)]
   pub items: Option<Vec<TruckWaybillItemCompositeRequest>>,
   #[validate(nested)]
@@ -633,6 +638,7 @@ impl CreateTruckWaybillRequest {
       document_number: req.document_number.clone(),
       date: req.date,
       sender_id: req.sender_id,
+      base_id: req.base_id,
     }
   }
 }
@@ -675,6 +681,7 @@ pub struct RailWaybillCompositeRequest {
   pub document_number: String,
   pub date: NaiveDate,
   pub sender_id: Uuid,
+  pub base_id: Uuid,
   #[validate(length(min = 1), nested)]
   pub manifests: Option<Vec<RailWagonManifestCompositeRequest>>,
 }
@@ -685,6 +692,7 @@ impl CreateRailWaybillRequest {
       document_number: req.document_number.clone(),
       date: req.date,
       sender_id: req.sender_id,
+      base_id: req.base_id,
     }
   }
 }

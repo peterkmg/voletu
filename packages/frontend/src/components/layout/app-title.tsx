@@ -10,15 +10,38 @@ import {
 import { cn } from '~/lib/utils'
 import { useNodeStore } from '~/stores/node-store'
 
+type SyncState = 'central' | 'syncing' | 'setup' | 'offline' | 'sleeping'
+
+function deriveSyncState(status: import('~/stores/node-store').NodeStatus): SyncState {
+  if (status.nodeType === 'CENTRAL')
+    return 'central'
+  if (!status.isInitialized)
+    return 'sleeping'
+  if (status.assignedBaseIds.length === 0)
+    return 'setup'
+  if (status.workerState === 'OnlineIdle' || status.workerState === 'Syncing')
+    return 'syncing'
+  if (status.workerState === 'Offline' || status.workerState === 'Backoff')
+    return 'offline'
+  return 'sleeping'
+}
+
+const syncStateConfig: Record<SyncState, { dot: string, label: string }> = {
+  central: { dot: 'bg-muted-foreground/50', label: 'node.syncState.central' },
+  syncing: { dot: 'bg-green-500', label: 'node.syncState.syncing' },
+  setup: { dot: 'bg-yellow-500', label: 'node.syncState.setupNeeded' },
+  offline: { dot: 'bg-red-500', label: 'node.syncState.offline' },
+  sleeping: { dot: 'bg-muted-foreground/50', label: 'node.syncState.notSyncing' },
+}
+
 export function AppTitle() {
   const { t } = useTranslation('system')
   const { setOpenMobile, state } = useSidebar()
   const status = useNodeStore(s => s.status)
   const isCollapsed = state === 'collapsed'
 
-  const isPeripheral = status.nodeType === 'PERIPHERAL'
-  const isOnline = status.workerState === 'OnlineIdle'
-    || status.workerState === 'Syncing'
+  const syncState = deriveSyncState(status)
+  const { dot: dotColor, label: labelKey } = syncStateConfig[syncState]
 
   const subtitle = status.isInitialized && status.nodeName
     ? `${status.nodeType} · ${status.nodeName}`
@@ -39,11 +62,11 @@ export function AppTitle() {
           >
             <div className="relative flex aspect-square size-9 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-primary">
               <Layers className="size-5" />
-              {isPeripheral && status.isInitialized && isCollapsed && (
+              {status.isInitialized && isCollapsed && (
                 <span
                   className={cn(
                     'absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-sidebar',
-                    isOnline ? 'bg-green-500' : 'bg-red-500',
+                    dotColor,
                   )}
                 />
               )}
@@ -51,18 +74,11 @@ export function AppTitle() {
             <div className="grid flex-1 text-start text-sm leading-tight">
               <span className="truncate font-bold">Voletu</span>
               <span className="truncate text-xs text-muted-foreground">{subtitle}</span>
-              {isPeripheral && status.isInitialized && !isCollapsed && (
+              {status.isInitialized && !isCollapsed && (
                 <span className="flex items-center gap-1">
-                  <span
-                    className={cn(
-                      'size-2 rounded-full',
-                      isOnline ? 'bg-green-500' : 'bg-red-500',
-                    )}
-                  />
+                  <span className={cn('size-2 rounded-full', dotColor)} />
                   <span className="text-[10px] text-muted-foreground">
-                    {isOnline
-                      ? t('node.status.online')
-                      : t('node.status.offline')}
+                    {t(labelKey)}
                   </span>
                 </span>
               )}

@@ -70,7 +70,8 @@ export function EntityTable<T>({
     for (const col of columns) {
       if (col.meta?.requiresRole) {
         const key = (col as { accessorKey?: string }).accessorKey ?? col.id
-        if (key) defaults[key] = false
+        if (key)
+          defaults[key] = false
       }
     }
     return defaults

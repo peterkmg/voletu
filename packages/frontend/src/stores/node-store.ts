@@ -10,6 +10,7 @@ export interface NodeStatus {
   nodeName: string | null
   workerState: WorkerState | null
   lastSyncAt: string | null
+  assignedBaseIds: string[]
 }
 
 const defaultStatus: NodeStatus = {
@@ -18,6 +19,7 @@ const defaultStatus: NodeStatus = {
   nodeName: null,
   workerState: null,
   lastSyncAt: null,
+  assignedBaseIds: [],
 }
 
 interface NodeStore {

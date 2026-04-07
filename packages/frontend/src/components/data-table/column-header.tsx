@@ -9,6 +9,7 @@ import {
   PinIcon,
   PinOff,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import {
   DropdownMenu,
@@ -20,7 +21,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
-import { useTranslation } from 'react-i18next'
 import { cn } from '~/lib/utils'
 import { ColumnFilterInline } from './column-filter'
 
@@ -33,8 +33,10 @@ type DataTableColumnHeaderProps<TData, TValue>
 /** Checks whether a column has an active filter value. */
 function hasActiveFilter<TData, TValue>(column: Column<TData, TValue>): boolean {
   const val = column.getFilterValue()
-  if (val == null) return false
-  if (Array.isArray(val)) return val.length > 0
+  if (val == null)
+    return false
+  if (Array.isArray(val))
+    return val.length > 0
   return true
 }
 
@@ -66,8 +68,10 @@ export function DataTableColumnHeader<TData, TValue>({
 
   // Determine trigger icon based on state
   let TriggerIcon = canSort ? ChevronsUpDown : Filter
-  if (sorted === 'asc') TriggerIcon = ArrowUp
-  if (sorted === 'desc') TriggerIcon = ArrowDown
+  if (sorted === 'asc')
+    TriggerIcon = ArrowUp
+  if (sorted === 'desc')
+    TriggerIcon = ArrowDown
 
   const triggerButton = (
     <DropdownMenuTrigger asChild>
@@ -170,7 +174,6 @@ function HeaderDropdownContent<TData, TValue>({
             <DropdownMenuSubContent className="w-52 p-0 text-xs">
               {/* Stop propagation prevents DropdownMenu from stealing keyboard
                   events that cmdk needs for search input and list navigation. */}
-              {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
               <div onKeyDown={e => e.stopPropagation()}>
                 <ColumnFilterInline column={column} />
               </div>

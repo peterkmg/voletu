@@ -171,7 +171,7 @@ describe('onUnauthorized()', () => {
 
   it('concurrent calls share one inflight promise (dedup)', async () => {
     useAuthStore.setState({ status: 'valid', refreshToken: 'rt' })
-    let resolveRefresh!: Function
+    let resolveRefresh!: (value: unknown) => void
     vi.mocked(sessionMocks.refreshTokens).mockImplementation(
       () => new Promise((r) => { resolveRefresh = r }),
     )

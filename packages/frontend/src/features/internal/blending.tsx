@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { LifecycleDialog } from '~/components/dialogs/lifecycle-dialog'
-import { DocumentDetailPage } from '~/components/document'
+import { DetailField, DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { EntityPage } from '~/components/entity-page'
 import { EntityPickerField } from '~/components/entity-picker'
@@ -21,12 +21,12 @@ import { useBlendingCompositeGet } from '~/generated/hooks/DocumentOperationsHoo
 import { flowBlendingFlatQueryQueryKey, useFlowBlendingFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowBlendingFlatQuery'
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
-import { formatDate, formatDateTime } from '~/lib/formatters'
 import { createDeleteDialog } from '~/lib/create-delete-dialog'
 import { createEntityDialogs } from '~/lib/create-entity-dialogs'
 import { createEntityProvider } from '~/lib/create-entity-provider'
 import { createPrimaryButtons } from '~/lib/create-primary-buttons'
 import { createRowActions } from '~/lib/create-row-actions'
+import { formatDate, formatDateTime } from '~/lib/formatters'
 
 // --- Provider ---
 
@@ -254,18 +254,9 @@ export function BlendingDetail() {
       document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
       formContent={(
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.date')}</span>
-            <p>{formatDate(doc.date)}</p>
-          </div>
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.contractor')}</span>
-            <p>{doc.contractorIdName ?? doc.contractorId}</p>
-          </div>
-          <div>
-            <span className="text-sm text-muted-foreground">{t('common:table.product')}</span>
-            <p>{doc.targetProductIdName ?? doc.targetProductId}</p>
-          </div>
+          <DetailField label={t('common:table.date')}>{formatDate(doc.date)}</DetailField>
+          <DetailField label={t('common:table.contractor')}>{doc.contractorIdName ?? doc.contractorId}</DetailField>
+          <DetailField label={t('common:table.product')}>{doc.targetProductIdName ?? doc.targetProductId}</DetailField>
         </div>
       )}
       itemsContent={(
@@ -296,7 +287,10 @@ export function BlendingDetail() {
           ? (
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">{t('common:metadata.executedAt')}:</span>
+                  <span className="text-muted-foreground">
+                    {t('common:metadata.executedAt')}
+                    :
+                  </span>
                   {' '}
                   {formatDateTime(doc.executedAt)}
                 </div>

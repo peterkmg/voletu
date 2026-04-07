@@ -1,10 +1,10 @@
 import type { Row } from '@tanstack/react-table'
 import type { CSSProperties } from 'react'
+import type { GroupInfo } from './table-utils'
 import { flexRender } from '@tanstack/react-table'
 import { memo, useCallback, useMemo } from 'react'
 import { TableCell, TableRow } from '~/components/ui/table'
 import { cn } from '~/lib/utils'
-import type { GroupInfo } from './table-utils'
 import { alignClasses, getPinningStyles } from './table-utils'
 
 interface DataRowProps<TData> {
@@ -52,17 +52,21 @@ function DataRowInner<TData>({
 
   // Group hover: highlight all rows in the same group
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!groupInfo) return
+    if (!groupInfo)
+      return
     const container = e.currentTarget.parentElement
-    if (!container) return
+    if (!container)
+      return
     container.querySelectorAll<HTMLElement>(`[data-group-id="${groupInfo.groupId}"]`)
       .forEach(el => el.setAttribute('data-group-hover', ''))
   }, [groupInfo])
 
   const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!groupInfo) return
+    if (!groupInfo)
+      return
     const container = e.currentTarget.parentElement
-    if (!container) return
+    if (!container)
+      return
     container.querySelectorAll<HTMLElement>('[data-group-hover]')
       .forEach(el => el.removeAttribute('data-group-hover'))
   }, [groupInfo])

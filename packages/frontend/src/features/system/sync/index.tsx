@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
-import { useSyncAuditLogList } from '~/generated/hooks/SyncHooks/useSyncAuditLogList'
 import { useSyncStatus } from '~/generated/hooks/SyncHooks/useSyncStatus'
 import { useSyncWatermarkList } from '~/generated/hooks/SyncHooks/useSyncWatermarkList'
 import { useNodeStatus } from '~/hooks/use-node-status'
-import { AuditLogTable } from './components/audit-log-table'
+import { SyncReadinessCard } from './components/sync-readiness-card'
 import { SyncStatusCard } from './components/sync-status-card'
 import { WatermarksTable } from './components/watermarks-table'
 import { WorkerStatusCard } from './components/worker-status-card'
@@ -22,9 +21,6 @@ export function SyncDashboard() {
   const { data: watermarksData, isLoading: watermarksLoading } = useSyncWatermarkList()
   const watermarks = watermarksData?.data ?? []
 
-  const { data: auditLogsData, isLoading: auditLogsLoading } = useSyncAuditLogList({ query: { refetchInterval: 30_000 } })
-  const auditLogs = auditLogsData?.data ?? []
-
   return (
     <>
       <Header fixed />
@@ -39,10 +35,10 @@ export function SyncDashboard() {
         </div>
 
         <div className="flex-1 overflow-y-auto -mx-4 px-4 space-y-4 sm:space-y-6">
+          <SyncReadinessCard />
           <WorkerStatusCard data={nodeStatus} isLoading={nodeStatusLoading} />
           <SyncStatusCard data={status} isLoading={statusLoading} />
           <WatermarksTable data={watermarks} isLoading={watermarksLoading} />
-          <AuditLogTable data={auditLogs} isLoading={auditLogsLoading} />
         </div>
       </Main>
     </>

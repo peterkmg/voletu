@@ -19,6 +19,7 @@ import { Route as AuthenticatedLedgerIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCargoFlowIndexRouteImport } from './routes/_authenticated/cargo-flow/index'
 import { Route as AuthenticatedSystemUsersIndexRouteImport } from './routes/_authenticated/system/users/index'
 import { Route as AuthenticatedSystemSyncIndexRouteImport } from './routes/_authenticated/system/sync/index'
+import { Route as AuthenticatedSystemAuditLogsIndexRouteImport } from './routes/_authenticated/system/audit-logs/index'
 import { Route as AuthenticatedOutgoingTruckIndexRouteImport } from './routes/_authenticated/outgoing/truck/index'
 import { Route as AuthenticatedOutgoingDirectIndexRouteImport } from './routes/_authenticated/outgoing/direct/index'
 import { Route as AuthenticatedOutgoingBunkeringIndexRouteImport } from './routes/_authenticated/outgoing/bunkering/index'
@@ -100,6 +101,12 @@ const AuthenticatedSystemSyncIndexRoute =
   AuthenticatedSystemSyncIndexRouteImport.update({
     id: '/system/sync/',
     path: '/system/sync/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSystemAuditLogsIndexRoute =
+  AuthenticatedSystemAuditLogsIndexRouteImport.update({
+    id: '/system/audit-logs/',
+    path: '/system/audit-logs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOutgoingTruckIndexRoute =
@@ -307,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/outgoing/bunkering/': typeof AuthenticatedOutgoingBunkeringIndexRoute
   '/outgoing/direct/': typeof AuthenticatedOutgoingDirectIndexRoute
   '/outgoing/truck/': typeof AuthenticatedOutgoingTruckIndexRoute
+  '/system/audit-logs/': typeof AuthenticatedSystemAuditLogsIndexRoute
   '/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users/': typeof AuthenticatedSystemUsersIndexRoute
 }
@@ -346,6 +354,7 @@ export interface FileRoutesByTo {
   '/outgoing/bunkering': typeof AuthenticatedOutgoingBunkeringIndexRoute
   '/outgoing/direct': typeof AuthenticatedOutgoingDirectIndexRoute
   '/outgoing/truck': typeof AuthenticatedOutgoingTruckIndexRoute
+  '/system/audit-logs': typeof AuthenticatedSystemAuditLogsIndexRoute
   '/system/sync': typeof AuthenticatedSystemSyncIndexRoute
   '/system/users': typeof AuthenticatedSystemUsersIndexRoute
 }
@@ -387,6 +396,7 @@ export interface FileRoutesById {
   '/_authenticated/outgoing/bunkering/': typeof AuthenticatedOutgoingBunkeringIndexRoute
   '/_authenticated/outgoing/direct/': typeof AuthenticatedOutgoingDirectIndexRoute
   '/_authenticated/outgoing/truck/': typeof AuthenticatedOutgoingTruckIndexRoute
+  '/_authenticated/system/audit-logs/': typeof AuthenticatedSystemAuditLogsIndexRoute
   '/_authenticated/system/sync/': typeof AuthenticatedSystemSyncIndexRoute
   '/_authenticated/system/users/': typeof AuthenticatedSystemUsersIndexRoute
 }
@@ -428,6 +438,7 @@ export interface FileRouteTypes {
     | '/outgoing/bunkering/'
     | '/outgoing/direct/'
     | '/outgoing/truck/'
+    | '/system/audit-logs/'
     | '/system/sync/'
     | '/system/users/'
   fileRoutesByTo: FileRoutesByTo
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/outgoing/bunkering'
     | '/outgoing/direct'
     | '/outgoing/truck'
+    | '/system/audit-logs'
     | '/system/sync'
     | '/system/users'
   id:
@@ -507,6 +519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/outgoing/bunkering/'
     | '/_authenticated/outgoing/direct/'
     | '/_authenticated/outgoing/truck/'
+    | '/_authenticated/system/audit-logs/'
     | '/_authenticated/system/sync/'
     | '/_authenticated/system/users/'
   fileRoutesById: FileRoutesById
@@ -588,6 +601,13 @@ declare module '@tanstack/react-router' {
       path: '/system/sync'
       fullPath: '/system/sync/'
       preLoaderRoute: typeof AuthenticatedSystemSyncIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/system/audit-logs/': {
+      id: '/_authenticated/system/audit-logs/'
+      path: '/system/audit-logs'
+      fullPath: '/system/audit-logs/'
+      preLoaderRoute: typeof AuthenticatedSystemAuditLogsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/outgoing/truck/': {
@@ -822,6 +842,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOutgoingBunkeringIndexRoute: typeof AuthenticatedOutgoingBunkeringIndexRoute
   AuthenticatedOutgoingDirectIndexRoute: typeof AuthenticatedOutgoingDirectIndexRoute
   AuthenticatedOutgoingTruckIndexRoute: typeof AuthenticatedOutgoingTruckIndexRoute
+  AuthenticatedSystemAuditLogsIndexRoute: typeof AuthenticatedSystemAuditLogsIndexRoute
   AuthenticatedSystemSyncIndexRoute: typeof AuthenticatedSystemSyncIndexRoute
   AuthenticatedSystemUsersIndexRoute: typeof AuthenticatedSystemUsersIndexRoute
 }
@@ -874,6 +895,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedOutgoingBunkeringIndexRoute,
   AuthenticatedOutgoingDirectIndexRoute: AuthenticatedOutgoingDirectIndexRoute,
   AuthenticatedOutgoingTruckIndexRoute: AuthenticatedOutgoingTruckIndexRoute,
+  AuthenticatedSystemAuditLogsIndexRoute:
+    AuthenticatedSystemAuditLogsIndexRoute,
   AuthenticatedSystemSyncIndexRoute: AuthenticatedSystemSyncIndexRoute,
   AuthenticatedSystemUsersIndexRoute: AuthenticatedSystemUsersIndexRoute,
 }

@@ -2,6 +2,7 @@ import type { SaveLocalConfigPayload } from '~/tauri/commands'
 import { useState } from 'react'
 import { setApiBaseUrl } from '~/api/client'
 import { extractErrorMessage } from '~/lib/error'
+import { TRAILING_SLASHES } from '~/lib/utils'
 import { useStartupStore } from '~/stores/startup-store'
 import {
   saveLocalConfig,
@@ -11,7 +12,7 @@ import {
 
 async function checkHealth(baseUrl: string): Promise<boolean> {
   try {
-    const res = await fetch(`${baseUrl.replace(/\/+$/, '')}/health`)
+    const res = await fetch(`${baseUrl.replace(TRAILING_SLASHES, '')}/health`)
     return res.ok
   }
   catch {

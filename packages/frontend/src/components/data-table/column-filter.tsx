@@ -25,23 +25,7 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { cn } from '~/lib/utils'
-
-type FilterType = 'text' | 'date' | 'number' | 'enum'
-
-export function detectFilterType(facetedValues: Map<unknown, number>): FilterType {
-  for (const [value] of facetedValues) {
-    if (value == null)
-      continue
-    if (typeof value === 'number')
-      return 'number'
-    if (typeof value === 'string') {
-      if (/^\d{4}-\d{2}-\d{2}/.test(value))
-        return 'date'
-    }
-    break
-  }
-  return 'text'
-}
+import { detectFilterType } from './filter-utils'
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -49,10 +33,13 @@ export function detectFilterType(facetedValues: Map<unknown, number>): FilterTyp
 
 /** Compute "Select All" checkbox state for a set of values. */
 function selectAllState(allValues: string[], selectedSet: Set<string>): boolean | 'indeterminate' {
-  if (allValues.length === 0) return false
+  if (allValues.length === 0)
+    return false
   const count = allValues.filter(v => selectedSet.has(v)).length
-  if (count === 0) return false
-  if (count === allValues.length) return true
+  if (count === 0)
+    return false
+  if (count === allValues.length)
+    return true
   return 'indeterminate'
 }
 
@@ -106,7 +93,8 @@ export function TextEnumFilterContent<TData, TValue>({
 
   function toggle(value: string) {
     const next = new Set(selectedSet)
-    if (next.has(value)) next.delete(value)
+    if (next.has(value))
+      next.delete(value)
     else next.add(value)
     commitFilter(column, next, allValues)
   }
@@ -179,7 +167,8 @@ function buildDateTree(facets: Map<unknown, number>): { years: YearNode[], allDa
   // Normalize ISO dates to YYYY-MM-DD and aggregate
   const dayMap = new Map<string, number>()
   for (const [value, count] of facets) {
-    if (value == null) continue
+    if (value == null)
+      continue
     const dateStr = String(value).slice(0, 10) // "2026-03-31"
     dayMap.set(dateStr, (dayMap.get(dateStr) ?? 0) + count)
   }
@@ -190,9 +179,11 @@ function buildDateTree(facets: Map<unknown, number>): { years: YearNode[], allDa
     const parts = dateStr.split('-')
     const y = Number(parts[0])
     const m = Number(parts[1])
-    if (!yearMap.has(y)) yearMap.set(y, new Map())
+    if (!yearMap.has(y))
+      yearMap.set(y, new Map())
     const monthMap = yearMap.get(y)!
-    if (!monthMap.has(m)) monthMap.set(m, [])
+    if (!monthMap.has(m))
+      monthMap.set(m, [])
     monthMap.get(m)!.push({ date: dateStr, count })
   }
 
@@ -230,14 +221,15 @@ export function DateGroupFilterContent<TData, TValue>({
   const { years, allDates } = useMemo(() => buildDateTree(facets), [facets])
   const selectedSet = getSelectedSet(filterValue, allDates)
   const isFiltered = filterValue !== undefined
-  const currentYear = new Date().getFullYear()
+  const currentYear = useMemo(() => new Date().getFullYear(), [])
   const hasSearch = search.trim().length > 0
 
   // --- Toggle functions ---
 
   function toggleDay(date: string) {
     const next = new Set(selectedSet)
-    if (next.has(date)) next.delete(date)
+    if (next.has(date))
+      next.delete(date)
     else next.add(date)
     commitFilter(column, next, allDates)
   }
@@ -310,7 +302,8 @@ export function DateGroupFilterContent<TData, TValue>({
             || String(yearNode.year).includes(search)
             || m.days.some(d => d.date.includes(search)),
           )
-          if (!yearMatches) return null
+          if (!yearMatches)
+            return null
 
           return (
             <Collapsible
@@ -337,7 +330,8 @@ export function DateGroupFilterContent<TData, TValue>({
                   const monthMatches = !hasSearch
                     || monthNode.label.toLowerCase().includes(search.toLowerCase())
                     || monthNode.days.some(d => d.date.includes(search))
-                  if (!monthMatches) return null
+                  if (!monthMatches)
+                    return null
 
                   return (
                     <Collapsible key={monthNode.month} open={hasSearch ? true : undefined}>
@@ -500,8 +494,10 @@ export function ColumnFilter<TData, TValue>({
   const filterType = meta?.filterType ?? detectFilterType(facets)
   const hasFilter = (() => {
     const val = column.getFilterValue()
-    if (val == null) return false
-    if (Array.isArray(val)) return val.length > 0
+    if (val == null)
+      return false
+    if (Array.isArray(val))
+      return val.length > 0
     return true
   })()
 

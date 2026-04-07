@@ -81,6 +81,11 @@ impl DocumentService {
       );
     }
 
+    self
+      .audit
+      .backfill_document_routing(conn, "blending_documents", doc.id)
+      .await?;
+
     Ok(dtos::BlendingCompositeResponse {
       document: doc,
       components,

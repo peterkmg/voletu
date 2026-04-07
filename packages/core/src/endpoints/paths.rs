@@ -13,6 +13,8 @@ pub mod node {
   pub const INITIALIZE: &str = "/node/initialize";
   pub const RESTART: &str = "/node/restart";
   pub const STATUS: &str = "/node/status";
+  pub const BASES: &str = "/node/bases";
+  pub const BASES_BY_ID: &str = "/node/bases/{baseId}";
 }
 
 pub mod users {

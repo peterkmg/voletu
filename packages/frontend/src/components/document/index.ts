@@ -1,4 +1,5 @@
 export { ChildItemsTable } from './child-items-table'
+export { DetailField } from './detail-field'
 export { DocumentDetailPage } from './document-detail-page'
 export type { DocumentDetailConfig } from './document-detail-page'
 export { DocumentForm, useDocumentFormLock } from './document-form'
