@@ -10,7 +10,6 @@ use super::parse_doc_id;
 use crate::common::integration::{
   api_get,
   api_post,
-  await_sync_cycle,
   create_acceptance_via_api,
   get_acceptance_composite_json,
   has_catalog_entity,
