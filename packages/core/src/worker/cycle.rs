@@ -60,6 +60,7 @@ pub(super) async fn sync_once(
           central_status.node_id,
           SyncDirection::Push,
           last_outbound_id,
+          String::new(),
         )
         .await?;
     }
@@ -105,6 +106,7 @@ pub(super) async fn sync_once(
         central_status.node_id,
         SyncDirection::Pull,
         pulled_highest_evaluated_id,
+        String::new(),
       )
       .await?;
   }

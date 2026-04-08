@@ -3,6 +3,7 @@ use sea_orm::{
   ActiveValue::Set,
   ColumnTrait,
   Condition,
+  ConnectionTrait,
   EntityTrait,
   QueryFilter,
 };
@@ -54,33 +55,83 @@ impl SyncService {
     Ok(rows.into_iter().map(SyncWatermarkResponse::from).collect())
   }
 
+  /// Load the `(last_audit_log_id, base_discriminant)` pair for a specific
+  /// target node and direction. Returns `(Uuid::nil(), String::new())` when no
+  /// row exists yet — this is the "fresh peripheral, never synced" state.
+  pub async fn load_pull_watermark(
+    &self,
+    target_node_id: Uuid,
+    direction: SyncDirection,
+  ) -> Result<(Uuid, String), ApiError> {
+    let row = sync_watermark::Entity::find()
+      .filter(sync_watermark::Column::TargetNodeId.eq(target_node_id))
+      .filter(sync_watermark::Column::Direction.eq(direction))
+      .one(self.db.as_ref())
+      .await?;
+    Ok(match row {
+      Some(r) => (r.last_audit_log_id, r.base_discriminant),
+      None => (Uuid::nil(), String::new()),
+    })
+  }
+
+  /// Upsert a watermark row outside of any caller-managed transaction. The
+  /// peripheral's pull path must NOT use this method directly — it should go
+  /// through `apply_pulled_logs`, which atomically applies logs and advances
+  /// the watermark with a discriminant re-check. This is the entry point for
+  /// the push path, which has no scope/discriminant concept and may pass an
+  /// empty string for `base_discriminant`.
   pub async fn upsert_watermark(
     &self,
     target_node_id: Uuid,
     direction: SyncDirection,
     last_audit_log_id: Uuid,
+    base_discriminant: String,
   ) -> Result<SyncWatermarkResponse, ApiError> {
+    let row = Self::upsert_watermark_in_txn(
+      self.db.as_ref(),
+      target_node_id,
+      direction,
+      last_audit_log_id,
+      base_discriminant,
+    )
+    .await?;
+    Ok(row.into())
+  }
+
+  /// Upsert a watermark row on an existing connection or transaction. Used by
+  /// `apply_pulled_logs` to advance the PULL watermark in the same transaction
+  /// as the audit-log restore, guaranteeing the two commit together or not at
+  /// all.
+  pub async fn upsert_watermark_in_txn<C: ConnectionTrait>(
+    conn: &C,
+    target_node_id: Uuid,
+    direction: SyncDirection,
+    last_audit_log_id: Uuid,
+    base_discriminant: String,
+  ) -> Result<sync_watermark::Model, ApiError> {
     let existing = sync_watermark::Entity::find()
       .filter(sync_watermark::Column::TargetNodeId.eq(target_node_id))
       .filter(sync_watermark::Column::Direction.eq(direction))
-      .one(self.db.as_ref())
+      .one(conn)
       .await?;
 
     let row = if let Some(existing) = existing {
       let mut am: sync_watermark::ActiveModel = existing.into();
       am.last_audit_log_id = Set(last_audit_log_id);
-      am.update(self.db.as_ref()).await?
+      am.base_discriminant = Set(base_discriminant);
+      am.update(conn).await?
     } else {
       sync_watermark::ActiveModel {
         target_node_id: Set(target_node_id),
         direction: Set(direction),
         last_audit_log_id: Set(last_audit_log_id),
+        base_discriminant: Set(base_discriminant),
         ..Default::default()
       }
-      .insert(self.db.as_ref())
+      .insert(conn)
       .await?
     };
 
-    Ok(row.into())
+    Ok(row)
   }
 }

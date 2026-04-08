@@ -175,11 +175,11 @@ async fn sync_watermark_upsert_updates_existing_row_for_same_node_and_direction(
   let first_log_id = Uuid::now_v7();
   let second_log_id = Uuid::now_v7();
   service
-    .upsert_watermark(node_id, SyncDirection::Push, first_log_id)
+    .upsert_watermark(node_id, SyncDirection::Push, first_log_id, String::new())
     .await
     .unwrap();
   service
-    .upsert_watermark(node_id, SyncDirection::Push, second_log_id)
+    .upsert_watermark(node_id, SyncDirection::Push, second_log_id, String::new())
     .await
     .unwrap();
 
