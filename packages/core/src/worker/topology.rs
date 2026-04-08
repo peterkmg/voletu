@@ -48,11 +48,14 @@ pub(super) async fn load_local_base_ids(
   Ok(rows.into_iter().map(|r| r.base_id).collect())
 }
 
+/// Find the `(last_audit_log_id, base_discriminant)` pair for a given target
+/// node and direction. Returns `(Uuid::nil(), String::new())` when no
+/// watermark row exists yet.
 pub(super) fn watermark_for(
   watermarks: &[SyncWatermarkResponse],
   target_node_id: Uuid,
   direction: &str,
-) -> Uuid {
+) -> (Uuid, String) {
   let watermark = watermarks.iter().find(|wm| {
     wm.target_node_id == target_node_id
       && matches!(
@@ -62,7 +65,7 @@ pub(super) fn watermark_for(
   });
 
   match watermark {
-    Some(wm) => wm.last_audit_log_id,
-    None => Uuid::nil(),
+    Some(wm) => (wm.last_audit_log_id, wm.base_discriminant.clone()),
+    None => (Uuid::nil(), String::new()),
   }
 }

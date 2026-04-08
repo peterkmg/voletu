@@ -106,9 +106,21 @@ pub fn spawn_sync_worker_with_config(
             has_updates = true;
           }
 
+          // Scope-aware status probe: include our base assignments so Central
+          // can compute a `highest_matching_id` that only advances when data
+          // relevant to OUR scope exists. Without this, the peripheral would
+          // hot-poll Central whenever any other base saw activity.
+          let central_base_ids_param = local_base_ids
+            .iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
           let central_status = get_api_json::<SyncStatusResponse>(
             &client,
-            &format!("{}/sync/status", central_api_url),
+            &format!(
+              "{}/sync/status?baseIds={}",
+              central_api_url, central_base_ids_param
+            ),
             config.probe_timeout,
           )
           .await;
@@ -125,14 +137,29 @@ pub fn spawn_sync_worker_with_config(
             continue;
           }
 
-          // Check if Central has new data we haven't pulled yet
+          // Check if Central has new IN-SCOPE data we haven't pulled yet.
+          // We compare `highest_matching_id` (scope-aware), not
+          // `highest_audit_log_id`, against our current PULL cursor. When the
+          // stored discriminant no longer matches the current one, treat the
+          // cursor as nil — any matching id on Central counts as new work.
           if let Ok(ref remote_status) = central_status {
-            let watermarks = match sync_service.list_sync_watermarks().await {
-              Ok(w) => w,
-              Err(_) => vec![],
+            let watermarks = sync_service
+              .list_sync_watermarks()
+              .await
+              .unwrap_or_default();
+            let (stored_last, stored_disc) =
+              topology::watermark_for(&watermarks, remote_status.node_id, "PULL");
+            let current_disc =
+              crate::services::sync::helpers::compute_base_discriminant(&local_base_ids);
+            let effective_cursor = if stored_disc == current_disc {
+              stored_last
+            } else {
+              // Discriminant invalidated — next pull will reset to nil and
+              // re-scan, and that needs to actually happen, so force
+              // has_updates=true as long as anything matches our new scope.
+              Uuid::nil()
             };
-            let pull_after = topology::watermark_for(&watermarks, remote_status.node_id, "PULL");
-            if remote_status.highest_audit_log_id > pull_after {
+            if remote_status.highest_matching_id > effective_cursor {
               has_updates = true;
             }
           }
