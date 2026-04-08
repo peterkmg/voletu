@@ -1,141 +1,79 @@
-//! Verifies that a record targeted at one Peripheral's base assignment is
-//! excluded from the pull destined for a different Peripheral, while the
-//! evaluated watermark still advances past the skipped entries.
+//! Verifies that a document targeted at one Peripheral's base assignment is
+//! excluded from the sync destined for a different Peripheral, using the real
+//! sync worker.
 //!
-//! Topology: Central + 2 Peripherals (Peripheral-1 on base_1, Peripheral-2 on base_2).
+//! Topology: Central + 2 Peripherals (PA on base_alpha, PB on base_beta).
 //!
-//! Property: after Peripheral-1 pushes a base_1-scoped record, Central holds it,
-//! Peripheral-1 retains it, but Peripheral-2 does not receive it; the watermark
-//! for Peripheral-2 nevertheless advances beyond the initial cursor.
+//! Property: after Central creates an acceptance scoped to storage_alpha
+//! (which routes to base_alpha), PA receives the document but PB does not.
 
 use std::time::Duration;
 
-use reqwest::Client;
-use uuid::Uuid;
-use voletu_core::enums::NodeType;
-
 use crate::common::integration::{
-  has_audit_record,
-  inject_targeted_idempotency_log,
-  prepare_node_db,
-  pull_from_central_to_target,
-  push_outbound_to_central,
-  register_remote_node_on_central,
-  reserve_port,
-  shutdown_server,
-  spawn_server,
-  temp_db_path,
-  wait_for_health,
-  wait_for_login_token,
+  await_sync_cycle, create_acceptance_via_api, get_acceptance_composite_json,
+  seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
 };
 
-const INITIAL_AUDIT_CURSOR: Uuid = Uuid::from_u128(1);
+use super::parse_doc_id;
 
 #[tokio::test]
-async fn sync_integration_b_targeted_record_excludes_other_peripheral_and_advances_evaluated_watermark(
-) {
-  let base_1 = Uuid::parse_str("00000000-0000-0000-0000-000000000121").unwrap();
-  let base_2 = Uuid::parse_str("00000000-0000-0000-0000-000000000122").unwrap();
+async fn targeted_acceptance_excludes_other_peripheral_via_worker() {
+  let client = reqwest::Client::new();
+  let central = setup_central_via_api(&client, &temp_db_path("s3-central")).await;
+  let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let central_db = temp_db_path("sync-b-central");
-  let p1_db = temp_db_path("sync-b-p1");
-  let p2_db = temp_db_path("sync-b-p2");
-
-  let p1_node_id =
-    prepare_node_db(&p1_db, "Peripheral-1", NodeType::Peripheral, Some(base_1)).await;
-  let p2_node_id =
-    prepare_node_db(&p2_db, "Peripheral-2", NodeType::Peripheral, Some(base_2)).await;
-  let _central_node_id = prepare_node_db(&central_db, "Central", NodeType::Central, None).await;
-  register_remote_node_on_central(&central_db, p1_node_id, "Peripheral-1", base_1).await;
-  register_remote_node_on_central(&central_db, p2_node_id, "Peripheral-2", base_2).await;
-
-  let central_port = reserve_port();
-  let p1_port = reserve_port();
-  let p2_port = reserve_port();
-  let (central_shutdown_tx, mut central_task) = spawn_server(&central_db, central_port).await;
-  let (p1_shutdown_tx, mut p1_task) = spawn_server(&p1_db, p1_port).await;
-  let (p2_shutdown_tx, mut p2_task) = spawn_server(&p2_db, p2_port).await;
-
-  let client = Client::new();
-  let central_url = format!("http://127.0.0.1:{central_port}");
-  let p1_url = format!("http://127.0.0.1:{p1_port}");
-  let p2_url = format!("http://127.0.0.1:{p2_port}");
-
-  wait_for_health(
-    &client,
-    &central_url,
-    Duration::from_secs(10),
-    &mut central_task,
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("s3-pa"), &central, &[
+    catalog.base_alpha,
+  ])
   .await;
-  wait_for_health(&client, &p1_url, Duration::from_secs(10), &mut p1_task).await;
-  wait_for_health(&client, &p2_url, Duration::from_secs(10), &mut p2_task).await;
-
-  let central_token = wait_for_login_token(
-    &client,
-    &central_url,
-    "admin",
-    "admin",
-    Duration::from_secs(5),
-  )
-  .await;
-  let p1_token =
-    wait_for_login_token(&client, &p1_url, "admin", "admin", Duration::from_secs(5)).await;
-  let p2_token =
-    wait_for_login_token(&client, &p2_url, "admin", "admin", Duration::from_secs(5)).await;
-
-  let record_id = Uuid::now_v7();
-  inject_targeted_idempotency_log(
-    &client,
-    &p1_url,
-    &p1_token,
-    p1_node_id,
-    record_id,
-    "sync-b-request",
-    &base_1.to_string(),
-  )
+  let pb = setup_peripheral_via_api(&client, &temp_db_path("s3-pb"), &central, &[
+    catalog.base_beta,
+  ])
   .await;
 
-  let pushed = push_outbound_to_central(
+  // Create an acceptance on Central for storage_alpha (routes to base_alpha only)
+  let acc = create_acceptance_via_api(
     &client,
-    &p1_url,
-    &p1_token,
-    &central_url,
-    &central_token,
-    INITIAL_AUDIT_CURSOR,
+    &central.url,
+    &central.token,
+    "ACC-ALPHA-ONLY",
+    catalog.contractor,
+    catalog.product,
+    catalog.storage_alpha,
+    "100.0",
   )
   .await;
-  assert!(pushed > 0);
+  let acc_id = parse_doc_id(&acc);
 
-  let (_pulled_for_p2, highest_evaluated_for_p2) = pull_from_central_to_target(
-    &client,
-    &central_url,
-    &central_token,
-    &p2_url,
-    &p2_token,
-    &[base_2],
-  )
-  .await;
+  // Let both peripherals sync
+  await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
+  await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  // P2 may receive global-table entries (bases, database_instances) but should NOT
-  // receive the targeted idempotency log that was scoped to base_1 only.
-  // The watermark should advance at least past the initial cursor.
-  assert!(highest_evaluated_for_p2 > INITIAL_AUDIT_CURSOR);
-
+  // PA (base_alpha) should have the acceptance
   assert!(
-    has_audit_record(
-      &client,
-      &central_url,
-      &central_token,
-      "audit_logs",
-      record_id,
-    )
-    .await
+    get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
+      .await
+      .is_some(),
+    "PA (base_alpha) should have the alpha-scoped acceptance"
   );
-  assert!(has_audit_record(&client, &p1_url, &p1_token, "audit_logs", record_id).await);
-  assert!(!has_audit_record(&client, &p2_url, &p2_token, "audit_logs", record_id).await);
 
-  shutdown_server(central_shutdown_tx, central_task).await;
-  shutdown_server(p1_shutdown_tx, p1_task).await;
-  shutdown_server(p2_shutdown_tx, p2_task).await;
+  // PB (base_beta) should NOT have the acceptance
+  assert!(
+    get_acceptance_composite_json(&client, &pb.url, &pb.token, acc_id)
+      .await
+      .is_none(),
+    "PB (base_beta) should NOT have the alpha-scoped acceptance"
+  );
+
+  // Central still has it
+  assert!(
+    get_acceptance_composite_json(&client, &central.url, &central.token, acc_id)
+      .await
+      .is_some(),
+    "Central should have the acceptance"
+  );
+
+  central.shutdown().await;
+  pa.shutdown().await;
+  pb.shutdown().await;
 }

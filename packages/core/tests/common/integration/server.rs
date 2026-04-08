@@ -4,7 +4,7 @@ use reqwest::{Client, StatusCode};
 use serde_json::{json, Value};
 use tokio::sync::oneshot;
 use uuid::Uuid;
-use voletu_core::{serve_api, DbConfig, DbParams, JwtConfig};
+use voletu_core::{serve_api, serve_api_with_sync_config, DbConfig, DbParams, JwtConfig, SyncConfig};
 
 use super::api_client::ensure_shared_memory_db_alive;
 
@@ -26,9 +26,30 @@ pub fn reserve_port() -> u16 {
   port
 }
 
+/// SyncConfig optimized for tests: fast ticks, generous timeouts.
+pub fn test_sync_config() -> SyncConfig {
+  SyncConfig {
+    tick_interval: Duration::from_millis(200),
+    probe_timeout: Duration::from_secs(3),
+    request_timeout: Duration::from_secs(5),
+    sync_batch_limit: 1000,
+  }
+}
+
 pub async fn spawn_server(
   db_name: &str,
   port: u16,
+) -> (
+  oneshot::Sender<()>,
+  tokio::task::JoinHandle<anyhow::Result<()>>,
+) {
+  spawn_server_with_sync_config(db_name, port, None).await
+}
+
+pub async fn spawn_server_with_sync_config(
+  db_name: &str,
+  port: u16,
+  sync_config: Option<SyncConfig>,
 ) -> (
   oneshot::Sender<()>,
   tokio::task::JoinHandle<anyhow::Result<()>>,
@@ -38,11 +59,12 @@ pub async fn spawn_server(
   let db_cfg = db_cfg(db_name);
   let jwt_cfg = JwtConfig::default();
   let server_task = tokio::spawn(async move {
-    serve_api(
+    serve_api_with_sync_config(
       "127.0.0.1".to_string(),
       port.to_string(),
       db_cfg,
       jwt_cfg,
+      sync_config,
       shutdown_rx,
     )
     .await

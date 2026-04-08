@@ -4,19 +4,23 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Reconciliation audit log targets the warehouse's base; peripheral receives the reconciliation
 
+use std::time::Duration;
+
 use uuid::Uuid;
 
 use crate::common::integration::{
   api_get,
   assert_audit_log_targets,
+  await_sync_cycle,
   create_reconciliation_via_api,
-  pull_from_central_to_target,
   query_audit_logs,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn reconciliation_routing_via_warehouse() {
@@ -55,15 +59,7 @@ async fn reconciliation_routing_via_warehouse() {
     catalog.base_alpha,
   );
 
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let recons = api_get(&client, &format!("{}/reconciliations", pa.url), &pa.token).await;
   assert!(
     recons

@@ -4,20 +4,24 @@
 //! **Topology:** Central + 1 Peripheral (assigned to base_alpha and base_beta, not gamma)
 //! **Verifies:** Multi-base peripheral pulls documents for all assigned bases and excludes unassigned ones
 
+use std::time::Duration;
+
 use uuid::Uuid;
 
 use super::parse_doc_id;
 use crate::common::integration::{
   add_base_assignment_via_api,
   api_post,
+  await_sync_cycle,
   create_acceptance_via_api,
   get_acceptance_composite_json,
-  pull_from_central_to_target,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn multi_base_node_pulls_all_assigned_bases() {
@@ -91,16 +95,8 @@ async fn multi_base_node_pulls_all_assigned_bases() {
   let acc_b_id = parse_doc_id(&acc_b);
   let acc_g_id = parse_doc_id(&acc_g);
 
-  // Pull with both assigned bases
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha, catalog.base_beta],
-  )
-  .await;
+  // Wait for worker to sync
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   assert!(
     get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_a_id)

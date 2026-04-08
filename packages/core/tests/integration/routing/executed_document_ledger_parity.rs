@@ -4,15 +4,19 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Ledger entry (storage + product + contractor + amount) on peripheral matches Central after syncing an executed document
 
-use super::pull_all;
+use std::time::Duration;
+
 use crate::common::integration::{
   api_post,
+  await_sync_cycle,
   get_all_ledger_entries,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn executed_document_syncs_with_ledger_parity() {
@@ -43,15 +47,7 @@ async fn executed_document_syncs_with_ledger_parity() {
   let expected_amount = &central_entry.unwrap()["currentAmount"];
 
   // Sync to PA
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   // Verify ledger on PA matches
   let pa_ledger = get_all_ledger_entries(&client, &pa.url, &pa.token).await;

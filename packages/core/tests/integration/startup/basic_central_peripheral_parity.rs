@@ -1,146 +1,90 @@
-//! Verifies that a basic push/pull cycle between a Central node and one
-//! Peripheral node reconstructs the data to parity on both sides.
+//! Verifies that a basic sync cycle between a Central node and one Peripheral
+//! node reconstructs catalog data to parity on both sides using the real sync worker.
 //!
-//! Topology: Central + 1 Peripheral (assigned to base_1).
+//! Topology: Central + 1 Peripheral (assigned to base_alpha).
 //!
-//! Property: after the Peripheral pushes a targeted idempotency log to Central
-//! and Central pulls it back, both nodes contain the same audit record.
+//! Property: after the Peripheral's worker syncs, a company created on the
+//! Peripheral appears on Central, and catalog entities seeded on Central
+//! appear on the Peripheral.
 
 use std::time::Duration;
 
-use reqwest::Client;
-use uuid::Uuid;
-use voletu_core::enums::NodeType;
+use serde_json::json;
 
 use crate::common::integration::{
-  has_audit_record,
-  inject_targeted_idempotency_log,
-  prepare_node_db,
-  pull_from_central_to_target,
-  push_outbound_to_central,
-  register_remote_node_on_central,
-  reserve_port,
-  shutdown_server,
-  spawn_server,
-  temp_db_path,
-  wait_for_health,
-  wait_for_login_token,
+  api_post, await_sync_cycle, has_catalog_entity, seed_catalog_via_api, setup_central_via_api,
+  setup_peripheral_via_api, temp_db_path,
 };
 
-const INITIAL_AUDIT_CURSOR: Uuid = Uuid::from_u128(1);
-
 #[tokio::test]
-async fn sync_integration_a_central_and_one_peripheral_reconstructs_to_parity() {
-  let base_1 = Uuid::parse_str("00000000-0000-0000-0000-000000000111").unwrap();
-  let central_db = temp_db_path("sync-a-central");
-  let peripheral_db = temp_db_path("sync-a-peripheral");
+async fn sync_worker_central_and_one_peripheral_reconstructs_to_parity() {
+  let client = reqwest::Client::new();
+  let central = setup_central_via_api(&client, &temp_db_path("s2-central")).await;
+  let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let peripheral_node_id = prepare_node_db(
-    &peripheral_db,
-    "Peripheral-1",
-    NodeType::Peripheral,
-    Some(base_1),
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("s2-pa"), &central, &[
+    catalog.base_alpha,
+  ])
   .await;
-  let _central_node_id = prepare_node_db(&central_db, "Central", NodeType::Central, None).await;
-  register_remote_node_on_central(&central_db, peripheral_node_id, "Peripheral-1", base_1).await;
 
-  let central_port = reserve_port();
-  let peripheral_port = reserve_port();
-  let (central_shutdown_tx, mut central_task) = spawn_server(&central_db, central_port).await;
-  let (peripheral_shutdown_tx, mut peripheral_task) =
-    spawn_server(&peripheral_db, peripheral_port).await;
-
-  let client = Client::new();
-  let central_url = format!("http://127.0.0.1:{central_port}");
-  let peripheral_url = format!("http://127.0.0.1:{peripheral_port}");
-
-  wait_for_health(
+  // Create a company on the Peripheral
+  let new_company = api_post(
     &client,
-    &central_url,
-    Duration::from_secs(10),
-    &mut central_task,
+    &format!("{}/catalog/companies", pa.url),
+    &pa.token,
+    json!({
+      "commonName": "PA Local Co",
+      "legalName": null,
+      "isContractor": true,
+      "isExporter": false,
+      "isManufacturer": false,
+      "isSender": false,
+    }),
   )
   .await;
-  wait_for_health(
-    &client,
-    &peripheral_url,
-    Duration::from_secs(10),
-    &mut peripheral_task,
-  )
-  .await;
+  let company_id =
+    uuid::Uuid::parse_str(new_company["id"].as_str().expect("company should have id")).unwrap();
 
-  let central_token = wait_for_login_token(
-    &client,
-    &central_url,
-    "admin",
-    "admin",
-    Duration::from_secs(5),
-  )
-  .await;
-  let peripheral_token = wait_for_login_token(
-    &client,
-    &peripheral_url,
-    "admin",
-    "admin",
-    Duration::from_secs(5),
-  )
-  .await;
+  // Wait for the worker to push the company to Central and complete a cycle
+  await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
 
-  let record_id = Uuid::now_v7();
-  inject_targeted_idempotency_log(
-    &client,
-    &peripheral_url,
-    &peripheral_token,
-    peripheral_node_id,
-    record_id,
-    "sync-a-request",
-    &base_1.to_string(),
-  )
-  .await;
-
-  let pushed = push_outbound_to_central(
-    &client,
-    &peripheral_url,
-    &peripheral_token,
-    &central_url,
-    &central_token,
-    INITIAL_AUDIT_CURSOR,
-  )
-  .await;
-  assert!(pushed > 0);
-
-  let _ = pull_from_central_to_target(
-    &client,
-    &central_url,
-    &central_token,
-    &peripheral_url,
-    &peripheral_token,
-    &[base_1],
-  )
-  .await;
-
+  // Verify: Central has the company created on Peripheral
   assert!(
-    has_audit_record(
+    has_catalog_entity(
       &client,
-      &central_url,
-      &central_token,
-      "audit_logs",
-      record_id,
+      &central.url,
+      &central.token,
+      "/catalog/companies",
+      company_id,
     )
-    .await
-  );
-  assert!(
-    has_audit_record(
-      &client,
-      &peripheral_url,
-      &peripheral_token,
-      "audit_logs",
-      record_id,
-    )
-    .await
+    .await,
+    "Central should have the company created on Peripheral after sync"
   );
 
-  shutdown_server(central_shutdown_tx, central_task).await;
-  shutdown_server(peripheral_shutdown_tx, peripheral_task).await;
+  // Verify: Peripheral has catalog entities seeded on Central
+  assert!(
+    has_catalog_entity(
+      &client,
+      &pa.url,
+      &pa.token,
+      "/catalog/products",
+      catalog.product,
+    )
+    .await,
+    "Peripheral should have products seeded on Central"
+  );
+  assert!(
+    has_catalog_entity(
+      &client,
+      &pa.url,
+      &pa.token,
+      "/catalog/bases",
+      catalog.base_alpha,
+    )
+    .await,
+    "Peripheral should have bases seeded on Central"
+  );
+
+  central.shutdown().await;
+  pa.shutdown().await;
 }

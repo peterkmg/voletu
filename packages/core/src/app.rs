@@ -14,10 +14,10 @@ use tracing::info;
 
 use crate::{
   api::{router::build_router, ApiState},
-  config::ApiConfig,
+  config::{ApiConfig, SyncConfig},
   db::init_database,
   entities::local,
-  worker::{spawn_sync_worker, WorkerStatus},
+  worker::{spawn_sync_worker, spawn_sync_worker_with_config, WorkerStatus},
   DbConfig,
   JwtConfig,
 };
@@ -27,6 +27,17 @@ pub async fn serve_api(
   port: String,
   db_cfg: DbConfig,
   jwt_cfg: JwtConfig,
+  shutdown_rx: oneshot::Receiver<()>,
+) -> Result<()> {
+  serve_api_with_sync_config(host, port, db_cfg, jwt_cfg, None, shutdown_rx).await
+}
+
+pub async fn serve_api_with_sync_config(
+  host: String,
+  port: String,
+  db_cfg: DbConfig,
+  jwt_cfg: JwtConfig,
+  sync_config: Option<SyncConfig>,
   shutdown_rx: oneshot::Receiver<()>,
 ) -> Result<()> {
   let address: SocketAddr = format!("{}:{}", host, port).parse()?;
@@ -78,7 +89,11 @@ pub async fn serve_api(
     if has_central_api_url {
       let (tx, rx) = oneshot::channel();
       worker_shutdown_tx = Some(tx);
-      worker_task = Some(spawn_sync_worker(db, cfg.clone(), rx, worker_status));
+      worker_task = Some(if let Some(ref sync_cfg) = sync_config {
+        spawn_sync_worker_with_config(db, cfg.clone(), rx, sync_cfg.clone(), worker_status)
+      } else {
+        spawn_sync_worker(db, cfg.clone(), rx, worker_status)
+      });
     }
 
     info!("Building API routes...");

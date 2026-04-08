@@ -1,322 +1,161 @@
-//! Verifies that ledger-affected ownership transfers propagate with correct
-//! scope narrowing across a three-node topology. The first wave uses a shared
-//! target (both bases), so all nodes converge. The second wave uses a local-only
-//! target (base_a only), so Node-C does not receive it.
+//! Verifies that ledger-affected documents propagate with correct scope
+//! narrowing across a three-node topology using the real sync worker.
 //!
-//! Topology: Central (Node-B) + 2 Peripherals (Node-A on base_a, Node-C on base_c).
+//! Wave 1 creates a cross-base physical transfer (routes to both bases) and
+//! executes it, so all three nodes converge on the document and ledger entries.
+//! Wave 2 creates a single-base acceptance (routes to base_alpha only) and
+//! executes it, so only Central and PA receive it while PB's ledger stays at
+//! the prior value.
 //!
-//! Property: shared-scope transfers and ledger entries reach all three nodes;
-//! local-scope transfers and ledger entries reach only Central and the originating
-//! Peripheral, while the other Peripheral's ledger remains at the prior value.
+//! Topology: Central + 2 Peripherals (PA on base_alpha, PB on base_beta).
+//!
+//! Property: shared-scope executed documents and their ledger entries reach all
+//! nodes; local-scope executed documents and their ledger entries reach only
+//! Central and the relevant Peripheral.
 
 use std::time::Duration;
 
-use reqwest::Client;
-use uuid::Uuid;
-use voletu_core::enums::NodeType;
-
 use crate::common::integration::{
-  create_local_transfer_and_ledger,
-  ensure_shared_transfer_catalog,
-  get_highest_audit_log_id,
-  get_ledger_entry_json,
-  get_ownership_transfer_json,
-  inject_targeted_sync_log,
-  prepare_node_db,
-  pull_from_central_to_target,
-  pull_from_central_to_target_after,
-  push_outbound_to_central,
-  register_remote_node_on_central,
-  reserve_port,
-  shutdown_server,
-  spawn_server,
-  temp_db_path,
-  wait_for_health,
-  wait_for_login_token,
+  api_post, await_sync_cycle, get_all_ledger_entries, get_physical_transfer_composite_json,
+  seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
 };
 
+use super::parse_doc_id;
+
 #[tokio::test]
-async fn sync_integration_ledger_affected_transfer_targets_shared_then_local_scope() {
-  let base_a = Uuid::parse_str("00000000-0000-0000-0000-000000000141").unwrap();
-  let base_c = Uuid::parse_str("00000000-0000-0000-0000-000000000142").unwrap();
+async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
+  let client = reqwest::Client::new();
+  let central = setup_central_via_api(&client, &temp_db_path("s5-central")).await;
+  let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let central_db = temp_db_path("sync-ledger-central");
-  let a_db = temp_db_path("sync-ledger-a");
-  let c_db = temp_db_path("sync-ledger-c");
-
-  let a_node_id = prepare_node_db(&a_db, "Node-A", NodeType::Peripheral, Some(base_a)).await;
-  let c_node_id = prepare_node_db(&c_db, "Node-C", NodeType::Peripheral, Some(base_c)).await;
-  let _central_node_id =
-    prepare_node_db(&central_db, "Node-B-Central", NodeType::Central, None).await;
-
-  register_remote_node_on_central(&central_db, a_node_id, "Node-A", base_a).await;
-  register_remote_node_on_central(&central_db, c_node_id, "Node-C", base_c).await;
-
-  let refs_a = ensure_shared_transfer_catalog(&a_db, a_node_id, base_a, base_c).await;
-  let _refs_b = ensure_shared_transfer_catalog(&central_db, a_node_id, base_a, base_c).await;
-  let _refs_c = ensure_shared_transfer_catalog(&c_db, c_node_id, base_a, base_c).await;
-
-  let central_port = reserve_port();
-  let a_port = reserve_port();
-  let c_port = reserve_port();
-
-  let (central_shutdown_tx, mut central_task) = spawn_server(&central_db, central_port).await;
-  let (a_shutdown_tx, mut a_task) = spawn_server(&a_db, a_port).await;
-  let (c_shutdown_tx, mut c_task) = spawn_server(&c_db, c_port).await;
-
-  let client = Client::new();
-  let central_url = format!("http://127.0.0.1:{central_port}");
-  let a_url = format!("http://127.0.0.1:{a_port}");
-  let c_url = format!("http://127.0.0.1:{c_port}");
-
-  wait_for_health(
-    &client,
-    &central_url,
-    Duration::from_secs(10),
-    &mut central_task,
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("s5-pa"), &central, &[
+    catalog.base_alpha,
+  ])
   .await;
-  wait_for_health(&client, &a_url, Duration::from_secs(10), &mut a_task).await;
-  wait_for_health(&client, &c_url, Duration::from_secs(10), &mut c_task).await;
-
-  let central_token = wait_for_login_token(
-    &client,
-    &central_url,
-    "admin",
-    "admin",
-    Duration::from_secs(5),
-  )
-  .await;
-  let a_token =
-    wait_for_login_token(&client, &a_url, "admin", "admin", Duration::from_secs(5)).await;
-  let c_token =
-    wait_for_login_token(&client, &c_url, "admin", "admin", Duration::from_secs(5)).await;
-
-  let transfer_1_id = Uuid::now_v7();
-  let ledger_1_id = Uuid::now_v7();
-  let (transfer_1_snapshot, transfer_1_item_id, transfer_1_item_snapshot, ledger_1_snapshot) =
-    create_local_transfer_and_ledger(&a_db, a_node_id, refs_a, transfer_1_id, ledger_1_id, 120)
-      .await;
-  let outbound_cursor_1 = get_highest_audit_log_id(&client, &a_url, &a_token).await;
-
-  inject_targeted_sync_log(
-    &client,
-    &a_url,
-    &a_token,
-    a_node_id,
-    "ownership_transfers",
-    transfer_1_id,
-    &transfer_1_snapshot,
-    &format!("{},{}", base_a, base_c),
-  )
-  .await;
-  inject_targeted_sync_log(
-    &client,
-    &a_url,
-    &a_token,
-    a_node_id,
-    "ownership_transfer_items",
-    transfer_1_item_id,
-    &transfer_1_item_snapshot,
-    &format!("{},{}", base_a, base_c),
-  )
-  .await;
-  inject_targeted_sync_log(
-    &client,
-    &a_url,
-    &a_token,
-    a_node_id,
-    "inventory_ledger_entries",
-    ledger_1_id,
-    &ledger_1_snapshot,
-    &format!("{},{}", base_a, base_c),
-  )
+  let pb = setup_peripheral_via_api(&client, &temp_db_path("s5-pb"), &central, &[
+    catalog.base_beta,
+  ])
   .await;
 
-  let pushed_wave_1 = push_outbound_to_central(
+  // ── Wave 1: cross-base physical transfer (routes to BOTH bases) ──
+
+  let transfer_1 = api_post(
     &client,
-    &a_url,
-    &a_token,
-    &central_url,
-    &central_token,
-    outbound_cursor_1,
+    &format!("{}/physical-transfers/save-and-execute", central.url),
+    &central.token,
+    serde_json::json!({
+      "documentNumber": "PHYS-SHARED-W1",
+      "date": "2026-01-15T10:00:00Z",
+      "contractorId": catalog.contractor,
+      "startCargoOps": "2026-01-15T08:00:00Z",
+      "endCargoOps": "2026-01-15T16:00:00Z",
+      "items": [{
+        "productId": catalog.product,
+        "fromStorageId": catalog.storage_alpha,
+        "toStorageId": catalog.storage_beta,
+        "amount": "120.0",
+      }]
+    }),
   )
   .await;
-  assert!(pushed_wave_1 >= 2);
+  let transfer_1_id = parse_doc_id(&transfer_1);
 
-  let pulled_wave_1_for_c =
-    pull_from_central_to_target(&client, &central_url, &central_token, &c_url, &c_token, &[
-      base_c,
-    ])
-    .await;
-  assert!(pulled_wave_1_for_c.0 >= 2);
+  // Let both peripherals sync wave 1
+  await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
+  await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  let transfer_1_a = get_ownership_transfer_json(&client, &a_url, &a_token, transfer_1_id)
-    .await
-    .unwrap();
-  let transfer_1_b =
-    get_ownership_transfer_json(&client, &central_url, &central_token, transfer_1_id)
+  // Both peripherals should have the transfer
+  let pa_t1 =
+    get_physical_transfer_composite_json(&client, &pa.url, &pa.token, transfer_1_id).await;
+  let pb_t1 =
+    get_physical_transfer_composite_json(&client, &pb.url, &pb.token, transfer_1_id).await;
+  assert!(pa_t1.is_some(), "PA should have wave-1 transfer");
+  assert!(pb_t1.is_some(), "PB should have wave-1 transfer");
+
+  // Field parity on the transfer
+  let central_t1 =
+    get_physical_transfer_composite_json(&client, &central.url, &central.token, transfer_1_id)
       .await
       .unwrap();
-  let transfer_1_c = get_ownership_transfer_json(&client, &c_url, &c_token, transfer_1_id)
-    .await
-    .unwrap();
   assert_eq!(
-    transfer_1_a["items"][0]["amount"],
-    transfer_1_b["items"][0]["amount"]
+    central_t1["items"][0]["amount"],
+    pa_t1.unwrap()["items"][0]["amount"],
+    "PA wave-1 amount should match Central"
   );
   assert_eq!(
-    transfer_1_b["items"][0]["amount"],
-    transfer_1_c["items"][0]["amount"]
+    central_t1["items"][0]["amount"],
+    pb_t1.unwrap()["items"][0]["amount"],
+    "PB wave-1 amount should match Central"
   );
 
-  let ledger_1_a = get_ledger_entry_json(
-    &client,
-    &a_url,
-    &a_token,
-    refs_a.storage_id,
-    refs_a.product_id,
-    refs_a.contractor_b_id,
-  )
-  .await
-  .unwrap();
-  let ledger_1_b = get_ledger_entry_json(
-    &client,
-    &central_url,
-    &central_token,
-    refs_a.storage_id,
-    refs_a.product_id,
-    refs_a.contractor_b_id,
-  )
-  .await
-  .unwrap();
-  let ledger_1_c = get_ledger_entry_json(
-    &client,
-    &c_url,
-    &c_token,
-    refs_a.storage_id,
-    refs_a.product_id,
-    refs_a.contractor_b_id,
-  )
-  .await
-  .unwrap();
-  assert_eq!(ledger_1_a["currentAmount"], ledger_1_b["currentAmount"]);
-  assert_eq!(ledger_1_b["currentAmount"], ledger_1_c["currentAmount"]);
-
-  let transfer_2_id = Uuid::now_v7();
-  let ledger_2_id = Uuid::now_v7();
-  let (transfer_2_snapshot, transfer_2_item_id, transfer_2_item_snapshot, ledger_2_snapshot) =
-    create_local_transfer_and_ledger(&a_db, a_node_id, refs_a, transfer_2_id, ledger_2_id, 45)
-      .await;
-  let outbound_cursor_2 = get_highest_audit_log_id(&client, &a_url, &a_token).await;
-
-  inject_targeted_sync_log(
-    &client,
-    &a_url,
-    &a_token,
-    a_node_id,
-    "ownership_transfers",
-    transfer_2_id,
-    &transfer_2_snapshot,
-    &base_a.to_string(),
-  )
-  .await;
-  inject_targeted_sync_log(
-    &client,
-    &a_url,
-    &a_token,
-    a_node_id,
-    "ownership_transfer_items",
-    transfer_2_item_id,
-    &transfer_2_item_snapshot,
-    &base_a.to_string(),
-  )
-  .await;
-  inject_targeted_sync_log(
-    &client,
-    &a_url,
-    &a_token,
-    a_node_id,
-    "inventory_ledger_entries",
-    ledger_2_id,
-    &ledger_2_snapshot,
-    &base_a.to_string(),
-  )
-  .await;
-
-  let pushed_wave_2 = push_outbound_to_central(
-    &client,
-    &a_url,
-    &a_token,
-    &central_url,
-    &central_token,
-    outbound_cursor_2,
-  )
-  .await;
-  assert!(pushed_wave_2 >= 2);
-
-  let (pulled_wave_2_for_c, _) = pull_from_central_to_target_after(
-    &client,
-    &central_url,
-    &central_token,
-    &c_url,
-    &c_token,
-    &[base_c],
-    pulled_wave_1_for_c.1,
-  )
-  .await;
-  assert_eq!(pulled_wave_2_for_c, 0);
-
-  let transfer_2_a = get_ownership_transfer_json(&client, &a_url, &a_token, transfer_2_id)
-    .await
-    .unwrap();
-  let transfer_2_b =
-    get_ownership_transfer_json(&client, &central_url, &central_token, transfer_2_id)
-      .await
-      .unwrap();
-  let transfer_2_c = get_ownership_transfer_json(&client, &c_url, &c_token, transfer_2_id).await;
+  // Ledger: both peripherals have entries (physical transfer creates ledger rows on execute)
+  let central_ledger_w1 = get_all_ledger_entries(&client, &central.url, &central.token).await;
+  let pa_ledger_w1 = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
+  let pb_ledger_w1 = get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+  assert!(
+    !central_ledger_w1.is_empty(),
+    "Central should have ledger entries after wave 1"
+  );
   assert_eq!(
-    transfer_2_a["items"][0]["amount"],
-    transfer_2_b["items"][0]["amount"]
+    pa_ledger_w1.len(),
+    central_ledger_w1.len(),
+    "PA ledger count should match Central after wave 1"
   );
-  assert!(transfer_2_c.is_none());
+  assert_eq!(
+    pb_ledger_w1.len(),
+    central_ledger_w1.len(),
+    "PB ledger count should match Central after wave 1"
+  );
 
-  let ledger_2_a = get_ledger_entry_json(
+  // ── Wave 2: single-base acceptance (routes to base_alpha ONLY) ──
+
+  let _acc_2 = api_post(
     &client,
-    &a_url,
-    &a_token,
-    refs_a.storage_id,
-    refs_a.product_id,
-    refs_a.contractor_b_id,
-  )
-  .await
-  .unwrap();
-  let ledger_2_b = get_ledger_entry_json(
-    &client,
-    &central_url,
-    &central_token,
-    refs_a.storage_id,
-    refs_a.product_id,
-    refs_a.contractor_b_id,
-  )
-  .await
-  .unwrap();
-  let ledger_2_c = get_ledger_entry_json(
-    &client,
-    &c_url,
-    &c_token,
-    refs_a.storage_id,
-    refs_a.product_id,
-    refs_a.contractor_b_id,
+    &format!(
+      "{}/acceptance/composite/save-and-execute",
+      central.url
+    ),
+    &central.token,
+    serde_json::json!({
+      "documentNumber": "ACC-ALPHA-W2",
+      "dateAccepted": "2026-01-16T10:00:00Z",
+      "arrivalType": "TRUCK",
+      "sourceEntity": null,
+      "contractorId": catalog.contractor,
+      "truckWaybillId": null,
+      "railWaybillId": null,
+      "transitDispatchId": null,
+      "items": [{
+        "productId": catalog.product,
+        "storageId": catalog.storage_alpha,
+        "acceptedAmount": "45.0",
+      }]
+    }),
   )
   .await;
-  assert_eq!(ledger_2_a["currentAmount"], ledger_2_b["currentAmount"]);
+
+  // Let both peripherals sync wave 2
+  await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
+  await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
+
+  // PA should have gained a new ledger entry (the acceptance for storage_alpha)
+  let pa_ledger_w2 = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
+  let central_ledger_w2 = get_all_ledger_entries(&client, &central.url, &central.token).await;
   assert_eq!(
-    ledger_2_c.unwrap()["currentAmount"],
-    ledger_1_c["currentAmount"]
+    pa_ledger_w2.len(),
+    central_ledger_w2.len(),
+    "PA ledger count should still match Central after wave 2"
   );
 
-  shutdown_server(central_shutdown_tx, central_task).await;
-  shutdown_server(a_shutdown_tx, a_task).await;
-  shutdown_server(c_shutdown_tx, c_task).await;
+  // PB should NOT have the new ledger entry — its count stays at wave 1 level
+  let pb_ledger_w2 = get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+  assert_eq!(
+    pb_ledger_w2.len(),
+    pb_ledger_w1.len(),
+    "PB ledger count should remain unchanged after wave 2 (alpha-only acceptance)"
+  );
+
+  central.shutdown().await;
+  pa.shutdown().await;
+  pb.shutdown().await;
 }

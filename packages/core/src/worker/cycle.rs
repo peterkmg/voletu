@@ -20,7 +20,8 @@ pub(super) async fn sync_once(
   client: &Client,
   sync_service: &SyncService,
   central_base_url: &str,
-  local_node_id: Uuid,
+  _local_node_id: Uuid,
+  local_base_ids: &[Uuid],
   config: &SyncConfig,
 ) -> anyhow::Result<u64> {
   let central_status: SyncStatusResponse = get_api_json(
@@ -65,11 +66,16 @@ pub(super) async fn sync_once(
   }
 
   let pull_after = super::topology::watermark_for(&watermarks, central_status.node_id, "PULL");
+  let base_ids_param = local_base_ids
+    .iter()
+    .map(|id| id.to_string())
+    .collect::<Vec<_>>()
+    .join(",");
   let pulled: PullAuditLogsResponse = get_api_json(
     client,
     &format!(
-      "{}/sync/pull?nodeId={}&lastAuditLogId={}&limit={}",
-      central_base_url, local_node_id, pull_after, config.sync_batch_limit
+      "{}/sync/pull?lastAuditLogId={}&baseIds={}&limit={}",
+      central_base_url, pull_after, base_ids_param, config.sync_batch_limit
     ),
     config.request_timeout,
   )
@@ -79,12 +85,18 @@ pub(super) async fn sync_once(
   let pulled_highest_evaluated_id = pulled.highest_evaluated_id;
 
   if pulled_count > 0 {
+    debug!(count = pulled_count, "applying pulled logs");
     let apply_payload = pulled
       .logs
       .into_iter()
       .map(PushAuditLogRequest::from)
       .collect::<Vec<_>>();
-    let _ = sync_service.push_logs(&apply_payload).await?;
+    let result = sync_service.push_logs(&apply_payload).await?;
+    debug!(
+      accepted = result.accepted,
+      rejected = result.rejected,
+      "sync pull batch applied"
+    );
   }
 
   if pulled_highest_evaluated_id != pull_after {

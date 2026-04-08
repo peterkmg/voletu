@@ -32,6 +32,7 @@ function normalizeBaseUrl(value: string): string {
 export function getBaseUrl(): string {
   return normalizeBaseUrl(
     (globalThis as { __VOLETU_API_BASE_URL__?: string }).__VOLETU_API_BASE_URL__
+    ?? import.meta.env.VITE_API_BASE_URL
     ?? 'http://127.0.0.1:3000',
   )
 }

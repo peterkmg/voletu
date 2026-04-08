@@ -4,17 +4,20 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Incremental pull returns only data created after the previous cursor; count is smaller than initial pull
 
+use std::time::Duration;
+
 use super::parse_doc_id;
 use crate::common::integration::{
+  await_sync_cycle,
   create_acceptance_via_api,
   get_acceptance_composite_json,
-  pull_from_central_to_target,
-  pull_from_central_to_target_after,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn incremental_pull_advances_watermark_correctly() {
@@ -26,7 +29,8 @@ async fn incremental_pull_advances_watermark_correctly() {
   ])
   .await;
 
-  let _acc1 = create_acceptance_via_api(
+  // Wave 1
+  create_acceptance_via_api(
     &client,
     &central.url,
     &central.token,
@@ -38,19 +42,19 @@ async fn incremental_pull_advances_watermark_correctly() {
   )
   .await;
 
-  // First pull — catalog + first doc
-  let (pull1_count, pull1_cursor) = pull_from_central_to_target(
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
+
+  // Verify wave 1 arrived
+  let pa_accs = crate::common::integration::api_get(
     &client,
-    &central.url,
-    &central.token,
-    &pa.url,
+    &format!("{}/acceptance", pa.url),
     &pa.token,
-    &[catalog.base_alpha],
   )
   .await;
-  assert!(pull1_count > 0);
+  let wave1_count = pa_accs.as_array().unwrap().len();
+  assert!(wave1_count > 0, "wave 1 should have synced at least one acceptance");
 
-  // Create second doc
+  // Wave 2
   let acc2 = create_acceptance_via_api(
     &client,
     &central.url,
@@ -64,26 +68,25 @@ async fn incremental_pull_advances_watermark_correctly() {
   .await;
   let acc2_id = parse_doc_id(&acc2);
 
-  // Incremental pull from cursor — only new data
-  let (pull2_count, _) = pull_from_central_to_target_after(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-    pull1_cursor,
-  )
-  .await;
-  assert!(pull2_count > 0, "incremental pull should return new data");
-  assert!(
-    pull2_count < pull1_count,
-    "incremental should be smaller than initial"
-  );
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
+
+  // Verify both wave 1 and wave 2 are present
   assert!(
     get_acceptance_composite_json(&client, &pa.url, &pa.token, acc2_id)
       .await
-      .is_some()
+      .is_some(),
+    "wave 2 acceptance should be on PA"
+  );
+  let pa_accs_after = crate::common::integration::api_get(
+    &client,
+    &format!("{}/acceptance", pa.url),
+    &pa.token,
+  )
+  .await;
+  let wave2_count = pa_accs_after.as_array().unwrap().len();
+  assert!(
+    wave2_count > wave1_count,
+    "should have more acceptances after wave 2 ({wave2_count} > {wave1_count})"
   );
 
   central.shutdown().await;

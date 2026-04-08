@@ -5,19 +5,23 @@
 //! **Topology:** Central (seeded) + 1 Peripheral (first base from seed)
 //! **Verifies:** Full catalog parity, ledger entry parity for assigned base, absence of other-base ledger entries, and presence of business documents
 
+use std::time::Duration;
+
 use serde_json::Value;
 use uuid::Uuid;
 
 use crate::common::integration::{
   api_get,
+  await_sync_cycle,
   dev_seed_via_api,
   get_all_ledger_entries,
   get_storages_for_base,
-  pull_from_central_to_target_after,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[tokio::test]
 async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
@@ -94,34 +98,16 @@ async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
     "target base should have ledger entries"
   );
 
-  // Setup Peripheral with this base and pull ALL data via incremental sync
+  // Setup Peripheral with this base — initial sync happens during setup.
+  // Run additional cycles to consume all seeded audit logs (seed creates many entries).
   let peripheral = setup_peripheral_via_api(&client, &temp_db_path("r15-periph"), &central, &[
     target_base_id,
   ])
   .await;
 
-  // Do repeated pulls until we've consumed all audit logs
-  // (seed creates many entries, may require multiple pull batches)
-  let mut total_pulled = 0usize;
-  let mut cursor = Uuid::from_u128(1);
-  loop {
-    let (pulled, new_cursor) = pull_from_central_to_target_after(
-      &client,
-      &central.url,
-      &central.token,
-      &peripheral.url,
-      &peripheral.token,
-      &[target_base_id],
-      cursor,
-    )
-    .await;
-    total_pulled += pulled;
-    if pulled == 0 || new_cursor == cursor {
-      break;
-    }
-    cursor = new_cursor;
-  }
-  assert!(total_pulled > 0, "should have pulled data from Central");
+  // Additional sync cycles to ensure all batched data arrives
+  await_sync_cycle(&client, &peripheral.url, &peripheral.token, SYNC_TIMEOUT).await;
+  await_sync_cycle(&client, &peripheral.url, &peripheral.token, SYNC_TIMEOUT).await;
 
   // --- Verify catalog entities present on Peripheral ---
   let periph_products = api_get(

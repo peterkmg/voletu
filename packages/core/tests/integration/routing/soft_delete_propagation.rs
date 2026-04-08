@@ -4,11 +4,13 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Soft-deleted entity is no longer in the active catalog list on the peripheral after pull
 
+use std::time::Duration;
+
 use uuid::Uuid;
 
-use super::pull_all;
 use crate::common::integration::{
   api_post,
+  await_sync_cycle,
   has_catalog_entity,
   seed_catalog_via_api,
   setup_central_via_api,
@@ -16,6 +18,8 @@ use crate::common::integration::{
   soft_delete_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn soft_delete_propagates_via_sync() {
@@ -32,15 +36,7 @@ async fn soft_delete_propagates_via_sync() {
     serde_json::json!({"commonName": "SoftDel Co", "legalName": null, "isContractor": true, "isExporter": false, "isManufacturer": false, "isSender": false})).await;
   let company_id = Uuid::parse_str(company["id"].as_str().unwrap()).unwrap();
 
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   assert!(
     has_catalog_entity(
       &client,
@@ -77,15 +73,7 @@ async fn soft_delete_propagates_via_sync() {
   );
 
   // Sync to PA
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   // PA should also not have it in active list
   assert!(

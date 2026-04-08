@@ -15,6 +15,7 @@ use uuid::Uuid;
 use crate::{
   config::{DatabaseType, DbConfig, NodeConfig},
   constants::{DEFAULT_ADMIN_PASSWORD, DEFAULT_ADMIN_USERNAME, DEFAULT_DATABASE_COMMON_NAME},
+  context::audit::with_audit_context,
   entities::{database_instance, local, role, user},
   enums,
   utils::{jwt, password::hash_password, paths::ensure_parent_dir},
@@ -38,48 +39,56 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
   let bootstrap_admin_id = Uuid::now_v7();
   let now = ChronoUtc::now();
 
-  let instance = database_instance::ActiveModel {
-    id: Set(bootstrap_db_id),
-    common_name: Set(DEFAULT_DATABASE_COMMON_NAME.to_string()),
-    node_type: Set(enums::NodeType::Peripheral),
-    base_id: Set(None),
-    created_at: Set(now),
-    updated_at: Set(now),
-    deleted_at: Set(None),
-    created_by: Set(bootstrap_admin_id),
-    updated_by: Set(bootstrap_admin_id),
-    deleted_by: Set(None),
-    origin_db_id: Set(bootstrap_db_id),
-  }
-  .insert(&txn)
-  .await?;
+  // Wrap syncable entity inserts in an audit context so they produce audit logs.
+  // Without this, database_instance and user records would never sync to other nodes.
+  let (instance, local) = with_audit_context(bootstrap_admin_id, bootstrap_db_id, || async {
+    let instance = database_instance::ActiveModel {
+      id: Set(bootstrap_db_id),
+      common_name: Set(DEFAULT_DATABASE_COMMON_NAME.to_string()),
+      node_type: Set(enums::NodeType::Peripheral),
+      base_id: Set(None),
+      created_at: Set(now),
+      updated_at: Set(now),
+      deleted_at: Set(None),
+      created_by: Set(bootstrap_admin_id),
+      updated_by: Set(bootstrap_admin_id),
+      deleted_by: Set(None),
+      origin_db_id: Set(bootstrap_db_id),
+    }
+    .insert(&txn)
+    .await?;
 
-  debug!("Seeded default database instance with id {}.", instance.id);
+    debug!("Seeded default database instance with id {}.", instance.id);
 
-  let local = local::ActiveModel {
-    local_db_id: Set(instance.id),
-    is_initialized: Set(false),
-    jwt_secret: Set(jwt::generate_secret()),
-    ..Default::default()
-  }
-  .insert(&txn)
-  .await?;
+    // local is not synced (excluded from audit), but must be inserted in same transaction
+    let local = local::ActiveModel {
+      local_db_id: Set(instance.id),
+      is_initialized: Set(false),
+      jwt_secret: Set(jwt::generate_secret()),
+      ..Default::default()
+    }
+    .insert(&txn)
+    .await?;
 
-  let _ = user::ActiveModel {
-    id: Set(bootstrap_admin_id),
-    username: Set(DEFAULT_ADMIN_USERNAME.to_string()),
-    password_hash: Set(hash_password(DEFAULT_ADMIN_PASSWORD).await?),
-    role_id: Set(enums::RoleType::Admin.uuid()),
-    created_at: Set(now),
-    updated_at: Set(now),
-    deleted_at: Set(None),
-    created_by: Set(bootstrap_admin_id),
-    updated_by: Set(bootstrap_admin_id),
-    deleted_by: Set(None),
-    origin_db_id: Set(bootstrap_db_id),
-    ..Default::default()
-  }
-  .insert(&txn)
+    let _ = user::ActiveModel {
+      id: Set(bootstrap_admin_id),
+      username: Set(DEFAULT_ADMIN_USERNAME.to_string()),
+      password_hash: Set(hash_password(DEFAULT_ADMIN_PASSWORD).await?),
+      role_id: Set(enums::RoleType::Admin.uuid()),
+      created_at: Set(now),
+      updated_at: Set(now),
+      deleted_at: Set(None),
+      created_by: Set(bootstrap_admin_id),
+      updated_by: Set(bootstrap_admin_id),
+      deleted_by: Set(None),
+      origin_db_id: Set(bootstrap_db_id),
+      ..Default::default()
+    }
+    .insert(&txn)
+    .await?;
+
+    Ok::<_, anyhow::Error>((instance, local))
+  })
   .await?;
 
   txn.commit().await?;

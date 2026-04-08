@@ -77,6 +77,16 @@ pub fn spawn_sync_worker_with_config(
             continue;
           };
 
+          let local_base_ids = match topology::load_local_base_ids(&db, local_node_id).await {
+            Ok(ids) => ids,
+            Err(error) => {
+              warn!(%error, "sync worker could not load base assignments");
+              state::transition(&mut worker_state, state::WorkerState::Backoff);
+              shared_status.write().await.state = worker_state;
+              continue;
+            }
+          };
+
           let local_status = match sync_service.sync_status().await {
             Ok(status) => status,
             Err(error) => {
@@ -92,13 +102,13 @@ pub fn spawn_sync_worker_with_config(
             has_updates = true;
           }
 
-          let online_now = get_api_json::<SyncStatusResponse>(
+          let central_status = get_api_json::<SyncStatusResponse>(
             &client,
             &format!("{}/sync/status", central_api_url),
             config.probe_timeout,
           )
-          .await
-          .is_ok();
+          .await;
+          let online_now = central_status.is_ok();
           if online_now != is_online {
             is_online = online_now;
             has_updates = true;
@@ -111,6 +121,18 @@ pub fn spawn_sync_worker_with_config(
             continue;
           }
 
+          // Check if Central has new data we haven't pulled yet
+          if let Ok(ref remote_status) = central_status {
+            let watermarks = match sync_service.list_sync_watermarks().await {
+              Ok(w) => w,
+              Err(_) => vec![],
+            };
+            let pull_after = topology::watermark_for(&watermarks, remote_status.node_id, "PULL");
+            if remote_status.highest_audit_log_id > pull_after {
+              has_updates = true;
+            }
+          }
+
           if !has_updates {
             state::transition(&mut worker_state, state::WorkerState::OnlineIdle);
             shared_status.write().await.state = worker_state;
@@ -119,15 +141,17 @@ pub fn spawn_sync_worker_with_config(
 
           state::transition(&mut worker_state, state::WorkerState::Syncing);
           shared_status.write().await.state = worker_state;
-          match cycle::sync_once(&client, &sync_service, &central_api_url, local_node_id, &config).await {
+          match cycle::sync_once(&client, &sync_service, &central_api_url, local_node_id, &local_base_ids, &config).await {
             Ok(changed) => {
               has_updates = false;
               state::transition(&mut worker_state, state::WorkerState::OnlineIdle);
-              {
+              let notify = {
                 let mut status = shared_status.write().await;
                 status.state = worker_state;
                 status.last_sync_at = Some(chrono::Utc::now());
-              }
+                Arc::clone(&status.cycle_completed)
+              };
+              notify.notify_waiters();
               debug!(changed, "sync worker cycle completed");
             }
             Err(error) => {

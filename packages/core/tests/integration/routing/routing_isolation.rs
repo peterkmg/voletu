@@ -4,16 +4,20 @@
 //! **Topology:** Central + 2 Peripherals (one base each)
 //! **Verifies:** Sync routing isolates documents by base assignment, with field parity on the correct node
 
+use std::time::Duration;
+
 use super::parse_doc_id;
 use crate::common::integration::{
+  await_sync_cycle,
   create_acceptance_via_api,
   get_acceptance_composite_json,
-  pull_from_central_to_target,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn routing_isolation_peripheral_gets_only_its_base_documents() {
@@ -57,25 +61,9 @@ async fn routing_isolation_peripheral_gets_only_its_base_documents() {
   .await;
   let acc_beta_id = parse_doc_id(&acc_beta);
 
-  // Pull to each peripheral
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pb.url,
-    &pb.token,
-    &[catalog.base_beta],
-  )
-  .await;
+  // Wait for each peripheral to sync
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
+  await_sync_cycle(&client, &pb.url, &pb.token, SYNC_TIMEOUT).await;
 
   // PA: has alpha, NOT beta
   assert!(

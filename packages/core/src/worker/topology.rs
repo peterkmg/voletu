@@ -1,10 +1,10 @@
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
   db::ops::load_local_bootstrap,
   dtos::SyncWatermarkResponse,
-  entities::database_instance,
+  entities::{database_instance, node_base_assignment},
   enums::SyncDirection,
 };
 
@@ -34,6 +34,18 @@ pub(super) async fn load_runtime_topology(
   };
 
   Ok((instance.id, instance.node_type.to_string(), central_api_url))
+}
+
+/// Load base IDs assigned to the local node from the node_base_assignment table.
+pub(super) async fn load_local_base_ids(
+  db: &DatabaseConnection,
+  node_id: Uuid,
+) -> anyhow::Result<Vec<Uuid>> {
+  let rows = node_base_assignment::Entity::find()
+    .filter(node_base_assignment::Column::NodeId.eq(node_id))
+    .all(db)
+    .await?;
+  Ok(rows.into_iter().map(|r| r.base_id).collect())
 }
 
 pub(super) fn watermark_for(

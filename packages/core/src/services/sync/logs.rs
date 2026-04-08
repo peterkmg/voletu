@@ -26,6 +26,7 @@ impl SyncService {
     &self,
     logs: &[PushAuditLogRequest],
   ) -> Result<PushAuditLogsResponse, ApiError> {
+    tracing::debug!(count = logs.len(), "push_logs: processing incoming batch");
     let txn = self.db.begin().await?;
     let mut accepted = 0_u64;
     let mut rejected = 0_u64;

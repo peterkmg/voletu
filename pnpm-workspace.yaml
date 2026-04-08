@@ -1,10 +1,10 @@
-
 packages:
   - packages/*
 
 ignoredBuiltDependencies:
   - esbuild
 onlyBuiltDependencies:
+  - es5-ext
   - msw
   - puppeteer
 shellEmulator: true

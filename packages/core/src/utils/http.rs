@@ -24,7 +24,13 @@ pub async fn post_api_json<Req: Serialize, Res: DeserializeOwned>(
   body: &Req,
   timeout: Duration,
 ) -> anyhow::Result<Res> {
-  let response = client.post(url).json(body).timeout(timeout).send().await?;
+  let response = client
+    .post(url)
+    .header("Idempotency-Key", uuid::Uuid::now_v7().to_string())
+    .json(body)
+    .timeout(timeout)
+    .send()
+    .await?;
   parse_api_response(response, "POST", url).await
 }
 

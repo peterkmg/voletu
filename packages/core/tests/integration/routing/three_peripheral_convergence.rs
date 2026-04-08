@@ -4,11 +4,14 @@
 //! **Topology:** Central + 3 Peripherals (P1: alpha, P2: beta, P3: alpha+beta)
 //! **Verifies:** P1 gets alpha + cross-base, P2 gets beta + cross-base, P3 gets all three documents
 
+use std::time::Duration;
+
 use uuid::Uuid;
 
-use super::{parse_doc_id, pull_all};
+use super::parse_doc_id;
 use crate::common::integration::{
   add_base_assignment_via_api,
+  await_sync_cycle,
   create_acceptance_via_api,
   create_physical_transfer_via_api,
   get_acceptance_composite_json,
@@ -18,6 +21,8 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn three_peripheral_convergence_with_overlapping_bases() {
@@ -83,34 +88,10 @@ async fn three_peripheral_convergence_with_overlapping_bases() {
   .await;
   let cross_id = Uuid::parse_str(cross["id"].as_str().unwrap()).unwrap();
 
-  // Pull to all three
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &p1.url,
-    &p1.token,
-    &[catalog.base_alpha],
-  )
-  .await;
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &p2.url,
-    &p2.token,
-    &[catalog.base_beta],
-  )
-  .await;
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &p3.url,
-    &p3.token,
-    &[catalog.base_alpha, catalog.base_beta],
-  )
-  .await;
+  // Wait for all three to sync
+  await_sync_cycle(&client, &p1.url, &p1.token, SYNC_TIMEOUT).await;
+  await_sync_cycle(&client, &p2.url, &p2.token, SYNC_TIMEOUT).await;
+  await_sync_cycle(&client, &p3.url, &p3.token, SYNC_TIMEOUT).await;
 
   // P1: alpha + cross, NOT beta
   assert!(

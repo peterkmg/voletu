@@ -14,6 +14,6 @@ pub mod services;
 pub mod utils;
 pub mod worker;
 
-pub use app::serve_api;
-pub use config::{DatabaseType, DbConfig, DbParams, JwtConfig, LoggingConfig};
+pub use app::{serve_api, serve_api_with_sync_config};
+pub use config::{DatabaseType, DbConfig, DbParams, JwtConfig, LoggingConfig, SyncConfig};
 pub use utils::paths::{ensure_dir, ensure_parent_dir, resolve_relative, split_file_path};

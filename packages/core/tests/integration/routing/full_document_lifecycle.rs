@@ -4,8 +4,11 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Document status transitions (DRAFT -> EXECUTED -> DRAFT -> EXECUTED) are faithfully replicated via sync
 
-use super::{parse_doc_id, pull_all};
+use std::time::Duration;
+
+use super::parse_doc_id;
 use crate::common::integration::{
+  await_sync_cycle,
   create_acceptance_via_api,
   execute_document_via_api,
   get_acceptance_composite_json,
@@ -15,6 +18,8 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn full_document_lifecycle_syncs_correctly() {
@@ -40,22 +45,14 @@ async fn full_document_lifecycle_syncs_correctly() {
   .await;
   let acc_id = parse_doc_id(&acc);
 
-  // Step 1: Pull draft to PA → verify DRAFT
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  // Step 1: Sync draft to PA → verify DRAFT
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
     .await
     .unwrap();
   assert_eq!(pa_acc["status"], "DRAFT");
 
-  // Step 2: Execute on Central → pull → verify EXECUTED
+  // Step 2: Execute on Central → sync → verify EXECUTED
   execute_document_via_api(
     &client,
     &central.url,
@@ -64,21 +61,13 @@ async fn full_document_lifecycle_syncs_correctly() {
     acc_id,
   )
   .await;
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
     .await
     .unwrap();
   assert_eq!(pa_acc["status"], "EXECUTED");
 
-  // Step 3: Revert on Central → pull → verify DRAFT again
+  // Step 3: Revert on Central → sync → verify DRAFT again
   revert_document_via_api(
     &client,
     &central.url,
@@ -87,21 +76,13 @@ async fn full_document_lifecycle_syncs_correctly() {
     acc_id,
   )
   .await;
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
     .await
     .unwrap();
   assert_eq!(pa_acc["status"], "DRAFT");
 
-  // Step 4: Re-execute → pull → verify EXECUTED again
+  // Step 4: Re-execute → sync → verify EXECUTED again
   execute_document_via_api(
     &client,
     &central.url,
@@ -110,15 +91,7 @@ async fn full_document_lifecycle_syncs_correctly() {
     acc_id,
   )
   .await;
-  pull_all(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
     .await
     .unwrap();

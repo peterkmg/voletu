@@ -4,21 +4,18 @@
 //! **Topology:** Central + 2 Peripherals (both assigned to base_alpha)
 //! **Verifies:** Push from peripheral to Central and pull to another peripheral preserves document with field parity
 
-use uuid::Uuid;
+use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
   create_acceptance_via_api,
   get_acceptance_composite_json,
-  pull_from_central_to_target,
-  push_outbound_to_central,
+  poll_until,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
-
-const INITIAL_AUDIT_CURSOR: Uuid = Uuid::from_u128(1);
 
 #[tokio::test]
 async fn bidirectional_sync_peripheral_to_central_to_peripheral() {
@@ -36,17 +33,6 @@ async fn bidirectional_sync_peripheral_to_central_to_peripheral() {
   ])
   .await;
 
-  // Sync catalog to PA so it can create documents
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
-
   // PA creates an acceptance document
   let acc = create_acceptance_via_api(
     &client,
@@ -61,36 +47,24 @@ async fn bidirectional_sync_peripheral_to_central_to_peripheral() {
   .await;
   let acc_id = parse_doc_id(&acc);
 
-  // Push PA → Central
-  let pushed = push_outbound_to_central(
-    &client,
-    &pa.url,
-    &pa.token,
-    &central.url,
-    &central.token,
-    INITIAL_AUDIT_CURSOR,
+  // PA's worker pushes to Central, then PB's worker pulls from Central.
+  // Use poll_until to wait for the document to appear on PB.
+  poll_until(
+    || {
+      let c = client.clone();
+      let url = pb.url.clone();
+      let tok = pb.token.clone();
+      async move { get_acceptance_composite_json(&c, &url, &tok, acc_id).await.is_some() }
+    },
+    Duration::from_secs(20),
+    "acceptance should propagate from PA to PB",
   )
   .await;
-  assert!(
-    pushed > 0,
-    "should push at least one log from PA to Central"
-  );
 
   // Central now has it
   let central_acc =
     get_acceptance_composite_json(&client, &central.url, &central.token, acc_id).await;
   assert!(central_acc.is_some(), "Central should have doc after push");
-
-  // Pull Central → PB
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pb.url,
-    &pb.token,
-    &[catalog.base_alpha],
-  )
-  .await;
 
   // PB has the doc created on PA
   let pb_acc = get_acceptance_composite_json(&client, &pb.url, &pb.token, acc_id).await;

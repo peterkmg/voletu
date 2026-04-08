@@ -11,7 +11,6 @@ use crate::{entities::base, enums};
 pub struct Model {
   #[sea_orm(primary_key)]
   pub id: Uuid,
-  #[sea_orm(unique)]
   pub common_name: String,
   #[sea_orm(column_name = "type")]
   pub node_type: enums::NodeType,

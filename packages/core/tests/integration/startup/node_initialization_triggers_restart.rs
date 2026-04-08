@@ -11,38 +11,23 @@ use std::time::Duration;
 
 use reqwest::{Client, StatusCode};
 use serde_json::Value;
-use tokio::sync::oneshot;
 use uuid::Uuid;
-use voletu_core::{serve_api, DbConfig, DbParams, JwtConfig};
 
-use crate::common::{
-  integration::{wait_for_health, wait_for_login_token},
-  payloads::{auth_login, node_initialize_replace_with_node_type},
+use crate::common::integration::{
+  spawn_server_with_sync_config, temp_db_path, test_sync_config, wait_for_health,
+  wait_for_login_token,
 };
+use crate::common::payloads::{auth_login, node_initialize_replace_with_node_type};
 
 #[tokio::test]
 async fn initialize_endpoint_triggers_restart_and_reloads_node_configuration() {
-  let tcp = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-  let port = tcp.local_addr().unwrap().port();
-  drop(tcp);
-
-  let db_path = std::env::temp_dir().join(format!("voletu-init-restart-{}.db", Uuid::now_v7()));
-  let db_cfg = DbConfig::new(DbParams::sqlite(db_path.clone()), "integrationtestpass");
-  let jwt_cfg = JwtConfig::default();
-
-  let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-  let mut server_task = tokio::spawn(async move {
-    serve_api(
-      "127.0.0.1".to_string(),
-      port.to_string(),
-      db_cfg,
-      jwt_cfg,
-      shutdown_rx,
-    )
-    .await
-  });
-
   let client = Client::new();
+  let db_name = temp_db_path("init-restart");
+  let port = crate::common::integration::reserve_port();
+
+  let (shutdown_tx, mut server_task) =
+    spawn_server_with_sync_config(&db_name, port, Some(test_sync_config())).await;
+
   let base_url = format!("http://127.0.0.1:{port}");
 
   wait_for_health(
@@ -120,6 +105,4 @@ async fn initialize_endpoint_triggers_restart_and_reloads_node_configuration() {
     .expect("server task should shut down in time")
     .expect("server task join should succeed");
   join_result.expect("serve_api should return Ok on shutdown");
-
-  let _ = std::fs::remove_file(db_path);
 }

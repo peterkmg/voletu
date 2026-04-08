@@ -227,6 +227,7 @@ pub mod sync {
   pub const PUSH: &str = "/sync/push";
   pub const STATUS: &str = "/sync/status";
   pub const WATERMARKS: &str = "/sync/watermarks";
+  pub const AWAIT_CYCLE: &str = "/sync/await-cycle";
 }
 
 pub mod flows {

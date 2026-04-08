@@ -4,20 +4,24 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Full field-level parity for both acceptance and physical transfer composites
 
+use std::time::Duration;
+
 use uuid::Uuid;
 
 use super::parse_doc_id;
 use crate::common::integration::{
+  await_sync_cycle,
   create_acceptance_via_api,
   create_physical_transfer_via_api,
   get_acceptance_composite_json,
   get_physical_transfer_composite_json,
-  pull_from_central_to_target,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn data_parity_after_full_sync_cycle() {
@@ -55,15 +59,7 @@ async fn data_parity_after_full_sync_cycle() {
   .await;
   let transfer_id = Uuid::parse_str(transfer["id"].as_str().unwrap()).unwrap();
 
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   // Acceptance parity
   let c_acc = get_acceptance_composite_json(&client, &central.url, &central.token, acc_id)

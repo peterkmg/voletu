@@ -5,18 +5,22 @@
 //! **Topology:** Central + 1 Peripheral (base_alpha)
 //! **Verifies:** Both INSERT and UPDATE audit logs target the correct base; peripheral sees EXECUTED status
 
+use std::time::Duration;
+
 use super::parse_doc_id;
 use crate::common::integration::{
+  await_sync_cycle,
   create_acceptance_via_api,
   execute_document_via_api,
   get_acceptance_composite_json,
-  pull_from_central_to_target,
   query_audit_logs,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn execute_produces_routed_update_audit_log() {
@@ -75,15 +79,7 @@ async fn execute_produces_routed_update_audit_log() {
   }
 
   // Peripheral gets the executed document
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id).await;
   assert!(pa_acc.is_some());
   assert_eq!(pa_acc.unwrap()["status"], "EXECUTED");

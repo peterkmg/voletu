@@ -4,17 +4,21 @@
 //! **Topology:** Central + 1 Peripheral (no base assignments)
 //! **Verifies:** Pull with empty base_ids syncs global catalog but excludes routed documents
 
+use std::time::Duration;
+
 use super::parse_doc_id;
 use crate::common::integration::{
+  await_sync_cycle,
   create_acceptance_via_api,
   get_acceptance_composite_json,
   has_catalog_entity,
-  pull_from_central_to_target,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn catalog_only_sync_with_no_base_assignment() {
@@ -39,17 +43,8 @@ async fn catalog_only_sync_with_no_base_assignment() {
   // Peripheral with NO base assignments
   let pa = setup_peripheral_via_api(&client, &temp_db_path("r7-pa"), &central, &[]).await;
 
-  // Pull with empty base_ids → catalog only
-  let (pulled, _) = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[],
-  )
-  .await;
-  assert!(pulled > 0, "should pull catalog entities");
+  // Worker already synced during setup; run one more cycle to pick up the acceptance
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   assert!(
     has_catalog_entity(

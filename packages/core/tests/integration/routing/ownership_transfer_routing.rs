@@ -4,19 +4,23 @@
 //! **Topology:** Central + 2 Peripherals (one base each)
 //! **Verifies:** Ownership transfer audit log targets the storage's base; only the correct peripheral receives it
 
+use std::time::Duration;
+
 use uuid::Uuid;
 
 use crate::common::integration::{
   assert_audit_log_targets,
+  await_sync_cycle,
   create_ownership_transfer_via_api,
   get_composite_json,
-  pull_from_central_to_target,
   query_audit_logs,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
 };
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
 async fn ownership_transfer_routing_via_storage() {
@@ -61,24 +65,8 @@ async fn ownership_transfer_routing_via_storage() {
     catalog.base_alpha,
   );
 
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pa.url,
-    &pa.token,
-    &[catalog.base_alpha],
-  )
-  .await;
-  let _ = pull_from_central_to_target(
-    &client,
-    &central.url,
-    &central.token,
-    &pb.url,
-    &pb.token,
-    &[catalog.base_beta],
-  )
-  .await;
+  await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
+  await_sync_cycle(&client, &pb.url, &pb.token, SYNC_TIMEOUT).await;
   assert!(get_composite_json(
     &client,
     &pa.url,
