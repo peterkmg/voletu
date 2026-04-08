@@ -2,20 +2,57 @@ use std::sync::Arc;
 
 use super::*;
 
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+#[serde(rename_all = "camelCase")]
+struct SyncStatusQuery {
+  /// Comma-separated base UUIDs the caller handles. Absent or empty means
+  /// catalog-only scope.
+  #[serde(default)]
+  base_ids: Option<String>,
+}
+
+impl SyncStatusQuery {
+  fn parse_base_ids(&self) -> Vec<Uuid> {
+    self
+      .base_ids
+      .as_deref()
+      .unwrap_or("")
+      .split(',')
+      .filter_map(|s| {
+        let trimmed = s.trim();
+        if trimmed.is_empty() {
+          None
+        } else {
+          Uuid::try_parse(trimmed).ok()
+        }
+      })
+      .collect()
+  }
+}
+
 #[utoipa::path(
   get,
   tag = "Sync",
   operation_id = "sync_status",
   summary = "Get sync status",
-  description = "Returns node synchronization status and readiness information used by replication workers.",
+  description = "Returns node synchronization status and readiness information used by replication workers. Accepts optional baseIds to compute a scope-aware highest_matching_id.",
   path = paths::sync::STATUS,
+  params(
+    ("baseIds" = Option<String>, Query, description = "Comma-separated base UUIDs the caller handles")
+  ),
   responses(
-    (status = 200, body = ApiResponse<SyncStatusResponse>, description = "Sync status envelope. Example: {\"success\":true,\"data\":{\"nodeId\":\"...\",\"ready\":true}}")
+    (status = 200, body = ApiResponse<SyncStatusResponse>, description = "Sync status envelope")
   )
 )]
 #[axum::debug_handler]
-async fn sync_status(State(state): State<Arc<ApiState>>) -> ApiResult<SyncStatusResponse> {
-  Ok(ApiResponse::success(state.svc.sync.sync_status().await?))
+async fn sync_status(
+  State(state): State<Arc<ApiState>>,
+  Valid(Query(req)): Valid<Query<SyncStatusQuery>>,
+) -> ApiResult<SyncStatusResponse> {
+  let base_ids = req.parse_base_ids();
+  Ok(ApiResponse::success(
+    state.svc.sync.sync_status(&base_ids).await?,
+  ))
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]

@@ -59,7 +59,18 @@ impl SyncService {
     Ok(rows.into_iter().map(AuditLogResponse::from).collect())
   }
 
-  pub async fn sync_status(&self) -> Result<SyncStatusResponse, ApiError> {
+  /// Return the node's identity and sync high-water marks.
+  ///
+  /// `base_ids` is the caller's requested scope. When non-empty, Central
+  /// filters the `highest_matching_id` computation to logs matching that
+  /// scope (global tables OR targeted for any of the provided bases). When
+  /// empty, the scope is catalog-only (global tables only). This is what
+  /// lets the worker's `has_updates` check avoid hot-polling when Central
+  /// has activity on bases the caller does not serve.
+  pub async fn sync_status(
+    &self,
+    base_ids: &[Uuid],
+  ) -> Result<SyncStatusResponse, ApiError> {
     let local_node_id = self.cfg.node.db_id;
     let instance_row = database_instance::Entity::find_by_id(local_node_id)
       .one(self.db.as_ref())
@@ -74,6 +85,7 @@ impl SyncService {
       }
     };
 
+    // Highest overall (unfiltered) — diagnostic / liveness signal.
     let latest_log = audit_log::Entity::find()
       .order_by_desc(audit_log::Column::Id)
       .one(self.db.as_ref())
@@ -83,10 +95,25 @@ impl SyncService {
       None => Uuid::nil(),
     };
 
+    // Highest in-scope — the authoritative "is there anything for you"
+    // signal. Shares the `scope_condition_for` helper with `pull_logs` to
+    // guarantee the two endpoints never drift.
+    let latest_matching = audit_log::Entity::find()
+      .filter(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
+      .filter(scope_condition_for(base_ids))
+      .order_by_desc(audit_log::Column::Id)
+      .one(self.db.as_ref())
+      .await?;
+    let highest_matching_id = match latest_matching {
+      Some(row) => row.id,
+      None => Uuid::nil(),
+    };
+
     Ok(SyncStatusResponse {
       node_id: instance.id,
       node_type: instance.node_type.to_string(),
       highest_audit_log_id,
+      highest_matching_id,
     })
   }
 

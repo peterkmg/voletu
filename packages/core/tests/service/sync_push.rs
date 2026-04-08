@@ -238,7 +238,7 @@ async fn sync_status_reflects_local_topology_and_local_row_keeps_central_url() {
 
     let service = sync_service_with_node(db.clone(), local_db_id);
 
-    let status = service.sync_status().await.unwrap();
+    let status = service.sync_status(&[]).await.unwrap();
     assert_eq!(status.node_type, "PERIPHERAL");
 
     let updated_local_row = local::Entity::find_by_id(1)

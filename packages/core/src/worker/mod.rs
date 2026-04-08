@@ -87,7 +87,11 @@ pub fn spawn_sync_worker_with_config(
             }
           };
 
-          let local_status = match sync_service.sync_status().await {
+          // Local status fetch: we only use `highest_audit_log_id` here to
+          // detect changes in our OWN audit log (used to trigger a push).
+          // The scope-aware `highest_matching_id` doesn't apply to local
+          // change detection, so we pass an empty scope.
+          let local_status = match sync_service.sync_status(&[]).await {
             Ok(status) => status,
             Err(error) => {
               warn!(%error, "sync worker could not fetch local status");

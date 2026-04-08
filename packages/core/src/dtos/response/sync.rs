@@ -10,7 +10,17 @@ use crate::{entities::sync_watermark, enums::SyncDirection};
 pub struct SyncStatusResponse {
   pub node_id: Uuid,
   pub node_type: String,
+  /// Highest audit_log id in the node's entire table, regardless of scope.
+  /// Used for diagnostics and "is the peer alive" liveness checks.
   pub highest_audit_log_id: Uuid,
+  /// Highest audit_log id that matches the caller's requested scope (global
+  /// tables OR logs targeted for any of the provided base_ids). When the
+  /// caller sends no baseIds this equals the max id of any global-table log.
+  /// The worker's `has_updates` decision compares THIS field — not
+  /// `highest_audit_log_id` — against its PULL cursor, so a peripheral does
+  /// not hot-poll Central when the only new activity is on bases it does
+  /// not serve.
+  pub highest_matching_id: Uuid,
 }
 
 /// Response DTO for the `sync_watermark` entity.
