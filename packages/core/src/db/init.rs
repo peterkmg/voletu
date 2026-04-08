@@ -115,6 +115,18 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     if !cfg.params.sqlite_in_memory && cfg.params.sqlite_shared_memory_name.is_none() {
       options.sqlcipher_key(cfg.password.clone());
     }
+    // For in-memory / shared-memory SQLite, constrain the connection pool
+    // to a single connection. SQLite's shared-cache mode has known
+    // cross-connection visibility quirks where a commit on one pooled
+    // connection isn't consistently seen by SELECTs on another pooled
+    // connection — readers can remain pinned to an earlier snapshot.
+    // Serializing all access through one connection eliminates that class
+    // of races. File-based SQLite under WAL gets normal snapshot semantics
+    // and keeps the default pool size.
+    if cfg.params.sqlite_in_memory || cfg.params.sqlite_shared_memory_name.is_some() {
+      options.max_connections(1);
+      options.min_connections(1);
+    }
   }
 
   trace!("Connecting to database...");

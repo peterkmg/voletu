@@ -104,50 +104,117 @@ async fn sync_await_cycle(
       .map(|dt| dt.with_timezone(&chrono::Utc))
   });
 
-  // Read current status and get the notify handle.
-  let (notify, current_state, current_last_sync) = {
+  // Capture initial counters + state atomically. The cycle counter and
+  // tick counter are race-free primitives: every successful `sync_once`
+  // increments `cycles_completed`, every worker tick (regardless of
+  // whether it synced anything) increments `ticks_observed`. Readers
+  // never miss an update because there's no subscription involved.
+  let (initial_cycles, initial_ticks, initial_state, initial_last_sync) = {
     let status = state.worker_status.read().await;
     (
-      Arc::clone(&status.cycle_completed),
+      status.cycle_count(),
+      status.tick_count(),
       status.state,
       status.last_sync_at,
     )
   };
 
-  // Register interest in the NEXT notification BEFORE checking conditions.
-  // This prevents the race where a cycle completes between our status read and the await.
-  let notification = notify.notified();
-
-  // If worker is sleeping (not a peripheral or no central URL), return immediately
-  if matches!(current_state, crate::worker::WorkerState::Sleeping) {
+  // If the worker is Sleeping (not a peripheral / no central URL), no
+  // cycle will ever happen. Return immediately.
+  if matches!(initial_state, crate::worker::WorkerState::Sleeping) {
     return Ok(ApiResponse::success(AwaitCycleResponse {
-      worker_state: format!("{:?}", current_state),
-      last_sync_at: current_last_sync.map(|t| t.to_rfc3339()),
+      worker_state: format!("{:?}", initial_state),
+      last_sync_at: initial_last_sync.map(|t| t.to_rfc3339()),
       completed: false,
     }));
   }
 
-  // If a sync already completed after the `since` timestamp, return immediately.
-  if let (Some(since_ts), Some(last_sync)) = (since, current_last_sync) {
+  // If the caller provided a `since` threshold that's already satisfied,
+  // return immediately.
+  if let (Some(since_ts), Some(last_sync)) = (since, initial_last_sync) {
     if last_sync >= since_ts {
       return Ok(ApiResponse::success(AwaitCycleResponse {
-        worker_state: format!("{:?}", current_state),
+        worker_state: format!("{:?}", initial_state),
         last_sync_at: Some(last_sync.to_rfc3339()),
         completed: true,
       }));
     }
   }
 
-  // Wait for the next cycle completion (notification was registered above)
-  let result =
-    tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), notification).await;
+  // Poll both counters. Break out as soon as either:
+  //   (a) cycles_completed advances past initial_cycles → at least one
+  //       full sync_once finished since the call, peripheral has pulled
+  //       whatever Central had as of that cycle's probe; OR
+  //   (b) ticks_observed advances at least twice past initial_ticks AND
+  //       the worker state is OnlineIdle → the worker has definitely
+  //       probed Central at least once since the call started, found no
+  //       work, and settled. Requiring TWO ticks rather than one
+  //       guarantees at least one probe happened entirely within the
+  //       endpoint's wait window (the first observed advance may reflect
+  //       a tick that began before the call).
+  //
+  // Also break if a `since` threshold gets satisfied, or the timeout
+  // elapses. We poll instead of awaiting a `Notify` because notifications
+  // are lost to listeners that aren't subscribed at the moment of
+  // `notify_waiters()`.
+  let deadline =
+    tokio::time::Instant::now() + std::time::Duration::from_secs(timeout_secs);
+  let poll_interval = std::time::Duration::from_millis(50);
 
-  let status = state.worker_status.read().await;
-  Ok(ApiResponse::success(AwaitCycleResponse {
-    worker_state: format!("{:?}", status.state),
-    last_sync_at: status.last_sync_at.map(|t| t.to_rfc3339()),
-    completed: result.is_ok(),
-  }))
+  loop {
+    let (cycles, ticks, cur_state, cur_last_sync) = {
+      let status = state.worker_status.read().await;
+      (
+        status.cycle_count(),
+        status.tick_count(),
+        status.state,
+        status.last_sync_at,
+      )
+    };
+
+    // A cycle finished after the call started — definitely caught up to
+    // whatever Central had at the time of the probe.
+    if cycles > initial_cycles {
+      return Ok(ApiResponse::success(AwaitCycleResponse {
+        worker_state: format!("{:?}", cur_state),
+        last_sync_at: cur_last_sync.map(|t| t.to_rfc3339()),
+        completed: true,
+      }));
+    }
+
+    if let (Some(since_ts), Some(last_sync)) = (since, cur_last_sync) {
+      if last_sync >= since_ts {
+        return Ok(ApiResponse::success(AwaitCycleResponse {
+          worker_state: format!("{:?}", cur_state),
+          last_sync_at: Some(last_sync.to_rfc3339()),
+          completed: true,
+        }));
+      }
+    }
+
+    // At least two ticks have elapsed AND the worker is idle → the
+    // worker has probed Central inside our wait window and found nothing
+    // to do. Peripheral is caught up.
+    if ticks >= initial_ticks.saturating_add(2)
+      && matches!(cur_state, crate::worker::WorkerState::OnlineIdle)
+    {
+      return Ok(ApiResponse::success(AwaitCycleResponse {
+        worker_state: format!("{:?}", cur_state),
+        last_sync_at: cur_last_sync.map(|t| t.to_rfc3339()),
+        completed: true,
+      }));
+    }
+
+    if tokio::time::Instant::now() >= deadline {
+      return Ok(ApiResponse::success(AwaitCycleResponse {
+        worker_state: format!("{:?}", cur_state),
+        last_sync_at: cur_last_sync.map(|t| t.to_rfc3339()),
+        completed: false,
+      }));
+    }
+
+    tokio::time::sleep(poll_interval).await;
+  }
 }
 
 pub(super) fn status_routes(state: Arc<ApiState>) -> OpenApiRouter {

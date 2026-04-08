@@ -67,10 +67,7 @@ impl SyncService {
   /// empty, the scope is catalog-only (global tables only). This is what
   /// lets the worker's `has_updates` check avoid hot-polling when Central
   /// has activity on bases the caller does not serve.
-  pub async fn sync_status(
-    &self,
-    base_ids: &[Uuid],
-  ) -> Result<SyncStatusResponse, ApiError> {
+  pub async fn sync_status(&self, base_ids: &[Uuid]) -> Result<SyncStatusResponse, ApiError> {
     let local_node_id = self.cfg.node.db_id;
     let instance_row = database_instance::Entity::find_by_id(local_node_id)
       .one(self.db.as_ref())
