@@ -1,16 +1,10 @@
-use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityTrait,
-  Order,
-  QueryFilter,
-  QueryOrder,
-  QuerySelect,
-  TransactionTrait,
-};
+use sea_orm::{ColumnTrait, Condition, EntityTrait, Order, QueryFilter, QueryOrder, QuerySelect};
 use uuid::Uuid;
 
-use super::{helpers::targeted_base_condition, SyncService};
+use super::{
+  helpers::{excluded_sync_tables, scope_condition_for},
+  SyncService,
+};
 use crate::{
   api::ApiError,
   db::ops::list_all,
@@ -119,8 +113,21 @@ impl SyncService {
   }
 
   /// Pull audit logs for a requesting node.
-  /// `base_ids` is provided by the requesting peripheral — Central filters accordingly.
-  /// Empty `base_ids` = catalog-only sync (global tables only).
+  ///
+  /// Returns logs matching the requester's scope with `id > last_audit_log_id`,
+  /// ordered by id ascending, up to `limit` rows (default 1000, capped at 1000).
+  /// `base_ids` is provided by the requesting peripheral — Central filters
+  /// accordingly. An empty `base_ids` slice means catalog-only scope
+  /// (global tables only).
+  ///
+  /// The `highest_evaluated_id` in the response is the id of the last log in
+  /// the batch, or `last_audit_log_id` if no logs matched. It is NOT the max
+  /// audit_log id in Central's table — that optimization used to cause a
+  /// leapfrog bug where the peripheral's PULL watermark advanced past logs it
+  /// had never actually processed under its scope. Correct watermark-advancement
+  /// discipline now lives on the peripheral side in `apply_pulled_logs`, which
+  /// is guarded by `base_discriminant`. Central just reports what it actually
+  /// returned.
   pub async fn pull_logs(
     &self,
     last_audit_log_id: Uuid,
@@ -128,71 +135,17 @@ impl SyncService {
     limit: Option<u64>,
   ) -> Result<PullAuditLogsResponse, ApiError> {
     let max_limit = limit.unwrap_or(1000).min(1000);
-    let excluded_tables = vec![
-      "roles".to_string(),
-      "local".to_string(),
-      "node_base_assignments".to_string(),
-    ];
-    let global_tables = vec![
-      "companies".to_string(),
-      "products".to_string(),
-      "product_groups".to_string(),
-      "product_types".to_string(),
-      "bases".to_string(),
-      "warehouses".to_string(),
-      "storages".to_string(),
-      "ports".to_string(),
-      "users".to_string(),
-      "database_instances".to_string(),
-    ];
-
-    let scope_condition = if base_ids.is_empty() {
-      // No base IDs provided → catalog-only sync (global tables)
-      Condition::any().add(audit_log::Column::TableName.is_in(global_tables))
-    } else {
-      // Peripheral requesting specific bases → global + targeted for each base
-      let mut cond = Condition::any().add(audit_log::Column::TableName.is_in(global_tables));
-      for base_id in base_ids {
-        cond = cond.add(targeted_base_condition(&base_id.to_string()));
-      }
-      cond
-    };
-
-    // Run both queries in a single transaction for snapshot isolation.
-    // Without this, the fallback `highest_evaluated_id` query can see a newer
-    // snapshot than the scope-filtered query, causing the watermark to leapfrog
-    // past logs that were committed between the two queries.
-    let txn = self.db.begin().await?;
 
     let logs = audit_log::Entity::find()
       .filter(audit_log::Column::Id.gt(last_audit_log_id))
-      .filter(audit_log::Column::TableName.is_not_in(excluded_tables))
-      .filter(scope_condition)
+      .filter(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
+      .filter(scope_condition_for(base_ids))
       .order_by(audit_log::Column::Id, Order::Asc)
       .limit(max_limit)
-      .all(&txn)
+      .all(self.db.as_ref())
       .await?;
 
-    let highest_evaluated_id = if let Some(last) = logs.last() {
-      last.id
-    } else {
-      // No scope-matching logs in the `id > last_audit_log_id` range. Advance
-      // the watermark past all logs in that range that were evaluated but not
-      // selected. Using the same `id > last_audit_log_id` filter (and the same
-      // snapshot via the transaction) guarantees we only advance past logs the
-      // scope query actually considered.
-      let latest_log = audit_log::Entity::find()
-        .filter(audit_log::Column::Id.gt(last_audit_log_id))
-        .order_by_desc(audit_log::Column::Id)
-        .one(&txn)
-        .await?;
-      match latest_log {
-        Some(log) => log.id,
-        None => last_audit_log_id,
-      }
-    };
-
-    txn.commit().await?;
+    let highest_evaluated_id = logs.last().map(|l| l.id).unwrap_or(last_audit_log_id);
 
     Ok(PullAuditLogsResponse {
       highest_evaluated_id,
