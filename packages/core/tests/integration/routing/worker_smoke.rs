@@ -67,7 +67,11 @@ async fn worker_smoke_pull_and_push() {
         let c = c.clone();
         let url = url.clone();
         let tok = tok.clone();
-        async move { get_acceptance_composite_json(&c, &url, &tok, acc_id).await.is_some() }
+        async move {
+          get_acceptance_composite_json(&c, &url, &tok, acc_id)
+            .await
+            .is_some()
+        }
       },
       SYNC_TIMEOUT,
       "acceptance created on Central should sync to Peripheral",
@@ -99,9 +103,7 @@ async fn worker_smoke_pull_and_push() {
       let c = client.clone();
       let url = central.url.clone();
       let tok = central.token.clone();
-      async move {
-        has_catalog_entity(&c, &url, &tok, "/catalog/companies", company_id).await
-      }
+      async move { has_catalog_entity(&c, &url, &tok, "/catalog/companies", company_id).await }
     },
     Duration::from_secs(20),
     "company created on PA should propagate to Central",
@@ -109,12 +111,7 @@ async fn worker_smoke_pull_and_push() {
   .await;
 
   // 9. Assert worker lastSyncAt is recent
-  let status = api_get(
-    &client,
-    &format!("{}/node/status", pa.url),
-    &pa.token,
-  )
-  .await;
+  let status = api_get(&client, &format!("{}/node/status", pa.url), &pa.token).await;
   let last_sync = status["lastSyncAt"].as_str();
   assert!(
     last_sync.is_some(),

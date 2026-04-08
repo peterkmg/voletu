@@ -45,14 +45,14 @@ async fn incremental_pull_advances_watermark_correctly() {
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   // Verify wave 1 arrived
-  let pa_accs = crate::common::integration::api_get(
-    &client,
-    &format!("{}/acceptance", pa.url),
-    &pa.token,
-  )
-  .await;
+  let pa_accs =
+    crate::common::integration::api_get(&client, &format!("{}/acceptance", pa.url), &pa.token)
+      .await;
   let wave1_count = pa_accs.as_array().unwrap().len();
-  assert!(wave1_count > 0, "wave 1 should have synced at least one acceptance");
+  assert!(
+    wave1_count > 0,
+    "wave 1 should have synced at least one acceptance"
+  );
 
   // Wave 2
   let acc2 = create_acceptance_via_api(
@@ -77,12 +77,9 @@ async fn incremental_pull_advances_watermark_correctly() {
       .is_some(),
     "wave 2 acceptance should be on PA"
   );
-  let pa_accs_after = crate::common::integration::api_get(
-    &client,
-    &format!("{}/acceptance", pa.url),
-    &pa.token,
-  )
-  .await;
+  let pa_accs_after =
+    crate::common::integration::api_get(&client, &format!("{}/acceptance", pa.url), &pa.token)
+      .await;
   let wave2_count = pa_accs_after.as_array().unwrap().len();
   assert!(
     wave2_count > wave1_count,

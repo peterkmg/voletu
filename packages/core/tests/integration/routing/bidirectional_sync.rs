@@ -54,7 +54,11 @@ async fn bidirectional_sync_peripheral_to_central_to_peripheral() {
       let c = client.clone();
       let url = pb.url.clone();
       let tok = pb.token.clone();
-      async move { get_acceptance_composite_json(&c, &url, &tok, acc_id).await.is_some() }
+      async move {
+        get_acceptance_composite_json(&c, &url, &tok, acc_id)
+          .await
+          .is_some()
+      }
     },
     Duration::from_secs(20),
     "acceptance should propagate from PA to PB",

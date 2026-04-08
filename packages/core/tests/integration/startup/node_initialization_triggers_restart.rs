@@ -13,11 +13,16 @@ use reqwest::{Client, StatusCode};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::common::integration::{
-  spawn_server_with_sync_config, temp_db_path, test_sync_config, wait_for_health,
-  wait_for_login_token,
+use crate::common::{
+  integration::{
+    spawn_server_with_sync_config,
+    temp_db_path,
+    test_sync_config,
+    wait_for_health,
+    wait_for_login_token,
+  },
+  payloads::{auth_login, node_initialize_replace_with_node_type},
 };
-use crate::common::payloads::{auth_login, node_initialize_replace_with_node_type};
 
 #[tokio::test]
 async fn initialize_endpoint_triggers_restart_and_reloads_node_configuration() {

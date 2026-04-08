@@ -15,12 +15,17 @@
 
 use std::time::Duration;
 
-use crate::common::integration::{
-  api_post, await_sync_cycle, get_all_ledger_entries, get_physical_transfer_composite_json,
-  seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
-};
-
 use super::parse_doc_id;
+use crate::common::integration::{
+  api_post,
+  await_sync_cycle,
+  get_all_ledger_entries,
+  get_physical_transfer_composite_json,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
+};
 
 #[tokio::test]
 async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
@@ -29,11 +34,11 @@ async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
   let pa = setup_peripheral_via_api(&client, &temp_db_path("s5-pa"), &central, &[
-    catalog.base_alpha,
+    catalog.base_alpha
   ])
   .await;
   let pb = setup_peripheral_via_api(&client, &temp_db_path("s5-pb"), &central, &[
-    catalog.base_beta,
+    catalog.base_beta
   ])
   .await;
 
@@ -111,10 +116,7 @@ async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
 
   let _acc_2 = api_post(
     &client,
-    &format!(
-      "{}/acceptance/composite/save-and-execute",
-      central.url
-    ),
+    &format!("{}/acceptance/composite/save-and-execute", central.url),
     &central.token,
     serde_json::json!({
       "documentNumber": "ACC-ALPHA-W2",

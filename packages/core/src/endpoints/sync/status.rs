@@ -102,11 +102,8 @@ async fn sync_await_cycle(
   }
 
   // Wait for the next cycle completion (notification was registered above)
-  let result = tokio::time::timeout(
-    std::time::Duration::from_secs(timeout_secs),
-    notification,
-  )
-  .await;
+  let result =
+    tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), notification).await;
 
   let status = state.worker_status.read().await;
   Ok(ApiResponse::success(AwaitCycleResponse {

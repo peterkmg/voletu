@@ -9,12 +9,16 @@
 
 use std::time::Duration;
 
-use crate::common::integration::{
-  await_sync_cycle, create_physical_transfer_via_api, get_physical_transfer_composite_json,
-  seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
-};
-
 use super::parse_doc_id;
+use crate::common::integration::{
+  await_sync_cycle,
+  create_physical_transfer_via_api,
+  get_physical_transfer_composite_json,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
+};
 
 #[tokio::test]
 async fn shared_target_physical_transfer_converges_via_worker() {
@@ -23,11 +27,11 @@ async fn shared_target_physical_transfer_converges_via_worker() {
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
   let pa = setup_peripheral_via_api(&client, &temp_db_path("s4-pa"), &central, &[
-    catalog.base_alpha,
+    catalog.base_alpha
   ])
   .await;
   let pb = setup_peripheral_via_api(&client, &temp_db_path("s4-pb"), &central, &[
-    catalog.base_beta,
+    catalog.base_beta
   ])
   .await;
 
@@ -51,10 +55,8 @@ async fn shared_target_physical_transfer_converges_via_worker() {
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
   // Both peripherals should have the transfer
-  let pa_t =
-    get_physical_transfer_composite_json(&client, &pa.url, &pa.token, transfer_id).await;
-  let pb_t =
-    get_physical_transfer_composite_json(&client, &pb.url, &pb.token, transfer_id).await;
+  let pa_t = get_physical_transfer_composite_json(&client, &pa.url, &pa.token, transfer_id).await;
+  let pb_t = get_physical_transfer_composite_json(&client, &pb.url, &pb.token, transfer_id).await;
   assert!(
     pa_t.is_some(),
     "PA (base_alpha) should have cross-base transfer"
