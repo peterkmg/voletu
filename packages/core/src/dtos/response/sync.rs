@@ -21,6 +21,10 @@ pub struct SyncWatermarkResponse {
   pub target_node_id: Uuid,
   pub direction: SyncDirection,
   pub last_audit_log_id: Uuid,
+  /// Canonical string of base UUIDs that were assigned to this node when the
+  /// watermark was last written. Empty means catalog-only scope. See
+  /// `docs/Sync.md` for semantics.
+  pub base_discriminant: String,
   pub synced_at: String,
 }
 
@@ -31,6 +35,7 @@ impl From<sync_watermark::Model> for SyncWatermarkResponse {
       target_node_id: row.target_node_id,
       direction: row.direction,
       last_audit_log_id: row.last_audit_log_id,
+      base_discriminant: row.base_discriminant,
       synced_at: row.synced_at.to_rfc3339(),
     }
   }

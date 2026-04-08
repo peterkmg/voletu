@@ -12,6 +12,14 @@ pub struct Model {
   pub target_node_id: Uuid,
   pub direction: enums::SyncDirection,
   pub last_audit_log_id: Uuid,
+  /// Canonical, sorted, comma-joined list of base UUIDs that were assigned to
+  /// this node when the watermark was last written. Empty string means
+  /// "catalog-only scope". Used as an invalidation token — when the current
+  /// base assignments no longer match this stored value, the worker resets the
+  /// pull cursor to nil and re-scans under the new scope. See `docs/Sync.md`
+  /// for the full model.
+  #[sea_orm(default_value = "")]
+  pub base_discriminant: String,
   pub synced_at: DateTimeUtc,
 }
 
