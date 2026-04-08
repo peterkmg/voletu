@@ -4,9 +4,10 @@ use chrono::{DateTime, Utc};
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, IntoActiveModel};
 use uuid::Uuid;
 use voletu_core::{
+  api::ApiError,
   context::audit::with_audit_context,
   dtos::PushAuditLogRequest,
-  entities::{audit_log, company, database_instance, local, sync_watermark},
+  entities::{audit_log, company, database_instance, local, node_base_assignment, sync_watermark},
   enums::{self, AuditAction, SyncDirection},
   services::sync::SyncService,
 };
@@ -249,6 +250,78 @@ async fn sync_status_reflects_local_topology_and_local_row_keeps_central_url() {
       updated_local_row.central_api_url.as_deref(),
       Some("http://central.local:3030")
     );
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn apply_pulled_logs_advances_watermark_within_same_transaction() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let central_id = Uuid::now_v7();
+    let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
+
+    // Apply an empty batch under the empty discriminant (catalog-only scope
+    // with no assignments). The method should succeed and write a watermark
+    // row with the given last_audit_log_id and base_discriminant="".
+    let target_last_id = Uuid::now_v7();
+    service
+      .apply_pulled_logs(&[], central_id, target_last_id, String::new())
+      .await
+      .expect("apply_pulled_logs should succeed with empty batch");
+
+    let (last_id, discriminant) = service
+      .load_pull_watermark(central_id, SyncDirection::Pull)
+      .await
+      .expect("watermark load");
+    assert_eq!(last_id, target_last_id);
+    assert_eq!(discriminant, "");
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn apply_pulled_logs_aborts_when_discriminant_drifted() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    // Real database_instance row so the node_base_assignment FK is satisfied.
+    let local_node_id = seed_sync_node(&db, catalog.base_id, "PA drift test").await;
+    let central_id = Uuid::now_v7();
+    let service = sync_service_with_node(db.clone(), local_node_id);
+
+    // Precondition: the local node has at least one base assignment, so its
+    // current discriminant is NOT empty.
+    node_base_assignment::ActiveModel {
+      node_id: Set(local_node_id),
+      base_id: Set(catalog.base_id),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    // Caller passes expected_discriminant="" (as if the pull was issued before
+    // the assignment was added). apply_pulled_logs must abort with Conflict.
+    let err = service
+      .apply_pulled_logs(&[], central_id, Uuid::now_v7(), String::new())
+      .await
+      .expect_err("apply_pulled_logs should abort on discriminant drift");
+
+    match err {
+      ApiError::Conflict(msg) => {
+        assert!(msg.contains("discriminant"), "unexpected message: {msg}");
+      }
+      other => panic!("expected Conflict, got {other:?}"),
+    }
+
+    // Watermark must NOT be written — the transaction rolled back.
+    let (last_id, disc) = service
+      .load_pull_watermark(central_id, SyncDirection::Pull)
+      .await
+      .unwrap();
+    assert_eq!(last_id, Uuid::nil());
+    assert_eq!(disc, "");
   })
   .await;
 }
