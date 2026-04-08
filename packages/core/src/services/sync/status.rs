@@ -1,4 +1,13 @@
-use sea_orm::{ColumnTrait, Condition, EntityTrait, Order, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{
+  ColumnTrait,
+  Condition,
+  EntityTrait,
+  Order,
+  QueryFilter,
+  QueryOrder,
+  QuerySelect,
+  TransactionTrait,
+};
 use uuid::Uuid;
 
 use super::{helpers::targeted_base_condition, SyncService};
@@ -149,27 +158,41 @@ impl SyncService {
       cond
     };
 
+    // Run both queries in a single transaction for snapshot isolation.
+    // Without this, the fallback `highest_evaluated_id` query can see a newer
+    // snapshot than the scope-filtered query, causing the watermark to leapfrog
+    // past logs that were committed between the two queries.
+    let txn = self.db.begin().await?;
+
     let logs = audit_log::Entity::find()
       .filter(audit_log::Column::Id.gt(last_audit_log_id))
       .filter(audit_log::Column::TableName.is_not_in(excluded_tables))
       .filter(scope_condition)
       .order_by(audit_log::Column::Id, Order::Asc)
       .limit(max_limit)
-      .all(self.db.as_ref())
+      .all(&txn)
       .await?;
 
     let highest_evaluated_id = if let Some(last) = logs.last() {
       last.id
     } else {
+      // No scope-matching logs in the `id > last_audit_log_id` range. Advance
+      // the watermark past all logs in that range that were evaluated but not
+      // selected. Using the same `id > last_audit_log_id` filter (and the same
+      // snapshot via the transaction) guarantees we only advance past logs the
+      // scope query actually considered.
       let latest_log = audit_log::Entity::find()
+        .filter(audit_log::Column::Id.gt(last_audit_log_id))
         .order_by_desc(audit_log::Column::Id)
-        .one(self.db.as_ref())
+        .one(&txn)
         .await?;
       match latest_log {
         Some(log) => log.id,
         None => last_audit_log_id,
       }
     };
+
+    txn.commit().await?;
 
     Ok(PullAuditLogsResponse {
       highest_evaluated_id,
