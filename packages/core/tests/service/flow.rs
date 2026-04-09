@@ -7,7 +7,14 @@ use voletu_core::{
   context::audit::with_audit_context,
   entities::{acceptance_document, acceptance_item, truck_waybill, truck_waybill_item},
   enums::{self, PipelineStatus},
-  services::{audit::AuditService, document::DocumentService, ledger::LedgerService},
+  services::{
+    audit::AuditService,
+    document::{
+      query::{AcceptanceFlatQuerySpec, TruckReceiptPipelineQuerySpec},
+      DocumentService,
+    },
+    ledger::LedgerService,
+  },
 };
 
 use crate::common::{catalog_seed::seed_inventory_catalog, setup_db};
@@ -119,7 +126,7 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
 
     // All rows
     let all = svc
-      .truck_receipt_pipeline_query(None, None, Some(1), Some(50))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec::list(Some(1), Some(50)))
       .await
       .unwrap();
     assert_eq!(all.len(), 3);
@@ -150,21 +157,30 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
 
     // Filter by status
     let pending_only = svc
-      .truck_receipt_pipeline_query(Some(PipelineStatus::Pending), None, Some(1), Some(50))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
+        pipeline_status: Some(PipelineStatus::Pending),
+        ..TruckReceiptPipelineQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(pending_only.len(), 1);
     assert_eq!(pending_only[0].basis_document_number, "TWB-001");
 
     let draft_only = svc
-      .truck_receipt_pipeline_query(Some(PipelineStatus::Draft), None, Some(1), Some(50))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
+        pipeline_status: Some(PipelineStatus::Draft),
+        ..TruckReceiptPipelineQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(draft_only.len(), 1);
     assert_eq!(draft_only[0].basis_document_number, "TWB-002");
 
     let executed_only = svc
-      .truck_receipt_pipeline_query(Some(PipelineStatus::Executed), None, Some(1), Some(50))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
+        pipeline_status: Some(PipelineStatus::Executed),
+        ..TruckReceiptPipelineQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(executed_only.len(), 1);
@@ -172,24 +188,30 @@ async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
 
     // Filter by contractor
     let by_sender = svc
-      .truck_receipt_pipeline_query(None, Some(fix.sender_id), Some(1), Some(50))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
+        contractor_id: Some(fix.sender_id),
+        ..TruckReceiptPipelineQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(by_sender.len(), 3);
     let by_nobody = svc
-      .truck_receipt_pipeline_query(None, Some(Uuid::now_v7()), Some(1), Some(50))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
+        contractor_id: Some(Uuid::now_v7()),
+        ..TruckReceiptPipelineQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(by_nobody.len(), 0);
 
     // Pagination
     let page1 = svc
-      .truck_receipt_pipeline_query(None, None, Some(1), Some(2))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec::list(Some(1), Some(2)))
       .await
       .unwrap();
     assert_eq!(page1.len(), 2);
     let page2 = svc
-      .truck_receipt_pipeline_query(None, None, Some(2), Some(2))
+      .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec::list(Some(2), Some(2)))
       .await
       .unwrap();
     assert_eq!(page2.len(), 1);
@@ -275,7 +297,7 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
 
     // --- All rows: should get 3 (2 items from doc1 + 1 item from doc2) ---
     let all = svc
-      .acceptance_flat_query(None, Some(1), Some(50))
+      .acceptance_flat_query(AcceptanceFlatQuerySpec::list(Some(1), Some(50)))
       .await
       .unwrap();
     assert_eq!(all.len(), 3, "Expected 3 flat rows (2 + 1 items)");
@@ -313,14 +335,20 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
 
     // --- Filter by status ---
     let drafts = svc
-      .acceptance_flat_query(Some(enums::DocumentStatus::Draft), Some(1), Some(50))
+      .acceptance_flat_query(AcceptanceFlatQuerySpec {
+        status: Some(enums::DocumentStatus::Draft),
+        ..AcceptanceFlatQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(drafts.len(), 2, "Only draft doc's 2 items");
     assert!(drafts.iter().all(|r| r.document_number == "ACC-FLAT-001"));
 
     let posted = svc
-      .acceptance_flat_query(Some(enums::DocumentStatus::Executed), Some(1), Some(50))
+      .acceptance_flat_query(AcceptanceFlatQuerySpec {
+        status: Some(enums::DocumentStatus::Executed),
+        ..AcceptanceFlatQuerySpec::list(Some(1), Some(50))
+      })
       .await
       .unwrap();
     assert_eq!(posted.len(), 1, "Only posted doc's 1 item");

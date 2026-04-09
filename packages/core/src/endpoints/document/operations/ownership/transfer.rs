@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::document::query::OwnershipTransferQuerySpec;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -6,6 +7,16 @@ struct OwnershipTransferQueryParams {
   status: Option<enums::DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<OwnershipTransferQueryParams> for OwnershipTransferQuerySpec {
+  fn from(value: OwnershipTransferQueryParams) -> Self {
+    Self {
+      status: value.status,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -28,17 +39,18 @@ async fn ownership_transfer_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<OwnershipTransferResponse>> {
+  let query = OwnershipTransferQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .ownership_transfer_composite_query_with_names(None, pagination.page, pagination.per_page)
+      .ownership_transfer_composite_query_with_names(query)
       .await?
   } else {
     state
       .svc
       .document
-      .ownership_transfer_composite_query(None, pagination.page, pagination.per_page)
+      .ownership_transfer_composite_query(query)
       .await?
   };
   Ok(ApiResponse::success(rows))
@@ -98,25 +110,18 @@ async fn ownership_transfer_query(
   Query(query): Query<OwnershipTransferQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<OwnershipTransferResponse>> {
+  let query = OwnershipTransferQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .ownership_transfer_composite_query_with_names(
-        query.status,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .ownership_transfer_composite_query_with_names(query)
       .await?
   } else {
     state
       .svc
       .document
-      .ownership_transfer_composite_query(
-        query.status,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .ownership_transfer_composite_query(query)
       .await?
   };
   Ok(ApiResponse::success(rows))

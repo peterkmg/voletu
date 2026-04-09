@@ -8,16 +8,8 @@ use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  api_get,
-  api_post,
-  create_acceptance_via_api,
-  get_acceptance_composite_json,
-  has_catalog_entity,
-  poll_until,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  temp_db_path,
+  api_get, api_post, create_acceptance_via_api, get_acceptance_composite_json, has_catalog_entity,
+  poll_until, seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
   wait_for_worker_online,
 };
 
@@ -34,9 +26,12 @@ async fn worker_smoke_pull_and_push() {
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
   // 3. Setup peripheral (wait_for_worker_online happens inside setup)
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("smoke-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("smoke-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
 
   // 3b. Verify worker is online

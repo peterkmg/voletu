@@ -1,28 +1,21 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
-  TransactionTrait,
+  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::PhysicalTransferFlatRow,
-    CreatePhysicalTransferItemRequest,
-    CreatePhysicalTransferRequest,
-    PhysicalTransferResponse,
+    response::pipeline::PhysicalTransferFlatRow, CreatePhysicalTransferItemRequest,
+    CreatePhysicalTransferRequest, PhysicalTransferResponse,
   },
   entities::{company, physical_storage_transfer, physical_transfer_item, product, storage},
-  enums,
-  services::document::DocumentService,
+  services::document::{
+    query::{PhysicalTransferFlatQuerySpec, PhysicalTransferQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
@@ -89,13 +82,79 @@ impl DocumentService {
     Ok(response)
   }
 
+  pub(super) async fn physical_transfer_model(
+    &self,
+    id: Uuid,
+  ) -> Result<physical_storage_transfer::ModelEx, ApiError> {
+    physical_storage_transfer::Entity::load()
+      .filter_by_id(id)
+      .filter(physical_storage_transfer::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with((physical_transfer_item::Entity, product::Entity))
+      .with((physical_transfer_item::Entity, storage::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Physical transfer '{}' not found", id)))
+  }
+
+  pub(super) async fn physical_transfer_query_models(
+    &self,
+    query: &PhysicalTransferQuerySpec,
+  ) -> Result<Vec<physical_storage_transfer::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+
+    let mut condition = Condition::all();
+    condition = condition.add(physical_storage_transfer::Column::DeletedAt.is_null());
+
+    if let Some(document_number) = query.document_number.as_deref() {
+      condition =
+        condition.add(physical_storage_transfer::Column::DocumentNumber.contains(document_number));
+    }
+
+    if let Some(status) = query.status {
+      condition = condition.add(physical_storage_transfer::Column::Status.eq(status));
+    }
+
+    physical_storage_transfer::Entity::load()
+      .filter(condition)
+      .with(company::Entity)
+      .with((physical_transfer_item::Entity, product::Entity))
+      .with((physical_transfer_item::Entity, storage::Entity))
+      .order_by_desc(physical_storage_transfer::Column::Date)
+      .paginate(self.db.as_ref(), per_page)
+      .fetch_page(page - 1)
+      .await
+      .map_err(Into::into)
+  }
+
+  pub(super) async fn physical_transfer_to_storage_names(
+    &self,
+    to_storage_ids: impl IntoIterator<Item = Uuid>,
+  ) -> Result<HashMap<Uuid, String>, ApiError> {
+    let ids = to_storage_ids.into_iter().collect::<HashSet<_>>();
+    if ids.is_empty() {
+      return Ok(HashMap::new());
+    }
+
+    let storages = storage::Entity::load()
+      .filter(storage::Column::Id.is_in(ids.into_iter().collect::<Vec<_>>()))
+      .all(self.db.as_ref())
+      .await?;
+
+    Ok(
+      storages
+        .into_iter()
+        .map(|storage| (storage.id, storage.common_name))
+        .collect(),
+    )
+  }
+
   pub async fn physical_transfer_composite_list(
     &self,
   ) -> Result<Vec<PhysicalTransferResponse>, ApiError> {
-    let docs = physical_storage_transfer::Entity::load()
-      .filter(physical_storage_transfer::Column::DeletedAt.is_null())
-      .with(physical_transfer_item::Entity)
-      .all(self.db.as_ref())
+    let docs = self
+      .physical_transfer_query_models(&PhysicalTransferQuerySpec::default())
       .await?;
 
     docs
@@ -108,57 +167,21 @@ impl DocumentService {
     &self,
     id: Uuid,
   ) -> Result<PhysicalTransferResponse, ApiError> {
-    let doc = physical_storage_transfer::Entity::load()
-      .filter_by_id(id)
-      .filter(physical_storage_transfer::Column::DeletedAt.is_null())
-      .with(physical_transfer_item::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| ApiError::NotFound(format!("Physical transfer '{}' not found", id)))?;
+    let doc = self.physical_transfer_model(id).await?;
 
     PhysicalTransferResponse::try_from(doc)
   }
 
   pub async fn physical_transfer_composite_query(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: PhysicalTransferQuerySpec,
   ) -> Result<Vec<PhysicalTransferResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-
-    let mut condition = Condition::all();
-    condition = condition.add(physical_storage_transfer::Column::DeletedAt.is_null());
-
-    if let Some(document_number) = document_number {
-      condition =
-        condition.add(physical_storage_transfer::Column::DocumentNumber.contains(document_number));
-    }
-
-    if let Some(status) = status {
-      condition = condition.add(physical_storage_transfer::Column::Status.eq(status));
-    }
-
-    let docs = physical_storage_transfer::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
-    let mut out = Vec::with_capacity(docs.len());
-    for doc in docs {
-      let loaded = physical_storage_transfer::Entity::load()
-        .filter_by_id(doc.id)
-        .filter(physical_storage_transfer::Column::DeletedAt.is_null())
-        .with(physical_transfer_item::Entity)
-        .one(self.db.as_ref())
-        .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Physical transfer '{}' not found", doc.id)))?;
-      out.push(PhysicalTransferResponse::try_from(loaded)?);
-    }
-
-    Ok(out)
+    self
+      .physical_transfer_query_models(&query)
+      .await?
+      .into_iter()
+      .map(PhysicalTransferResponse::try_from)
+      .collect()
   }
 
   /// Returns one row per physical transfer item with document fields repeated.
@@ -169,46 +192,29 @@ impl DocumentService {
   /// in-memory by batch-fetching storage records for all `to_storage_id` values.
   pub async fn physical_transfer_flat_query(
     &self,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: PhysicalTransferFlatQuerySpec,
   ) -> Result<Vec<PhysicalTransferFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-    let db = self.db.as_ref();
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
 
-    let mut cond = Condition::all().add(physical_storage_transfer::Column::DeletedAt.is_null());
-    if let Some(s) = status {
-      cond = cond.add(physical_storage_transfer::Column::Status.eq(s));
-    }
-
-    let docs: Vec<physical_storage_transfer::ModelEx> = physical_storage_transfer::Entity::load()
-      .filter(cond)
-      .with(company::Entity)
-      .with((physical_transfer_item::Entity, product::Entity))
-      .with((physical_transfer_item::Entity, storage::Entity)) // from_storage
-      .order_by_desc(physical_storage_transfer::Column::Date)
-      .paginate(db, per_page)
-      .fetch_page(page - 1)
+    let docs = self
+      .physical_transfer_query_models(&PhysicalTransferQuerySpec {
+        status: query.status,
+        page: Some(page),
+        per_page: Some(per_page),
+        ..PhysicalTransferQuerySpec::default()
+      })
       .await?;
 
     // Collect all to_storage_id values and batch-fetch storage names.
-    let to_storage_ids: Vec<Uuid> = docs
-      .iter()
-      .flat_map(|d| d.items.iter().map(|i| i.to_storage_id))
-      .collect();
-
-    let to_storage_map: HashMap<Uuid, String> = if to_storage_ids.is_empty() {
-      HashMap::new()
-    } else {
-      let storages = storage::Entity::find()
-        .filter(storage::Column::Id.is_in(to_storage_ids))
-        .all(db)
-        .await?;
-      storages
-        .into_iter()
-        .map(|s| (s.id, s.common_name))
-        .collect()
-    };
+    let to_storage_map = self
+      .physical_transfer_to_storage_names(
+        docs
+          .iter()
+          .flat_map(|d| d.items.iter().map(|i| i.to_storage_id))
+          .collect::<Vec<_>>(),
+      )
+      .await?;
 
     let mut rows = Vec::new();
     for doc in &docs {

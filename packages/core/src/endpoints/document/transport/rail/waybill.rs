@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
 use super::*;
+use crate::services::document::query::RailWaybillQuerySpec;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -9,6 +10,17 @@ struct RailWaybillQueryParams {
   sender_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<RailWaybillQueryParams> for RailWaybillQuerySpec {
+  fn from(value: RailWaybillQueryParams) -> Self {
+    Self {
+      document_number: value.document_number,
+      sender_id: value.sender_id,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -31,18 +43,15 @@ async fn rail_waybill_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<RailWaybillResponse>> {
+  let query = RailWaybillQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .rail_waybill_query_with_names(None, None, pagination.page, pagination.per_page)
+      .rail_waybill_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .rail_waybill_query(None, None, pagination.page, pagination.per_page)
-      .await?
+    state.svc.document.rail_waybill_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }
@@ -69,28 +78,15 @@ async fn rail_waybill_query(
   Query(query): Query<RailWaybillQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<RailWaybillResponse>> {
+  let query = RailWaybillQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .rail_waybill_query_with_names(
-        query.document_number.as_deref(),
-        query.sender_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .rail_waybill_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .rail_waybill_query(
-        query.document_number.as_deref(),
-        query.sender_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
-      .await?
+    state.svc.document.rail_waybill_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }

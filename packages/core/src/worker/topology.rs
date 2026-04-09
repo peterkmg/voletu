@@ -1,11 +1,13 @@
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::{
-  db::ops::load_local_bootstrap,
   dtos::SyncWatermarkResponse,
-  entities::{database_instance, node_base_assignment},
   enums::SyncDirection,
+  services::system::{
+    database_instance::load_active_database_instance, local::load_local_bootstrap,
+    node_bases::load_node_base_ids as load_assigned_base_ids,
+  },
 };
 
 pub(super) async fn load_runtime_topology(
@@ -14,13 +16,9 @@ pub(super) async fn load_runtime_topology(
   let local_row = load_local_bootstrap(db)
     .await
     .map_err(|err| anyhow::anyhow!(err.to_string()))?;
-  let instance_row = database_instance::Entity::find_by_id(local_row.local_db_id)
-    .one(db)
-    .await?;
-  let instance = match instance_row {
-    Some(instance) => instance,
-    None => return Err(anyhow::anyhow!("Database instance row is missing")),
-  };
+  let instance = load_active_database_instance(db, local_row.local_db_id)
+    .await
+    .map_err(|err| anyhow::anyhow!(err.to_string()))?;
 
   let central_api_url = if let Some(value) = local_row.central_api_url.as_ref() {
     let trimmed = value.trim();
@@ -41,11 +39,9 @@ pub(super) async fn load_local_base_ids(
   db: &DatabaseConnection,
   node_id: Uuid,
 ) -> anyhow::Result<Vec<Uuid>> {
-  let rows = node_base_assignment::Entity::find()
-    .filter(node_base_assignment::Column::NodeId.eq(node_id))
-    .all(db)
-    .await?;
-  Ok(rows.into_iter().map(|r| r.base_id).collect())
+  load_assigned_base_ids(db, node_id)
+    .await
+    .map_err(Into::into)
 }
 
 /// Find the `(last_audit_log_id, base_discriminant)` pair for a given target

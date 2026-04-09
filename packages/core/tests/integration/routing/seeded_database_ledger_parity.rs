@@ -11,14 +11,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::common::integration::{
-  api_get,
-  await_sync_cycle,
-  dev_seed_via_api,
-  get_all_ledger_entries,
-  get_storages_for_base,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  temp_db_path,
+  api_get, await_sync_cycle, dev_seed_via_api, get_all_ledger_entries, get_storages_for_base,
+  setup_central_via_api, setup_peripheral_via_api, temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(30);
@@ -100,9 +94,12 @@ async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
 
   // Setup Peripheral with this base — initial sync happens during setup.
   // Run additional cycles to consume all seeded audit logs (seed creates many entries).
-  let peripheral = setup_peripheral_via_api(&client, &temp_db_path("r15-periph"), &central, &[
-    target_base_id,
-  ])
+  let peripheral = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r15-periph"),
+    &central,
+    &[target_base_id],
+  )
   .await;
 
   // Additional sync cycles to ensure all batched data arrives

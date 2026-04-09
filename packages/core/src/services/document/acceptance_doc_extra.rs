@@ -1,12 +1,5 @@
 use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
-  TransactionTrait,
+  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -14,12 +7,117 @@ use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::AcceptanceFlatRow},
   endpoints::query::NullableFilter,
-  entities::{acceptance_document, acceptance_item, company, product, storage},
-  enums,
-  services::document::DocumentService,
+  entities::{
+    acceptance_document, acceptance_item, company, dispatch_document, product, rail_waybill,
+    storage, truck_waybill,
+  },
+  services::document::{
+    query::{AcceptanceDocumentQuerySpec, AcceptanceFlatQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
+  pub(super) async fn acceptance_document_model(
+    &self,
+    id: Uuid,
+  ) -> Result<acceptance_document::ModelEx, ApiError> {
+    acceptance_document::Entity::load()
+      .filter_by_id(id)
+      .filter(acceptance_document::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(truck_waybill::Entity)
+      .with(rail_waybill::Entity)
+      .with(dispatch_document::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Acceptance document '{}' not found", id)))
+  }
+
+  pub(super) async fn acceptance_document_query_models(
+    &self,
+    query: &AcceptanceDocumentQuerySpec,
+  ) -> Result<Vec<acceptance_document::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+
+    let mut condition = Condition::all();
+    condition = condition.add(acceptance_document::Column::DeletedAt.is_null());
+
+    if let Some(document_number) = query.document_number.as_deref() {
+      condition =
+        condition.add(acceptance_document::Column::DocumentNumber.contains(document_number));
+    }
+
+    if let Some(status) = query.status {
+      condition = condition.add(acceptance_document::Column::Status.eq(status));
+    }
+
+    if let Some(filter) = query.truck_waybill_id {
+      match filter {
+        NullableFilter::IsNull => {
+          condition = condition.add(acceptance_document::Column::TruckWaybillId.is_null());
+        }
+        NullableFilter::IsNotNull => {
+          condition = condition.add(acceptance_document::Column::TruckWaybillId.is_not_null());
+        }
+      }
+    }
+
+    if let Some(filter) = query.rail_waybill_id {
+      match filter {
+        NullableFilter::IsNull => {
+          condition = condition.add(acceptance_document::Column::RailWaybillId.is_null());
+        }
+        NullableFilter::IsNotNull => {
+          condition = condition.add(acceptance_document::Column::RailWaybillId.is_not_null());
+        }
+      }
+    }
+
+    if let Some(filter) = query.transit_dispatch_id {
+      match filter {
+        NullableFilter::IsNull => {
+          condition = condition.add(acceptance_document::Column::TransitDispatchId.is_null());
+        }
+        NullableFilter::IsNotNull => {
+          condition = condition.add(acceptance_document::Column::TransitDispatchId.is_not_null());
+        }
+      }
+    }
+
+    Ok(
+      acceptance_document::Entity::load()
+        .filter(condition)
+        .with(company::Entity)
+        .with(truck_waybill::Entity)
+        .with(rail_waybill::Entity)
+        .with(dispatch_document::Entity)
+        .order_by_desc(acceptance_document::Column::DateAccepted)
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?,
+    )
+  }
+
+  pub(super) async fn acceptance_composite_model(
+    &self,
+    id: Uuid,
+  ) -> Result<acceptance_document::ModelEx, ApiError> {
+    acceptance_document::Entity::load()
+      .filter_by_id(id)
+      .filter(acceptance_document::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(truck_waybill::Entity)
+      .with(rail_waybill::Entity)
+      .with(dispatch_document::Entity)
+      .with((acceptance_item::Entity, product::Entity))
+      .with((acceptance_item::Entity, storage::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Acceptance document '{}' not found", id)))
+  }
+
   pub async fn acceptance_composite_create(
     &self,
     req: &dtos::CreateAcceptanceCompositeRequest,
@@ -82,74 +180,16 @@ impl DocumentService {
     Ok(dtos::AcceptanceCompositeResponse { document, items })
   }
 
-  #[allow(clippy::too_many_arguments)]
   pub async fn acceptance_document_query(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    truck_waybill_id: Option<NullableFilter>,
-    rail_waybill_id: Option<NullableFilter>,
-    transit_dispatch_id: Option<NullableFilter>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: AcceptanceDocumentQuerySpec,
   ) -> Result<Vec<dtos::AcceptanceResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-
-    let mut condition = Condition::all();
-    condition = condition.add(acceptance_document::Column::DeletedAt.is_null());
-
-    if let Some(document_number) = document_number {
-      condition =
-        condition.add(acceptance_document::Column::DocumentNumber.contains(document_number));
-    }
-
-    if let Some(status) = status {
-      condition = condition.add(acceptance_document::Column::Status.eq(status));
-    }
-
-    if let Some(filter) = truck_waybill_id {
-      match filter {
-        NullableFilter::IsNull => {
-          condition = condition.add(acceptance_document::Column::TruckWaybillId.is_null());
-        }
-        NullableFilter::IsNotNull => {
-          condition = condition.add(acceptance_document::Column::TruckWaybillId.is_not_null());
-        }
-      }
-    }
-
-    if let Some(filter) = rail_waybill_id {
-      match filter {
-        NullableFilter::IsNull => {
-          condition = condition.add(acceptance_document::Column::RailWaybillId.is_null());
-        }
-        NullableFilter::IsNotNull => {
-          condition = condition.add(acceptance_document::Column::RailWaybillId.is_not_null());
-        }
-      }
-    }
-
-    if let Some(filter) = transit_dispatch_id {
-      match filter {
-        NullableFilter::IsNull => {
-          condition = condition.add(acceptance_document::Column::TransitDispatchId.is_null());
-        }
-        NullableFilter::IsNotNull => {
-          condition = condition.add(acceptance_document::Column::TransitDispatchId.is_not_null());
-        }
-      }
-    }
-
-    let docs = acceptance_document::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
     Ok(
-      docs
+      self
+        .acceptance_document_query_models(&query)
+        .await?
         .into_iter()
-        .map(dtos::AcceptanceResponse::from)
+        .map(|doc| dtos::AcceptanceResponse::from(acceptance_document::Model::from(doc)))
         .collect(),
     )
   }
@@ -158,13 +198,7 @@ impl DocumentService {
     &self,
     id: Uuid,
   ) -> Result<dtos::AcceptanceCompositeResponse, ApiError> {
-    let doc = acceptance_document::Entity::load()
-      .filter_by_id(id)
-      .filter(acceptance_document::Column::DeletedAt.is_null())
-      .with(acceptance_item::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| ApiError::NotFound(format!("Acceptance document '{}' not found", id)))?;
+    let doc = self.acceptance_composite_model(id).await?;
 
     dtos::AcceptanceCompositeResponse::try_from(doc)
   }
@@ -173,15 +207,14 @@ impl DocumentService {
   /// Used by the grouped-row list table on the frontend.
   pub async fn acceptance_flat_query(
     &self,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: AcceptanceFlatQuerySpec,
   ) -> Result<Vec<AcceptanceFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(acceptance_document::Column::DeletedAt.is_null());
-    if let Some(s) = status {
+    if let Some(s) = query.status {
       cond = cond.add(acceptance_document::Column::Status.eq(s));
     }
 

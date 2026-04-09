@@ -1,3 +1,6 @@
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+use uuid::Uuid;
+
 use crate::{
   dtos,
   entities::{product_type, storage, warehouse},
@@ -6,6 +9,46 @@ use crate::{
     CatalogService,
   },
 };
+
+async fn ensure_active_warehouse(
+  conn: &impl ConnectionTrait,
+  warehouse_id: Uuid,
+  field_name: &str,
+) -> Result<(), crate::api::ApiError> {
+  let exists = warehouse::Entity::load()
+    .filter_by_id(warehouse_id)
+    .filter(warehouse::Column::DeletedAt.is_null())
+    .one(conn)
+    .await?;
+
+  if exists.is_none() {
+    return Err(crate::api::ApiError::BadRequest(format!(
+      "{field_name} '{warehouse_id}' does not reference a valid record"
+    )));
+  }
+
+  Ok(())
+}
+
+async fn ensure_active_product_type(
+  conn: &impl ConnectionTrait,
+  product_type_id: Uuid,
+  field_name: &str,
+) -> Result<(), crate::api::ApiError> {
+  let exists = product_type::Entity::load()
+    .filter_by_id(product_type_id)
+    .filter(product_type::Column::DeletedAt.is_null())
+    .one(conn)
+    .await?;
+
+  if exists.is_none() {
+    return Err(crate::api::ApiError::BadRequest(format!(
+      "{field_name} '{product_type_id}' does not reference a valid record"
+    )));
+  }
+
+  Ok(())
+}
 
 fn apply_storage_update(model: &mut storage::ActiveModel, req: &dtos::UpdateStorageRequest) {
   set_if_some(&mut model.warehouse_id, req.warehouse_id);
@@ -21,22 +64,10 @@ async fn before_storage_create(
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateStorageRequest,
 ) -> Result<(), crate::api::ApiError> {
-  crate::services::common::validate_fk_exists::<warehouse::Entity>(
-    conn,
-    req.warehouse_id,
-    warehouse::Column::Id,
-    warehouse::Column::DeletedAt,
-    "warehouseId",
-  )
-  .await?;
-  crate::services::common::validate_optional_fk_exists::<product_type::Entity>(
-    conn,
-    req.product_type_id,
-    product_type::Column::Id,
-    product_type::Column::DeletedAt,
-    "productTypeId",
-  )
-  .await?;
+  ensure_active_warehouse(conn, req.warehouse_id, "warehouseId").await?;
+  if let Some(product_type_id) = req.product_type_id {
+    ensure_active_product_type(conn, product_type_id, "productTypeId").await?;
+  }
   Ok(())
 }
 
@@ -47,24 +78,10 @@ async fn before_storage_update(
   req: &dtos::UpdateStorageRequest,
 ) -> Result<(), crate::api::ApiError> {
   if let Some(warehouse_id) = req.warehouse_id {
-    crate::services::common::validate_fk_exists::<warehouse::Entity>(
-      conn,
-      warehouse_id,
-      warehouse::Column::Id,
-      warehouse::Column::DeletedAt,
-      "warehouseId",
-    )
-    .await?;
+    ensure_active_warehouse(conn, warehouse_id, "warehouseId").await?;
   }
   if let Some(product_type_id) = req.product_type_id {
-    crate::services::common::validate_fk_exists::<product_type::Entity>(
-      conn,
-      product_type_id,
-      product_type::Column::Id,
-      product_type::Column::DeletedAt,
-      "productTypeId",
-    )
-    .await?;
+    ensure_active_product_type(conn, product_type_id, "productTypeId").await?;
   }
   Ok(())
 }

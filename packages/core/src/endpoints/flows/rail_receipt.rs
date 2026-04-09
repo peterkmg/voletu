@@ -10,6 +10,7 @@ use crate::{
   dtos::response::pipeline::RailReceiptPipelineResponse,
   endpoints::{paths, query::PaginationParams},
   enums::PipelineStatus,
+  services::document::query::RailReceiptPipelineQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -19,6 +20,17 @@ struct RailReceiptPipelineQueryParams {
   contractor_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<RailReceiptPipelineQueryParams> for RailReceiptPipelineQuerySpec {
+  fn from(params: RailReceiptPipelineQueryParams) -> Self {
+    Self {
+      pipeline_status: params.pipeline_status,
+      contractor_id: params.contractor_id,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -44,12 +56,7 @@ async fn rail_receipt_pipeline_query(
   let rows = state
     .svc
     .document
-    .rail_receipt_pipeline_query(
-      params.pipeline_status,
-      params.contractor_id,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .rail_receipt_pipeline_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

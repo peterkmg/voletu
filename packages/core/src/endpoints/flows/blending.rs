@@ -9,6 +9,7 @@ use crate::{
   dtos::response::pipeline::BlendingFlatRow,
   endpoints::{paths, query::PaginationParams},
   enums::DocumentStatus,
+  services::document::query::BlendingFlatQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +18,16 @@ struct BlendingFlatQueryParams {
   status: Option<DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<BlendingFlatQueryParams> for BlendingFlatQuerySpec {
+  fn from(params: BlendingFlatQueryParams) -> Self {
+    Self {
+      status: params.status,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -41,11 +52,7 @@ async fn blending_flat_query(
   let rows = state
     .svc
     .document
-    .blending_flat_query(
-      params.status,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .blending_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

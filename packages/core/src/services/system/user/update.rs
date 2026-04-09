@@ -1,17 +1,13 @@
 use std::str::FromStr;
 
 use anyhow::anyhow;
-use sea_orm::{
-  ActiveModelTrait,
-  ActiveValue::Set,
-  ColumnTrait,
-  EntityLoaderTrait,
-  EntityTrait,
-  QueryFilter,
-};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityLoaderTrait};
 use uuid::Uuid;
 
-use super::super::SystemService;
+use super::{
+  super::SystemService,
+  helpers::{load_local_active_user_by_id, load_local_active_user_by_username},
+};
 use crate::{
   api::ApiError,
   dtos::{UpdateUserRequest, UserResponse},
@@ -28,27 +24,21 @@ impl SystemService {
   ) -> Result<UserResponse, ApiError> {
     let local_db_id = self.user_local_db_id().await?;
 
-    let existing = user::Entity::find()
-      .filter(user::Column::Id.eq(id))
-      .filter(user::Column::OriginDbId.eq(local_db_id))
-      .filter(user::Column::DeletedAt.is_null())
-      .one(self.db.as_ref())
-      .await?;
+    let existing = load_local_active_user_by_id(self.db.as_ref(), local_db_id, id).await?;
 
     let Some(existing) = existing else {
       return Err(ApiError::NotFound(format!("User '{}' not found", id)));
     };
 
-    let mut model: user::ActiveModel = existing.clone().into();
+    let mut model = user::ActiveModel {
+      id: Set(existing.id),
+      ..Default::default()
+    };
 
     if let Some(username) = &dto.username {
       if username != &existing.username {
-        let duplicate = user::Entity::find()
-          .filter(user::Column::Username.eq(username))
-          .filter(user::Column::OriginDbId.eq(local_db_id))
-          .filter(user::Column::DeletedAt.is_null())
-          .one(self.db.as_ref())
-          .await?;
+        let duplicate =
+          load_local_active_user_by_username(self.db.as_ref(), local_db_id, username).await?;
 
         if let Some(duplicate) = duplicate {
           if duplicate.id != id {

@@ -1,10 +1,5 @@
 use sea_orm::{
-  ActiveModelTrait,
-  ActiveValue::Set,
-  ColumnTrait,
-  EntityTrait,
-  QueryFilter,
-  QueryOrder,
+  ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityLoaderTrait, QueryFilter, QueryOrder,
   TransactionTrait,
 };
 use uuid::Uuid;
@@ -16,7 +11,6 @@ use super::{
 };
 use crate::{
   api::ApiError,
-  db::ops::exists_by_id,
   dtos::{PushAuditLogRequest, PushAuditLogsResponse},
   entities::{audit_log, node_base_assignment},
   enums::{AuditTable, SyncDirection},
@@ -33,12 +27,16 @@ impl SyncService {
     let mut rejected = 0_u64;
 
     for incoming in logs {
-      let already_exists = exists_by_id::<audit_log::Entity>(&txn, incoming.id).await?;
+      let already_exists = audit_log::Entity::load()
+        .filter_by_id(incoming.id)
+        .one(&txn)
+        .await?
+        .is_some();
       if already_exists {
         continue;
       }
 
-      let latest_for_record = audit_log::Entity::find()
+      let latest_for_record = audit_log::Entity::load()
         .filter(audit_log::Column::RecordId.eq(incoming.record_id))
         .order_by_desc(audit_log::Column::Timestamp)
         .one(&txn)
@@ -130,7 +128,7 @@ impl SyncService {
     // Re-read base assignments inside the transaction and recompute the
     // current discriminant. If it has drifted since the pull was issued,
     // abort the whole transaction — no logs applied, no watermark advanced.
-    let assignment_rows = node_base_assignment::Entity::find()
+    let assignment_rows = node_base_assignment::Entity::load()
       .filter(node_base_assignment::Column::NodeId.eq(local_node_id))
       .all(&txn)
       .await?;
@@ -149,7 +147,11 @@ impl SyncService {
     let mut rejected = 0_u64;
 
     for incoming in logs {
-      let already_exists = exists_by_id::<audit_log::Entity>(&txn, incoming.id).await?;
+      let already_exists = audit_log::Entity::load()
+        .filter_by_id(incoming.id)
+        .one(&txn)
+        .await?
+        .is_some();
       if already_exists {
         continue;
       }
@@ -157,7 +159,7 @@ impl SyncService {
       // Conflict resolution (same rule as push_logs): skip this incoming log
       // if a newer local log with a higher role weight exists for the same
       // record.
-      let latest_for_record = audit_log::Entity::find()
+      let latest_for_record = audit_log::Entity::load()
         .filter(audit_log::Column::RecordId.eq(incoming.record_id))
         .order_by_desc(audit_log::Column::Timestamp)
         .one(&txn)

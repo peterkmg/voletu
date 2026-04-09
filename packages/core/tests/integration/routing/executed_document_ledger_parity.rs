@@ -7,13 +7,8 @@
 use std::time::Duration;
 
 use crate::common::integration::{
-  api_post,
-  await_sync_cycle,
-  get_all_ledger_entries,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  temp_db_path,
+  api_post, await_sync_cycle, get_all_ledger_entries, seed_catalog_via_api, setup_central_via_api,
+  setup_peripheral_via_api, temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -23,9 +18,12 @@ async fn executed_document_syncs_with_ledger_parity() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r21-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("r21-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r21-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
 
   // Create and execute acceptance (creates ledger entry)

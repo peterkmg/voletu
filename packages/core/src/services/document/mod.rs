@@ -22,6 +22,7 @@ pub mod ownership_item;
 pub mod physical_doc;
 pub mod physical_doc_extra;
 pub mod physical_item;
+pub mod query;
 pub mod rail_manifest;
 pub mod rail_measurement;
 pub mod rail_waybill;

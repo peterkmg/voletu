@@ -9,6 +9,7 @@ use crate::{
   dtos::response::pipeline::DispatchFlatRow,
   endpoints::{paths, query::PaginationParams},
   enums::{DispatchMethod, DispatchPurpose, DocumentStatus},
+  services::document::query::DispatchFlatQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -19,6 +20,18 @@ struct DispatchFlatQueryParams {
   dispatch_purpose: Option<DispatchPurpose>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<DispatchFlatQueryParams> for DispatchFlatQuerySpec {
+  fn from(params: DispatchFlatQueryParams) -> Self {
+    Self {
+      status: params.status,
+      dispatch_method: params.dispatch_method,
+      dispatch_purpose: params.dispatch_purpose,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -45,13 +58,7 @@ async fn dispatch_flat_query(
   let rows = state
     .svc
     .document
-    .dispatch_flat_query(
-      params.status,
-      params.dispatch_method,
-      params.dispatch_purpose,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .dispatch_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

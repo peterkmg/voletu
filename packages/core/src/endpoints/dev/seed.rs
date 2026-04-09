@@ -13,13 +13,7 @@ use fake::{
   Fake,
 };
 use rand::{RngExt, SeedableRng};
-use sea_orm::{
-  prelude::Decimal,
-  ActiveModelTrait,
-  ActiveValue::Set,
-  DatabaseConnection,
-  EntityTrait,
-};
+use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, DatabaseConnection};
 use serde::Serialize;
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -29,36 +23,14 @@ use crate::{
   api::{response::ApiResponse, result::ApiResult, state::ApiState, ApiError},
   context::audit::with_audit_context,
   entities::{
-    acceptance_document,
-    acceptance_item,
-    base,
-    blending_component,
-    blending_document,
-    blending_result,
-    company,
-    dispatch_document,
-    dispatch_item,
-    inventory_adjustment,
-    inventory_ledger_entry,
-    inventory_reconciliation,
-    local,
-    ownership_transfer,
-    ownership_transfer_item,
-    physical_storage_transfer,
-    physical_transfer_item,
-    port,
-    product,
-    product_group,
-    product_type,
-    rail_wagon_manifest,
-    rail_waybill,
-    storage,
-    truck_waybill,
-    truck_waybill_item,
-    user,
-    warehouse,
+    acceptance_document, acceptance_item, base, blending_component, blending_document,
+    blending_result, company, dispatch_document, dispatch_item, inventory_adjustment,
+    inventory_ledger_entry, inventory_reconciliation, ownership_transfer, ownership_transfer_item,
+    physical_storage_transfer, physical_transfer_item, port, product, product_group, product_type,
+    rail_wagon_manifest, rail_waybill, storage, truck_waybill, truck_waybill_item, user, warehouse,
   },
   enums::{AdjustmentType, ArrivalType, DispatchMethod, DispatchPurpose, DocumentStatus, RoleType},
+  services::system::local::load_local_bootstrap,
   utils::password::hash_password,
 };
 
@@ -95,10 +67,7 @@ pub struct SeedResult {
 )]
 #[axum::debug_handler]
 async fn dev_seed(State(state): State<Arc<ApiState>>) -> ApiResult<SeedResult> {
-  let local_cfg = local::Entity::find()
-    .one(&*state.db)
-    .await?
-    .ok_or_else(|| ApiError::NotFound("local config not found".to_string()))?;
+  let local_cfg = load_local_bootstrap(state.db.as_ref()).await?;
 
   let actor_id = Uuid::now_v7();
   let origin_db_id = local_cfg.local_db_id;

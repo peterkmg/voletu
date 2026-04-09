@@ -9,6 +9,7 @@ use crate::{
   dtos::response::pipeline::ReconciliationFlatRow,
   endpoints::{paths, query::PaginationParams},
   enums::DocumentStatus,
+  services::document::query::ReconciliationFlatQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +18,16 @@ struct ReconciliationFlatQueryParams {
   status: Option<DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<ReconciliationFlatQueryParams> for ReconciliationFlatQuerySpec {
+  fn from(params: ReconciliationFlatQueryParams) -> Self {
+    Self {
+      status: params.status,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -41,11 +52,7 @@ async fn reconciliation_flat_query(
   let rows = state
     .svc
     .document
-    .reconciliation_flat_query(
-      params.status,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .reconciliation_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

@@ -1,11 +1,11 @@
-use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, Condition, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 
 use super::SystemService;
 use crate::{api::ApiError, dtos::LocalResponse, entities::local};
 
 impl SystemService {
   pub async fn local_list(&self) -> Result<Vec<LocalResponse>, ApiError> {
-    let rows = local::Entity::find()
+    let rows: Vec<local::ModelEx> = local::Entity::load()
       .all(self.db.as_ref())
       .await
       .map_err(ApiError::Database)?;
@@ -14,7 +14,8 @@ impl SystemService {
   }
 
   pub async fn local_get(&self, id: i32) -> Result<LocalResponse, ApiError> {
-    let row = local::Entity::find_by_id(id)
+    let row: local::ModelEx = local::Entity::load()
+      .filter_by_id(id)
       .one(self.db.as_ref())
       .await?
       .ok_or_else(|| ApiError::NotFound(format!("Local row '{}' not found", id)))?;
@@ -32,7 +33,7 @@ impl SystemService {
       condition = condition.add(local::Column::IsInitialized.eq(is_initialized));
     }
 
-    let rows = local::Entity::find()
+    let rows: Vec<local::ModelEx> = local::Entity::load()
       .filter(condition)
       .all(self.db.as_ref())
       .await
@@ -40,4 +41,22 @@ impl SystemService {
 
     Ok(rows.iter().map(LocalResponse::from).collect())
   }
+}
+
+pub async fn load_local_bootstrap(conn: &impl ConnectionTrait) -> Result<local::Model, ApiError> {
+  let row = local::Entity::load()
+    .filter_by_id(1)
+    .one(conn)
+    .await
+    .map_err(ApiError::Database)?;
+
+  row
+    .map(|row| local::Model {
+      id: row.id,
+      is_initialized: row.is_initialized,
+      local_db_id: row.local_db_id,
+      jwt_secret: row.jwt_secret,
+      central_api_url: row.central_api_url,
+    })
+    .ok_or_else(|| ApiError::NotFound("Local bootstrap row is missing".to_string()))
 }

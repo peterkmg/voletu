@@ -1,3 +1,6 @@
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+use uuid::Uuid;
+
 use crate::{
   dtos,
   entities::{base, warehouse},
@@ -6,6 +9,26 @@ use crate::{
     CatalogService,
   },
 };
+
+async fn ensure_active_base(
+  conn: &impl ConnectionTrait,
+  base_id: Uuid,
+  field_name: &str,
+) -> Result<(), crate::api::ApiError> {
+  let exists = base::Entity::load()
+    .filter_by_id(base_id)
+    .filter(base::Column::DeletedAt.is_null())
+    .one(conn)
+    .await?;
+
+  if exists.is_none() {
+    return Err(crate::api::ApiError::BadRequest(format!(
+      "{field_name} '{base_id}' does not reference a valid record"
+    )));
+  }
+
+  Ok(())
+}
 
 fn apply_warehouse_update(model: &mut warehouse::ActiveModel, req: &dtos::UpdateWarehouseRequest) {
   set_if_some(&mut model.base_id, req.base_id);
@@ -18,14 +41,7 @@ async fn before_warehouse_create(
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateWarehouseRequest,
 ) -> Result<(), crate::api::ApiError> {
-  crate::services::common::validate_fk_exists::<base::Entity>(
-    conn,
-    req.base_id,
-    base::Column::Id,
-    base::Column::DeletedAt,
-    "baseId",
-  )
-  .await?;
+  ensure_active_base(conn, req.base_id, "baseId").await?;
   Ok(())
 }
 
@@ -36,14 +52,7 @@ async fn before_warehouse_update(
   req: &dtos::UpdateWarehouseRequest,
 ) -> Result<(), crate::api::ApiError> {
   if let Some(base_id) = req.base_id {
-    crate::services::common::validate_fk_exists::<base::Entity>(
-      conn,
-      base_id,
-      base::Column::Id,
-      base::Column::DeletedAt,
-      "baseId",
-    )
-    .await?;
+    ensure_active_base(conn, base_id, "baseId").await?;
   }
   Ok(())
 }

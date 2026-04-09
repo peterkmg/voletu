@@ -5,7 +5,6 @@ use std::{
 };
 
 use anyhow::Result;
-use sea_orm::EntityTrait;
 use tokio::{
   net::TcpListener,
   sync::{oneshot, watch},
@@ -16,10 +15,9 @@ use crate::{
   api::{router::build_router, ApiState},
   config::{ApiConfig, SyncConfig},
   db::init_database,
-  entities::local,
+  services::system::local::load_local_bootstrap,
   worker::{spawn_sync_worker, spawn_sync_worker_with_config, WorkerStatus},
-  DbConfig,
-  JwtConfig,
+  DbConfig, JwtConfig,
 };
 
 pub async fn serve_api(
@@ -61,9 +59,8 @@ pub async fn serve_api_with_sync_config(
     let (restart_tx, restart_rx) = oneshot::channel();
     let restart_tx = Arc::new(Mutex::new(Some(restart_tx)));
 
-    let is_initialized = local::Entity::find_by_id(1)
-      .one(db.as_ref())
-      .await?
+    let is_initialized = load_local_bootstrap(db.as_ref())
+      .await
       .map(|row| row.is_initialized)
       .unwrap_or(false);
 

@@ -1,4 +1,6 @@
-use sea_orm::{ColumnTrait, Condition, EntityTrait, Order, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{
+  ColumnTrait, Condition, DatabaseConnection, EntityLoaderTrait, Order, QueryFilter, QueryOrder,
+};
 use uuid::Uuid;
 
 use super::{
@@ -7,19 +9,49 @@ use super::{
 };
 use crate::{
   api::ApiError,
-  db::ops::list_all,
   dtos::{AuditLogResponse, PullAuditLogsResponse, PushAuditLogRequest, SyncStatusResponse},
   entities::{audit_log, database_instance},
 };
 
+async fn load_audit_log_slice(
+  db: &DatabaseConnection,
+  condition: Condition,
+  limit: u64,
+  offset: u64,
+) -> Result<Vec<audit_log::ModelEx>, ApiError> {
+  let per_page = limit.max(1);
+  let page_index = offset / per_page;
+  let intra_page_offset = (offset % per_page) as usize;
+
+  let paginator = audit_log::Entity::load()
+    .filter(condition)
+    .order_by(audit_log::Column::Id, Order::Asc)
+    .paginate(db, per_page);
+
+  let mut rows = paginator.fetch_page(page_index).await?;
+
+  if intra_page_offset > 0 {
+    rows = rows.into_iter().skip(intra_page_offset).collect();
+
+    if rows.len() < per_page as usize {
+      let needed = per_page as usize - rows.len();
+      let next_page = paginator.fetch_page(page_index + 1).await?;
+      rows.extend(next_page.into_iter().take(needed));
+    }
+  }
+
+  Ok(rows)
+}
+
 impl SyncService {
   pub async fn list_audit_logs(&self) -> Result<Vec<crate::dtos::AuditLogResponse>, ApiError> {
-    let rows = list_all::<audit_log::Entity>(self.db.as_ref()).await?;
+    let rows: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(self.db.as_ref()).await?;
     Ok(rows.into_iter().map(AuditLogResponse::from).collect())
   }
 
   pub async fn audit_log_get(&self, id: Uuid) -> Result<crate::dtos::AuditLogResponse, ApiError> {
-    let row = audit_log::Entity::find_by_id(id)
+    let row: audit_log::ModelEx = audit_log::Entity::load()
+      .filter_by_id(id)
       .one(self.db.as_ref())
       .await?
       .ok_or_else(|| ApiError::NotFound(format!("Audit log '{}' not found", id)))?;
@@ -35,6 +67,8 @@ impl SyncService {
     offset: Option<u64>,
   ) -> Result<Vec<crate::dtos::AuditLogResponse>, ApiError> {
     let mut condition = Condition::all();
+    let max_limit = limit.unwrap_or(100).min(1000);
+    let offset = offset.unwrap_or(0);
 
     if let Some(table_name) = table_name {
       condition = condition.add(audit_log::Column::TableName.eq(table_name));
@@ -48,13 +82,7 @@ impl SyncService {
       condition = condition.add(audit_log::Column::OriginDbId.eq(origin_db_id));
     }
 
-    let rows = audit_log::Entity::find()
-      .filter(condition)
-      .order_by(audit_log::Column::Id, Order::Asc)
-      .limit(limit.unwrap_or(100).min(1000))
-      .offset(offset.unwrap_or(0))
-      .all(self.db.as_ref())
-      .await?;
+    let rows = load_audit_log_slice(self.db.as_ref(), condition, max_limit, offset).await?;
 
     Ok(rows.into_iter().map(AuditLogResponse::from).collect())
   }
@@ -69,7 +97,8 @@ impl SyncService {
   /// has activity on bases the caller does not serve.
   pub async fn sync_status(&self, base_ids: &[Uuid]) -> Result<SyncStatusResponse, ApiError> {
     let local_node_id = self.cfg.node.db_id;
-    let instance_row = database_instance::Entity::find_by_id(local_node_id)
+    let instance_row: Option<database_instance::ModelEx> = database_instance::Entity::load()
+      .filter_by_id(local_node_id)
       .one(self.db.as_ref())
       .await?;
     let instance = match instance_row {
@@ -83,7 +112,7 @@ impl SyncService {
     };
 
     // Highest overall (unfiltered) — diagnostic / liveness signal.
-    let latest_log = audit_log::Entity::find()
+    let latest_log = audit_log::Entity::load()
       .order_by_desc(audit_log::Column::Id)
       .one(self.db.as_ref())
       .await?;
@@ -95,7 +124,7 @@ impl SyncService {
     // Highest in-scope — the authoritative "is there anything for you"
     // signal. Shares the `scope_condition_for` helper with `pull_logs` to
     // guarantee the two endpoints never drift.
-    let latest_matching = audit_log::Entity::find()
+    let latest_matching = audit_log::Entity::load()
       .filter(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
       .filter(scope_condition_for(base_ids))
       .order_by_desc(audit_log::Column::Id)
@@ -120,12 +149,13 @@ impl SyncService {
     limit: Option<u64>,
   ) -> Result<Vec<PushAuditLogRequest>, ApiError> {
     let max_limit = limit.unwrap_or(1000).min(1000);
-    let rows = audit_log::Entity::find()
-      .filter(audit_log::Column::Id.gt(after_audit_log_id))
-      .order_by(audit_log::Column::Id, Order::Asc)
-      .limit(max_limit)
-      .all(self.db.as_ref())
-      .await?;
+    let rows = load_audit_log_slice(
+      self.db.as_ref(),
+      Condition::all().add(audit_log::Column::Id.gt(after_audit_log_id)),
+      max_limit,
+      0,
+    )
+    .await?;
 
     Ok(
       rows
@@ -159,15 +189,11 @@ impl SyncService {
     limit: Option<u64>,
   ) -> Result<PullAuditLogsResponse, ApiError> {
     let max_limit = limit.unwrap_or(1000).min(1000);
-
-    let logs = audit_log::Entity::find()
-      .filter(audit_log::Column::Id.gt(last_audit_log_id))
-      .filter(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
-      .filter(scope_condition_for(base_ids))
-      .order_by(audit_log::Column::Id, Order::Asc)
-      .limit(max_limit)
-      .all(self.db.as_ref())
-      .await?;
+    let condition = Condition::all()
+      .add(audit_log::Column::Id.gt(last_audit_log_id))
+      .add(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
+      .add(scope_condition_for(base_ids));
+    let logs = load_audit_log_slice(self.db.as_ref(), condition, max_limit, 0).await?;
 
     let highest_evaluated_id = logs.last().map(|l| l.id).unwrap_or(last_audit_log_id);
 

@@ -5,12 +5,8 @@ use sea_orm::DatabaseConnection;
 use crate::{
   config::ApiConfig,
   services::{
-    audit::AuditService,
-    catalog::CatalogService as DomainCatalogService,
-    document::DocumentService,
-    ledger::LedgerService,
-    sync::SyncService,
-    system::SystemService,
+    audit::AuditService, catalog::CatalogService as DomainCatalogService,
+    document::DocumentService, ledger::LedgerService, sync::SyncService, system::SystemService,
   },
 };
 

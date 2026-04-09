@@ -1,14 +1,8 @@
 use sea_orm::{
-  entity::prelude::*,
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
+  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder,
   TransactionTrait,
 };
+use std::collections::BTreeMap;
 use uuid::Uuid;
 
 use crate::{
@@ -18,18 +12,117 @@ use crate::{
     response::pipeline::{DispatchFlatRow, TruckDispatchPipelineResponse},
   },
   entities::{
-    company,
-    dispatch_document,
-    dispatch_item,
-    dispatch_storage_measurement,
-    product,
+    base, company, dispatch_document, dispatch_item, dispatch_storage_measurement, port, product,
     storage,
   },
-  enums::{self, DispatchMethod, DocumentStatus, PipelineStatus},
-  services::document::DocumentService,
+  enums::{DispatchMethod, DocumentStatus, PipelineStatus},
+  services::document::{
+    query::{DispatchDocumentQuerySpec, DispatchFlatQuerySpec, TruckDispatchPipelineQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
+  pub(super) async fn dispatch_exporter_names(
+    &self,
+    exporter_ids: impl IntoIterator<Item = Uuid>,
+  ) -> Result<BTreeMap<Uuid, String>, ApiError> {
+    let mut exporter_ids = exporter_ids.into_iter().collect::<Vec<_>>();
+    exporter_ids.sort_unstable();
+    exporter_ids.dedup();
+
+    if exporter_ids.is_empty() {
+      return Ok(BTreeMap::new());
+    }
+
+    Ok(
+      company::Entity::load()
+        .filter(company::Column::Id.is_in(exporter_ids))
+        .all(self.db.as_ref())
+        .await?
+        .into_iter()
+        .map(|company| (company.id, company.common_name))
+        .collect(),
+    )
+  }
+
+  pub(super) async fn dispatch_document_model(
+    &self,
+    id: Uuid,
+  ) -> Result<dispatch_document::ModelEx, ApiError> {
+    dispatch_document::Entity::load()
+      .filter_by_id(id)
+      .filter(dispatch_document::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(base::Entity)
+      .with(port::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Dispatch document '{}' not found", id)))
+  }
+
+  pub(super) async fn dispatch_document_query_models(
+    &self,
+    query: &DispatchDocumentQuerySpec,
+  ) -> Result<Vec<dispatch_document::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+
+    let mut condition = Condition::all();
+    condition = condition.add(dispatch_document::Column::DeletedAt.is_null());
+
+    if let Some(document_number) = query.document_number.as_deref() {
+      condition =
+        condition.add(dispatch_document::Column::DocumentNumber.contains(document_number));
+    }
+
+    if let Some(status) = query.status {
+      condition = condition.add(dispatch_document::Column::Status.eq(status));
+    }
+
+    if let Some(contractor_id) = query.contractor_id {
+      condition = condition.add(dispatch_document::Column::ContractorId.eq(contractor_id));
+    }
+
+    if let Some(dispatch_method) = query.dispatch_method {
+      condition = condition.add(dispatch_document::Column::DispatchMethod.eq(dispatch_method));
+    }
+
+    if let Some(dispatch_purpose) = query.dispatch_purpose {
+      condition = condition.add(dispatch_document::Column::DispatchPurpose.eq(dispatch_purpose));
+    }
+
+    Ok(
+      dispatch_document::Entity::load()
+        .filter(condition)
+        .with(company::Entity)
+        .with(base::Entity)
+        .with(port::Entity)
+        .order_by_desc(dispatch_document::Column::Date)
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?,
+    )
+  }
+
+  pub(super) async fn dispatch_composite_model(
+    &self,
+    id: Uuid,
+  ) -> Result<dispatch_document::ModelEx, ApiError> {
+    dispatch_document::Entity::load()
+      .filter_by_id(id)
+      .filter(dispatch_document::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(base::Entity)
+      .with(port::Entity)
+      .with((dispatch_item::Entity, product::Entity))
+      .with((dispatch_item::Entity, storage::Entity))
+      .with((dispatch_storage_measurement::Entity, storage::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Dispatch document '{}' not found", id)))
+  }
+
   pub async fn dispatch_composite_create(
     &self,
     req: &dtos::CreateDispatchCompositeRequest,
@@ -108,84 +201,44 @@ impl DocumentService {
     })
   }
 
-  #[allow(clippy::too_many_arguments)]
   pub async fn dispatch_document_query(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    contractor_id: Option<Uuid>,
-    dispatch_method: Option<enums::DispatchMethod>,
-    dispatch_purpose: Option<enums::DispatchPurpose>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: DispatchDocumentQuerySpec,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-
-    let mut condition = Condition::all();
-    condition = condition.add(dispatch_document::Column::DeletedAt.is_null());
-
-    if let Some(document_number) = document_number {
-      condition =
-        condition.add(dispatch_document::Column::DocumentNumber.contains(document_number));
-    }
-
-    if let Some(status) = status {
-      condition = condition.add(dispatch_document::Column::Status.eq(status));
-    }
-
-    if let Some(contractor_id) = contractor_id {
-      condition = condition.add(dispatch_document::Column::ContractorId.eq(contractor_id));
-    }
-
-    if let Some(dispatch_method) = dispatch_method {
-      condition = condition.add(dispatch_document::Column::DispatchMethod.eq(dispatch_method));
-    }
-
-    if let Some(dispatch_purpose) = dispatch_purpose {
-      condition = condition.add(dispatch_document::Column::DispatchPurpose.eq(dispatch_purpose));
-    }
-
-    let docs = dispatch_document::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
-    Ok(docs.into_iter().map(dtos::DispatchResponse::from).collect())
+    Ok(
+      self
+        .dispatch_document_query_models(&query)
+        .await?
+        .into_iter()
+        .map(|doc| dtos::DispatchResponse::from(dispatch_document::Model::from(doc)))
+        .collect(),
+    )
   }
 
   pub async fn dispatch_composite_get(
     &self,
     id: Uuid,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
-    let doc = dispatch_document::Entity::load()
-      .filter_by_id(id)
-      .with(dispatch_item::Entity)
-      .with(dispatch_storage_measurement::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| ApiError::NotFound(format!("Dispatch document '{}' not found", id)))?;
+    let doc = self.dispatch_composite_model(id).await?;
 
     dtos::DispatchCompositeResponse::try_from(doc)
   }
 
   pub async fn truck_dispatch_pipeline_query(
     &self,
-    pipeline_status: Option<PipelineStatus>,
-    contractor_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: TruckDispatchPipelineQuerySpec,
   ) -> Result<Vec<TruckDispatchPipelineResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all()
       .add(dispatch_document::Column::DeletedAt.is_null())
       .add(dispatch_document::Column::DispatchMethod.eq(DispatchMethod::Truck));
-    if let Some(cid) = contractor_id {
+    if let Some(cid) = query.contractor_id {
       cond = cond.add(dispatch_document::Column::ContractorId.eq(cid));
     }
-    if let Some(ps) = pipeline_status {
+    if let Some(ps) = query.pipeline_status {
       match ps {
         PipelineStatus::Pending => return Ok(vec![]),
         PipelineStatus::Draft => {
@@ -238,23 +291,20 @@ impl DocumentService {
   /// Used by the grouped-row list table on the frontend.
   pub async fn dispatch_flat_query(
     &self,
-    status: Option<enums::DocumentStatus>,
-    dispatch_method: Option<enums::DispatchMethod>,
-    dispatch_purpose: Option<enums::DispatchPurpose>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: DispatchFlatQuerySpec,
   ) -> Result<Vec<DispatchFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(dispatch_document::Column::DeletedAt.is_null());
-    if let Some(s) = status {
+    if let Some(s) = query.status {
       cond = cond.add(dispatch_document::Column::Status.eq(s));
     }
-    if let Some(dm) = dispatch_method {
+    if let Some(dm) = query.dispatch_method {
       cond = cond.add(dispatch_document::Column::DispatchMethod.eq(dm));
     }
-    if let Some(dp) = dispatch_purpose {
+    if let Some(dp) = query.dispatch_purpose {
       cond = cond.add(dispatch_document::Column::DispatchPurpose.eq(dp));
     }
 

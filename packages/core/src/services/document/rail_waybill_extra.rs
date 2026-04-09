@@ -1,14 +1,6 @@
 use sea_orm::{
-  entity::prelude::*,
-  ColumnTrait,
-  Condition,
-  ConnectionTrait,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
-  TransactionTrait,
+  entity::prelude::*, ColumnTrait, Condition, ConnectionTrait, EntityLoaderTrait, QueryFilter,
+  QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -16,48 +8,71 @@ use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::RailReceiptPipelineResponse},
   entities::{
-    acceptance_document,
-    acceptance_item,
-    company,
-    product,
-    rail_wagon_manifest,
-    rail_waybill,
+    acceptance_document, acceptance_item, company, product, rail_wagon_manifest,
+    rail_wagon_measurement, rail_wagon_weight, rail_waybill,
   },
   enums::PipelineStatus,
-  services::DocumentService,
+  services::{
+    document::query::{RailReceiptPipelineQuerySpec, RailWaybillQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
-  pub async fn rail_waybill_query(
+  pub(super) async fn rail_waybill_composite_model(
     &self,
-    document_number: Option<&str>,
-    sender_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
-  ) -> Result<Vec<dtos::RailWaybillResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    id: Uuid,
+  ) -> Result<rail_waybill::ModelEx, ApiError> {
+    rail_waybill::Entity::load()
+      .filter_by_id(id)
+      .filter(rail_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with((rail_wagon_manifest::Entity, product::Entity))
+      .with((rail_wagon_manifest::Entity, rail_wagon_measurement::Entity))
+      .with((rail_wagon_manifest::Entity, rail_wagon_weight::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Rail waybill '{}' not found", id)))
+  }
+
+  pub(super) async fn rail_waybill_query_models(
+    &self,
+    query: &RailWaybillQuerySpec,
+  ) -> Result<Vec<rail_waybill::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(rail_waybill::Column::DeletedAt.is_null());
 
-    if let Some(document_number) = document_number {
+    if let Some(document_number) = query.document_number.as_deref() {
       condition = condition.add(rail_waybill::Column::DocumentNumber.contains(document_number));
     }
 
-    if let Some(sender_id) = sender_id {
+    if let Some(sender_id) = query.sender_id {
       condition = condition.add(rail_waybill::Column::SenderId.eq(sender_id));
     }
 
-    let docs = rail_waybill::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
     Ok(
-      docs
+      rail_waybill::Entity::load()
+        .filter(condition)
+        .with(company::Entity)
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?,
+    )
+  }
+
+  pub async fn rail_waybill_query(
+    &self,
+    query: RailWaybillQuerySpec,
+  ) -> Result<Vec<dtos::RailWaybillResponse>, ApiError> {
+    Ok(
+      self
+        .rail_waybill_query_models(&query)
+        .await?
         .into_iter()
-        .map(dtos::RailWaybillResponse::from)
+        .map(|doc| dtos::RailWaybillResponse::from(rail_waybill::Model::from(doc)))
         .collect(),
     )
   }
@@ -139,18 +154,30 @@ impl DocumentService {
     &self,
     id: Uuid,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
-    let doc = rail_waybill::Entity::load()
-      .filter_by_id(id)
-      .filter(rail_waybill::Column::DeletedAt.is_null())
-      .with(rail_wagon_manifest::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| ApiError::NotFound(format!("Rail waybill '{}' not found", id)))?;
+    let doc = self.rail_waybill_composite_model(id).await?;
 
     let manifests: Vec<dtos::RailWagonManifestResponse> = doc
       .wagon_manifests
       .iter()
-      .map(|m| dtos::RailWagonManifestResponse::from(rail_wagon_manifest::Model::from(m.clone())))
+      .map(|manifest| {
+        let mut response =
+          dtos::RailWagonManifestResponse::from(rail_wagon_manifest::Model::from(manifest.clone()));
+        let measurements = manifest
+          .measurements
+          .iter()
+          .cloned()
+          .map(dtos::RailWagonMeasurementResponse::from)
+          .collect::<Vec<_>>();
+        let weights = manifest
+          .weights
+          .iter()
+          .cloned()
+          .map(dtos::RailWagonWeightResponse::from)
+          .collect::<Vec<_>>();
+        response.measurements = (!measurements.is_empty()).then_some(measurements);
+        response.weights = (!weights.is_empty()).then_some(weights);
+        response
+      })
       .collect();
 
     let waybill = dtos::RailWaybillResponse::from(rail_waybill::Model::from(doc));
@@ -167,16 +194,14 @@ impl DocumentService {
 
   pub async fn rail_receipt_pipeline_query(
     &self,
-    pipeline_status: Option<PipelineStatus>,
-    contractor_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: RailReceiptPipelineQuerySpec,
   ) -> Result<Vec<RailReceiptPipelineResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(rail_waybill::Column::DeletedAt.is_null());
-    if let Some(cid) = contractor_id {
+    if let Some(cid) = query.contractor_id {
       cond = cond.add(rail_waybill::Column::SenderId.eq(cid));
     }
 
@@ -195,7 +220,7 @@ impl DocumentService {
       let acc = wb.acceptances.get(0);
       let status = PipelineStatus::from_doc_status(acc.map(|a| &a.status));
 
-      if pipeline_status.is_some() && pipeline_status != Some(status) {
+      if query.pipeline_status.is_some() && query.pipeline_status != Some(status) {
         continue;
       }
 

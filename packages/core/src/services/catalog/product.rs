@@ -1,11 +1,54 @@
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+use uuid::Uuid;
+
 use crate::{
   dtos,
   entities::{company, product, product_group},
   services::{
-    common::{set_if_some, set_if_some_mapped, validate_fk_exists, validate_optional_fk_exists},
+    common::{set_if_some, set_if_some_mapped},
     CatalogService,
   },
 };
+
+async fn ensure_active_product_group(
+  conn: &impl ConnectionTrait,
+  product_group_id: Uuid,
+  field_name: &str,
+) -> Result<(), crate::api::ApiError> {
+  let exists = product_group::Entity::load()
+    .filter_by_id(product_group_id)
+    .filter(product_group::Column::DeletedAt.is_null())
+    .one(conn)
+    .await?;
+
+  if exists.is_none() {
+    return Err(crate::api::ApiError::BadRequest(format!(
+      "{field_name} '{product_group_id}' does not reference a valid record"
+    )));
+  }
+
+  Ok(())
+}
+
+async fn ensure_active_company(
+  conn: &impl ConnectionTrait,
+  company_id: Uuid,
+  field_name: &str,
+) -> Result<(), crate::api::ApiError> {
+  let exists = company::Entity::load()
+    .filter_by_id(company_id)
+    .filter(company::Column::DeletedAt.is_null())
+    .one(conn)
+    .await?;
+
+  if exists.is_none() {
+    return Err(crate::api::ApiError::BadRequest(format!(
+      "{field_name} '{company_id}' does not reference a valid record"
+    )));
+  }
+
+  Ok(())
+}
 
 fn apply_product_update(model: &mut product::ActiveModel, req: &dtos::UpdateProductRequest) {
   set_if_some(&mut model.product_group_id, req.product_group_id);
@@ -25,23 +68,10 @@ async fn before_product_create(
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateProductRequest,
 ) -> Result<(), crate::api::ApiError> {
-  validate_fk_exists::<product_group::Entity>(
-    conn,
-    req.product_group_id,
-    product_group::Column::Id,
-    product_group::Column::DeletedAt,
-    "productGroupId",
-  )
-  .await?;
-
-  validate_optional_fk_exists::<company::Entity>(
-    conn,
-    req.manufacturer_id,
-    company::Column::Id,
-    company::Column::DeletedAt,
-    "manufacturerId",
-  )
-  .await?;
+  ensure_active_product_group(conn, req.product_group_id, "productGroupId").await?;
+  if let Some(manufacturer_id) = req.manufacturer_id {
+    ensure_active_company(conn, manufacturer_id, "manufacturerId").await?;
+  }
   Ok(())
 }
 
@@ -52,24 +82,10 @@ async fn before_product_update(
   req: &dtos::UpdateProductRequest,
 ) -> Result<(), crate::api::ApiError> {
   if let Some(product_group_id) = req.product_group_id {
-    validate_fk_exists::<product_group::Entity>(
-      conn,
-      product_group_id,
-      product_group::Column::Id,
-      product_group::Column::DeletedAt,
-      "productGroupId",
-    )
-    .await?;
+    ensure_active_product_group(conn, product_group_id, "productGroupId").await?;
   }
   if let Some(manufacturer_id) = req.manufacturer_id {
-    validate_fk_exists::<company::Entity>(
-      conn,
-      manufacturer_id,
-      company::Column::Id,
-      company::Column::DeletedAt,
-      "manufacturerId",
-    )
-    .await?;
+    ensure_active_company(conn, manufacturer_id, "manufacturerId").await?;
   }
   Ok(())
 }

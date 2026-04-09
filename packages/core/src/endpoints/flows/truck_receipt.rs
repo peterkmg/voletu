@@ -10,6 +10,7 @@ use crate::{
   dtos::response::pipeline::TruckReceiptPipelineResponse,
   endpoints::{paths, query::PaginationParams},
   enums::PipelineStatus,
+  services::document::query::TruckReceiptPipelineQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -19,6 +20,17 @@ struct TruckReceiptFlowQueryParams {
   contractor_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<TruckReceiptFlowQueryParams> for TruckReceiptPipelineQuerySpec {
+  fn from(params: TruckReceiptFlowQueryParams) -> Self {
+    Self {
+      pipeline_status: params.pipeline_status,
+      contractor_id: params.contractor_id,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -44,12 +56,7 @@ async fn truck_receipt_query(
   let rows = state
     .svc
     .document
-    .truck_receipt_pipeline_query(
-      params.pipeline_status,
-      params.contractor_id,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .truck_receipt_pipeline_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

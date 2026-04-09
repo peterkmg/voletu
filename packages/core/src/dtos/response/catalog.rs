@@ -2,9 +2,8 @@ use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::{
-  entities::{base, company, port, product, product_group, product_type, storage, warehouse},
-  services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames},
+use crate::entities::{
+  base, company, port, product, product_group, product_type, storage, warehouse,
 };
 
 /// Response DTO for the `company` entity.
@@ -162,6 +161,30 @@ impl From<product_group::Model> for ProductGroupResponse {
   }
 }
 
+impl From<product_group::ModelEx> for ProductGroupResponse {
+  fn from(row: product_group::ModelEx) -> Self {
+    let product_type_id_name = row
+      .product_type
+      .as_ref()
+      .map(|product_type| product_type.common_name.clone());
+
+    Self {
+      id: row.id,
+      product_type_id: row.product_type_id,
+      common_name: row.common_name,
+      long_name: row.long_name,
+      product_type_id_name,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 impl From<product::Model> for ProductResponse {
   fn from(row: product::Model) -> Self {
     Self {
@@ -174,6 +197,38 @@ impl From<product::Model> for ProductResponse {
       is_component: row.is_component,
       product_group_id_name: None,
       manufacturer_id_name: None,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
+impl From<product::ModelEx> for ProductResponse {
+  fn from(row: product::ModelEx) -> Self {
+    let product_group_id_name = row
+      .product_group
+      .as_ref()
+      .map(|product_group| product_group.common_name.clone());
+    let manufacturer_id_name = row
+      .manufacturer
+      .as_ref()
+      .map(|manufacturer| manufacturer.common_name.clone());
+
+    Self {
+      id: row.id,
+      product_group_id: row.product_group_id,
+      manufacturer_id: row.manufacturer_id,
+      common_name: row.common_name,
+      long_name: row.long_name,
+      add_identification: row.add_identification,
+      is_component: row.is_component,
+      product_group_id_name,
+      manufacturer_id_name,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -221,6 +276,27 @@ impl From<warehouse::Model> for WarehouseResponse {
   }
 }
 
+impl From<warehouse::ModelEx> for WarehouseResponse {
+  fn from(row: warehouse::ModelEx) -> Self {
+    let base_id_name = row.base.as_ref().map(|base| base.common_name.clone());
+
+    Self {
+      id: row.id,
+      base_id: row.base_id,
+      common_name: row.common_name,
+      long_name: row.long_name,
+      base_id_name,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 impl From<storage::Model> for StorageResponse {
   fn from(row: storage::Model) -> Self {
     Self {
@@ -233,6 +309,38 @@ impl From<storage::Model> for StorageResponse {
       product_type_id: row.product_type_id,
       warehouse_id_name: None,
       product_type_id_name: None,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
+impl From<storage::ModelEx> for StorageResponse {
+  fn from(row: storage::ModelEx) -> Self {
+    let warehouse_id_name = row
+      .warehouse
+      .as_ref()
+      .map(|warehouse| warehouse.common_name.clone());
+    let product_type_id_name = row
+      .product_type
+      .as_ref()
+      .map(|product_type| product_type.common_name.clone());
+
+    Self {
+      id: row.id,
+      warehouse_id: row.warehouse_id,
+      common_name: row.common_name,
+      long_name: row.long_name,
+      capacity: row.capacity,
+      is_type_specific: row.is_type_specific,
+      product_type_id: row.product_type_id,
+      warehouse_id_name,
+      product_type_id_name,
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -258,59 +366,5 @@ impl From<port::Model> for PortResponse {
       deleted_by: row.deleted_by,
       origin_db_id: row.origin_db_id,
     }
-  }
-}
-
-// ── ResolveFkNames impls ────────────────────────────────────────────────
-
-impl ResolveFkNames for ProductGroupResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_type_ids.insert(self.product_type_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_type_id_name = r.product_types.get(&self.product_type_id).cloned();
-  }
-}
-
-impl ResolveFkNames for ProductResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_group_ids.insert(self.product_group_id);
-    if let Some(id) = self.manufacturer_id {
-      c.company_ids.insert(id);
-    }
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_group_id_name = r.product_groups.get(&self.product_group_id).cloned();
-    self.manufacturer_id_name = self
-      .manufacturer_id
-      .and_then(|id| r.companies.get(&id).cloned());
-  }
-}
-
-impl ResolveFkNames for WarehouseResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.base_ids.insert(self.base_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.base_id_name = r.bases.get(&self.base_id).cloned();
-  }
-}
-
-impl ResolveFkNames for StorageResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.warehouse_ids.insert(self.warehouse_id);
-    if let Some(id) = self.product_type_id {
-      c.product_type_ids.insert(id);
-    }
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
-    self.product_type_id_name = self
-      .product_type_id
-      .and_then(|id| r.product_types.get(&id).cloned());
   }
 }

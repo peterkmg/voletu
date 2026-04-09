@@ -1,14 +1,13 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use axum::{extract::State, Json};
-use sea_orm::EntityTrait;
 use serde::Serialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiState},
   endpoints::paths,
-  entities::database_instance,
+  services::system::database_instance::load_active_database_instance,
 };
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]
@@ -31,11 +30,8 @@ pub struct HealthData {
 )]
 #[axum::debug_handler]
 async fn health(State(state): State<Arc<ApiState>>) -> Json<ApiResponse<HealthData>> {
-  let node_name = database_instance::Entity::find_by_id(state.cfg.node.db_id)
-    .one(state.db.as_ref())
+  let node_name = load_active_database_instance(state.db.as_ref(), state.cfg.node.db_id)
     .await
-    .ok()
-    .flatten()
     .map(|row| row.common_name)
     .unwrap_or_default();
 

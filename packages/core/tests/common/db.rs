@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use sea_orm::{Database, DatabaseConnection, EntityTrait};
+use sea_orm::{Database, DatabaseConnection, EntityLoaderTrait};
 use tokio::sync::oneshot;
 use uuid::Uuid;
 use voletu_core::{
@@ -35,7 +35,8 @@ pub fn test_config() -> ApiConfig {
 
 #[allow(dead_code)]
 pub async fn test_config_for_db(db: &DatabaseConnection) -> ApiConfig {
-  let node_id = local::Entity::find_by_id(1)
+  let node_id = local::Entity::load()
+    .filter_by_id(1)
     .one(db)
     .await
     .unwrap()

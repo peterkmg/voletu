@@ -51,6 +51,19 @@ impl From<sync_watermark::Model> for SyncWatermarkResponse {
   }
 }
 
+impl From<sync_watermark::ModelEx> for SyncWatermarkResponse {
+  fn from(row: sync_watermark::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      target_node_id: row.target_node_id,
+      direction: row.direction,
+      last_audit_log_id: row.last_audit_log_id,
+      base_discriminant: row.base_discriminant,
+      synced_at: row.synced_at.to_rfc3339(),
+    }
+  }
+}
+
 /// Functional DTO summarizing push synchronization results.
 #[response_dto]
 #[derive(Deserialize)]

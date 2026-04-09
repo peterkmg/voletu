@@ -1,15 +1,7 @@
-use sea_orm::{
-  entity::prelude::Decimal,
-  ActiveModelTrait,
-  ActiveValue::Set,
-  ColumnTrait,
-  ConnectionTrait,
-  EntityTrait,
-  QueryFilter,
-};
+use sea_orm::{entity::prelude::Decimal, ActiveModelTrait, ActiveValue::Set, ConnectionTrait};
 use uuid::Uuid;
 
-use super::LedgerService;
+use super::{load_entry_by_dimensions_on, LedgerService};
 use crate::{api::ApiError, entities::inventory_ledger_entry};
 
 impl LedgerService {
@@ -39,19 +31,17 @@ impl LedgerService {
     contractor_id: Uuid,
     delta: Decimal,
   ) -> Result<(), ApiError> {
-    let existing = inventory_ledger_entry::Entity::find()
-      .filter(inventory_ledger_entry::Column::StorageId.eq(storage_id))
-      .filter(inventory_ledger_entry::Column::ProductId.eq(product_id))
-      .filter(inventory_ledger_entry::Column::ContractorId.eq(contractor_id))
-      .one(conn)
-      .await?;
+    let existing = load_entry_by_dimensions_on(conn, storage_id, product_id, contractor_id).await?;
 
     match existing {
       Some(model) => {
-        let new_amount = model.current_amount + delta;
-        let mut am: inventory_ledger_entry::ActiveModel = model.into();
-        am.current_amount = Set(new_amount);
-        am.update(conn).await?;
+        inventory_ledger_entry::ActiveModel {
+          id: Set(model.id),
+          current_amount: Set(model.current_amount + delta),
+          ..Default::default()
+        }
+        .update(conn)
+        .await?;
       }
       None => {
         inventory_ledger_entry::ActiveModel {

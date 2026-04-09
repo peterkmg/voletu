@@ -230,11 +230,10 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
       };
       methods.push(quote! {
         pub async fn #list_name(&self, pagination: Option<(u64, u64)>) -> Result<Vec<#response>, crate::api::ApiError> {
-          use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
-          let query = #entity_mod::Entity::find()
+          use sea_orm::{ColumnTrait, EntityLoaderTrait, PaginatorTrait, QueryFilter};
+          let query = #entity_mod::Entity::load()
             .filter(#entity_mod::Column::DeletedAt.is_null());
-          let rows = if let Some((page, per_page)) = pagination {
-            use sea_orm::PaginatorTrait;
+          let rows: Vec<#entity_mod::ModelEx> = if let Some((page, per_page)) = pagination {
             query
               .paginate(self.db.as_ref(), per_page)
               .fetch_page(page.saturating_sub(1))
@@ -242,7 +241,7 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
           } else {
             query.all(self.db.as_ref()).await?
           };
-          Ok(rows.into_iter().map(Into::into).collect())
+          Ok(rows.into_iter().map(#entity_mod::Model::from).map(Into::into).collect())
         }
       });
     } else if op == "get" {
@@ -256,15 +255,16 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
       };
       methods.push(quote! {
         pub async fn #get_name(&self, id: uuid::Uuid) -> Result<#response, crate::api::ApiError> {
-          let row = crate::services::common::get_active_by_id::<#entity_mod::Entity, _>(
-            self.db.as_ref(),
-            id,
-            #entity_mod::Column::Id,
-            #entity_mod::Column::DeletedAt,
-            format!("{} '{}' not found", #entity_name, id),
-          )
-          .await?;
-          Ok(row.into())
+          use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
+
+          let row: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(id)
+            .filter(#entity_mod::Column::DeletedAt.is_null())
+            .one(self.db.as_ref())
+            .await?
+            .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, id)))?;
+
+          Ok(#entity_mod::Model::from(row).into())
         }
       });
     } else if op == "update" {
@@ -316,14 +316,15 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
           id: uuid::Uuid,
           req: &#update_req,
         ) -> Result<#response, crate::api::ApiError> {
-          let existing: #entity_mod::Model = crate::services::common::get_active_by_id::<#entity_mod::Entity, _>(
-            conn,
-            id,
-            #entity_mod::Column::Id,
-            #entity_mod::Column::DeletedAt,
-            format!("{} '{}' not found", #entity_name, id),
-          )
-          .await?;
+          use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
+
+          let existing_loaded: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(id)
+            .filter(#entity_mod::Column::DeletedAt.is_null())
+            .one(conn)
+            .await?
+            .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, id)))?;
+          let existing: #entity_mod::Model = #entity_mod::Model::from(existing_loaded);
 
           #before_update_call
 
@@ -365,30 +366,32 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
         }
 
         async fn #soft_delete_set_state_name(&self, id: uuid::Uuid, undo: bool) -> Result<(), crate::api::ApiError> {
+          use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
+
           let actor_id = crate::context::audit::current_actor_id().ok_or_else(|| {
             crate::api::ApiError::Unauthorized("Missing authenticated actor context".to_string())
           })?;
 
           let txn = sea_orm::TransactionTrait::begin(self.db.as_ref()).await?;
-          let existing: #entity_mod::Model = crate::services::common::get_soft_delete_target_by_id::<#entity_mod::Entity, _>(
-            &txn,
-            id,
-            #entity_mod::Column::Id,
-            #entity_mod::Column::DeletedAt,
-            undo,
-            format!("{} '{}' not found", #entity_name, id),
-          )
-          .await?;
+          let deleted_filter = if undo {
+            #entity_mod::Column::DeletedAt.is_not_null()
+          } else {
+            #entity_mod::Column::DeletedAt.is_null()
+          };
+          let existing_loaded: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(id)
+            .filter(deleted_filter)
+            .one(&txn)
+            .await?
+            .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, id)))?;
+          let existing: #entity_mod::Model = #entity_mod::Model::from(existing_loaded);
 
           #before_soft_delete_call
 
           let mut model: #entity_mod::ActiveModel = existing.clone().into();
-          crate::services::common::set_soft_deleted_fields(
-            &mut model.deleted_at,
-            &mut model.deleted_by,
-            undo,
-            actor_id,
-          );
+          let now = sea_orm::prelude::ChronoUtc::now();
+          model.deleted_at = sea_orm::ActiveValue::Set(if undo { None } else { Some(now) });
+          model.deleted_by = sea_orm::ActiveValue::Set(if undo { None } else { Some(actor_id) });
 
           #apply_soft_delete_call
 
@@ -405,14 +408,39 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
     } else if op == "hard_delete" {
       methods.push(quote! {
         pub async fn #hard_delete_name(&self, id: uuid::Uuid) -> Result<(), crate::api::ApiError> {
-          crate::services::common::hard_delete_with_audit::<#entity_mod::Entity>(
-            self.db.as_ref(),
-            self.audit.as_ref(),
-            id,
-            #entity_name_value,
-            format!("{} '{}' not found", #entity_name, id),
-          )
-          .await
+          use sea_orm::{EntityLoaderTrait, EntityTrait, TransactionTrait};
+
+          let txn = sea_orm::TransactionTrait::begin(self.db.as_ref()).await?;
+          let existing_loaded: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(id)
+            .one(&txn)
+            .await?
+            .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, id)))?;
+          let existing: #entity_mod::Model = #entity_mod::Model::from(existing_loaded);
+
+          #entity_mod::Entity::delete_by_id(id)
+            .exec(&txn)
+            .await
+            .map_err(|err| {
+              let message = err.to_string().to_lowercase();
+              let has_dependency_violation = message.contains("foreign key")
+                || message.contains("constraint failed")
+                || message.contains("violates foreign key constraint")
+                || message.contains("violates constraint");
+
+              if has_dependency_violation {
+                crate::api::ApiError::Conflict(format!(
+                  "Cannot hard delete {} because dependent records exist",
+                  #entity_name_value
+                ))
+              } else {
+                crate::api::ApiError::Database(err)
+              }
+            })?;
+
+          self.audit.register_delete(&txn, id, &existing).await?;
+          txn.commit().await?;
+          Ok(())
         }
       });
     } else if op == "create_and_execute" {
@@ -447,6 +475,8 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
           req: &#create_req,
           actor_id: uuid::Uuid,
         ) -> Result<#response, crate::api::ApiError> {
+          use sea_orm::EntityLoaderTrait;
+
           let txn = sea_orm::TransactionTrait::begin(self.db.as_ref()).await?;
 
           #before_create_txn_call
@@ -459,12 +489,12 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
             .#execute_no_tx_name(&txn, created.id, actor_id)
             .await?;
 
-          let updated = crate::db::ops::find_by_id_required::<#entity_mod::Entity>(
-            &txn,
-            created.id,
-            format!("{} '{}' not found", #entity_name, created.id),
-          )
-          .await?;
+          let updated_loaded: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(created.id)
+            .one(&txn)
+            .await?
+            .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, created.id)))?;
+          let updated: #entity_mod::Model = #entity_mod::Model::from(updated_loaded);
 
           txn.commit().await?;
           Ok(updated.into())
@@ -501,10 +531,14 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
           document_id: uuid::Uuid,
           actor_id: uuid::Uuid,
         ) -> Result<(), crate::api::ApiError> {
-          let existing = #entity_mod::Entity::find_by_id(document_id)
+          use sea_orm::EntityLoaderTrait;
+
+          let existing_loaded: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(document_id)
             .one(conn)
             .await?
             .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, document_id)))?;
+          let existing: #entity_mod::Model = #entity_mod::Model::from(existing_loaded);
 
           if existing.deleted_at.is_some() {
             return Err(crate::api::ApiError::Conflict(format!(
@@ -570,10 +604,14 @@ pub(crate) fn entity_service(attr: TokenStream, item: TokenStream) -> TokenStrea
           document_id: uuid::Uuid,
           actor_id: uuid::Uuid,
         ) -> Result<(), crate::api::ApiError> {
-          let existing = #entity_mod::Entity::find_by_id(document_id)
+          use sea_orm::EntityLoaderTrait;
+
+          let existing_loaded: #entity_mod::ModelEx = #entity_mod::Entity::load()
+            .filter_by_id(document_id)
             .one(conn)
             .await?
             .ok_or_else(|| crate::api::ApiError::NotFound(format!("{} '{}' not found", #entity_name, document_id)))?;
+          let existing: #entity_mod::Model = #entity_mod::Model::from(existing_loaded);
 
           if existing.deleted_at.is_some() {
             return Err(crate::api::ApiError::Conflict(format!(

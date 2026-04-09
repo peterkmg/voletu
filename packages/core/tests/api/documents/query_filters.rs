@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use sea_orm::{prelude::Decimal, ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{prelude::Decimal, ColumnTrait, EntityLoaderTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
 use voletu_core::{endpoints::paths as api_paths, entities::ownership_transfer};
 
@@ -7,22 +7,12 @@ use super::seed_inventory_context;
 use crate::common::{
   catalog_seed::seed_ledger_balance,
   http::{
-    assert_api_error,
-    assert_api_success,
-    get,
-    post_empty,
-    post_json,
-    setup_seeded_app_with_admin_token,
-    with_auth_token,
+    assert_api_error, assert_api_success, get, post_empty, post_json,
+    setup_seeded_app_with_admin_token, with_auth_token,
   },
   payloads::{
-    acceptance_composite_save,
-    acceptance_save_truck,
-    blending_composite_save,
-    blending_save,
-    dispatch_save_external_truck,
-    operations_ownership_transfer,
-    operations_physical_transfer,
+    acceptance_composite_save, acceptance_save_truck, blending_composite_save, blending_save,
+    dispatch_save_external_truck, operations_ownership_transfer, operations_physical_transfer,
     operations_reconciliation_save,
   },
 };
@@ -434,8 +424,8 @@ async fn query_endpoints_filter_by_document_number_and_status() {
       RECONCILIATION_QUERY_DOC_NUMBER_2
     );
 
-    let persisted_ownership = ownership_transfer::Entity::find()
-      .filter(ownership_transfer::Column::Id.eq(Uuid::parse_str(&ownership_draft_id).unwrap()))
+    let persisted_ownership = ownership_transfer::Entity::load()
+      .filter_by_id(Uuid::parse_str(&ownership_draft_id).unwrap())
       .one(&*db)
       .await
       .unwrap();

@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::document::query::DispatchDocumentQuerySpec;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,6 +11,20 @@ struct DispatchQueryParams {
   dispatch_purpose: Option<enums::DispatchPurpose>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<DispatchQueryParams> for DispatchDocumentQuerySpec {
+  fn from(value: DispatchQueryParams) -> Self {
+    Self {
+      document_number: value.document_number,
+      status: value.status,
+      contractor_id: value.contractor_id,
+      dispatch_method: value.dispatch_method,
+      dispatch_purpose: value.dispatch_purpose,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -32,34 +47,15 @@ async fn dispatch_document_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<DispatchResponse>> {
+  let query = DispatchDocumentQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .dispatch_document_query_with_names(
-        None,
-        None,
-        None,
-        None,
-        None,
-        pagination.page,
-        pagination.per_page,
-      )
+      .dispatch_document_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .dispatch_document_query(
-        None,
-        None,
-        None,
-        None,
-        None,
-        pagination.page,
-        pagination.per_page,
-      )
-      .await?
+    state.svc.document.dispatch_document_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }
@@ -135,34 +131,15 @@ async fn dispatch_document_query(
   Query(query): Query<DispatchQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<DispatchResponse>> {
+  let query = DispatchDocumentQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .dispatch_document_query_with_names(
-        query.document_number.as_deref(),
-        query.status,
-        query.contractor_id,
-        query.dispatch_method,
-        query.dispatch_purpose,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .dispatch_document_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .dispatch_document_query(
-        query.document_number.as_deref(),
-        query.status,
-        query.contractor_id,
-        query.dispatch_method,
-        query.dispatch_purpose,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
-      .await?
+    state.svc.document.dispatch_document_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }

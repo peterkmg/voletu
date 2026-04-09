@@ -1,4 +1,4 @@
-use sea_orm::{ConnectionTrait, EntityLoaderTrait, EntityTrait, IntoActiveModel};
+use sea_orm::{ConnectionTrait, EntityLoaderTrait, IntoActiveModel};
 use uuid::Uuid;
 
 use crate::{

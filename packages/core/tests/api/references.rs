@@ -1,28 +1,15 @@
 use axum::http::StatusCode;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
-use voletu_core::{
-  endpoints::paths as api_paths,
-  entities::{base, company, product_group, product_type, warehouse},
-};
+use voletu_core::endpoints::paths as api_paths;
 
 use crate::common::{
   http::{
-    assert_api_error,
-    assert_api_success,
-    post_json,
-    setup_seeded_app_with_admin_token,
+    assert_api_error, assert_api_success, get, post_json, setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{
-    catalog_base,
-    catalog_company,
-    catalog_port,
-    catalog_product,
-    catalog_product_group,
-    catalog_product_type,
-    catalog_storage,
-    catalog_warehouse,
+    catalog_base, catalog_company, catalog_port, catalog_product, catalog_product_group,
+    catalog_product_type, catalog_storage, catalog_warehouse,
   },
 };
 
@@ -34,7 +21,7 @@ const BASE_COMMON_NAME: &str = "Base A";
 
 #[tokio::test]
 async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dto_data() {
-  let (db, app, token) = setup_seeded_app_with_admin_token().await;
+  let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
     let create_company = post_json(
@@ -66,13 +53,9 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
       PRODUCT_TYPE_COMMON_NAME
     );
 
-    let company_id = company::Entity::find().one(&*db).await.unwrap().unwrap().id;
-    let product_type_id = product_type::Entity::find()
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
+    let company_id = Uuid::parse_str(company_json["data"]["id"].as_str().unwrap()).unwrap();
+    let product_type_id =
+      Uuid::parse_str(product_type_json["data"]["id"].as_str().unwrap()).unwrap();
 
     let create_product_group = post_json(
       &app,
@@ -86,14 +69,8 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
       group_json["data"]["productTypeId"],
       product_type_id.to_string()
     );
-
-    let product_group_id = product_group::Entity::find()
-      .filter(product_group::Column::ProductTypeId.eq(product_type_id))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
+    let product_group_id_str = group_json["data"]["id"].as_str().unwrap().to_owned();
+    let product_group_id = Uuid::parse_str(&product_group_id_str).unwrap();
 
     let create_product = post_json(
       &app,
@@ -111,6 +88,8 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
     let product_json = assert_api_success(create_product).await;
     assert_eq!(product_json["data"]["commonName"], PRODUCT_COMMON_NAME);
     assert_eq!(product_json["data"]["isComponent"], true);
+    let product_id = Uuid::parse_str(product_json["data"]["id"].as_str().unwrap()).unwrap();
+    let product_id_str = product_id.to_string();
 
     let create_base = post_json(
       &app,
@@ -120,8 +99,7 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
     .await;
     let base_json = assert_api_success(create_base).await;
     assert_eq!(base_json["data"]["commonName"], BASE_COMMON_NAME);
-
-    let base_id = base::Entity::find().one(&*db).await.unwrap().unwrap().id;
+    let base_id = Uuid::parse_str(base_json["data"]["id"].as_str().unwrap()).unwrap();
 
     let create_warehouse = post_json(
       &app,
@@ -132,14 +110,8 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
     let warehouse_json = assert_api_success(create_warehouse).await;
     assert_eq!(warehouse_json["data"]["baseId"], base_id.to_string());
     assert_eq!(warehouse_json["data"]["commonName"], "WH-1");
-
-    let warehouse_id = warehouse::Entity::find()
-      .filter(warehouse::Column::BaseId.eq(base_id))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
+    let warehouse_id_str = warehouse_json["data"]["id"].as_str().unwrap().to_owned();
+    let warehouse_id = Uuid::parse_str(&warehouse_id_str).unwrap();
 
     let create_storage = post_json(
       &app,
@@ -163,6 +135,8 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
       storage_json["data"]["productTypeId"],
       product_type_id.to_string()
     );
+    let storage_id = Uuid::parse_str(storage_json["data"]["id"].as_str().unwrap()).unwrap();
+    let storage_id_str = storage_id.to_string();
 
     let create_port = post_json(
       &app,
@@ -173,6 +147,151 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
     let port_json = assert_api_success(create_port).await;
     assert_eq!(port_json["data"]["commonName"], "Port A");
     assert_eq!(port_json["data"]["country"], "EE");
+
+    let product_group_list_json = assert_api_success(
+      get(
+        &app,
+        format!("{}?embed=names", api_paths::catalog::PRODUCT_GROUPS),
+      )
+      .await,
+    )
+    .await;
+    let product_group_list_item = product_group_list_json["data"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|item| item["id"].as_str() == Some(product_group_id_str.as_str()))
+      .unwrap();
+    assert_eq!(
+      product_group_list_item["productTypeIdName"],
+      PRODUCT_TYPE_COMMON_NAME
+    );
+
+    let product_group_get_json = assert_api_success(
+      get(
+        &app,
+        format!(
+          "{}/{}?embed=names",
+          api_paths::catalog::PRODUCT_GROUPS,
+          product_group_id
+        ),
+      )
+      .await,
+    )
+    .await;
+    assert_eq!(
+      product_group_get_json["data"]["productTypeIdName"],
+      PRODUCT_TYPE_COMMON_NAME
+    );
+
+    let product_list_json = assert_api_success(
+      get(
+        &app,
+        format!("{}?embed=names", api_paths::catalog::PRODUCTS),
+      )
+      .await,
+    )
+    .await;
+    let product_list_item = product_list_json["data"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|item| item["id"].as_str() == Some(product_id_str.as_str()))
+      .unwrap();
+    assert_eq!(
+      product_list_item["productGroupIdName"],
+      PRODUCT_GROUP_COMMON_NAME
+    );
+    assert_eq!(product_list_item["manufacturerIdName"], COMPANY_COMMON_NAME);
+
+    let product_get_json = assert_api_success(
+      get(
+        &app,
+        format!(
+          "{}/{}?embed=names",
+          api_paths::catalog::PRODUCTS,
+          product_id
+        ),
+      )
+      .await,
+    )
+    .await;
+    assert_eq!(
+      product_get_json["data"]["productGroupIdName"],
+      PRODUCT_GROUP_COMMON_NAME
+    );
+    assert_eq!(
+      product_get_json["data"]["manufacturerIdName"],
+      COMPANY_COMMON_NAME
+    );
+
+    let warehouse_list_json = assert_api_success(
+      get(
+        &app,
+        format!("{}?embed=names", api_paths::catalog::WAREHOUSES),
+      )
+      .await,
+    )
+    .await;
+    let warehouse_list_item = warehouse_list_json["data"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|item| item["id"].as_str() == Some(warehouse_id_str.as_str()))
+      .unwrap();
+    assert_eq!(warehouse_list_item["baseIdName"], BASE_COMMON_NAME);
+
+    let warehouse_get_json = assert_api_success(
+      get(
+        &app,
+        format!(
+          "{}/{}?embed=names",
+          api_paths::catalog::WAREHOUSES,
+          warehouse_id
+        ),
+      )
+      .await,
+    )
+    .await;
+    assert_eq!(warehouse_get_json["data"]["baseIdName"], BASE_COMMON_NAME);
+
+    let storage_list_json = assert_api_success(
+      get(
+        &app,
+        format!("{}?embed=names", api_paths::catalog::STORAGES),
+      )
+      .await,
+    )
+    .await;
+    let storage_list_item = storage_list_json["data"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|item| item["id"].as_str() == Some(storage_id_str.as_str()))
+      .unwrap();
+    assert_eq!(storage_list_item["warehouseIdName"], "WH-1");
+    assert_eq!(
+      storage_list_item["productTypeIdName"],
+      PRODUCT_TYPE_COMMON_NAME
+    );
+
+    let storage_get_json = assert_api_success(
+      get(
+        &app,
+        format!(
+          "{}/{}?embed=names",
+          api_paths::catalog::STORAGES,
+          storage_id
+        ),
+      )
+      .await,
+    )
+    .await;
+    assert_eq!(storage_get_json["data"]["warehouseIdName"], "WH-1");
+    assert_eq!(
+      storage_get_json["data"]["productTypeIdName"],
+      PRODUCT_TYPE_COMMON_NAME
+    );
   })
   .await;
 }

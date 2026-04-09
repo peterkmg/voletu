@@ -32,3 +32,22 @@ impl From<inventory_ledger_entry::Model> for LedgerEntryResponse {
     }
   }
 }
+
+impl From<inventory_ledger_entry::ModelEx> for LedgerEntryResponse {
+  fn from(row: inventory_ledger_entry::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      storage_id: row.storage_id,
+      product_id: row.product_id,
+      contractor_id: row.contractor_id,
+      current_amount: row.current_amount,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}

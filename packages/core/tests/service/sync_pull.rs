@@ -13,8 +13,7 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_sync_node},
-  setup_db,
-  test_config,
+  setup_db, test_config,
 };
 
 const TEST_SYNC_NODE_ID: Uuid = Uuid::from_u128(11);
@@ -137,6 +136,49 @@ async fn sync_outbound_returns_push_payload_shape_with_json_strings() {
       .unwrap();
   assert_json_eq!(old_values, serde_json::json!({ "name": "Old" }));
   assert_json_eq!(new_values, serde_json::json!({ "name": "New" }));
+}
+
+#[tokio::test]
+async fn sync_audit_log_query_applies_offset_and_limit_in_ascending_id_order() {
+  let db = Arc::new(setup_db().await);
+  let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
+  let origin_db_id = Uuid::now_v7();
+
+  let first_id = Uuid::from_u128(10);
+  let second_id = Uuid::from_u128(20);
+  let third_id = Uuid::from_u128(30);
+
+  for (id, table_name) in [
+    (first_id, "query-audit-a"),
+    (second_id, "query-audit-b"),
+    (third_id, "query-audit-c"),
+  ] {
+    audit_log::ActiveModel {
+      id: Set(id),
+      table_name: Set(table_name.to_string()),
+      record_id: Set(Uuid::now_v7()),
+      action: Set(enums::AuditAction::Insert),
+      old_values: Set(None),
+      new_values: Set(None),
+      target_base_ids: Set(String::new()),
+      user_role_weight: Set(10),
+      user_id: Set(Uuid::now_v7()),
+      timestamp: Set(ts("2026-01-01T00:00:00Z")),
+      origin_db_id: Set(origin_db_id),
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+  }
+
+  let rows = service
+    .audit_log_query(None, None, Some(origin_db_id), Some(2), Some(1))
+    .await
+    .unwrap();
+
+  assert_eq!(rows.len(), 2);
+  assert_eq!(rows[0].id, second_id);
+  assert_eq!(rows[1].id, third_id);
 }
 
 #[tokio::test]

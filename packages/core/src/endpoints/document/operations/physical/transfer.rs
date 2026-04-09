@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::document::query::PhysicalTransferQuerySpec;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -7,6 +8,17 @@ struct PhysicalTransferQueryParams {
   status: Option<enums::DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<PhysicalTransferQueryParams> for PhysicalTransferQuerySpec {
+  fn from(value: PhysicalTransferQueryParams) -> Self {
+    Self {
+      document_number: value.document_number,
+      status: value.status,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -29,22 +41,18 @@ async fn physical_transfer_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<PhysicalTransferResponse>> {
+  let query = PhysicalTransferQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .physical_transfer_composite_query_with_names(
-        None,
-        None,
-        pagination.page,
-        pagination.per_page,
-      )
+      .physical_transfer_composite_query_with_names(query)
       .await?
   } else {
     state
       .svc
       .document
-      .physical_transfer_composite_query(None, None, pagination.page, pagination.per_page)
+      .physical_transfer_composite_query(query)
       .await?
   };
   Ok(ApiResponse::success(rows))
@@ -105,27 +113,18 @@ async fn physical_transfer_query(
   Query(query): Query<PhysicalTransferQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<PhysicalTransferResponse>> {
+  let query = PhysicalTransferQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .physical_transfer_composite_query_with_names(
-        query.document_number.as_deref(),
-        query.status,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .physical_transfer_composite_query_with_names(query)
       .await?
   } else {
     state
       .svc
       .document
-      .physical_transfer_composite_query(
-        query.document_number.as_deref(),
-        query.status,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .physical_transfer_composite_query(query)
       .await?
   };
   Ok(ApiResponse::success(rows))

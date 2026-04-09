@@ -8,15 +8,9 @@ use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  await_sync_cycle,
-  create_acceptance_via_api,
-  execute_document_via_api,
-  get_acceptance_composite_json,
-  revert_document_via_api,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  temp_db_path,
+  await_sync_cycle, create_acceptance_via_api, execute_document_via_api,
+  get_acceptance_composite_json, revert_document_via_api, seed_catalog_via_api,
+  setup_central_via_api, setup_peripheral_via_api, temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -26,9 +20,12 @@ async fn full_document_lifecycle_syncs_correctly() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r18-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("r18-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r18-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
 
   // Create acceptance draft

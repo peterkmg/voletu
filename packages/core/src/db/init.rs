@@ -1,12 +1,6 @@
 use sea_orm::{
-  entity::prelude::ChronoUtc,
-  ActiveModelTrait,
-  ActiveValue::Set,
-  ConnectOptions,
-  Database,
-  DatabaseConnection,
-  EntityTrait,
-  TransactionTrait,
+  entity::prelude::ChronoUtc, ActiveModelTrait, ActiveValue::Set, ConnectOptions, Database,
+  DatabaseConnection, TransactionTrait,
 };
 use strum::VariantArray;
 use tracing::{debug, log::LevelFilter, trace};
@@ -18,6 +12,9 @@ use crate::{
   context::audit::with_audit_context,
   entities::{database_instance, local, role, user},
   enums,
+  services::system::{
+    database_instance::load_active_database_instance, local::load_local_bootstrap,
+  },
   utils::{jwt, password::hash_password, paths::ensure_parent_dir},
 };
 
@@ -41,7 +38,7 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
 
   // Wrap syncable entity inserts in an audit context so they produce audit logs.
   // Without this, database_instance and user records would never sync to other nodes.
-  let (instance, local) = with_audit_context(bootstrap_admin_id, bootstrap_db_id, || async {
+  let (_instance, local) = with_audit_context(bootstrap_admin_id, bootstrap_db_id, || async {
     let instance = database_instance::ActiveModel {
       id: Set(bootstrap_db_id),
       common_name: Set(DEFAULT_DATABASE_COMMON_NAME.to_string()),
@@ -139,15 +136,15 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     .await?;
   trace!("Database schema synchronized.");
 
-  let local = match local::Entity::find().one(&db).await? {
-    Some(existing) => existing,
-    None => seed_defaults(&db).await?,
+  let local = match load_local_bootstrap(&db).await {
+    Ok(existing) => existing,
+    Err(crate::api::ApiError::NotFound(_)) => seed_defaults(&db).await?,
+    Err(other) => return Err(anyhow::anyhow!(other.to_string())),
   };
 
-  let instance = database_instance::Entity::find_by_id(local.local_db_id)
-    .one(&db)
-    .await?
-    .ok_or_else(|| anyhow::anyhow!("Database instance row is missing"))?;
+  let instance = load_active_database_instance(&db, local.local_db_id)
+    .await
+    .map_err(|err| anyhow::anyhow!(err.to_string()))?;
 
   Ok((
     db,

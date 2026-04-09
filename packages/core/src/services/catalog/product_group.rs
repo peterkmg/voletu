@@ -1,3 +1,6 @@
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+use uuid::Uuid;
+
 use crate::{
   dtos,
   entities::{product_group, product_type},
@@ -6,6 +9,26 @@ use crate::{
     CatalogService,
   },
 };
+
+async fn ensure_active_product_type(
+  conn: &impl ConnectionTrait,
+  product_type_id: Uuid,
+  field_name: &str,
+) -> Result<(), crate::api::ApiError> {
+  let exists = product_type::Entity::load()
+    .filter_by_id(product_type_id)
+    .filter(product_type::Column::DeletedAt.is_null())
+    .one(conn)
+    .await?;
+
+  if exists.is_none() {
+    return Err(crate::api::ApiError::BadRequest(format!(
+      "{field_name} '{product_type_id}' does not reference a valid record"
+    )));
+  }
+
+  Ok(())
+}
 
 fn apply_product_group_update(
   model: &mut product_group::ActiveModel,
@@ -21,14 +44,7 @@ async fn before_product_group_create(
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateProductGroupRequest,
 ) -> Result<(), crate::api::ApiError> {
-  crate::services::common::validate_fk_exists::<product_type::Entity>(
-    conn,
-    req.product_type_id,
-    product_type::Column::Id,
-    product_type::Column::DeletedAt,
-    "productTypeId",
-  )
-  .await?;
+  ensure_active_product_type(conn, req.product_type_id, "productTypeId").await?;
   Ok(())
 }
 
@@ -39,14 +55,7 @@ async fn before_product_group_update(
   req: &dtos::UpdateProductGroupRequest,
 ) -> Result<(), crate::api::ApiError> {
   if let Some(product_type_id) = req.product_type_id {
-    crate::services::common::validate_fk_exists::<product_type::Entity>(
-      conn,
-      product_type_id,
-      product_type::Column::Id,
-      product_type::Column::DeletedAt,
-      "productTypeId",
-    )
-    .await?;
+    ensure_active_product_type(conn, product_type_id, "productTypeId").await?;
   }
   Ok(())
 }

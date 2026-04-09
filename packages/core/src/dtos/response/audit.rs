@@ -38,3 +38,21 @@ impl From<audit_log::Model> for AuditLogResponse {
     }
   }
 }
+
+impl From<audit_log::ModelEx> for AuditLogResponse {
+  fn from(row: audit_log::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      table_name: row.table_name,
+      record_id: row.record_id,
+      action: row.action,
+      old_values_json: row.old_values.map(|value| value.to_string()),
+      new_values_json: row.new_values.map(|value| value.to_string()),
+      target_base_ids: row.target_base_ids,
+      user_role_weight: row.user_role_weight,
+      user_id: row.user_id,
+      timestamp: row.timestamp,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}

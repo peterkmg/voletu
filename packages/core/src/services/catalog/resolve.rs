@@ -1,9 +1,11 @@
+use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos,
-  services::{common::resolve_names, CatalogService},
+  entities::{base, company, product, product_group, product_type, storage, warehouse},
+  services::CatalogService,
 };
 
 impl CatalogService {
@@ -11,65 +13,137 @@ impl CatalogService {
     &self,
     pagination: Option<(u64, u64)>,
   ) -> Result<Vec<dtos::ProductResponse>, ApiError> {
-    let mut items = self.product_list(pagination).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    let query = product::Entity::load()
+      .filter(product::Column::DeletedAt.is_null())
+      .with(product_group::Entity)
+      .with(company::Entity);
+
+    let items: Vec<product::ModelEx> = if let Some((page, per_page)) = pagination {
+      query
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?
+    } else {
+      query.all(self.db.as_ref()).await?
+    };
+
+    Ok(items.into_iter().map(Into::into).collect())
   }
 
   pub async fn product_get_with_names(&self, id: Uuid) -> Result<dtos::ProductResponse, ApiError> {
-    let mut item = self.product_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = product::Entity::load()
+      .filter_by_id(id)
+      .filter(product::Column::DeletedAt.is_null())
+      .with(product_group::Entity)
+      .with(company::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Product '{}' not found", id)))?;
+
+    Ok(item.into())
   }
 
   pub async fn product_group_list_with_names(
     &self,
     pagination: Option<(u64, u64)>,
   ) -> Result<Vec<dtos::ProductGroupResponse>, ApiError> {
-    let mut items = self.product_group_list(pagination).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    let query = product_group::Entity::load()
+      .filter(product_group::Column::DeletedAt.is_null())
+      .with(product_type::Entity);
+
+    let items: Vec<product_group::ModelEx> = if let Some((page, per_page)) = pagination {
+      query
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?
+    } else {
+      query.all(self.db.as_ref()).await?
+    };
+
+    Ok(items.into_iter().map(Into::into).collect())
   }
 
   pub async fn product_group_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::ProductGroupResponse, ApiError> {
-    let mut item = self.product_group_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = product_group::Entity::load()
+      .filter_by_id(id)
+      .filter(product_group::Column::DeletedAt.is_null())
+      .with(product_type::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Product group '{}' not found", id)))?;
+
+    Ok(item.into())
   }
 
   pub async fn warehouse_list_with_names(
     &self,
     pagination: Option<(u64, u64)>,
   ) -> Result<Vec<dtos::WarehouseResponse>, ApiError> {
-    let mut items = self.warehouse_list(pagination).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    let query = warehouse::Entity::load()
+      .filter(warehouse::Column::DeletedAt.is_null())
+      .with(base::Entity);
+
+    let items: Vec<warehouse::ModelEx> = if let Some((page, per_page)) = pagination {
+      query
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?
+    } else {
+      query.all(self.db.as_ref()).await?
+    };
+
+    Ok(items.into_iter().map(Into::into).collect())
   }
 
   pub async fn warehouse_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::WarehouseResponse, ApiError> {
-    let mut item = self.warehouse_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = warehouse::Entity::load()
+      .filter_by_id(id)
+      .filter(warehouse::Column::DeletedAt.is_null())
+      .with(base::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Warehouse '{}' not found", id)))?;
+
+    Ok(item.into())
   }
 
   pub async fn storage_list_with_names(
     &self,
     pagination: Option<(u64, u64)>,
   ) -> Result<Vec<dtos::StorageResponse>, ApiError> {
-    let mut items = self.storage_list(pagination).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    let query = storage::Entity::load()
+      .filter(storage::Column::DeletedAt.is_null())
+      .with(warehouse::Entity)
+      .with(product_type::Entity);
+
+    let items: Vec<storage::ModelEx> = if let Some((page, per_page)) = pagination {
+      query
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?
+    } else {
+      query.all(self.db.as_ref()).await?
+    };
+
+    Ok(items.into_iter().map(Into::into).collect())
   }
 
   pub async fn storage_get_with_names(&self, id: Uuid) -> Result<dtos::StorageResponse, ApiError> {
-    let mut item = self.storage_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = storage::Entity::load()
+      .filter_by_id(id)
+      .filter(storage::Column::DeletedAt.is_null())
+      .with(warehouse::Entity)
+      .with(product_type::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Storage '{}' not found", id)))?;
+
+    Ok(item.into())
   }
 }

@@ -9,6 +9,7 @@ use crate::{
   dtos::response::pipeline::PhysicalTransferFlatRow,
   endpoints::{paths, query::PaginationParams},
   enums::DocumentStatus,
+  services::document::query::PhysicalTransferFlatQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +18,16 @@ struct PhysicalTransferFlatQueryParams {
   status: Option<DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<PhysicalTransferFlatQueryParams> for PhysicalTransferFlatQuerySpec {
+  fn from(params: PhysicalTransferFlatQueryParams) -> Self {
+    Self {
+      status: params.status,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -41,11 +52,7 @@ async fn physical_transfer_flat_query(
   let rows = state
     .svc
     .document
-    .physical_transfer_flat_query(
-      params.status,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .physical_transfer_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

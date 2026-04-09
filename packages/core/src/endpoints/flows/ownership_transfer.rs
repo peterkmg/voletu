@@ -9,6 +9,7 @@ use crate::{
   dtos::response::pipeline::OwnershipTransferFlatRow,
   endpoints::{paths, query::PaginationParams},
   enums::DocumentStatus,
+  services::document::query::OwnershipTransferFlatQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +18,16 @@ struct OwnershipTransferFlatQueryParams {
   status: Option<DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<OwnershipTransferFlatQueryParams> for OwnershipTransferFlatQuerySpec {
+  fn from(params: OwnershipTransferFlatQueryParams) -> Self {
+    Self {
+      status: params.status,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -41,11 +52,7 @@ async fn ownership_transfer_flat_query(
   let rows = state
     .svc
     .document
-    .ownership_transfer_flat_query(
-      params.status,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .ownership_transfer_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

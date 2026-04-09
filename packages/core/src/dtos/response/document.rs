@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use sea_orm::entity::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
@@ -5,30 +7,13 @@ use voletu_core_macros::response_dto;
 use crate::{
   api::ApiError,
   entities::{
-    acceptance_document,
-    acceptance_item,
-    blending_component,
-    blending_document,
-    blending_result,
-    dispatch_document,
-    dispatch_item,
-    dispatch_storage_measurement,
-    inventory_adjustment,
-    inventory_reconciliation,
-    ownership_transfer,
-    ownership_transfer_item,
-    physical_storage_transfer,
-    physical_transfer_item,
-    rail_wagon_manifest,
-    rail_wagon_measurement,
-    rail_wagon_weight,
-    rail_waybill,
-    truck_waybill,
-    truck_waybill_item,
-    truck_weight_doc,
+    acceptance_document, acceptance_item, blending_component, blending_document, blending_result,
+    dispatch_document, dispatch_item, dispatch_storage_measurement, inventory_adjustment,
+    inventory_reconciliation, ownership_transfer, ownership_transfer_item,
+    physical_storage_transfer, physical_transfer_item, rail_wagon_manifest, rail_wagon_measurement,
+    rail_wagon_weight, rail_waybill, truck_waybill, truck_waybill_item, truck_weight_doc,
   },
   enums::{AdjustmentType, ArrivalType, BunkerType, DispatchMethod, DispatchPurpose},
-  services::common::resolve::{FkIdCollector, ResolveFkNames, ResolvedNames},
 };
 
 /// Response DTO for the `acceptance_document` entity.
@@ -73,6 +58,50 @@ impl From<acceptance_document::Model> for AcceptanceResponse {
       truck_waybill_id_name: None,
       rail_waybill_id_name: None,
       transit_dispatch_id_name: None,
+      created_at: model.created_at.to_rfc3339(),
+      updated_at: model.updated_at.to_rfc3339(),
+      deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: model.created_by,
+      updated_by: model.updated_by,
+      deleted_by: model.deleted_by,
+      origin_db_id: model.origin_db_id,
+      status: model.status,
+      executed_at: model.executed_at.map(|v| v.to_rfc3339()),
+      executed_by: model.executed_by,
+      reverted_at: model.reverted_at.map(|v| v.to_rfc3339()),
+      reverted_by: model.reverted_by,
+    }
+  }
+}
+
+impl From<acceptance_document::ModelEx> for AcceptanceResponse {
+  fn from(model: acceptance_document::ModelEx) -> Self {
+    Self {
+      id: model.id,
+      document_number: model.document_number,
+      date_accepted: model.date_accepted.to_rfc3339(),
+      arrival_type: model.arrival_type,
+      source_entity: model.source_entity,
+      contractor_id: model.contractor_id,
+      contractor_id_name: model
+        .contractor
+        .as_ref()
+        .map(|contractor| contractor.common_name.clone()),
+      truck_waybill_id: model.truck_waybill_id,
+      rail_waybill_id: model.rail_waybill_id,
+      transit_dispatch_id: model.transit_dispatch_id,
+      truck_waybill_id_name: model
+        .truck_waybill
+        .as_ref()
+        .map(|truck_waybill| truck_waybill.document_number.clone()),
+      rail_waybill_id_name: model
+        .rail_waybill
+        .as_ref()
+        .map(|rail_waybill| rail_waybill.document_number.clone()),
+      transit_dispatch_id_name: model
+        .transit_dispatch
+        .as_ref()
+        .map(|dispatch| dispatch.document_number.clone()),
       created_at: model.created_at.to_rfc3339(),
       updated_at: model.updated_at.to_rfc3339(),
       deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
@@ -196,6 +225,51 @@ impl From<dispatch_document::Model> for DispatchResponse {
   }
 }
 
+impl DispatchResponse {
+  pub(crate) fn from_loaded(
+    model: dispatch_document::ModelEx,
+    exporter_id_name: Option<String>,
+  ) -> Self {
+    Self {
+      id: model.id,
+      document_number: model.document_number,
+      date: model.date.to_rfc3339(),
+      dispatch_purpose: model.dispatch_purpose,
+      dispatch_method: model.dispatch_method,
+      contractor_id: model.contractor_id,
+      destination_base_id: model.destination_base_id,
+      receiver_entity: model.receiver_entity,
+      start_cargo_ops: model.start_cargo_ops.map(|v| v.to_rfc3339()),
+      end_cargo_ops: model.end_cargo_ops.map(|v| v.to_rfc3339()),
+      bunker_type: model.bunker_type,
+      exporter_id: model.exporter_id,
+      port_id: model.port_id,
+      contractor_id_name: model
+        .contractor
+        .as_ref()
+        .map(|contractor| contractor.common_name.clone()),
+      destination_base_id_name: model
+        .destination_base
+        .as_ref()
+        .map(|base| base.common_name.clone()),
+      exporter_id_name,
+      port_id_name: model.port.as_ref().map(|port| port.common_name.clone()),
+      created_at: model.created_at.to_rfc3339(),
+      updated_at: model.updated_at.to_rfc3339(),
+      deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: model.created_by,
+      updated_by: model.updated_by,
+      deleted_by: model.deleted_by,
+      origin_db_id: model.origin_db_id,
+      status: model.status,
+      executed_at: model.executed_at.map(|v| v.to_rfc3339()),
+      executed_by: model.executed_by,
+      reverted_at: model.reverted_at.map(|v| v.to_rfc3339()),
+      reverted_by: model.reverted_by,
+    }
+  }
+}
+
 /// Response DTO for the `dispatch_item` entity.
 #[response_dto(service_fields(common))]
 pub struct DispatchItemResponse {
@@ -233,6 +307,33 @@ impl From<dispatch_item::Model> for DispatchItemResponse {
   }
 }
 
+impl From<dispatch_item::ModelEx> for DispatchItemResponse {
+  fn from(item: dispatch_item::ModelEx) -> Self {
+    Self {
+      id: item.id,
+      dispatch_doc_id: item.dispatch_doc_id,
+      product_id: item.product_id,
+      storage_id: item.storage_id,
+      dispatched_amount: item.dispatched_amount,
+      product_id_name: item
+        .product
+        .as_ref()
+        .map(|product| product.common_name.clone()),
+      storage_id_name: item
+        .storage
+        .as_ref()
+        .map(|storage| storage.common_name.clone()),
+      created_at: item.created_at.to_rfc3339(),
+      updated_at: item.updated_at.to_rfc3339(),
+      deleted_at: item.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: item.created_by,
+      updated_by: item.updated_by,
+      deleted_by: item.deleted_by,
+      origin_db_id: item.origin_db_id,
+    }
+  }
+}
+
 impl From<acceptance_item::Model> for AcceptanceItemResponse {
   fn from(model: acceptance_item::Model) -> Self {
     Self {
@@ -243,6 +344,33 @@ impl From<acceptance_item::Model> for AcceptanceItemResponse {
       accepted_amount: model.accepted_amount,
       product_id_name: None,
       storage_id_name: None,
+      created_at: model.created_at.to_rfc3339(),
+      updated_at: model.updated_at.to_rfc3339(),
+      deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: model.created_by,
+      updated_by: model.updated_by,
+      deleted_by: model.deleted_by,
+      origin_db_id: model.origin_db_id,
+    }
+  }
+}
+
+impl From<acceptance_item::ModelEx> for AcceptanceItemResponse {
+  fn from(model: acceptance_item::ModelEx) -> Self {
+    Self {
+      id: model.id,
+      acceptance_doc_id: model.acceptance_doc_id,
+      product_id: model.product_id,
+      storage_id: model.storage_id,
+      accepted_amount: model.accepted_amount,
+      product_id_name: model
+        .product
+        .as_ref()
+        .map(|product| product.common_name.clone()),
+      storage_id_name: model
+        .storage
+        .as_ref()
+        .map(|storage| storage.common_name.clone()),
       created_at: model.created_at.to_rfc3339(),
       updated_at: model.updated_at.to_rfc3339(),
       deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
@@ -288,6 +416,35 @@ impl From<dispatch_storage_measurement::Model> for DispatchMeasurementResponse {
       after_density: measurement.after_density,
       after_mass: measurement.after_mass,
       storage_id_name: None,
+      created_at: measurement.created_at.to_rfc3339(),
+      updated_at: measurement.updated_at.to_rfc3339(),
+      deleted_at: measurement.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: measurement.created_by,
+      updated_by: measurement.updated_by,
+      deleted_by: measurement.deleted_by,
+      origin_db_id: measurement.origin_db_id,
+    }
+  }
+}
+
+impl From<dispatch_storage_measurement::ModelEx> for DispatchMeasurementResponse {
+  fn from(measurement: dispatch_storage_measurement::ModelEx) -> Self {
+    Self {
+      id: measurement.id,
+      dispatch_doc_id: measurement.dispatch_doc_id,
+      storage_id: measurement.storage_id,
+      before_height: measurement.before_height,
+      before_volume: measurement.before_volume,
+      before_density: measurement.before_density,
+      before_mass: measurement.before_mass,
+      after_height: measurement.after_height,
+      after_volume: measurement.after_volume,
+      after_density: measurement.after_density,
+      after_mass: measurement.after_mass,
+      storage_id_name: measurement
+        .storage
+        .as_ref()
+        .map(|storage| storage.common_name.clone()),
       created_at: measurement.created_at.to_rfc3339(),
       updated_at: measurement.updated_at.to_rfc3339(),
       deleted_at: measurement.deleted_at.map(|v| v.to_rfc3339()),
@@ -352,6 +509,25 @@ pub struct PhysicalTransferResponse {
   pub items: Vec<PhysicalTransferItemResponse>,
 }
 
+impl PhysicalTransferResponse {
+  pub(crate) fn from_loaded_with_names(
+    model: physical_storage_transfer::ModelEx,
+    to_storage_names: &HashMap<Uuid, String>,
+  ) -> Self {
+    let contractor_id_name = model.contractor.as_ref().map(|c| c.common_name.clone());
+    let items = model
+      .items
+      .iter()
+      .cloned()
+      .map(|item| PhysicalTransferItemResponse::from_loaded_with_names(item, to_storage_names))
+      .collect();
+    let mut response = Self::from(physical_storage_transfer::Model::from(model));
+    response.contractor_id_name = contractor_id_name;
+    response.items = items;
+    response
+  }
+}
+
 impl TryFrom<physical_storage_transfer::ModelEx> for PhysicalTransferResponse {
   type Error = ApiError;
 
@@ -359,9 +535,8 @@ impl TryFrom<physical_storage_transfer::ModelEx> for PhysicalTransferResponse {
     let items = model
       .items
       .iter()
-      .map(|item| {
-        PhysicalTransferItemResponse::from(physical_transfer_item::Model::from(item.clone()))
-      })
+      .cloned()
+      .map(PhysicalTransferItemResponse::from)
       .collect();
 
     let doc_model = physical_storage_transfer::Model::from(model);
@@ -456,6 +631,28 @@ pub struct PhysicalTransferItemResponse {
   pub to_storage_id_name: Option<String>,
 }
 
+impl PhysicalTransferItemResponse {
+  fn from_loaded_with_names(
+    model: physical_transfer_item::ModelEx,
+    to_storage_names: &HashMap<Uuid, String>,
+  ) -> Self {
+    let product_id_name = model.product.as_ref().map(|p| p.common_name.clone());
+    let from_storage_id_name = model.from_storage.as_ref().map(|s| s.common_name.clone());
+    let to_storage_id_name = to_storage_names.get(&model.to_storage_id).cloned();
+    let mut response = Self::from(physical_transfer_item::Model::from(model));
+    response.product_id_name = product_id_name;
+    response.from_storage_id_name = from_storage_id_name;
+    response.to_storage_id_name = to_storage_id_name;
+    response
+  }
+}
+
+impl From<physical_transfer_item::ModelEx> for PhysicalTransferItemResponse {
+  fn from(model: physical_transfer_item::ModelEx) -> Self {
+    Self::from(physical_transfer_item::Model::from(model))
+  }
+}
+
 impl From<physical_transfer_item::Model> for PhysicalTransferItemResponse {
   fn from(row: physical_transfer_item::Model) -> Self {
     Self {
@@ -486,6 +683,23 @@ pub struct OwnershipTransferResponse {
   pub items: Vec<OwnershipTransferItemResponse>,
 }
 
+impl OwnershipTransferResponse {
+  pub(crate) fn from_loaded_with_names(
+    model: ownership_transfer::ModelEx,
+    contractor_names: &HashMap<Uuid, String>,
+  ) -> Self {
+    let items = model
+      .items
+      .iter()
+      .cloned()
+      .map(|item| OwnershipTransferItemResponse::from_loaded_with_names(item, contractor_names))
+      .collect();
+    let mut response = Self::from(ownership_transfer::Model::from(model));
+    response.items = items;
+    response
+  }
+}
+
 impl TryFrom<ownership_transfer::ModelEx> for OwnershipTransferResponse {
   type Error = ApiError;
 
@@ -493,9 +707,8 @@ impl TryFrom<ownership_transfer::ModelEx> for OwnershipTransferResponse {
     let items = model
       .items
       .iter()
-      .map(|item| {
-        OwnershipTransferItemResponse::from(ownership_transfer_item::Model::from(item.clone()))
-      })
+      .cloned()
+      .map(OwnershipTransferItemResponse::from)
       .collect();
 
     let doc_model = ownership_transfer::Model::from(model);
@@ -584,6 +797,30 @@ pub struct OwnershipTransferItemResponse {
   pub to_contractor_id_name: Option<String>,
 }
 
+impl OwnershipTransferItemResponse {
+  fn from_loaded_with_names(
+    model: ownership_transfer_item::ModelEx,
+    contractor_names: &HashMap<Uuid, String>,
+  ) -> Self {
+    let storage_id_name = model.storage.as_ref().map(|s| s.common_name.clone());
+    let product_id_name = model.product.as_ref().map(|p| p.common_name.clone());
+    let from_contractor_id_name = contractor_names.get(&model.from_contractor_id).cloned();
+    let to_contractor_id_name = contractor_names.get(&model.to_contractor_id).cloned();
+    let mut response = Self::from(ownership_transfer_item::Model::from(model));
+    response.storage_id_name = storage_id_name;
+    response.product_id_name = product_id_name;
+    response.from_contractor_id_name = from_contractor_id_name;
+    response.to_contractor_id_name = to_contractor_id_name;
+    response
+  }
+}
+
+impl From<ownership_transfer_item::ModelEx> for OwnershipTransferItemResponse {
+  fn from(model: ownership_transfer_item::ModelEx) -> Self {
+    Self::from(ownership_transfer_item::Model::from(model))
+  }
+}
+
 impl From<ownership_transfer_item::Model> for OwnershipTransferItemResponse {
   fn from(row: ownership_transfer_item::Model) -> Self {
     Self {
@@ -650,6 +887,38 @@ impl From<blending_document::Model> for BlendingResponse {
   }
 }
 
+impl From<blending_document::ModelEx> for BlendingResponse {
+  fn from(row: blending_document::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      document_number: row.document_number,
+      date: row.date.to_rfc3339(),
+      contractor_id: row.contractor_id,
+      target_product_id: row.target_product_id,
+      contractor_id_name: row
+        .contractor
+        .as_ref()
+        .map(|company| company.common_name.clone()),
+      target_product_id_name: row
+        .target_product
+        .as_ref()
+        .map(|product| product.common_name.clone()),
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+      status: row.status,
+      executed_at: row.executed_at.map(|v| v.to_rfc3339()),
+      executed_by: row.executed_by,
+      reverted_at: row.reverted_at.map(|v| v.to_rfc3339()),
+      reverted_by: row.reverted_by,
+    }
+  }
+}
+
 /// Response DTO for the `blending_component` entity.
 #[response_dto(service_fields(common))]
 pub struct BlendingComponentResponse {
@@ -676,6 +945,33 @@ impl From<blending_component::Model> for BlendingComponentResponse {
       amount_used: row.amount_used,
       source_product_id_name: None,
       storage_id_name: None,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
+impl From<blending_component::ModelEx> for BlendingComponentResponse {
+  fn from(row: blending_component::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      blending_doc_id: row.blending_doc_id,
+      storage_id: row.storage_id,
+      source_product_id: row.source_product_id,
+      amount_used: row.amount_used,
+      source_product_id_name: row
+        .source_product
+        .as_ref()
+        .map(|product| product.common_name.clone()),
+      storage_id_name: row
+        .storage
+        .as_ref()
+        .map(|storage| storage.common_name.clone()),
       created_at: row.created_at.to_rfc3339(),
       updated_at: row.updated_at.to_rfc3339(),
       deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
@@ -718,6 +1014,28 @@ impl From<blending_result::Model> for BlendingResultResponse {
   }
 }
 
+impl From<blending_result::ModelEx> for BlendingResultResponse {
+  fn from(row: blending_result::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      blending_doc_id: row.blending_doc_id,
+      storage_id: row.storage_id,
+      produced_amount: row.produced_amount,
+      storage_id_name: row
+        .storage
+        .as_ref()
+        .map(|storage| storage.common_name.clone()),
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 /// Response DTO for the `inventory_reconciliation` entity.
 #[response_dto(service_fields(document))]
 pub struct InventoryReconciliationResponse {
@@ -732,6 +1050,17 @@ pub struct InventoryReconciliationResponse {
   #[serde(skip_serializing_if = "Option::is_none")]
   #[schema(nullable)]
   pub warehouse_id_name: Option<String>,
+}
+
+impl From<inventory_reconciliation::ModelEx> for InventoryReconciliationResponse {
+  fn from(model: inventory_reconciliation::ModelEx) -> Self {
+    let contractor_id_name = model.contractor.as_ref().map(|c| c.common_name.clone());
+    let warehouse_id_name = model.warehouse.as_ref().map(|w| w.common_name.clone());
+    let mut response = Self::from(inventory_reconciliation::Model::from(model));
+    response.contractor_id_name = contractor_id_name;
+    response.warehouse_id_name = warehouse_id_name;
+    response
+  }
 }
 
 impl From<inventory_reconciliation::Model> for InventoryReconciliationResponse {
@@ -816,18 +1145,18 @@ impl TryFrom<blending_document::ModelEx> for BlendingCompositeResponse {
     let components = model
       .components
       .iter()
-      .map(|item| BlendingComponentResponse::from(blending_component::Model::from(item.clone())))
+      .cloned()
+      .map(BlendingComponentResponse::from)
       .collect();
 
     let results = model
       .results
       .iter()
-      .map(|item| BlendingResultResponse::from(blending_result::Model::from(item.clone())))
+      .cloned()
+      .map(BlendingResultResponse::from)
       .collect();
 
-    let doc_model = blending_document::Model::from(model);
-
-    let document = BlendingResponse::from(doc_model);
+    let document = BlendingResponse::from(model);
     Ok(Self {
       document,
       components,
@@ -873,6 +1202,27 @@ impl From<truck_waybill::Model> for TruckWaybillResponse {
   }
 }
 
+impl From<truck_waybill::ModelEx> for TruckWaybillResponse {
+  fn from(row: truck_waybill::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      document_number: row.document_number,
+      date: row.date.to_string(),
+      sender_id: row.sender_id,
+      sender_id_name: row.sender.as_ref().map(|sender| sender.common_name.clone()),
+      base_id: row.base_id,
+      base_id_name: row.base.as_ref().map(|base| base.common_name.clone()),
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 /// Response DTO for the `truck_waybill_item` entity.
 #[response_dto(service_fields(common))]
 pub struct TruckWaybillItemResponse {
@@ -904,6 +1254,28 @@ impl From<truck_waybill_item::Model> for TruckWaybillItemResponse {
   }
 }
 
+impl From<truck_waybill_item::ModelEx> for TruckWaybillItemResponse {
+  fn from(row: truck_waybill_item::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      truck_waybill_id: row.truck_waybill_id,
+      product_id: row.product_id,
+      declared_amount: row.declared_amount,
+      product_id_name: row
+        .product
+        .as_ref()
+        .map(|product| product.common_name.clone()),
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 /// Response DTO for the `truck_weight_doc` entity.
 #[response_dto(service_fields(common))]
 pub struct TruckWeightDocResponse {
@@ -914,6 +1286,23 @@ pub struct TruckWeightDocResponse {
 
 impl From<truck_weight_doc::Model> for TruckWeightDocResponse {
   fn from(row: truck_weight_doc::Model) -> Self {
+    Self {
+      id: row.id,
+      truck_waybill_id: row.truck_waybill_id,
+      total_weight: row.total_weight,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
+impl From<truck_weight_doc::ModelEx> for TruckWeightDocResponse {
+  fn from(row: truck_weight_doc::ModelEx) -> Self {
     Self {
       id: row.id,
       truck_waybill_id: row.truck_waybill_id,
@@ -966,6 +1355,27 @@ impl From<rail_waybill::Model> for RailWaybillResponse {
   }
 }
 
+impl From<rail_waybill::ModelEx> for RailWaybillResponse {
+  fn from(row: rail_waybill::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      document_number: row.document_number,
+      date: row.date.to_string(),
+      sender_id: row.sender_id,
+      sender_id_name: row.sender.as_ref().map(|sender| sender.common_name.clone()),
+      base_id: row.base_id,
+      base_id_name: row.base.as_ref().map(|base| base.common_name.clone()),
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 /// Response DTO for the `rail_wagon_manifest` entity.
 #[response_dto(service_fields(common))]
 pub struct RailWagonManifestResponse {
@@ -1007,6 +1417,46 @@ impl From<rail_wagon_manifest::Model> for RailWagonManifestResponse {
   }
 }
 
+impl From<rail_wagon_manifest::ModelEx> for RailWagonManifestResponse {
+  fn from(row: rail_wagon_manifest::ModelEx) -> Self {
+    let measurements = row
+      .measurements
+      .iter()
+      .cloned()
+      .map(RailWagonMeasurementResponse::from)
+      .collect::<Vec<_>>();
+    let weights = row
+      .weights
+      .iter()
+      .cloned()
+      .map(RailWagonWeightResponse::from)
+      .collect::<Vec<_>>();
+
+    Self {
+      id: row.id,
+      rail_waybill_id: row.rail_waybill_id,
+      wagon_number: row.wagon_number,
+      product_id: row.product_id,
+      declared_volume: row.declared_volume,
+      declared_density: row.declared_density,
+      declared_mass: row.declared_mass,
+      measurements: (!measurements.is_empty()).then_some(measurements),
+      weights: (!weights.is_empty()).then_some(weights),
+      product_id_name: row
+        .product
+        .as_ref()
+        .map(|product| product.common_name.clone()),
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 /// Response DTO for the `rail_wagon_measurement` entity.
 #[response_dto(service_fields(common))]
 pub struct RailWagonMeasurementResponse {
@@ -1019,6 +1469,25 @@ pub struct RailWagonMeasurementResponse {
 
 impl From<rail_wagon_measurement::Model> for RailWagonMeasurementResponse {
   fn from(row: rail_wagon_measurement::Model) -> Self {
+    Self {
+      id: row.id,
+      wagon_manifest_id: row.wagon_manifest_id,
+      measured_height: row.measured_height,
+      lab_density: row.lab_density,
+      calculated_mass: row.calculated_mass,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
+impl From<rail_wagon_measurement::ModelEx> for RailWagonMeasurementResponse {
+  fn from(row: rail_wagon_measurement::ModelEx) -> Self {
     Self {
       id: row.id,
       wagon_manifest_id: row.wagon_manifest_id,
@@ -1065,6 +1534,25 @@ impl From<rail_wagon_weight::Model> for RailWagonWeightResponse {
   }
 }
 
+impl From<rail_wagon_weight::ModelEx> for RailWagonWeightResponse {
+  fn from(row: rail_wagon_weight::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      wagon_manifest_id: row.wagon_manifest_id,
+      gross_weight: row.gross_weight,
+      tare_weight: row.tare_weight,
+      net_product_weight: row.net_product_weight,
+      created_at: row.created_at.to_rfc3339(),
+      updated_at: row.updated_at.to_rfc3339(),
+      deleted_at: row.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: row.created_by,
+      updated_by: row.updated_by,
+      deleted_by: row.deleted_by,
+      origin_db_id: row.origin_db_id,
+    }
+  }
+}
+
 /// Composite response DTO used by truck waybill aggregate endpoints.
 #[response_dto]
 pub struct TruckWaybillCompositeResponse {
@@ -1078,230 +1566,4 @@ pub struct TruckWaybillCompositeResponse {
 pub struct RailWaybillCompositeResponse {
   pub waybill: RailWaybillResponse,
   pub wagon_manifests: Option<Vec<RailWagonManifestResponse>>,
-}
-
-impl ResolveFkNames for AcceptanceResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
-    if let Some(id) = self.truck_waybill_id {
-      c.truck_waybill_ids.insert(id);
-    }
-    if let Some(id) = self.rail_waybill_id {
-      c.rail_waybill_ids.insert(id);
-    }
-    if let Some(id) = self.transit_dispatch_id {
-      c.dispatch_document_ids.insert(id);
-    }
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
-    self.truck_waybill_id_name = self
-      .truck_waybill_id
-      .and_then(|id| r.truck_waybills.get(&id).cloned());
-    self.rail_waybill_id_name = self
-      .rail_waybill_id
-      .and_then(|id| r.rail_waybills.get(&id).cloned());
-    self.transit_dispatch_id_name = self
-      .transit_dispatch_id
-      .and_then(|id| r.dispatch_documents.get(&id).cloned());
-  }
-}
-
-impl ResolveFkNames for AcceptanceItemResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_ids.insert(self.product_id);
-    c.storage_ids.insert(self.storage_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-  }
-}
-
-impl ResolveFkNames for DispatchResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
-    if let Some(id) = self.destination_base_id {
-      c.base_ids.insert(id);
-    }
-    if let Some(id) = self.exporter_id {
-      c.company_ids.insert(id);
-    }
-    if let Some(id) = self.port_id {
-      c.port_ids.insert(id);
-    }
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
-    self.destination_base_id_name = self
-      .destination_base_id
-      .and_then(|id| r.bases.get(&id).cloned());
-    self.exporter_id_name = self
-      .exporter_id
-      .and_then(|id| r.companies.get(&id).cloned());
-    self.port_id_name = self.port_id.and_then(|id| r.ports.get(&id).cloned());
-  }
-}
-
-impl ResolveFkNames for DispatchItemResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_ids.insert(self.product_id);
-    c.storage_ids.insert(self.storage_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-  }
-}
-
-impl ResolveFkNames for DispatchMeasurementResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.storage_ids.insert(self.storage_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-  }
-}
-
-impl ResolveFkNames for PhysicalTransferResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
-  }
-}
-
-impl ResolveFkNames for PhysicalTransferItemResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_ids.insert(self.product_id);
-    c.storage_ids.insert(self.from_storage_id);
-    c.storage_ids.insert(self.to_storage_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-    self.from_storage_id_name = r.storages.get(&self.from_storage_id).cloned();
-    self.to_storage_id_name = r.storages.get(&self.to_storage_id).cloned();
-  }
-}
-
-impl ResolveFkNames for OwnershipTransferItemResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.storage_ids.insert(self.storage_id);
-    c.product_ids.insert(self.product_id);
-    c.company_ids.insert(self.from_contractor_id);
-    c.company_ids.insert(self.to_contractor_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-    self.from_contractor_id_name = r.companies.get(&self.from_contractor_id).cloned();
-    self.to_contractor_id_name = r.companies.get(&self.to_contractor_id).cloned();
-  }
-}
-
-impl ResolveFkNames for BlendingResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
-    c.product_ids.insert(self.target_product_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
-    self.target_product_id_name = r.products.get(&self.target_product_id).cloned();
-  }
-}
-
-impl ResolveFkNames for BlendingComponentResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_ids.insert(self.source_product_id);
-    c.storage_ids.insert(self.storage_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.source_product_id_name = r.products.get(&self.source_product_id).cloned();
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-  }
-}
-
-impl ResolveFkNames for BlendingResultResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.storage_ids.insert(self.storage_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-  }
-}
-
-impl ResolveFkNames for InventoryReconciliationResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.contractor_id);
-    c.warehouse_ids.insert(self.warehouse_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.contractor_id_name = r.companies.get(&self.contractor_id).cloned();
-    self.warehouse_id_name = r.warehouses.get(&self.warehouse_id).cloned();
-  }
-}
-
-impl ResolveFkNames for InventoryAdjustmentResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.storage_ids.insert(self.storage_id);
-    c.product_ids.insert(self.product_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.storage_id_name = r.storages.get(&self.storage_id).cloned();
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-  }
-}
-
-impl ResolveFkNames for TruckWaybillResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.sender_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.sender_id_name = r.companies.get(&self.sender_id).cloned();
-  }
-}
-
-impl ResolveFkNames for TruckWaybillItemResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_ids.insert(self.product_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-  }
-}
-
-impl ResolveFkNames for RailWaybillResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.company_ids.insert(self.sender_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.sender_id_name = r.companies.get(&self.sender_id).cloned();
-  }
-}
-
-impl ResolveFkNames for RailWagonManifestResponse {
-  fn collect_fk_ids(&self, c: &mut FkIdCollector) {
-    c.product_ids.insert(self.product_id);
-  }
-
-  fn apply_resolved_names(&mut self, r: &ResolvedNames) {
-    self.product_id_name = r.products.get(&self.product_id).cloned();
-  }
 }

@@ -1,66 +1,79 @@
-use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
-};
+use sea_orm::{ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder};
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{response::pipeline::ReconciliationFlatRow, InventoryReconciliationResponse},
   entities::{
-    company,
-    inventory_adjustment,
-    inventory_reconciliation,
-    product,
-    storage,
-    warehouse,
+    company, inventory_adjustment, inventory_reconciliation, product, storage, warehouse,
   },
-  enums::DocumentStatus,
-  services::DocumentService,
+  services::{
+    document::query::{ReconciliationFlatQuerySpec, ReconciliationQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
-  pub async fn reconciliation_query(
+  pub(super) async fn reconciliation_model(
     &self,
-    document_number: Option<&str>,
-    status: Option<DocumentStatus>,
-    warehouse_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
-  ) -> Result<Vec<InventoryReconciliationResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    id: Uuid,
+  ) -> Result<inventory_reconciliation::ModelEx, ApiError> {
+    inventory_reconciliation::Entity::load()
+      .filter_by_id(id)
+      .filter(inventory_reconciliation::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(warehouse::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Reconciliation '{}' not found", id)))
+  }
+
+  pub(super) async fn reconciliation_query_models(
+    &self,
+    query: &ReconciliationQuerySpec,
+  ) -> Result<Vec<inventory_reconciliation::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(inventory_reconciliation::Column::DeletedAt.is_null());
 
-    if let Some(document_number) = document_number {
+    if let Some(document_number) = query.document_number.as_deref() {
       condition =
         condition.add(inventory_reconciliation::Column::DocumentNumber.contains(document_number));
     }
 
-    if let Some(status) = status {
+    if let Some(status) = query.status {
       condition = condition.add(inventory_reconciliation::Column::Status.eq(status));
     }
 
-    if let Some(warehouse_id) = warehouse_id {
+    if let Some(warehouse_id) = query.warehouse_id {
       condition = condition.add(inventory_reconciliation::Column::WarehouseId.eq(warehouse_id));
     }
 
-    let docs = inventory_reconciliation::Entity::find()
+    inventory_reconciliation::Entity::load()
       .filter(condition)
+      .with(company::Entity)
+      .with(warehouse::Entity)
+      .order_by_desc(inventory_reconciliation::Column::Date)
       .paginate(self.db.as_ref(), per_page)
       .fetch_page(page - 1)
-      .await?;
+      .await
+      .map_err(Into::into)
+  }
 
+  pub async fn reconciliation_query(
+    &self,
+    query: ReconciliationQuerySpec,
+  ) -> Result<Vec<InventoryReconciliationResponse>, ApiError> {
     Ok(
-      docs
+      self
+        .reconciliation_query_models(&query)
+        .await?
         .into_iter()
-        .map(InventoryReconciliationResponse::from)
+        .map(|model| {
+          InventoryReconciliationResponse::from(inventory_reconciliation::Model::from(model))
+        })
         .collect(),
     )
   }
@@ -69,15 +82,14 @@ impl DocumentService {
   /// Used by the grouped-row list table on the frontend.
   pub async fn reconciliation_flat_query(
     &self,
-    status: Option<DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: ReconciliationFlatQuerySpec,
   ) -> Result<Vec<ReconciliationFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(inventory_reconciliation::Column::DeletedAt.is_null());
-    if let Some(s) = status {
+    if let Some(s) = query.status {
       cond = cond.add(inventory_reconciliation::Column::Status.eq(s));
     }
 

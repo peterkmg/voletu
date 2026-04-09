@@ -1,16 +1,13 @@
 use std::{str::FromStr, sync::Arc};
 
 use chrono::{DateTime, Utc};
-use sea_orm::{prelude::Decimal, EntityTrait};
+use sea_orm::{prelude::Decimal, EntityLoaderTrait};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   dtos::{
-    BlendingComponentCompositeRequest,
-    BlendingResultCompositeRequest,
-    CreateBlendingComponentRequest,
-    CreateBlendingRequest,
-    CreateBlendingResultRequest,
+    BlendingComponentCompositeRequest, BlendingResultCompositeRequest,
+    CreateBlendingComponentRequest, CreateBlendingRequest, CreateBlendingResultRequest,
   },
   entities::blending_document,
   enums::DocumentStatus,
@@ -19,8 +16,7 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
-  setup_db,
-  test_config,
+  setup_db, test_config,
 };
 
 fn ts(value: &str) -> DateTime<Utc> {
@@ -239,7 +235,8 @@ async fn blending_component_creation_rejects_posted_document_mutation() {
       .await
       .unwrap();
 
-    let posted = blending_document::Entity::find_by_id(doc.id)
+    let posted = blending_document::Entity::load()
+      .filter_by_id(doc.id)
       .one(db.as_ref())
       .await
       .unwrap()

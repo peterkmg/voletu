@@ -5,9 +5,7 @@ use voletu_core::{api::router::build_router, endpoints::paths as api_paths};
 
 use crate::common::{
   http::{get, response_json},
-  setup_db,
-  test_api_state_with_default_restart_controls,
-  test_config_for_db,
+  setup_db, test_api_state_with_default_restart_controls, test_config_for_db,
 };
 
 #[tokio::test]
@@ -71,42 +69,48 @@ async fn openapi_query_parameter_contract_enforces_pagination_and_filter_params(
   }
 
   let query_route_contracts: [(&str, &[&str]); 6] = [
-    (api_paths::acceptance::QUERY, &[
-      "documentNumber",
-      "status",
-      "page",
-      "per_page",
-    ]),
-    (api_paths::dispatch::QUERY, &[
-      "documentNumber",
-      "status",
-      "contractorId",
-      "page",
-      "per_page",
-    ]),
-    (api_paths::blending::QUERY, &[
-      "documentNumber",
-      "status",
-      "contractorId",
-      "page",
-      "per_page",
-    ]),
-    (api_paths::operations::PHYSICAL_TRANSFERS_QUERY, &[
-      "documentNumber",
-      "status",
-      "page",
-      "per_page",
-    ]),
-    (api_paths::operations::OWNERSHIP_TRANSFERS_QUERY, &[
-      "status", "page", "per_page",
-    ]),
-    (api_paths::operations::RECONCILIATIONS_QUERY, &[
-      "documentNumber",
-      "status",
-      "warehouseId",
-      "page",
-      "per_page",
-    ]),
+    (
+      api_paths::acceptance::QUERY,
+      &["documentNumber", "status", "page", "per_page"],
+    ),
+    (
+      api_paths::dispatch::QUERY,
+      &[
+        "documentNumber",
+        "status",
+        "contractorId",
+        "page",
+        "per_page",
+      ],
+    ),
+    (
+      api_paths::blending::QUERY,
+      &[
+        "documentNumber",
+        "status",
+        "contractorId",
+        "page",
+        "per_page",
+      ],
+    ),
+    (
+      api_paths::operations::PHYSICAL_TRANSFERS_QUERY,
+      &["documentNumber", "status", "page", "per_page"],
+    ),
+    (
+      api_paths::operations::OWNERSHIP_TRANSFERS_QUERY,
+      &["status", "page", "per_page"],
+    ),
+    (
+      api_paths::operations::RECONCILIATIONS_QUERY,
+      &[
+        "documentNumber",
+        "status",
+        "warehouseId",
+        "page",
+        "per_page",
+      ],
+    ),
   ];
 
   for (path, expected_query_params) in query_route_contracts {

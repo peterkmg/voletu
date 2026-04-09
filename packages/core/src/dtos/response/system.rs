@@ -93,8 +93,28 @@ impl From<&role::Model> for RoleResponse {
   }
 }
 
+impl From<&role::ModelEx> for RoleResponse {
+  fn from(model: &role::ModelEx) -> Self {
+    Self {
+      id: model.id,
+      common_name: model.common_name.to_string(),
+    }
+  }
+}
+
 impl From<&local::Model> for LocalResponse {
   fn from(model: &local::Model) -> Self {
+    Self {
+      id: model.id,
+      is_initialized: model.is_initialized,
+      local_db_id: model.local_db_id,
+      central_api_url: model.central_api_url.clone(),
+    }
+  }
+}
+
+impl From<&local::ModelEx> for LocalResponse {
+  fn from(model: &local::ModelEx) -> Self {
     Self {
       id: model.id,
       is_initialized: model.is_initialized,
@@ -122,8 +142,40 @@ impl From<&database_instance::Model> for DatabaseInstanceResponse {
   }
 }
 
+impl From<&database_instance::ModelEx> for DatabaseInstanceResponse {
+  fn from(model: &database_instance::ModelEx) -> Self {
+    Self {
+      id: model.id,
+      common_name: model.common_name.clone(),
+      node_type: model.node_type.to_string(),
+      base_id: model.base_id,
+      created_at: model.created_at.to_rfc3339(),
+      updated_at: model.updated_at.to_rfc3339(),
+      deleted_at: model.deleted_at.map(|v| v.to_rfc3339()),
+      created_by: model.created_by,
+      updated_by: model.updated_by,
+      deleted_by: model.deleted_by,
+      origin_db_id: model.origin_db_id,
+    }
+  }
+}
+
 impl From<&refresh_token::Model> for RefreshTokenResponse {
   fn from(model: &refresh_token::Model) -> Self {
+    Self {
+      id: model.id,
+      user_id: model.user_id,
+      expires_at: model.expires_at.to_rfc3339(),
+      is_revoked: model.is_revoked,
+      device_info: model.device_info.clone(),
+      created_at: model.created_at.to_rfc3339(),
+      updated_at: model.updated_at.to_rfc3339(),
+    }
+  }
+}
+
+impl From<&refresh_token::ModelEx> for RefreshTokenResponse {
+  fn from(model: &refresh_token::ModelEx) -> Self {
     Self {
       id: model.id,
       user_id: model.user_id,

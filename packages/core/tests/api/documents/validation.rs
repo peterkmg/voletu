@@ -3,11 +3,7 @@ use uuid::Uuid;
 use voletu_core::endpoints::paths as api_paths;
 
 use crate::common::http::{
-  assert_api_error,
-  get,
-  post_empty,
-  setup_seeded_app_with_admin_token,
-  with_auth_token,
+  assert_api_error, get, post_empty, setup_seeded_app_with_admin_token, with_auth_token,
 };
 
 #[tokio::test]

@@ -9,9 +9,7 @@ use crate::{
   api::{state::ApiState, ApiError},
   endpoints,
   middleware::{
-    auth::auth_middleware,
-    error::error_middleware,
-    idempotency::idempotency_middleware,
+    auth::auth_middleware, error::error_middleware, idempotency::idempotency_middleware,
     init_guard::init_guard_middleware,
   },
 };

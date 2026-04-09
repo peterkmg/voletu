@@ -5,18 +5,11 @@ use voletu_core::{api::router::build_router, db::seed_defaults, endpoints::paths
 
 use crate::common::{
   http::{
-    assert_api_error,
-    assert_api_success,
-    get,
-    login_admin_token,
-    post_json,
-    response_json,
+    assert_api_error, assert_api_success, get, login_admin_token, post_json, response_json,
     with_auth_token,
   },
   payloads::{auth_login, catalog_base, node_initialize_replace},
-  setup_db,
-  test_api_state_with_default_restart_controls,
-  test_config_for_db,
+  setup_db, test_api_state_with_default_restart_controls, test_config_for_db,
 };
 
 #[tokio::test]

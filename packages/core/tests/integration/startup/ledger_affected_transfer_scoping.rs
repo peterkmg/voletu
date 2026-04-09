@@ -17,13 +17,8 @@ use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  api_post,
-  await_sync_cycle,
-  get_all_ledger_entries,
-  get_physical_transfer_composite_json,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
+  api_post, await_sync_cycle, get_all_ledger_entries, get_physical_transfer_composite_json,
+  get_storages_for_base, seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api,
   temp_db_path,
 };
 
@@ -33,14 +28,55 @@ async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
   let central = setup_central_via_api(&client, &temp_db_path("s5-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("s5-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("s5-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
-  let pb = setup_peripheral_via_api(&client, &temp_db_path("s5-pb"), &central, &[
-    catalog.base_beta
-  ])
+  let pb = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("s5-pb"),
+    &central,
+    &[catalog.base_beta],
+  )
   .await;
+  let alpha_storage_ids =
+    get_storages_for_base(&client, &central.url, &central.token, catalog.base_alpha).await;
+  let beta_storage_ids =
+    get_storages_for_base(&client, &central.url, &central.token, catalog.base_beta).await;
+  let summarize = |entries: &[serde_json::Value]| {
+    let mut rows = entries
+      .iter()
+      .map(|entry| {
+        (
+          entry["storageId"].as_str().unwrap_or_default().to_string(),
+          entry["productId"].as_str().unwrap_or_default().to_string(),
+          entry["contractorId"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+          entry["quantity"].to_string(),
+        )
+      })
+      .collect::<Vec<_>>();
+    rows.sort();
+    rows
+  };
+  let filter_by_storage = |entries: &[serde_json::Value], allowed: &[uuid::Uuid]| {
+    entries
+      .iter()
+      .filter(|entry| {
+        entry["storageId"]
+          .as_str()
+          .and_then(|id| uuid::Uuid::parse_str(id).ok())
+          .map(|id| allowed.contains(&id))
+          .unwrap_or(false)
+      })
+      .cloned()
+      .collect::<Vec<_>>()
+  };
 
   // ── Wave 1: cross-base physical transfer (routes to BOTH bases) ──
 
@@ -93,23 +129,26 @@ async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
     "PB wave-1 amount should match Central"
   );
 
-  // Ledger: both peripherals have entries (physical transfer creates ledger rows on execute)
+  // Ledger rows are storage-scoped, so each peripheral should mirror the
+  // subset of Central rows whose storage belongs to its assigned base.
   let central_ledger_w1 = get_all_ledger_entries(&client, &central.url, &central.token).await;
   let pa_ledger_w1 = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
   let pb_ledger_w1 = get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+  let central_alpha_w1 = filter_by_storage(&central_ledger_w1, &alpha_storage_ids);
+  let central_beta_w1 = filter_by_storage(&central_ledger_w1, &beta_storage_ids);
   assert!(
     !central_ledger_w1.is_empty(),
     "Central should have ledger entries after wave 1"
   );
   assert_eq!(
-    pa_ledger_w1.len(),
-    central_ledger_w1.len(),
-    "PA ledger count should match Central after wave 1"
+    summarize(&pa_ledger_w1),
+    summarize(&central_alpha_w1),
+    "PA should mirror Central's alpha-scoped ledger rows after wave 1"
   );
   assert_eq!(
-    pb_ledger_w1.len(),
-    central_ledger_w1.len(),
-    "PB ledger count should match Central after wave 1"
+    summarize(&pb_ledger_w1),
+    summarize(&central_beta_w1),
+    "PB should mirror Central's beta-scoped ledger rows after wave 1"
   );
 
   // ── Wave 2: single-base acceptance (routes to base_alpha ONLY) ──
@@ -140,21 +179,28 @@ async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
   await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  // PA should have gained a new ledger entry (the acceptance for storage_alpha)
+  // Wave 2 only affects alpha-scoped ledger rows.
   let pa_ledger_w2 = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
   let central_ledger_w2 = get_all_ledger_entries(&client, &central.url, &central.token).await;
+  let central_alpha_w2 = filter_by_storage(&central_ledger_w2, &alpha_storage_ids);
   assert_eq!(
-    pa_ledger_w2.len(),
-    central_ledger_w2.len(),
-    "PA ledger count should still match Central after wave 2"
+    summarize(&pa_ledger_w2),
+    summarize(&central_alpha_w2),
+    "PA should mirror Central's alpha-scoped ledger rows after wave 2"
   );
 
-  // PB should NOT have the new ledger entry — its count stays at wave 1 level
+  // PB should remain on the beta-scoped subset it already had after wave 1.
   let pb_ledger_w2 = get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+  let central_beta_w2 = filter_by_storage(&central_ledger_w2, &beta_storage_ids);
   assert_eq!(
-    pb_ledger_w2.len(),
-    pb_ledger_w1.len(),
-    "PB ledger count should remain unchanged after wave 2 (alpha-only acceptance)"
+    summarize(&pb_ledger_w2),
+    summarize(&central_beta_w2),
+    "PB should still mirror Central's beta-scoped ledger rows after wave 2"
+  );
+  assert_eq!(
+    summarize(&pb_ledger_w2),
+    summarize(&pb_ledger_w1),
+    "PB beta-scoped ledger rows should remain unchanged after alpha-only wave 2"
   );
 
   central.shutdown().await;

@@ -1,10 +1,4 @@
-use sea_orm::{
-  entity::prelude::Decimal,
-  ConnectionTrait,
-  EntityLoaderTrait,
-  EntityTrait,
-  IntoActiveModel,
-};
+use sea_orm::{entity::prelude::Decimal, ConnectionTrait, EntityLoaderTrait, IntoActiveModel};
 use uuid::Uuid;
 
 use crate::{

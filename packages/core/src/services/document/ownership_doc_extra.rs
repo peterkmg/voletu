@@ -1,28 +1,21 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
-  TransactionTrait,
+  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::OwnershipTransferFlatRow,
-    CreateOwnershipTransferItemRequest,
-    CreateOwnershipTransferRequest,
-    OwnershipTransferResponse,
+    response::pipeline::OwnershipTransferFlatRow, CreateOwnershipTransferItemRequest,
+    CreateOwnershipTransferRequest, OwnershipTransferResponse,
   },
   entities::{company, ownership_transfer, ownership_transfer_item, product, storage},
-  enums,
-  services::document::DocumentService,
+  services::document::{
+    query::{OwnershipTransferFlatQuerySpec, OwnershipTransferQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
@@ -89,13 +82,72 @@ impl DocumentService {
     Ok(response)
   }
 
+  pub(super) async fn ownership_transfer_model(
+    &self,
+    id: Uuid,
+  ) -> Result<ownership_transfer::ModelEx, ApiError> {
+    ownership_transfer::Entity::load()
+      .filter_by_id(id)
+      .filter(ownership_transfer::Column::DeletedAt.is_null())
+      .with((ownership_transfer_item::Entity, product::Entity))
+      .with((ownership_transfer_item::Entity, storage::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Ownership transfer '{}' not found", id)))
+  }
+
+  pub(super) async fn ownership_transfer_query_models(
+    &self,
+    query: &OwnershipTransferQuerySpec,
+  ) -> Result<Vec<ownership_transfer::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+
+    let mut condition = Condition::all();
+    condition = condition.add(ownership_transfer::Column::DeletedAt.is_null());
+
+    if let Some(status) = query.status {
+      condition = condition.add(ownership_transfer::Column::Status.eq(status));
+    }
+
+    ownership_transfer::Entity::load()
+      .filter(condition)
+      .with((ownership_transfer_item::Entity, product::Entity))
+      .with((ownership_transfer_item::Entity, storage::Entity))
+      .order_by_desc(ownership_transfer::Column::Date)
+      .paginate(self.db.as_ref(), per_page)
+      .fetch_page(page - 1)
+      .await
+      .map_err(Into::into)
+  }
+
+  pub(super) async fn ownership_transfer_contractor_names(
+    &self,
+    contractor_ids: impl IntoIterator<Item = Uuid>,
+  ) -> Result<HashMap<Uuid, String>, ApiError> {
+    let ids = contractor_ids.into_iter().collect::<HashSet<_>>();
+    if ids.is_empty() {
+      return Ok(HashMap::new());
+    }
+
+    let companies = company::Entity::load()
+      .filter(company::Column::Id.is_in(ids.into_iter().collect::<Vec<_>>()))
+      .all(self.db.as_ref())
+      .await?;
+
+    Ok(
+      companies
+        .into_iter()
+        .map(|company| (company.id, company.common_name))
+        .collect(),
+    )
+  }
+
   pub async fn ownership_transfer_composite_list(
     &self,
   ) -> Result<Vec<OwnershipTransferResponse>, ApiError> {
-    let docs = ownership_transfer::Entity::load()
-      .filter(ownership_transfer::Column::DeletedAt.is_null())
-      .with(ownership_transfer_item::Entity)
-      .all(self.db.as_ref())
+    let docs = self
+      .ownership_transfer_query_models(&OwnershipTransferQuerySpec::default())
       .await?;
 
     docs
@@ -108,99 +160,52 @@ impl DocumentService {
     &self,
     id: Uuid,
   ) -> Result<OwnershipTransferResponse, ApiError> {
-    let doc = ownership_transfer::Entity::load()
-      .filter_by_id(id)
-      .filter(ownership_transfer::Column::DeletedAt.is_null())
-      .with(ownership_transfer_item::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| ApiError::NotFound(format!("Ownership transfer '{}' not found", id)))?;
+    let doc = self.ownership_transfer_model(id).await?;
 
     OwnershipTransferResponse::try_from(doc)
   }
 
   pub async fn ownership_transfer_composite_query(
     &self,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: OwnershipTransferQuerySpec,
   ) -> Result<Vec<OwnershipTransferResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-
-    let mut condition = Condition::all();
-    condition = condition.add(ownership_transfer::Column::DeletedAt.is_null());
-
-    if let Some(status) = status {
-      condition = condition.add(ownership_transfer::Column::Status.eq(status));
-    }
-
-    let docs = ownership_transfer::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
-    let mut out = Vec::with_capacity(docs.len());
-    for doc in docs {
-      let loaded = ownership_transfer::Entity::load()
-        .filter_by_id(doc.id)
-        .filter(ownership_transfer::Column::DeletedAt.is_null())
-        .with(ownership_transfer_item::Entity)
-        .one(self.db.as_ref())
-        .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Ownership transfer '{}' not found", doc.id)))?;
-      out.push(OwnershipTransferResponse::try_from(loaded)?);
-    }
-
-    Ok(out)
+    self
+      .ownership_transfer_query_models(&query)
+      .await?
+      .into_iter()
+      .map(OwnershipTransferResponse::try_from)
+      .collect()
   }
 
   /// Returns one row per ownership transfer item with document fields repeated.
   /// Used by the grouped-row list table on the frontend.
   pub async fn ownership_transfer_flat_query(
     &self,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: OwnershipTransferFlatQuerySpec,
   ) -> Result<Vec<OwnershipTransferFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-    let db = self.db.as_ref();
-
-    let mut cond = Condition::all().add(ownership_transfer::Column::DeletedAt.is_null());
-    if let Some(s) = status {
-      cond = cond.add(ownership_transfer::Column::Status.eq(s));
-    }
-
-    let docs: Vec<ownership_transfer::ModelEx> = ownership_transfer::Entity::load()
-      .filter(cond)
-      .with((ownership_transfer_item::Entity, product::Entity))
-      .with((ownership_transfer_item::Entity, storage::Entity))
-      .order_by_desc(ownership_transfer::Column::Date)
-      .paginate(db, per_page)
-      .fetch_page(page - 1)
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let docs = self
+      .ownership_transfer_query_models(&OwnershipTransferQuerySpec {
+        status: query.status,
+        page: Some(page),
+        per_page: Some(per_page),
+      })
       .await?;
 
-    // Collect all unique contractor IDs from items to batch-fetch names
-    let mut contractor_ids = std::collections::HashSet::new();
-    for doc in &docs {
-      for item in &doc.items {
-        contractor_ids.insert(item.from_contractor_id);
-        contractor_ids.insert(item.to_contractor_id);
-      }
-    }
-
-    let contractor_map: HashMap<Uuid, String> = if contractor_ids.is_empty() {
-      HashMap::new()
-    } else {
-      let companies = company::Entity::find()
-        .filter(company::Column::Id.is_in(contractor_ids))
-        .all(db)
-        .await?;
-      companies
-        .into_iter()
-        .map(|c| (c.id, c.common_name))
-        .collect()
-    };
+    let contractor_map = self
+      .ownership_transfer_contractor_names(
+        docs
+          .iter()
+          .flat_map(|doc| {
+            doc
+              .items
+              .iter()
+              .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+          })
+          .collect::<Vec<_>>(),
+      )
+      .await?;
 
     let dash = "\u{2014}".to_string();
 

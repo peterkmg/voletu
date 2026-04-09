@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::{Path, State};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait};
 use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
@@ -10,6 +10,7 @@ use crate::{
   api::{ApiError, ApiResponse, ApiResult, ApiState},
   endpoints::paths,
   entities::node_base_assignment,
+  services::system::node_bases::{load_node_base_assignment, load_node_base_assignments},
 };
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -36,6 +37,16 @@ impl From<node_base_assignment::Model> for BaseAssignmentResponse {
   }
 }
 
+impl From<&node_base_assignment::ModelEx> for BaseAssignmentResponse {
+  fn from(m: &node_base_assignment::ModelEx) -> Self {
+    Self {
+      id: m.id,
+      node_id: m.node_id,
+      base_id: m.base_id,
+    }
+  }
+}
+
 #[utoipa::path(
   get,
   tag = "Node",
@@ -50,12 +61,9 @@ async fn list_base_assignments(
   State(state): State<Arc<ApiState>>,
 ) -> ApiResult<Vec<BaseAssignmentResponse>> {
   let local_node_id = state.cfg.node.db_id;
-  let rows = node_base_assignment::Entity::find()
-    .filter(node_base_assignment::Column::NodeId.eq(local_node_id))
-    .all(state.db.as_ref())
-    .await?;
+  let rows = load_node_base_assignments(state.db.as_ref(), local_node_id).await?;
   Ok(ApiResponse::success(
-    rows.into_iter().map(BaseAssignmentResponse::from).collect(),
+    rows.iter().map(BaseAssignmentResponse::from).collect(),
   ))
 }
 
@@ -79,12 +87,7 @@ async fn add_base_assignment(
 ) -> ApiResult<BaseAssignmentResponse> {
   let local_node_id = state.cfg.node.db_id;
 
-  // Check duplicate
-  let existing = node_base_assignment::Entity::find()
-    .filter(node_base_assignment::Column::NodeId.eq(local_node_id))
-    .filter(node_base_assignment::Column::BaseId.eq(req.base_id))
-    .one(state.db.as_ref())
-    .await?;
+  let existing = load_node_base_assignment(state.db.as_ref(), local_node_id, req.base_id).await?;
 
   if existing.is_some() {
     return Err(ApiError::Conflict(
@@ -123,10 +126,7 @@ async fn remove_base_assignment(
 ) -> ApiResult<String> {
   let local_node_id = state.cfg.node.db_id;
 
-  let row = node_base_assignment::Entity::find()
-    .filter(node_base_assignment::Column::NodeId.eq(local_node_id))
-    .filter(node_base_assignment::Column::BaseId.eq(base_id))
-    .one(state.db.as_ref())
+  let row = load_node_base_assignment(state.db.as_ref(), local_node_id, base_id)
     .await?
     .ok_or_else(|| ApiError::NotFound("Base assignment not found".into()))?;
 

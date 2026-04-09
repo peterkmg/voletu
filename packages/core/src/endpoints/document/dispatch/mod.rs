@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use axum::{
   extract::{Path, Query, State},
-  Extension,
-  Json,
+  Extension, Json,
 };
 use axum_valid::Valid;
 use serde::Deserialize;
@@ -13,12 +12,8 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
-    CreateDispatchCompositeRequest,
-    CreateDispatchMeasurementRequest,
-    CreateDispatchRequest,
-    DispatchCompositeResponse,
-    DispatchMeasurementResponse,
-    DispatchResponse,
+    CreateDispatchCompositeRequest, CreateDispatchMeasurementRequest, CreateDispatchRequest,
+    DispatchCompositeResponse, DispatchMeasurementResponse, DispatchResponse,
   },
   endpoints::{
     paths,

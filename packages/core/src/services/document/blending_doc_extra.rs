@@ -1,12 +1,5 @@
 use sea_orm::{
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
-  TransactionTrait,
+  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -14,11 +7,79 @@ use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::BlendingFlatRow},
   entities::{blending_component, blending_document, blending_result, company, product, storage},
-  enums,
-  services::document::DocumentService,
+  services::document::{
+    query::{BlendingDocumentQuerySpec, BlendingFlatQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
+  pub(super) async fn blending_document_model(
+    &self,
+    document_id: Uuid,
+  ) -> Result<blending_document::ModelEx, ApiError> {
+    blending_document::Entity::load()
+      .filter_by_id(document_id)
+      .filter(blending_document::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(product::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Blending document '{}' not found", document_id)))
+  }
+
+  pub(super) async fn blending_document_query_models(
+    &self,
+    query: &BlendingDocumentQuerySpec,
+  ) -> Result<Vec<blending_document::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+
+    let mut condition = Condition::all();
+    condition = condition.add(blending_document::Column::DeletedAt.is_null());
+
+    if let Some(document_number) = query.document_number.as_deref() {
+      condition =
+        condition.add(blending_document::Column::DocumentNumber.contains(document_number));
+    }
+
+    if let Some(status) = query.status {
+      condition = condition.add(blending_document::Column::Status.eq(status));
+    }
+
+    if let Some(contractor_id) = query.contractor_id {
+      condition = condition.add(blending_document::Column::ContractorId.eq(contractor_id));
+    }
+
+    Ok(
+      blending_document::Entity::load()
+        .filter(condition)
+        .with(company::Entity)
+        .with(product::Entity)
+        .order_by_desc(blending_document::Column::Date)
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?,
+    )
+  }
+
+  pub(super) async fn blending_composite_model(
+    &self,
+    document_id: Uuid,
+  ) -> Result<blending_document::ModelEx, ApiError> {
+    blending_document::Entity::load()
+      .filter_by_id(document_id)
+      .filter(blending_document::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(product::Entity)
+      .with((blending_component::Entity, product::Entity))
+      .with((blending_component::Entity, storage::Entity))
+      .with((blending_result::Entity, storage::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Blending document '{}' not found", document_id)))
+  }
+
   pub async fn blending_composite_create(
     &self,
     req: &dtos::CreateBlendingCompositeRequest,
@@ -95,53 +156,23 @@ impl DocumentService {
 
   pub async fn blending_document_query(
     &self,
-    doc_num: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    contractor_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: BlendingDocumentQuerySpec,
   ) -> Result<Vec<dtos::BlendingResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
-
-    let mut condition = Condition::all();
-    condition = condition.add(blending_document::Column::DeletedAt.is_null());
-
-    if let Some(document_number) = doc_num {
-      condition =
-        condition.add(blending_document::Column::DocumentNumber.contains(document_number));
-    }
-
-    if let Some(status) = status {
-      condition = condition.add(blending_document::Column::Status.eq(status));
-    }
-
-    if let Some(contractor_id) = contractor_id {
-      condition = condition.add(blending_document::Column::ContractorId.eq(contractor_id));
-    }
-
-    let docs = blending_document::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
-    Ok(docs.into_iter().map(dtos::BlendingResponse::from).collect())
+    Ok(
+      self
+        .blending_document_query_models(&query)
+        .await?
+        .into_iter()
+        .map(|doc| dtos::BlendingResponse::from(blending_document::Model::from(doc)))
+        .collect(),
+    )
   }
 
   pub async fn blending_composite_get(
     &self,
     document_id: Uuid,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
-    let doc = blending_document::Entity::load()
-      .filter_by_id(document_id)
-      .filter(blending_document::Column::DeletedAt.is_null())
-      .with(blending_component::Entity)
-      .with(blending_result::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| {
-        ApiError::NotFound(format!("Blending document '{}' not found", document_id))
-      })?;
+    let doc = self.blending_composite_model(document_id).await?;
 
     dtos::BlendingCompositeResponse::try_from(doc)
   }
@@ -150,15 +181,14 @@ impl DocumentService {
   /// Used by the grouped-row list table on the frontend.
   pub async fn blending_flat_query(
     &self,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: BlendingFlatQuerySpec,
   ) -> Result<Vec<BlendingFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(blending_document::Column::DeletedAt.is_null());
-    if let Some(s) = status {
+    if let Some(s) = query.status {
       cond = cond.add(blending_document::Column::Status.eq(s));
     }
 

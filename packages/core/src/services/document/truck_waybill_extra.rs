@@ -1,12 +1,5 @@
 use sea_orm::{
-  entity::prelude::*,
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  PaginatorTrait,
-  QueryFilter,
-  QueryOrder,
+  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder,
   TransactionTrait,
 };
 use uuid::Uuid;
@@ -15,48 +8,70 @@ use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::TruckReceiptPipelineResponse},
   entities::{
-    acceptance_document,
-    acceptance_item,
-    company,
-    product,
-    truck_waybill,
-    truck_waybill_item,
+    acceptance_document, acceptance_item, company, product, truck_waybill, truck_waybill_item,
+    truck_weight_doc,
   },
   enums::PipelineStatus,
-  services::DocumentService,
+  services::{
+    document::query::{TruckReceiptPipelineQuerySpec, TruckWaybillQuerySpec},
+    DocumentService,
+  },
 };
 
 impl DocumentService {
-  pub async fn truck_waybill_query(
+  pub(super) async fn truck_waybill_composite_model(
     &self,
-    document_number: Option<&str>,
-    sender_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
-  ) -> Result<Vec<dtos::TruckWaybillResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    id: Uuid,
+  ) -> Result<truck_waybill::ModelEx, ApiError> {
+    truck_waybill::Entity::load()
+      .filter_by_id(id)
+      .filter(truck_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with((truck_waybill_item::Entity, product::Entity))
+      .with(truck_weight_doc::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Truck waybill '{}' not found", id)))
+  }
+
+  pub(super) async fn truck_waybill_query_models(
+    &self,
+    query: &TruckWaybillQuerySpec,
+  ) -> Result<Vec<truck_waybill::ModelEx>, ApiError> {
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(truck_waybill::Column::DeletedAt.is_null());
 
-    if let Some(document_number) = document_number {
+    if let Some(document_number) = query.document_number.as_deref() {
       condition = condition.add(truck_waybill::Column::DocumentNumber.contains(document_number));
     }
 
-    if let Some(sender_id) = sender_id {
+    if let Some(sender_id) = query.sender_id {
       condition = condition.add(truck_waybill::Column::SenderId.eq(sender_id));
     }
 
-    let docs = truck_waybill::Entity::find()
-      .filter(condition)
-      .paginate(self.db.as_ref(), per_page)
-      .fetch_page(page - 1)
-      .await?;
-
     Ok(
-      docs
+      truck_waybill::Entity::load()
+        .filter(condition)
+        .with(company::Entity)
+        .paginate(self.db.as_ref(), per_page)
+        .fetch_page(page - 1)
+        .await?,
+    )
+  }
+
+  pub async fn truck_waybill_query(
+    &self,
+    query: TruckWaybillQuerySpec,
+  ) -> Result<Vec<dtos::TruckWaybillResponse>, ApiError> {
+    Ok(
+      self
+        .truck_waybill_query_models(&query)
+        .await?
         .into_iter()
-        .map(dtos::TruckWaybillResponse::from)
+        .map(|doc| dtos::TruckWaybillResponse::from(truck_waybill::Model::from(doc)))
         .collect(),
     )
   }
@@ -120,13 +135,7 @@ impl DocumentService {
     &self,
     id: Uuid,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
-    let doc = truck_waybill::Entity::load()
-      .filter_by_id(id)
-      .filter(truck_waybill::Column::DeletedAt.is_null())
-      .with(truck_waybill_item::Entity)
-      .one(self.db.as_ref())
-      .await?
-      .ok_or_else(|| ApiError::NotFound(format!("Truck waybill '{}' not found", id)))?;
+    let doc = self.truck_waybill_composite_model(id).await?;
 
     let items: Vec<dtos::TruckWaybillItemResponse> = doc
       .items
@@ -135,28 +144,36 @@ impl DocumentService {
         dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone()))
       })
       .collect();
+    let weight_docs: Vec<dtos::TruckWeightDocResponse> = doc
+      .weight_docs
+      .iter()
+      .cloned()
+      .map(dtos::TruckWeightDocResponse::from)
+      .collect();
 
     let waybill = dtos::TruckWaybillResponse::from(truck_waybill::Model::from(doc));
 
     Ok(dtos::TruckWaybillCompositeResponse {
       waybill,
       items: if items.is_empty() { None } else { Some(items) },
-      weight_docs: None,
+      weight_docs: if weight_docs.is_empty() {
+        None
+      } else {
+        Some(weight_docs)
+      },
     })
   }
 
   pub async fn truck_receipt_pipeline_query(
     &self,
-    pipeline_status: Option<PipelineStatus>,
-    contractor_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: TruckReceiptPipelineQuerySpec,
   ) -> Result<Vec<TruckReceiptPipelineResponse>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(truck_waybill::Column::DeletedAt.is_null());
-    if let Some(cid) = contractor_id {
+    if let Some(cid) = query.contractor_id {
       cond = cond.add(truck_waybill::Column::SenderId.eq(cid));
     }
 
@@ -175,7 +192,7 @@ impl DocumentService {
       let acc = wb.acceptances.get(0);
       let status = PipelineStatus::from_doc_status(acc.map(|a| &a.status));
 
-      if pipeline_status.is_some() && pipeline_status != Some(status) {
+      if query.pipeline_status.is_some() && query.pipeline_status != Some(status) {
         continue;
       }
 

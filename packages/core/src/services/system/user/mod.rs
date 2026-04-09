@@ -1,5 +1,5 @@
 mod create;
 mod delete;
-mod helpers;
+pub(super) mod helpers;
 mod query;
 mod update;

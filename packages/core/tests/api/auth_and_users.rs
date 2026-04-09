@@ -1,18 +1,11 @@
 use axum::http::StatusCode;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use voletu_core::{
-  endpoints::paths as api_paths,
-  entities::{role, user},
-  enums,
-};
+use uuid::Uuid;
+use voletu_core::{endpoints::paths as api_paths, entities::role, enums};
 
 use crate::common::{
   http::{
-    assert_api_error,
-    assert_api_success,
-    delete,
-    post_json,
-    setup_seeded_app_with_admin_token,
+    assert_api_error, assert_api_success, delete, post_json, setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{auth_change_password, auth_login, auth_refresh, user_create},
@@ -24,7 +17,7 @@ const OPERATOR_NEW_PASSWORD: &str = "operator-pass-new";
 
 #[tokio::test]
 async fn auth_and_user_endpoints_cover_login_create_password_change_delete_and_error_payloads() {
-  let (db, app, token) = setup_seeded_app_with_admin_token().await;
+  let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
     let login_admin = post_json(&app, api_paths::auth::LOGIN, auth_login("admin", "admin")).await;
@@ -127,13 +120,8 @@ async fn auth_and_user_endpoints_cover_login_create_password_change_delete_and_e
       OPERATOR_USERNAME
     );
 
-    let endpoint_user_id = user::Entity::find()
-      .filter(user::Column::Username.eq(OPERATOR_USERNAME))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap()
-      .id;
+    let endpoint_user_id =
+      Uuid::parse_str(create_user_json["data"]["id"].as_str().unwrap()).unwrap();
 
     let delete_user = delete(
       &app,

@@ -7,6 +7,7 @@ use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::CargoFlowFlatRow,
   endpoints::{paths, query::PaginationParams},
+  services::document::query::CargoFlowQuerySpec,
 };
 
 #[utoipa::path(
@@ -30,7 +31,7 @@ async fn cargo_flow_flat_query(
   let rows = state
     .svc
     .document
-    .cargo_flow_flat_query(params.page, params.per_page)
+    .cargo_flow_flat_query(CargoFlowQuerySpec::list(params.page, params.per_page))
     .await?;
   Ok(ApiResponse::success(rows))
 }

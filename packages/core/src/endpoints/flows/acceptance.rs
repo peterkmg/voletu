@@ -9,6 +9,7 @@ use crate::{
   dtos::response::pipeline::AcceptanceFlatRow,
   endpoints::{paths, query::PaginationParams},
   enums::DocumentStatus,
+  services::document::query::AcceptanceFlatQuerySpec,
 };
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +18,16 @@ struct AcceptanceFlatQueryParams {
   status: Option<DocumentStatus>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<AcceptanceFlatQueryParams> for AcceptanceFlatQuerySpec {
+  fn from(params: AcceptanceFlatQueryParams) -> Self {
+    Self {
+      status: params.status,
+      page: params.pagination.page,
+      per_page: params.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -41,11 +52,7 @@ async fn acceptance_flat_query(
   let rows = state
     .svc
     .document
-    .acceptance_flat_query(
-      params.status,
-      params.pagination.page,
-      params.pagination.per_page,
-    )
+    .acceptance_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

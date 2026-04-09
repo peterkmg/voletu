@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::document::query::ReconciliationQuerySpec;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -8,6 +9,18 @@ struct ReconciliationQueryParams {
   warehouse_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<ReconciliationQueryParams> for ReconciliationQuerySpec {
+  fn from(value: ReconciliationQueryParams) -> Self {
+    Self {
+      document_number: value.document_number,
+      status: value.status,
+      warehouse_id: value.warehouse_id,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -30,18 +43,15 @@ async fn reconciliation_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<InventoryReconciliationResponse>> {
+  let query = ReconciliationQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .reconciliation_query_with_names(None, None, None, pagination.page, pagination.per_page)
+      .reconciliation_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .reconciliation_query(None, None, None, pagination.page, pagination.per_page)
-      .await?
+    state.svc.document.reconciliation_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }
@@ -68,30 +78,15 @@ async fn reconciliation_query(
   Query(query): Query<ReconciliationQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<InventoryReconciliationResponse>> {
+  let query = ReconciliationQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .reconciliation_query_with_names(
-        query.document_number.as_deref(),
-        query.status,
-        query.warehouse_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .reconciliation_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .reconciliation_query(
-        query.document_number.as_deref(),
-        query.status,
-        query.warehouse_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
-      .await?
+    state.svc.document.reconciliation_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }

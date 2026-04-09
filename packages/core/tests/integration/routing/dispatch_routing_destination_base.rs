@@ -8,15 +8,8 @@ use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  api_post,
-  await_sync_cycle,
-  create_dispatch_via_api,
-  get_composite_json,
-  query_audit_logs,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  temp_db_path,
+  api_post, await_sync_cycle, create_dispatch_via_api, get_composite_json, query_audit_logs,
+  seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -26,13 +19,19 @@ async fn dispatch_routing_includes_destination_base() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r9-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("r9-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r9-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
-  let pb = setup_peripheral_via_api(&client, &temp_db_path("r9-pb"), &central, &[
-    catalog.base_beta
-  ])
+  let pb = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r9-pb"),
+    &central,
+    &[catalog.base_beta],
+  )
   .await;
 
   // Pre-fill inventory so dispatch validation passes

@@ -2,37 +2,22 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use chrono::NaiveDate;
-use sea_orm::{prelude::Decimal, ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{prelude::Decimal, EntityLoaderTrait};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   dtos::{
-    CreateBaseRequest,
-    CreateCompanyRequest,
-    CreatePortRequest,
-    CreateProductGroupRequest,
-    CreateProductRequest,
-    CreateProductTypeRequest,
-    CreateRailWagonManifestRequest,
-    CreateRailWagonMeasurementRequest,
-    CreateRailWagonWeightRequest,
-    CreateRailWaybillRequest,
-    CreateStorageRequest,
-    CreateTruckWaybillItemRequest,
-    CreateTruckWaybillRequest,
-    CreateTruckWeightDocRequest,
-    CreateWarehouseRequest,
-    RailWagonManifestCompositeRequest,
-    TruckWaybillItemCompositeRequest,
-    TruckWeightDocCompositeRequest,
+    CreateBaseRequest, CreateCompanyRequest, CreatePortRequest, CreateProductGroupRequest,
+    CreateProductRequest, CreateProductTypeRequest, CreateRailWagonManifestRequest,
+    CreateRailWagonMeasurementRequest, CreateRailWagonWeightRequest, CreateRailWaybillRequest,
+    CreateStorageRequest, CreateTruckWaybillItemRequest, CreateTruckWaybillRequest,
+    CreateTruckWeightDocRequest, CreateWarehouseRequest, RailWagonManifestCompositeRequest,
+    TruckWaybillItemCompositeRequest, TruckWeightDocCompositeRequest,
   },
-  entities::{audit_log, product_group, rail_wagon_manifest, rail_waybill, truck_waybill},
+  entities::audit_log,
   enums,
   services::{
-    audit::AuditService,
-    catalog::CatalogService,
-    document::DocumentService,
-    ledger::LedgerService,
+    audit::AuditService, catalog::CatalogService, document::DocumentService, ledger::LedgerService,
   },
 };
 
@@ -139,7 +124,7 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
     assert_eq!(product.product_group_id, pgroup.id);
     assert_eq!(port.common_name, "Port A");
 
-    let logs = audit_log::Entity::find().all(&*db).await.unwrap();
+    let logs: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(&*db).await.unwrap();
     assert!(logs.len() >= 8);
 
     let company_insert_log = logs
@@ -150,7 +135,8 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
           && row.action == enums::AuditAction::Insert
       })
       .unwrap();
-    let company_model = voletu_core::entities::company::Entity::find_by_id(company.id)
+    let company_model = voletu_core::entities::company::Entity::load()
+      .filter_by_id(company.id)
       .one(&*db)
       .await
       .unwrap()
@@ -268,34 +254,14 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
     );
     assert_eq!(doc_service.rail_weight_list(None).await.unwrap().len(), 1);
 
-    // Ensure helper data is actually reused by checking records are linked to seeded IDs.
-    let saved_truck_waybill = truck_waybill::Entity::find()
-      .filter(truck_waybill::Column::DocumentNumber.eq("TW-1"))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap();
-    let saved_rail_waybill = rail_waybill::Entity::find()
-      .filter(rail_waybill::Column::DocumentNumber.eq("RW-1"))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap();
-    let saved_manifest = rail_wagon_manifest::Entity::find()
-      .filter(rail_wagon_manifest::Column::RailWaybillId.eq(saved_rail_waybill.id))
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap();
-    let saved_group = product_group::Entity::find_by_id(catalog.product_group_id)
-      .one(&*db)
-      .await
-      .unwrap();
-    assert_eq!(saved_truck_waybill.sender_id, catalog.sender_id);
-    assert_eq!(saved_manifest.product_id, catalog.product_a_id);
-    assert!(saved_group.is_some());
+    // The create helpers should preserve the seeded linkage without extra lookup hops.
+    assert_eq!(truck_waybill_row.sender_id, catalog.sender_id);
+    assert_eq!(truck_waybill_row.base_id, catalog.base_id);
+    assert_eq!(rail_waybill_row.sender_id, catalog.sender_id);
+    assert_eq!(manifest.rail_waybill_id, rail_waybill_row.id);
+    assert_eq!(manifest.product_id, catalog.product_a_id);
 
-    let logs = audit_log::Entity::find().all(&*db).await.unwrap();
+    let logs: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(&*db).await.unwrap();
     assert!(logs.len() >= 7);
   })
   .await;

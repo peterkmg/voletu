@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, IntoActiveModel};
+use sea_orm::{
+  ActiveModelTrait, ActiveValue::Set, EntityLoaderTrait, EntityTrait, IntoActiveModel,
+};
 use uuid::Uuid;
 use voletu_core::{
   api::ApiError,
@@ -14,8 +16,7 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_sync_node},
-  setup_db,
-  test_config,
+  setup_db, test_config,
 };
 
 const TEST_SYNC_NODE_ID: Uuid = Uuid::from_u128(11);
@@ -89,7 +90,7 @@ async fn sync_push_rejects_lower_role_update_when_newer_higher_role_log_exists()
     assert_eq!(result.accepted, 1);
     assert_eq!(result.rejected, 1);
 
-    let all_logs = audit_log::Entity::find().all(&*db).await.unwrap();
+    let all_logs: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(&*db).await.unwrap();
     assert_eq!(all_logs.len(), 2);
   })
   .await;
@@ -119,7 +120,8 @@ async fn sync_push_restores_company_from_snapshot_and_is_idempotent_on_reapply()
       .exec(&*db)
       .await
       .unwrap();
-    assert!(company::Entity::find_by_id(seeded_company.id)
+    assert!(company::Entity::load()
+      .filter_by_id(seeded_company.id)
       .one(&*db)
       .await
       .unwrap()
@@ -144,7 +146,8 @@ async fn sync_push_restores_company_from_snapshot_and_is_idempotent_on_reapply()
     assert_eq!(first_apply.accepted, 1);
     assert_eq!(first_apply.rejected, 0);
 
-    let reconstructed = company::Entity::find_by_id(seeded_company.id)
+    let reconstructed = company::Entity::load()
+      .filter_by_id(seeded_company.id)
       .one(&*db)
       .await
       .unwrap()
@@ -157,7 +160,8 @@ async fn sync_push_restores_company_from_snapshot_and_is_idempotent_on_reapply()
     assert_eq!(second_apply.rejected, 0);
 
     // Verify the pushed restore log exists (other audit logs may be present from entity hooks)
-    let restore_log = audit_log::Entity::find_by_id(restore_log_id)
+    let restore_log = audit_log::Entity::load()
+      .filter_by_id(restore_log_id)
       .one(&*db)
       .await
       .unwrap();
@@ -184,7 +188,7 @@ async fn sync_watermark_upsert_updates_existing_row_for_same_node_and_direction(
     .await
     .unwrap();
 
-  let rows = sync_watermark::Entity::find().all(&*db).await.unwrap();
+  let rows: Vec<sync_watermark::ModelEx> = sync_watermark::Entity::load().all(&*db).await.unwrap();
   assert_eq!(rows.len(), 1);
   assert_eq!(rows[0].last_audit_log_id, second_log_id);
 }
@@ -195,7 +199,7 @@ async fn sync_status_reflects_local_topology_and_local_row_keeps_central_url() {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
 
-    let local_db_id = database_instance::ActiveModel {
+    let instance_row = database_instance::ActiveModel {
       common_name: Set("Local Node".to_string()),
       node_type: Set(enums::NodeType::Central),
       base_id: Set(None),
@@ -203,13 +207,12 @@ async fn sync_status_reflects_local_topology_and_local_row_keeps_central_url() {
     }
     .insert(&*db)
     .await
-    .unwrap()
-    .id;
+    .unwrap();
 
-    local::ActiveModel {
+    let local_row = local::ActiveModel {
       id: Set(1),
       is_initialized: Set(false),
-      local_db_id: Set(local_db_id),
+      local_db_id: Set(instance_row.id),
       jwt_secret: Set("test-secret".to_string()),
       central_api_url: Set(None),
     }
@@ -217,31 +220,22 @@ async fn sync_status_reflects_local_topology_and_local_row_keeps_central_url() {
     .await
     .unwrap();
 
-    let local_row = local::Entity::find_by_id(1)
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap();
     let mut local_am = local_row.clone().into_active_model();
     local_am.central_api_url = Set(Some("http://central.local:3030".to_string()));
     local_am.update(&*db).await.unwrap();
 
-    let instance_row = database_instance::Entity::find_by_id(local_row.local_db_id)
-      .one(&*db)
-      .await
-      .unwrap()
-      .unwrap();
     let mut instance_am = instance_row.into_active_model();
     instance_am.base_id = Set(Some(catalog.base_id));
     instance_am.node_type = Set(enums::NodeType::Peripheral);
     instance_am.update(&*db).await.unwrap();
 
-    let service = sync_service_with_node(db.clone(), local_db_id);
+    let service = sync_service_with_node(db.clone(), local_row.local_db_id);
 
     let status = service.sync_status(&[]).await.unwrap();
     assert_eq!(status.node_type, "PERIPHERAL");
 
-    let updated_local_row = local::Entity::find_by_id(1)
+    let updated_local_row = local::Entity::load()
+      .filter_by_id(1)
       .one(&*db)
       .await
       .unwrap()

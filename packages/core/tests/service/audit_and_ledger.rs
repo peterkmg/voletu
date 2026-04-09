@@ -2,11 +2,7 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use sea_orm::{
-  entity::prelude::Decimal,
-  ActiveModelTrait,
-  ActiveValue::Set,
-  ColumnTrait,
-  EntityTrait,
+  entity::prelude::Decimal, ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityLoaderTrait,
   QueryFilter,
 };
 use uuid::Uuid;
@@ -64,7 +60,7 @@ async fn audit_service_insert_and_update_persist_expected_fields_and_payloads() 
       .await
       .unwrap();
 
-    let rows = audit_log::Entity::find()
+    let rows: Vec<audit_log::ModelEx> = audit_log::Entity::load()
       .filter(audit_log::Column::RecordId.eq(saved.id))
       .all(&*db)
       .await
@@ -137,7 +133,7 @@ async fn audit_service_model_methods_capture_full_inserts_and_field_level_update
       .await
       .unwrap();
 
-    let rows = audit_log::Entity::find()
+    let rows: Vec<audit_log::ModelEx> = audit_log::Entity::load()
       .filter(audit_log::Column::RecordId.eq(saved.id))
       .all(&*db)
       .await

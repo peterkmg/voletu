@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::document::query::BlendingDocumentQuerySpec;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -8,6 +9,18 @@ struct BlendingQueryParams {
   contractor_id: Option<Uuid>,
   #[serde(flatten)]
   pagination: PaginationParams,
+}
+
+impl From<BlendingQueryParams> for BlendingDocumentQuerySpec {
+  fn from(value: BlendingQueryParams) -> Self {
+    Self {
+      document_number: value.document_number,
+      status: value.status,
+      contractor_id: value.contractor_id,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -30,18 +43,15 @@ async fn blending_document_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<BlendingResponse>> {
+  let query = BlendingDocumentQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .blending_document_query_with_names(None, None, None, pagination.page, pagination.per_page)
+      .blending_document_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .blending_document_query(None, None, None, pagination.page, pagination.per_page)
-      .await?
+    state.svc.document.blending_document_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }
@@ -113,30 +123,15 @@ async fn blending_document_query(
   Query(query): Query<BlendingQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<BlendingResponse>> {
+  let query = BlendingDocumentQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .blending_document_query_with_names(
-        query.document_number.as_deref(),
-        query.status,
-        query.contractor_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .blending_document_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .blending_document_query(
-        query.document_number.as_deref(),
-        query.status,
-        query.contractor_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
-      .await?
+    state.svc.document.blending_document_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }

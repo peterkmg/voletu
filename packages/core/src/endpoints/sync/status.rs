@@ -1,6 +1,17 @@
 use std::sync::Arc;
 
 use super::*;
+use reqwest::Client;
+use uuid::Uuid;
+
+use crate::{
+  api::ApiError,
+  dtos::{SyncStatusResponse, SyncWatermarkResponse},
+  enums::SyncDirection,
+  services::sync::helpers::compute_base_discriminant,
+  services::system::node_bases::load_node_base_ids,
+  utils::http::get_api_json,
+};
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -75,6 +86,125 @@ struct AwaitCycleResponse {
   completed: bool,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct PendingFence {
+  target_node_id: Uuid,
+  target_audit_log_id: Uuid,
+}
+
+#[derive(Debug, Default)]
+struct PendingReplicationTargets {
+  pull: Option<PendingFence>,
+  push: Option<PendingFence>,
+}
+
+fn base_ids_query(base_ids: &[Uuid]) -> String {
+  base_ids
+    .iter()
+    .map(|id| id.to_string())
+    .collect::<Vec<_>>()
+    .join(",")
+}
+
+fn watermark_for(
+  watermarks: &[SyncWatermarkResponse],
+  target_node_id: Uuid,
+  direction: SyncDirection,
+) -> (Uuid, String) {
+  let watermark = watermarks
+    .iter()
+    .find(|wm| wm.target_node_id == target_node_id && wm.direction == direction);
+
+  match watermark {
+    Some(wm) => (wm.last_audit_log_id, wm.base_discriminant.clone()),
+    None => (Uuid::nil(), String::new()),
+  }
+}
+
+async fn load_local_base_ids(state: &ApiState) -> Result<Vec<Uuid>, ApiError> {
+  load_node_base_ids(state.db.as_ref(), state.cfg.node.db_id)
+    .await
+    .map_err(Into::into)
+}
+
+async fn pending_replication_targets(
+  state: &Arc<ApiState>,
+  timeout_secs: u64,
+) -> Result<Option<PendingReplicationTargets>, ApiError> {
+  if !state.cfg.node.node_type.eq_ignore_ascii_case("PERIPHERAL") {
+    return Ok(None);
+  }
+
+  let Some(central_api_url) = state
+    .cfg
+    .node
+    .central_api_url
+    .as_deref()
+    .map(str::trim)
+    .filter(|value| !value.is_empty())
+  else {
+    return Ok(None);
+  };
+
+  let local_base_ids = load_local_base_ids(state).await?;
+  let central_status: SyncStatusResponse = match get_api_json(
+    &Client::new(),
+    &format!(
+      "{}/sync/status?baseIds={}",
+      central_api_url.trim_end_matches('/'),
+      base_ids_query(&local_base_ids)
+    ),
+    std::time::Duration::from_secs(timeout_secs.clamp(1, 5)),
+  )
+  .await
+  {
+    Ok(status) => status,
+    Err(_) => return Ok(None),
+  };
+
+  let watermarks = state.svc.sync.list_sync_watermarks().await?;
+  let local_status = state.svc.sync.sync_status(&[]).await?;
+  let current_discriminant = compute_base_discriminant(&local_base_ids);
+
+  let (push_cursor, _) = watermark_for(&watermarks, central_status.node_id, SyncDirection::Push);
+  let push = (local_status.highest_audit_log_id > push_cursor).then_some(PendingFence {
+    target_node_id: central_status.node_id,
+    target_audit_log_id: local_status.highest_audit_log_id,
+  });
+
+  let (stored_pull_cursor, stored_discriminant) =
+    watermark_for(&watermarks, central_status.node_id, SyncDirection::Pull);
+  let effective_pull_cursor = if stored_discriminant == current_discriminant {
+    stored_pull_cursor
+  } else {
+    Uuid::nil()
+  };
+  let pull = (central_status.highest_matching_id > effective_pull_cursor).then_some(PendingFence {
+    target_node_id: central_status.node_id,
+    target_audit_log_id: central_status.highest_matching_id,
+  });
+
+  Ok(Some(PendingReplicationTargets { pull, push }))
+}
+
+async fn fence_satisfied(
+  state: &Arc<ApiState>,
+  fence: PendingFence,
+  direction: SyncDirection,
+) -> Result<bool, ApiError> {
+  let watermarks = state.svc.sync.list_sync_watermarks().await?;
+  let (cursor, stored_discriminant) = watermark_for(&watermarks, fence.target_node_id, direction);
+
+  if matches!(direction, SyncDirection::Pull) {
+    let current_discriminant = compute_base_discriminant(&load_local_base_ids(state).await?);
+    if stored_discriminant != current_discriminant {
+      return Ok(false);
+    }
+  }
+
+  Ok(cursor >= fence.target_audit_log_id)
+}
+
 #[utoipa::path(
   get,
   tag = "Sync",
@@ -129,15 +259,68 @@ async fn sync_await_cycle(
     }));
   }
 
+  let pending_targets = pending_replication_targets(&state, timeout_secs).await?;
+
   // If the caller provided a `since` threshold that's already satisfied,
   // return immediately.
-  if let (Some(since_ts), Some(last_sync)) = (since, initial_last_sync) {
-    if last_sync >= since_ts {
-      return Ok(ApiResponse::success(AwaitCycleResponse {
-        worker_state: format!("{:?}", initial_state),
-        last_sync_at: Some(last_sync.to_rfc3339()),
-        completed: true,
-      }));
+  if pending_targets
+    .as_ref()
+    .map(|targets| targets.pull.is_none() && targets.push.is_none())
+    .unwrap_or(true)
+  {
+    if let (Some(since_ts), Some(last_sync)) = (since, initial_last_sync) {
+      if last_sync >= since_ts {
+        return Ok(ApiResponse::success(AwaitCycleResponse {
+          worker_state: format!("{:?}", initial_state),
+          last_sync_at: Some(last_sync.to_rfc3339()),
+          completed: true,
+        }));
+      }
+    }
+  }
+
+  // When work was already pending at call entry, wait for the relevant
+  // watermark(s) to reach the target ids instead of treating "some cycle
+  // finished" as proof that the specific change we care about was processed.
+  if let Some(targets) = &pending_targets {
+    let has_pending_work = targets.pull.is_some() || targets.push.is_some();
+    if has_pending_work {
+      let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(timeout_secs);
+      let poll_interval = std::time::Duration::from_millis(50);
+
+      loop {
+        let (cur_state, cur_last_sync) = {
+          let status = state.worker_status.read().await;
+          (status.state, status.last_sync_at)
+        };
+
+        let pull_done = match targets.pull {
+          Some(fence) => fence_satisfied(&state, fence, SyncDirection::Pull).await?,
+          None => true,
+        };
+        let push_done = match targets.push {
+          Some(fence) => fence_satisfied(&state, fence, SyncDirection::Push).await?,
+          None => true,
+        };
+
+        if pull_done && push_done {
+          return Ok(ApiResponse::success(AwaitCycleResponse {
+            worker_state: format!("{:?}", cur_state),
+            last_sync_at: cur_last_sync.map(|t| t.to_rfc3339()),
+            completed: true,
+          }));
+        }
+
+        if tokio::time::Instant::now() >= deadline {
+          return Ok(ApiResponse::success(AwaitCycleResponse {
+            worker_state: format!("{:?}", cur_state),
+            last_sync_at: cur_last_sync.map(|t| t.to_rfc3339()),
+            completed: false,
+          }));
+        }
+
+        tokio::time::sleep(poll_interval).await;
+      }
     }
   }
 
@@ -157,8 +340,7 @@ async fn sync_await_cycle(
   // elapses. We poll instead of awaiting a `Notify` because notifications
   // are lost to listeners that aren't subscribed at the moment of
   // `notify_waiters()`.
-  let deadline =
-    tokio::time::Instant::now() + std::time::Duration::from_secs(timeout_secs);
+  let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(timeout_secs);
   let poll_interval = std::time::Duration::from_millis(50);
 
   loop {

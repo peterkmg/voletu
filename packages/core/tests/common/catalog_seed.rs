@@ -5,15 +5,8 @@ use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   entities::{
-    base,
-    company,
-    database_instance,
-    inventory_ledger_entry,
-    product,
-    product_group,
-    product_type,
-    storage,
-    warehouse,
+    base, company, database_instance, inventory_ledger_entry, product, product_group, product_type,
+    storage, warehouse,
   },
   enums,
 };

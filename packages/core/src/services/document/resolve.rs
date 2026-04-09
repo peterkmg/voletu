@@ -1,10 +1,18 @@
+use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos,
-  enums,
-  services::{common::resolve_names, DocumentService},
+  entities::{company, rail_waybill, truck_waybill},
+  services::{
+    document::query::{
+      AcceptanceDocumentQuerySpec, BlendingDocumentQuerySpec, DispatchDocumentQuerySpec,
+      OwnershipTransferQuerySpec, PhysicalTransferQuerySpec, RailWaybillQuerySpec,
+      ReconciliationQuerySpec, TruckWaybillQuerySpec,
+    },
+    DocumentService,
+  },
 };
 
 impl DocumentService {
@@ -13,59 +21,77 @@ impl DocumentService {
   pub async fn dispatch_document_list_with_names(
     &self,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
-    let mut items = self.dispatch_document_list(None).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    self
+      .dispatch_document_query_with_names(DispatchDocumentQuerySpec::default())
+      .await
   }
 
   pub async fn dispatch_document_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::DispatchResponse, ApiError> {
-    let mut item = self.dispatch_document_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = self.dispatch_document_model(id).await?;
+    let exporter_names = self
+      .dispatch_exporter_names(item.exporter_id.into_iter())
+      .await?;
+    let exporter_id_name = item
+      .exporter_id
+      .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());
+
+    Ok(dtos::DispatchResponse::from_loaded(item, exporter_id_name))
   }
 
-  #[allow(clippy::too_many_arguments)]
   pub async fn dispatch_document_query_with_names(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    contractor_id: Option<Uuid>,
-    dispatch_method: Option<enums::DispatchMethod>,
-    dispatch_purpose: Option<enums::DispatchPurpose>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: DispatchDocumentQuerySpec,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
-    let mut items = self
-      .dispatch_document_query(
-        document_number,
-        status,
-        contractor_id,
-        dispatch_method,
-        dispatch_purpose,
-        page,
-        per_page,
-      )
+    let items = self.dispatch_document_query_models(&query).await?;
+    let exporter_names = self
+      .dispatch_exporter_names(items.iter().filter_map(|item| item.exporter_id))
       .await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+
+    Ok(
+      items
+        .into_iter()
+        .map(|item| {
+          let exporter_id_name = item
+            .exporter_id
+            .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());
+          dtos::DispatchResponse::from_loaded(item, exporter_id_name)
+        })
+        .collect(),
+    )
   }
 
   pub async fn dispatch_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
-    let mut composite = self.dispatch_composite_get(id).await?;
-    resolve_names(
-      self.db.as_ref(),
-      std::slice::from_mut(&mut composite.document),
-    )
-    .await?;
-    resolve_names(self.db.as_ref(), &mut composite.items).await?;
-    resolve_names(self.db.as_ref(), &mut composite.storage_measurements).await?;
-    Ok(composite)
+    let composite = self.dispatch_composite_model(id).await?;
+    let items = composite
+      .items
+      .iter()
+      .cloned()
+      .map(dtos::DispatchItemResponse::from)
+      .collect();
+    let storage_measurements = composite
+      .storage_measurements
+      .iter()
+      .cloned()
+      .map(dtos::DispatchMeasurementResponse::from)
+      .collect();
+    let exporter_names = self
+      .dispatch_exporter_names(composite.exporter_id.into_iter())
+      .await?;
+    let exporter_id_name = composite
+      .exporter_id
+      .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());
+
+    Ok(dtos::DispatchCompositeResponse {
+      document: dtos::DispatchResponse::from_loaded(composite, exporter_id_name),
+      items,
+      storage_measurements,
+    })
   }
 
   // ── Acceptance ────────────────────────────
@@ -73,58 +99,48 @@ impl DocumentService {
   pub async fn acceptance_document_list_with_names(
     &self,
   ) -> Result<Vec<dtos::AcceptanceResponse>, ApiError> {
-    let mut items = self.acceptance_document_list(None).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    self
+      .acceptance_document_query_with_names(AcceptanceDocumentQuerySpec::default())
+      .await
   }
 
   pub async fn acceptance_document_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::AcceptanceResponse, ApiError> {
-    let mut item = self.acceptance_document_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    Ok(self.acceptance_document_model(id).await?.into())
   }
 
-  #[allow(clippy::too_many_arguments)]
   pub async fn acceptance_document_query_with_names(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    truck_waybill_id: Option<crate::endpoints::query::NullableFilter>,
-    rail_waybill_id: Option<crate::endpoints::query::NullableFilter>,
-    transit_dispatch_id: Option<crate::endpoints::query::NullableFilter>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: AcceptanceDocumentQuerySpec,
   ) -> Result<Vec<dtos::AcceptanceResponse>, ApiError> {
-    let mut items = self
-      .acceptance_document_query(
-        document_number,
-        status,
-        truck_waybill_id,
-        rail_waybill_id,
-        transit_dispatch_id,
-        page,
-        per_page,
-      )
-      .await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    Ok(
+      self
+        .acceptance_document_query_models(&query)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect(),
+    )
   }
 
   pub async fn acceptance_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::AcceptanceCompositeResponse, ApiError> {
-    let mut composite = self.acceptance_composite_get(id).await?;
-    resolve_names(
-      self.db.as_ref(),
-      std::slice::from_mut(&mut composite.document),
-    )
-    .await?;
-    resolve_names(self.db.as_ref(), &mut composite.items).await?;
-    Ok(composite)
+    let composite = self.acceptance_composite_model(id).await?;
+    let items = composite
+      .items
+      .iter()
+      .cloned()
+      .map(dtos::AcceptanceItemResponse::from)
+      .collect();
+
+    Ok(dtos::AcceptanceCompositeResponse {
+      document: composite.into(),
+      items,
+    })
   }
 
   // ── Blending ──────────────────────────────
@@ -132,48 +148,37 @@ impl DocumentService {
   pub async fn blending_document_list_with_names(
     &self,
   ) -> Result<Vec<dtos::BlendingResponse>, ApiError> {
-    let mut items = self.blending_document_list(None).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    self
+      .blending_document_query_with_names(BlendingDocumentQuerySpec::default())
+      .await
   }
 
   pub async fn blending_document_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::BlendingResponse, ApiError> {
-    let mut item = self.blending_document_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    Ok(self.blending_document_model(id).await?.into())
   }
 
   pub async fn blending_document_query_with_names(
     &self,
-    doc_num: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    contractor_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: BlendingDocumentQuerySpec,
   ) -> Result<Vec<dtos::BlendingResponse>, ApiError> {
-    let mut items = self
-      .blending_document_query(doc_num, status, contractor_id, page, per_page)
-      .await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    Ok(
+      self
+        .blending_document_query_models(&query)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect(),
+    )
   }
 
   pub async fn blending_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
-    let mut composite = self.blending_composite_get(id).await?;
-    resolve_names(
-      self.db.as_ref(),
-      std::slice::from_mut(&mut composite.document),
-    )
-    .await?;
-    resolve_names(self.db.as_ref(), &mut composite.components).await?;
-    resolve_names(self.db.as_ref(), &mut composite.results).await?;
-    Ok(composite)
+    Ok(self.blending_composite_model(id).await?.try_into()?)
   }
 
   // ── Reconciliation ────────────────────────
@@ -181,131 +186,135 @@ impl DocumentService {
   pub async fn reconciliation_list_with_names(
     &self,
   ) -> Result<Vec<dtos::InventoryReconciliationResponse>, ApiError> {
-    let mut items = self.reconciliation_list(None).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    self
+      .reconciliation_query_with_names(ReconciliationQuerySpec::default())
+      .await
   }
 
   pub async fn reconciliation_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::InventoryReconciliationResponse, ApiError> {
-    let mut item = self.reconciliation_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    Ok(self.reconciliation_model(id).await?.into())
   }
 
   pub async fn reconciliation_query_with_names(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    warehouse_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: ReconciliationQuerySpec,
   ) -> Result<Vec<dtos::InventoryReconciliationResponse>, ApiError> {
-    let mut items = self
-      .reconciliation_query(document_number, status, warehouse_id, page, per_page)
-      .await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    Ok(
+      self
+        .reconciliation_query_models(&query)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect(),
+    )
   }
 
   // ── Truck waybill ─────────────────────────
-
-  pub async fn truck_waybill_list_with_names(
-    &self,
-  ) -> Result<Vec<dtos::TruckWaybillResponse>, ApiError> {
-    let mut items = self.truck_waybill_list(None).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
-  }
 
   pub async fn truck_waybill_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::TruckWaybillResponse, ApiError> {
-    let mut item = self.truck_waybill_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = truck_waybill::Entity::load()
+      .filter_by_id(id)
+      .filter(truck_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Truck waybill '{}' not found", id)))?;
+
+    Ok(item.into())
   }
 
   pub async fn truck_waybill_query_with_names(
     &self,
-    document_number: Option<&str>,
-    sender_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: TruckWaybillQuerySpec,
   ) -> Result<Vec<dtos::TruckWaybillResponse>, ApiError> {
-    let mut items = self
-      .truck_waybill_query(document_number, sender_id, page, per_page)
-      .await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    Ok(
+      self
+        .truck_waybill_query_models(&query)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect(),
+    )
   }
 
   pub async fn truck_waybill_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
-    let mut composite = self.truck_waybill_composite_get(id).await?;
-    resolve_names(
-      self.db.as_ref(),
-      std::slice::from_mut(&mut composite.waybill),
-    )
-    .await?;
-    if let Some(ref mut items) = composite.items {
-      resolve_names(self.db.as_ref(), items).await?;
-    }
-    Ok(composite)
+    let composite = self.truck_waybill_composite_model(id).await?;
+    let items = composite
+      .items
+      .iter()
+      .cloned()
+      .map(dtos::TruckWaybillItemResponse::from)
+      .collect::<Vec<_>>();
+    let weight_docs = composite
+      .weight_docs
+      .iter()
+      .cloned()
+      .map(dtos::TruckWeightDocResponse::from)
+      .collect::<Vec<_>>();
+
+    Ok(dtos::TruckWaybillCompositeResponse {
+      waybill: composite.into(),
+      items: (!items.is_empty()).then_some(items),
+      weight_docs: (!weight_docs.is_empty()).then_some(weight_docs),
+    })
   }
 
   // ── Rail waybill ──────────────────────────
-
-  pub async fn rail_waybill_list_with_names(
-    &self,
-  ) -> Result<Vec<dtos::RailWaybillResponse>, ApiError> {
-    let mut items = self.rail_waybill_list(None).await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
-  }
 
   pub async fn rail_waybill_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::RailWaybillResponse, ApiError> {
-    let mut item = self.rail_waybill_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut item)).await?;
-    Ok(item)
+    let item = rail_waybill::Entity::load()
+      .filter_by_id(id)
+      .filter(rail_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Rail waybill '{}' not found", id)))?;
+
+    Ok(item.into())
   }
 
   pub async fn rail_waybill_query_with_names(
     &self,
-    document_number: Option<&str>,
-    sender_id: Option<Uuid>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: RailWaybillQuerySpec,
   ) -> Result<Vec<dtos::RailWaybillResponse>, ApiError> {
-    let mut items = self
-      .rail_waybill_query(document_number, sender_id, page, per_page)
-      .await?;
-    resolve_names(self.db.as_ref(), &mut items).await?;
-    Ok(items)
+    Ok(
+      self
+        .rail_waybill_query_models(&query)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect(),
+    )
   }
 
   pub async fn rail_waybill_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
-    let mut composite = self.rail_waybill_composite_get(id).await?;
-    resolve_names(
-      self.db.as_ref(),
-      std::slice::from_mut(&mut composite.waybill),
-    )
-    .await?;
-    if let Some(ref mut manifests) = composite.wagon_manifests {
-      resolve_names(self.db.as_ref(), manifests).await?;
-    }
-    Ok(composite)
+    let composite = self.rail_waybill_composite_model(id).await?;
+    let wagon_manifests = composite
+      .wagon_manifests
+      .iter()
+      .cloned()
+      .map(dtos::RailWagonManifestResponse::from)
+      .collect::<Vec<_>>();
+
+    Ok(dtos::RailWaybillCompositeResponse {
+      waybill: composite.into(),
+      wagon_manifests: (!wagon_manifests.is_empty()).then_some(wagon_manifests),
+    })
   }
 
   // ── Physical transfer ─────────────────────
@@ -313,60 +322,83 @@ impl DocumentService {
   pub async fn physical_transfer_list_with_names(
     &self,
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
-    let mut responses = self.physical_transfer_list(None).await?;
-    for response in &mut responses {
-      resolve_names(self.db.as_ref(), std::slice::from_mut(response)).await?;
-      resolve_names(self.db.as_ref(), &mut response.items).await?;
-    }
-    Ok(responses)
+    self
+      .physical_transfer_composite_query_with_names(PhysicalTransferQuerySpec::default())
+      .await
   }
 
   pub async fn physical_transfer_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
-    let mut response = self.physical_transfer_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut response)).await?;
-    resolve_names(self.db.as_ref(), &mut response.items).await?;
-    Ok(response)
+    let response = self.physical_transfer_model(id).await?;
+    let to_storage_names = self
+      .physical_transfer_to_storage_names(
+        response
+          .items
+          .iter()
+          .map(|item| item.to_storage_id)
+          .collect::<Vec<_>>(),
+      )
+      .await?;
+
+    Ok(dtos::PhysicalTransferResponse::from_loaded_with_names(
+      response,
+      &to_storage_names,
+    ))
   }
 
   pub async fn physical_transfer_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
-    let mut response = self.physical_transfer_composite_get(id).await?;
-    resolve_names(self.db.as_ref(), std::slice::from_mut(&mut response)).await?;
-    resolve_names(self.db.as_ref(), &mut response.items).await?;
-    Ok(response)
+    let response = self.physical_transfer_model(id).await?;
+    let to_storage_names = self
+      .physical_transfer_to_storage_names(
+        response
+          .items
+          .iter()
+          .map(|item| item.to_storage_id)
+          .collect::<Vec<_>>(),
+      )
+      .await?;
+
+    Ok(dtos::PhysicalTransferResponse::from_loaded_with_names(
+      response,
+      &to_storage_names,
+    ))
   }
 
   pub async fn physical_transfer_composite_list_with_names(
     &self,
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
-    let mut responses = self.physical_transfer_composite_list().await?;
-    for response in &mut responses {
-      resolve_names(self.db.as_ref(), std::slice::from_mut(response)).await?;
-      resolve_names(self.db.as_ref(), &mut response.items).await?;
-    }
-    Ok(responses)
+    self
+      .physical_transfer_composite_query_with_names(PhysicalTransferQuerySpec::default())
+      .await
   }
 
   pub async fn physical_transfer_composite_query_with_names(
     &self,
-    document_number: Option<&str>,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: PhysicalTransferQuerySpec,
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
-    let mut responses = self
-      .physical_transfer_composite_query(document_number, status, page, per_page)
+    let responses = self.physical_transfer_query_models(&query).await?;
+    let to_storage_names = self
+      .physical_transfer_to_storage_names(
+        responses
+          .iter()
+          .flat_map(|response| response.items.iter().map(|item| item.to_storage_id))
+          .collect::<Vec<_>>(),
+      )
       .await?;
-    for response in &mut responses {
-      resolve_names(self.db.as_ref(), std::slice::from_mut(response)).await?;
-      resolve_names(self.db.as_ref(), &mut response.items).await?;
-    }
-    Ok(responses)
+
+    Ok(
+      responses
+        .into_iter()
+        .map(|response| {
+          dtos::PhysicalTransferResponse::from_loaded_with_names(response, &to_storage_names)
+        })
+        .collect(),
+    )
   }
 
   // ── Ownership transfer ────────────────────
@@ -374,53 +406,87 @@ impl DocumentService {
   pub async fn ownership_transfer_list_with_names(
     &self,
   ) -> Result<Vec<dtos::OwnershipTransferResponse>, ApiError> {
-    let mut responses = self.ownership_transfer_list(None).await?;
-    for response in &mut responses {
-      resolve_names(self.db.as_ref(), &mut response.items).await?;
-    }
-    Ok(responses)
+    self
+      .ownership_transfer_composite_query_with_names(OwnershipTransferQuerySpec::default())
+      .await
   }
 
   pub async fn ownership_transfer_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::OwnershipTransferResponse, ApiError> {
-    let mut response = self.ownership_transfer_get(id).await?;
-    resolve_names(self.db.as_ref(), &mut response.items).await?;
-    Ok(response)
+    let response = self.ownership_transfer_model(id).await?;
+    let contractor_names = self
+      .ownership_transfer_contractor_names(
+        response
+          .items
+          .iter()
+          .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+          .collect::<Vec<_>>(),
+      )
+      .await?;
+
+    Ok(dtos::OwnershipTransferResponse::from_loaded_with_names(
+      response,
+      &contractor_names,
+    ))
   }
 
   pub async fn ownership_transfer_composite_get_with_names(
     &self,
     id: Uuid,
   ) -> Result<dtos::OwnershipTransferResponse, ApiError> {
-    let mut response = self.ownership_transfer_composite_get(id).await?;
-    resolve_names(self.db.as_ref(), &mut response.items).await?;
-    Ok(response)
+    let response = self.ownership_transfer_model(id).await?;
+    let contractor_names = self
+      .ownership_transfer_contractor_names(
+        response
+          .items
+          .iter()
+          .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+          .collect::<Vec<_>>(),
+      )
+      .await?;
+
+    Ok(dtos::OwnershipTransferResponse::from_loaded_with_names(
+      response,
+      &contractor_names,
+    ))
   }
 
   pub async fn ownership_transfer_composite_list_with_names(
     &self,
   ) -> Result<Vec<dtos::OwnershipTransferResponse>, ApiError> {
-    let mut responses = self.ownership_transfer_composite_list().await?;
-    for response in &mut responses {
-      resolve_names(self.db.as_ref(), &mut response.items).await?;
-    }
-    Ok(responses)
+    self
+      .ownership_transfer_composite_query_with_names(OwnershipTransferQuerySpec::default())
+      .await
   }
 
   pub async fn ownership_transfer_composite_query_with_names(
     &self,
-    status: Option<enums::DocumentStatus>,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: OwnershipTransferQuerySpec,
   ) -> Result<Vec<dtos::OwnershipTransferResponse>, ApiError> {
-    let mut responses = self
-      .ownership_transfer_composite_query(status, page, per_page)
+    let responses = self.ownership_transfer_query_models(&query).await?;
+    let contractor_names = self
+      .ownership_transfer_contractor_names(
+        responses
+          .iter()
+          .flat_map(|response| {
+            response
+              .items
+              .iter()
+              .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+          })
+          .collect::<Vec<_>>(),
+      )
       .await?;
-    for response in &mut responses {
-      resolve_names(self.db.as_ref(), &mut response.items).await?;
-    }
-    Ok(responses)
+
+    Ok(
+      responses
+        .into_iter()
+        .map(|response| {
+          dtos::OwnershipTransferResponse::from_loaded_with_names(response, &contractor_names)
+        })
+        .collect(),
+    )
   }
 }

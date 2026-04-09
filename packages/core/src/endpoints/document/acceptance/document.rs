@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use axum::{
   extract::{Path, Query, State},
-  Extension,
-  Json,
+  Extension, Json,
 };
 use axum_valid::Valid;
 use serde::Deserialize;
@@ -17,7 +16,10 @@ use crate::{
     query::{EmbedParams, NullableFilter, PaginationParams},
   },
   enums,
-  services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
+  services::{
+    common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
+    document::query::AcceptanceDocumentQuerySpec,
+  },
   utils::jwt::Claims,
 };
 
@@ -31,6 +33,20 @@ pub(super) struct AcceptanceQueryParams {
   pub(super) transit_dispatch_id: Option<NullableFilter>,
   #[serde(flatten)]
   pub(super) pagination: PaginationParams,
+}
+
+impl From<AcceptanceQueryParams> for AcceptanceDocumentQuerySpec {
+  fn from(value: AcceptanceQueryParams) -> Self {
+    Self {
+      document_number: value.document_number,
+      status: value.status,
+      truck_waybill_id: value.truck_waybill_id,
+      rail_waybill_id: value.rail_waybill_id,
+      transit_dispatch_id: value.transit_dispatch_id,
+      page: value.pagination.page,
+      per_page: value.pagination.per_page,
+    }
+  }
 }
 
 #[utoipa::path(
@@ -52,34 +68,15 @@ pub(super) async fn acceptance_document_list(
   Query(pagination): Query<PaginationParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<AcceptanceResponse>> {
+  let query = AcceptanceDocumentQuerySpec::list(pagination.page, pagination.per_page);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .acceptance_document_query_with_names(
-        None,
-        None,
-        None,
-        None,
-        None,
-        pagination.page,
-        pagination.per_page,
-      )
+      .acceptance_document_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .acceptance_document_query(
-        None,
-        None,
-        None,
-        None,
-        None,
-        pagination.page,
-        pagination.per_page,
-      )
-      .await?
+    state.svc.document.acceptance_document_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }
@@ -152,34 +149,15 @@ pub(super) async fn acceptance_document_query(
   Query(query): Query<AcceptanceQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<AcceptanceResponse>> {
+  let query = AcceptanceDocumentQuerySpec::from(query);
   let rows = if embed.wants_names() {
     state
       .svc
       .document
-      .acceptance_document_query_with_names(
-        query.document_number.as_deref(),
-        query.status,
-        query.truck_waybill_id,
-        query.rail_waybill_id,
-        query.transit_dispatch_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
+      .acceptance_document_query_with_names(query)
       .await?
   } else {
-    state
-      .svc
-      .document
-      .acceptance_document_query(
-        query.document_number.as_deref(),
-        query.status,
-        query.truck_waybill_id,
-        query.rail_waybill_id,
-        query.transit_dispatch_id,
-        query.pagination.page,
-        query.pagination.per_page,
-      )
-      .await?
+    state.svc.document.acceptance_document_query(query).await?
   };
   Ok(ApiResponse::success(rows))
 }

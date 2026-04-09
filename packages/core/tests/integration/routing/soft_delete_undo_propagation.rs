@@ -9,14 +9,8 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::common::integration::{
-  api_post,
-  await_sync_cycle,
-  has_catalog_entity,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  soft_delete_via_api,
-  temp_db_path,
+  api_post, await_sync_cycle, has_catalog_entity, seed_catalog_via_api, setup_central_via_api,
+  setup_peripheral_via_api, soft_delete_via_api, temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -26,9 +20,12 @@ async fn soft_delete_undo_propagates_via_sync() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r20-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("r20-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r20-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
 
   // Create company, sync, soft-delete, sync

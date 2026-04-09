@@ -1,20 +1,14 @@
-use sea_orm::{
-  prelude::Decimal,
-  ColumnTrait,
-  ConnectionTrait,
-  EntityLoaderTrait,
-  EntityTrait,
-  QueryFilter,
-};
+use sea_orm::{prelude::Decimal, ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos,
-  entities::{dispatch_document, dispatch_item, inventory_ledger_entry},
+  entities::{dispatch_document, dispatch_item},
   services::{
     common::{ensure_doc_mod_allowed, ensure_storage_accepts_product, set_if_some},
     document::DocumentService,
+    ledger::load_entry_by_dimensions_on,
   },
 };
 
@@ -39,12 +33,13 @@ async fn ensure_dispatch_item_create_allowed(
   ensure_doc_mod_allowed(doc.status)?;
   ensure_storage_accepts_product(conn, req.item.storage_id, req.item.product_id).await?;
 
-  let current_amount_row = inventory_ledger_entry::Entity::find()
-    .filter(inventory_ledger_entry::Column::StorageId.eq(req.item.storage_id))
-    .filter(inventory_ledger_entry::Column::ProductId.eq(req.item.product_id))
-    .filter(inventory_ledger_entry::Column::ContractorId.eq(doc.contractor_id))
-    .one(conn)
-    .await?;
+  let current_amount_row = load_entry_by_dimensions_on(
+    conn,
+    req.item.storage_id,
+    req.item.product_id,
+    doc.contractor_id,
+  )
+  .await?;
   let current_amount = match current_amount_row {
     Some(entry) => entry.current_amount,
     None => Decimal::ZERO,
@@ -82,12 +77,8 @@ async fn ensure_dispatch_item_update_allowed(
 
   ensure_storage_accepts_product(txn, storage_id, product_id).await?;
 
-  let current_amount_row = inventory_ledger_entry::Entity::find()
-    .filter(inventory_ledger_entry::Column::StorageId.eq(storage_id))
-    .filter(inventory_ledger_entry::Column::ProductId.eq(product_id))
-    .filter(inventory_ledger_entry::Column::ContractorId.eq(doc.contractor_id))
-    .one(txn)
-    .await?;
+  let current_amount_row =
+    load_entry_by_dimensions_on(txn, storage_id, product_id, doc.contractor_id).await?;
   let current_amount = match current_amount_row {
     Some(entry) => entry.current_amount,
     None => Decimal::ZERO,

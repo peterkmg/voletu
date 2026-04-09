@@ -10,15 +10,9 @@ use uuid::Uuid;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  add_base_assignment_via_api,
-  api_post,
-  await_sync_cycle,
-  create_acceptance_via_api,
-  get_acceptance_composite_json,
-  seed_catalog_via_api,
-  setup_central_via_api,
-  setup_peripheral_via_api,
-  temp_db_path,
+  add_base_assignment_via_api, api_post, await_sync_cycle, create_acceptance_via_api,
+  get_acceptance_composite_json, seed_catalog_via_api, setup_central_via_api,
+  setup_peripheral_via_api, temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -51,9 +45,12 @@ async fn multi_base_node_pulls_all_assigned_bases() {
   let storage_gamma_id = Uuid::parse_str(st_gamma["id"].as_str().unwrap()).unwrap();
 
   // PA handles alpha + beta (not gamma) — set up with alpha, add beta via API
-  let pa = setup_peripheral_via_api(&client, &temp_db_path("r6-pa"), &central, &[
-    catalog.base_alpha
-  ])
+  let pa = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("r6-pa"),
+    &central,
+    &[catalog.base_alpha],
+  )
   .await;
   add_base_assignment_via_api(&client, &pa.url, &pa.token, catalog.base_beta).await;
 

@@ -1,16 +1,8 @@
 use anyhow::anyhow;
 use chrono::Duration;
 use sea_orm::{
-  entity::prelude::ChronoUtc,
-  ActiveModelTrait,
-  ActiveValue::Set,
-  ColumnTrait,
-  Condition,
-  EntityLoaderTrait,
-  EntityTrait,
-  QueryFilter,
-  QueryOrder,
-  TransactionTrait,
+  entity::prelude::ChronoUtc, ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition,
+  EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -69,7 +61,8 @@ impl SystemService {
     let (refresh_id, refresh_secret) = parse_refresh_token(token)?;
     let txn = self.db.begin().await?;
 
-    let stored = refresh_token::Entity::find_by_id(refresh_id)
+    let stored = refresh_token::Entity::load()
+      .filter_by_id(refresh_id)
       .one(&txn)
       .await?
       .ok_or(ApiError::Unauthorized("Invalid refresh token".to_string()))?;
@@ -87,9 +80,13 @@ impl SystemService {
       return Err(ApiError::Unauthorized("Invalid refresh token".to_string()));
     }
 
-    let mut refresh_model: refresh_token::ActiveModel = stored.clone().into();
-    refresh_model.is_revoked = Set(true);
-    refresh_model.update(&txn).await?;
+    refresh_token::ActiveModel {
+      id: Set(stored.id),
+      is_revoked: Set(true),
+      ..Default::default()
+    }
+    .update(&txn)
+    .await?;
 
     let user = user::Entity::load()
       .filter_by_id(stored.user_id)
@@ -156,23 +153,27 @@ impl SystemService {
   }
 
   pub(super) async fn revoke_user_refresh_tokens(&self, user_id: Uuid) -> Result<(), ApiError> {
-    let rows = refresh_token::Entity::find()
+    let rows: Vec<refresh_token::ModelEx> = refresh_token::Entity::load()
       .filter(refresh_token::Column::UserId.eq(user_id))
       .filter(refresh_token::Column::IsRevoked.eq(false))
       .all(self.db.as_ref())
       .await?;
 
     for row in rows {
-      let mut model: refresh_token::ActiveModel = row.into();
-      model.is_revoked = Set(true);
-      model.update(self.db.as_ref()).await?;
+      refresh_token::ActiveModel {
+        id: Set(row.id),
+        is_revoked: Set(true),
+        ..Default::default()
+      }
+      .update(self.db.as_ref())
+      .await?;
     }
 
     Ok(())
   }
 
   pub async fn refresh_token_list(&self) -> Result<Vec<RefreshTokenResponse>, ApiError> {
-    let rows = refresh_token::Entity::find()
+    let rows: Vec<refresh_token::ModelEx> = refresh_token::Entity::load()
       .order_by_desc(refresh_token::Column::CreatedAt)
       .all(self.db.as_ref())
       .await
@@ -182,7 +183,8 @@ impl SystemService {
   }
 
   pub async fn refresh_token_get(&self, id: Uuid) -> Result<RefreshTokenResponse, ApiError> {
-    let row = refresh_token::Entity::find_by_id(id)
+    let row = refresh_token::Entity::load()
+      .filter_by_id(id)
       .one(self.db.as_ref())
       .await?
       .ok_or_else(|| ApiError::NotFound(format!("Refresh token '{}' not found", id)))?;
@@ -205,7 +207,7 @@ impl SystemService {
       condition = condition.add(refresh_token::Column::IsRevoked.eq(is_revoked));
     }
 
-    let rows = refresh_token::Entity::find()
+    let rows: Vec<refresh_token::ModelEx> = refresh_token::Entity::load()
       .filter(condition)
       .order_by_desc(refresh_token::Column::CreatedAt)
       .all(self.db.as_ref())

@@ -2,17 +2,13 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use chrono::{DateTime, Utc};
-use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, EntityTrait};
+use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, EntityLoaderTrait};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   dtos::{
-    AcceptanceItemCompositeRequest,
-    CreateAcceptanceItemRequest,
-    CreateAcceptanceRequest,
-    CreateDispatchItemRequest,
-    CreateDispatchRequest,
-    DispatchItemCompositeRequest,
+    AcceptanceItemCompositeRequest, CreateAcceptanceItemRequest, CreateAcceptanceRequest,
+    CreateDispatchItemRequest, CreateDispatchRequest, DispatchItemCompositeRequest,
   },
   entities::{acceptance_document, audit_log, product_type, storage},
   enums::{self, ArrivalType, DispatchMethod, DispatchPurpose},
@@ -21,8 +17,7 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
-  setup_db,
-  test_config,
+  setup_db, test_config,
 };
 
 fn ts(value: &str) -> DateTime<Utc> {
@@ -74,7 +69,8 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
 
     assert_eq!(item.storage_id, catalog.storage_a_id);
 
-    let created_doc_model = acceptance_document::Entity::find_by_id(doc.id)
+    let created_doc_model = acceptance_document::Entity::load()
+      .filter_by_id(doc.id)
       .one(&*db)
       .await
       .unwrap()
@@ -96,7 +92,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
       .unwrap();
     assert_eq!(entry.current_amount, dec("42.5"));
 
-    let audit_rows = audit_log::Entity::find().all(&*db).await.unwrap();
+    let audit_rows: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(&*db).await.unwrap();
     assert!(!audit_rows.is_empty());
 
     let insert_log = audit_rows
@@ -118,7 +114,8 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
           && row.action == enums::AuditAction::Update
       })
       .unwrap();
-    let updated_doc = acceptance_document::Entity::find_by_id(doc.id)
+    let updated_doc = acceptance_document::Entity::load()
+      .filter_by_id(doc.id)
       .one(&*db)
       .await
       .unwrap()

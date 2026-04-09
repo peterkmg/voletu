@@ -12,16 +12,10 @@ use voletu_core::{
 
 use crate::common::{
   http::{
-    assert_api_error,
-    assert_api_success,
-    login_admin_token,
-    post_empty,
-    post_json,
-    with_auth_token,
+    assert_api_error, assert_api_success, login_admin_token, post_empty, post_json, with_auth_token,
   },
   payloads::{auth_login, user_create},
-  setup_db,
-  test_config_for_db,
+  setup_db, test_config_for_db,
 };
 
 #[tokio::test]

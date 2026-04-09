@@ -1,11 +1,4 @@
-use sea_orm::{
-  ColumnTrait,
-  ConnectionTrait,
-  EntityLoaderTrait,
-  EntityTrait,
-  IntoActiveModel,
-  QueryFilter,
-};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, IntoActiveModel, QueryFilter};
 use uuid::Uuid;
 
 use crate::{

@@ -10,6 +10,7 @@ mod auth_password;
 mod auth_session;
 pub mod database_instance;
 pub mod local;
+pub mod node_bases;
 pub mod role;
 pub mod token;
 pub mod user;

@@ -1,15 +1,13 @@
 use std::{str::FromStr, sync::Arc};
 
 use chrono::{DateTime, Utc};
-use sea_orm::{prelude::Decimal, EntityTrait};
+use sea_orm::{prelude::Decimal, EntityLoaderTrait};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   dtos::{
-    CreateOwnershipTransferRequest,
-    CreatePhysicalTransferRequest,
-    OwnershipTransferItemCompositeRequest,
-    PhysicalTransferItemCompositeRequest,
+    CreateOwnershipTransferRequest, CreatePhysicalTransferRequest,
+    OwnershipTransferItemCompositeRequest, PhysicalTransferItemCompositeRequest,
   },
   entities::{ownership_transfer, physical_storage_transfer},
   enums::DocumentStatus,
@@ -18,8 +16,7 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
-  setup_db,
-  test_config,
+  setup_db, test_config,
 };
 
 fn ts(value: &str) -> DateTime<Utc> {
@@ -233,7 +230,8 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
       .await
       .unwrap();
 
-    let physical_model = physical_storage_transfer::Entity::find_by_id(physical.id)
+    let physical_model = physical_storage_transfer::Entity::load()
+      .filter_by_id(physical.id)
       .one(db.as_ref())
       .await
       .unwrap()
@@ -257,7 +255,8 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
       .await
       .unwrap();
 
-    let ownership_model = ownership_transfer::Entity::find_by_id(ownership.id)
+    let ownership_model = ownership_transfer::Entity::load()
+      .filter_by_id(ownership.id)
       .one(db.as_ref())
       .await
       .unwrap()

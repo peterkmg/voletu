@@ -2,7 +2,13 @@ use crate::{
   api::ApiError,
   dtos::response::pipeline::CargoFlowFlatRow,
   enums,
-  services::document::DocumentService,
+  services::document::{
+    query::{
+      AcceptanceFlatQuerySpec, BlendingFlatQuerySpec, CargoFlowQuerySpec, DispatchFlatQuerySpec,
+      OwnershipTransferFlatQuerySpec, PhysicalTransferFlatQuerySpec, ReconciliationFlatQuerySpec,
+    },
+    DocumentService,
+  },
 };
 
 impl DocumentService {
@@ -13,22 +19,26 @@ impl DocumentService {
   /// and paginated in-memory.
   pub async fn cargo_flow_flat_query(
     &self,
-    page: Option<u64>,
-    per_page: Option<u64>,
+    query: CargoFlowQuerySpec,
   ) -> Result<Vec<CargoFlowFlatRow>, ApiError> {
-    let (page, per_page) = crate::services::common::normalize_pagination(page, per_page)?;
+    let (page, per_page) =
+      crate::services::common::normalize_pagination(query.page, query.per_page)?;
 
     // Fetch all document types in parallel (no filters, large page to get all).
     let big_page = Some(1u64);
     let big_per_page = Some(10_000u64);
 
     let (acceptance, dispatch, physical, ownership, blending, reconciliation) = tokio::try_join!(
-      self.acceptance_flat_query(None, big_page, big_per_page),
-      self.dispatch_flat_query(None, None, None, big_page, big_per_page),
-      self.physical_transfer_flat_query(None, big_page, big_per_page),
-      self.ownership_transfer_flat_query(None, big_page, big_per_page),
-      self.blending_flat_query(None, big_page, big_per_page),
-      self.reconciliation_flat_query(None, big_page, big_per_page),
+      self.acceptance_flat_query(AcceptanceFlatQuerySpec::list(big_page, big_per_page)),
+      self.dispatch_flat_query(DispatchFlatQuerySpec::list(big_page, big_per_page)),
+      self
+        .physical_transfer_flat_query(PhysicalTransferFlatQuerySpec::list(big_page, big_per_page)),
+      self.ownership_transfer_flat_query(OwnershipTransferFlatQuerySpec::list(
+        big_page,
+        big_per_page
+      )),
+      self.blending_flat_query(BlendingFlatQuerySpec::list(big_page, big_per_page)),
+      self.reconciliation_flat_query(ReconciliationFlatQuerySpec::list(big_page, big_per_page)),
     )?;
 
     let mut rows: Vec<CargoFlowFlatRow> = Vec::new();

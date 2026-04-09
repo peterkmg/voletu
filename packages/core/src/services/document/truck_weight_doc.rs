@@ -5,9 +5,7 @@ use crate::{
   dtos,
   entities::truck_weight_doc,
   services::{
-    common::set_if_some,
-    document::truck_waybill::ensure_parent_waybill_active,
-    DocumentService,
+    common::set_if_some, document::truck_waybill::ensure_parent_waybill_active, DocumentService,
   },
 };
 
