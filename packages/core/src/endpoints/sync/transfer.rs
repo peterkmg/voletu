@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::sync::query::PullAuditLogsQuerySpec;
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +27,12 @@ impl PullAuditLogsQuery {
         }
       })
       .collect()
+  }
+}
+
+impl From<PullAuditLogsQuery> for PullAuditLogsQuerySpec {
+  fn from(query: PullAuditLogsQuery) -> Self {
+    Self::new(query.last_audit_log_id, query.parse_base_ids(), query.limit)
   }
 }
 
@@ -74,13 +81,8 @@ async fn log_pull(
   State(state): State<Arc<ApiState>>,
   Valid(Query(req)): Valid<Query<PullAuditLogsQuery>>,
 ) -> ApiResult<PullAuditLogsResponse> {
-  let base_ids = req.parse_base_ids();
   Ok(ApiResponse::success(
-    state
-      .svc
-      .sync
-      .pull_logs(req.last_audit_log_id, &base_ids, req.limit)
-      .await?,
+    state.svc.sync.pull_logs(req.into()).await?,
   ))
 }
 

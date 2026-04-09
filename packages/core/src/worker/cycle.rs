@@ -13,7 +13,11 @@ use crate::{
     SyncStatusResponse,
   },
   enums::SyncDirection,
-  services::sync::{helpers::compute_base_discriminant, SyncService},
+  services::sync::{
+    helpers::compute_base_discriminant,
+    query::OutboundAuditLogsQuerySpec,
+    SyncService,
+  },
   utils::http::{get_api_json, post_api_json},
 };
 
@@ -50,7 +54,10 @@ pub(super) async fn sync_once(
   let (push_after, _push_disc) =
     super::topology::watermark_for(&watermarks, central_status.node_id, "PUSH");
   let outbound = sync_service
-    .outbound_logs(push_after, Some(config.sync_batch_limit))
+    .outbound_logs(OutboundAuditLogsQuerySpec::new(
+      push_after,
+      Some(config.sync_batch_limit),
+    ))
     .await?;
   let outbound_count = outbound.len() as u64;
   let last_outbound_id = outbound.last().map(|last| last.id);

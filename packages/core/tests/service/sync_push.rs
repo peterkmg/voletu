@@ -15,7 +15,7 @@ use voletu_core::{
   dtos::PushAuditLogRequest,
   entities::{audit_log, company, database_instance, local, node_base_assignment, sync_watermark},
   enums::{self, AuditAction, SyncDirection},
-  services::sync::SyncService,
+  services::sync::{query::SyncStatusQuerySpec, SyncService},
 };
 
 use crate::common::{
@@ -236,7 +236,10 @@ async fn sync_status_reflects_local_topology_and_local_row_keeps_central_url() {
 
     let service = sync_service_with_node(db.clone(), local_row.local_db_id);
 
-    let status = service.sync_status(&[]).await.unwrap();
+    let status = service
+      .sync_status(SyncStatusQuerySpec::default())
+      .await
+      .unwrap();
     assert_eq!(status.node_type, "PERIPHERAL");
 
     let updated_local_row = local::Entity::load()

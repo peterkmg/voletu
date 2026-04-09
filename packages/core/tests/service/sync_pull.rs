@@ -8,7 +8,10 @@ use voletu_core::{
   context::audit::with_audit_context,
   entities::{audit_log, base},
   enums::{self, AuditAction},
-  services::sync::SyncService,
+  services::sync::{
+    query::{AuditLogQuerySpec, OutboundAuditLogsQuerySpec, PullAuditLogsQuerySpec},
+    SyncService,
+  },
 };
 
 use crate::common::{
@@ -81,7 +84,11 @@ async fn sync_pull_target_matching_is_delimiter_safe_for_base_ids() {
     .unwrap();
 
     let response = service
-      .pull_logs(INITIAL_AUDIT_CURSOR, &[base_target], None)
+      .pull_logs(PullAuditLogsQuerySpec::new(
+        INITIAL_AUDIT_CURSOR,
+        vec![base_target],
+        None,
+      ))
       .await
       .unwrap();
     // Only targeted (non-global) logs for base_other should be excluded.
@@ -123,7 +130,10 @@ async fn sync_outbound_returns_push_payload_shape_with_json_strings() {
   .unwrap();
 
   let outbound = service
-    .outbound_logs(INITIAL_AUDIT_CURSOR, Some(100))
+    .outbound_logs(OutboundAuditLogsQuerySpec::new(
+      INITIAL_AUDIT_CURSOR,
+      Some(100),
+    ))
     .await
     .unwrap();
   assert_eq!(outbound.len(), 1);
@@ -173,7 +183,12 @@ async fn sync_audit_log_query_applies_offset_and_limit_in_ascending_id_order() {
   }
 
   let rows = service
-    .audit_log_query(None, None, Some(origin_db_id), Some(2), Some(1))
+    .audit_log_query(AuditLogQuerySpec {
+      origin_db_id: Some(origin_db_id),
+      limit: Some(2),
+      offset: Some(1),
+      ..Default::default()
+    })
     .await
     .unwrap();
 
@@ -227,7 +242,11 @@ async fn sync_pull_empty_scope_advances_to_highest_evaluated_id() {
     .unwrap();
 
     let response = service
-      .pull_logs(INITIAL_AUDIT_CURSOR, &[base_a.id], None)
+      .pull_logs(PullAuditLogsQuerySpec::new(
+        INITIAL_AUDIT_CURSOR,
+        vec![base_a.id],
+        None,
+      ))
       .await
       .unwrap();
     // Only targeted (non-global) logs for base_b should be excluded.
@@ -337,7 +356,11 @@ async fn sync_pull_returns_global_and_targeted_logs_for_requesting_base_scope() 
     .unwrap();
 
     let response = service
-      .pull_logs(INITIAL_AUDIT_CURSOR, &[base_a_id], None)
+      .pull_logs(PullAuditLogsQuerySpec::new(
+        INITIAL_AUDIT_CURSOR,
+        vec![base_a_id],
+        None,
+      ))
       .await
       .unwrap();
     let pulled_ids = response
@@ -422,7 +445,11 @@ async fn sync_pull_excludes_roles_and_local_tables_from_scope() {
     .unwrap();
 
     let response = service
-      .pull_logs(INITIAL_AUDIT_CURSOR, &[catalog.base_id], None)
+      .pull_logs(PullAuditLogsQuerySpec::new(
+        INITIAL_AUDIT_CURSOR,
+        vec![catalog.base_id],
+        None,
+      ))
       .await
       .unwrap();
 

@@ -1,5 +1,6 @@
 pub mod helpers;
 mod logs;
+pub mod query;
 mod restore;
 mod service;
 mod status;

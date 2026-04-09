@@ -11,6 +11,12 @@ use uuid::Uuid;
 
 use super::{
   helpers::{excluded_sync_tables, scope_condition_for},
+  query::{
+    AuditLogQuerySpec,
+    OutboundAuditLogsQuerySpec,
+    PullAuditLogsQuerySpec,
+    SyncStatusQuerySpec,
+  },
   SyncService,
 };
 use crate::{
@@ -18,6 +24,10 @@ use crate::{
   dtos::{AuditLogResponse, PullAuditLogsResponse, PushAuditLogRequest, SyncStatusResponse},
   entities::{audit_log, database_instance},
 };
+
+fn bounded_limit(limit: Option<u64>, default: u64) -> u64 {
+  limit.unwrap_or(default).min(1000)
+}
 
 async fn load_audit_log_slice(
   db: &DatabaseConnection,
@@ -50,6 +60,44 @@ async fn load_audit_log_slice(
 }
 
 impl SyncService {
+  async fn load_local_database_instance(&self) -> Result<database_instance::ModelEx, ApiError> {
+    let local_node_id = self.cfg.node.db_id;
+    database_instance::Entity::load()
+      .filter_by_id(local_node_id)
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| {
+        ApiError::Internal(anyhow::anyhow!(
+          "Database instance row '{}' is missing",
+          local_node_id
+        ))
+      })
+  }
+
+  async fn highest_audit_log_id(&self) -> Result<Uuid, ApiError> {
+    Ok(
+      audit_log::Entity::load()
+        .order_by_desc(audit_log::Column::Id)
+        .one(self.db.as_ref())
+        .await?
+        .map(|row| row.id)
+        .unwrap_or_else(Uuid::nil),
+    )
+  }
+
+  async fn highest_matching_audit_log_id(&self, base_ids: &[Uuid]) -> Result<Uuid, ApiError> {
+    Ok(
+      audit_log::Entity::load()
+        .filter(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
+        .filter(scope_condition_for(base_ids))
+        .order_by_desc(audit_log::Column::Id)
+        .one(self.db.as_ref())
+        .await?
+        .map(|row| row.id)
+        .unwrap_or_else(Uuid::nil),
+    )
+  }
+
   pub async fn list_audit_logs(&self) -> Result<Vec<crate::dtos::AuditLogResponse>, ApiError> {
     let rows: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(self.db.as_ref()).await?;
     Ok(rows.into_iter().map(AuditLogResponse::from).collect())
@@ -66,25 +114,21 @@ impl SyncService {
 
   pub async fn audit_log_query(
     &self,
-    table_name: Option<&str>,
-    record_id: Option<Uuid>,
-    origin_db_id: Option<Uuid>,
-    limit: Option<u64>,
-    offset: Option<u64>,
+    query: AuditLogQuerySpec,
   ) -> Result<Vec<crate::dtos::AuditLogResponse>, ApiError> {
     let mut condition = Condition::all();
-    let max_limit = limit.unwrap_or(100).min(1000);
-    let offset = offset.unwrap_or(0);
+    let max_limit = bounded_limit(query.limit, 100);
+    let offset = query.offset.unwrap_or(0);
 
-    if let Some(table_name) = table_name {
+    if let Some(table_name) = query.table_name.as_deref() {
       condition = condition.add(audit_log::Column::TableName.eq(table_name));
     }
 
-    if let Some(record_id) = record_id {
+    if let Some(record_id) = query.record_id {
       condition = condition.add(audit_log::Column::RecordId.eq(record_id));
     }
 
-    if let Some(origin_db_id) = origin_db_id {
+    if let Some(origin_db_id) = query.origin_db_id {
       condition = condition.add(audit_log::Column::OriginDbId.eq(origin_db_id));
     }
 
@@ -101,45 +145,13 @@ impl SyncService {
   /// empty, the scope is catalog-only (global tables only). This is what
   /// lets the worker's `has_updates` check avoid hot-polling when Central
   /// has activity on bases the caller does not serve.
-  pub async fn sync_status(&self, base_ids: &[Uuid]) -> Result<SyncStatusResponse, ApiError> {
-    let local_node_id = self.cfg.node.db_id;
-    let instance_row: Option<database_instance::ModelEx> = database_instance::Entity::load()
-      .filter_by_id(local_node_id)
-      .one(self.db.as_ref())
-      .await?;
-    let instance = match instance_row {
-      Some(instance) => instance,
-      None => {
-        return Err(ApiError::Internal(anyhow::anyhow!(
-          "Database instance row '{}' is missing",
-          local_node_id
-        )));
-      }
-    };
-
-    // Highest overall (unfiltered) — diagnostic / liveness signal.
-    let latest_log = audit_log::Entity::load()
-      .order_by_desc(audit_log::Column::Id)
-      .one(self.db.as_ref())
-      .await?;
-    let highest_audit_log_id = match latest_log {
-      Some(row) => row.id,
-      None => Uuid::nil(),
-    };
-
-    // Highest in-scope — the authoritative "is there anything for you"
-    // signal. Shares the `scope_condition_for` helper with `pull_logs` to
-    // guarantee the two endpoints never drift.
-    let latest_matching = audit_log::Entity::load()
-      .filter(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
-      .filter(scope_condition_for(base_ids))
-      .order_by_desc(audit_log::Column::Id)
-      .one(self.db.as_ref())
-      .await?;
-    let highest_matching_id = match latest_matching {
-      Some(row) => row.id,
-      None => Uuid::nil(),
-    };
+  pub async fn sync_status(
+    &self,
+    query: SyncStatusQuerySpec,
+  ) -> Result<SyncStatusResponse, ApiError> {
+    let instance = self.load_local_database_instance().await?;
+    let highest_audit_log_id = self.highest_audit_log_id().await?;
+    let highest_matching_id = self.highest_matching_audit_log_id(&query.base_ids).await?;
 
     Ok(SyncStatusResponse {
       node_id: instance.id,
@@ -151,13 +163,12 @@ impl SyncService {
 
   pub async fn outbound_logs(
     &self,
-    after_audit_log_id: Uuid,
-    limit: Option<u64>,
+    query: OutboundAuditLogsQuerySpec,
   ) -> Result<Vec<PushAuditLogRequest>, ApiError> {
-    let max_limit = limit.unwrap_or(1000).min(1000);
+    let max_limit = bounded_limit(query.limit, 1000);
     let rows = load_audit_log_slice(
       self.db.as_ref(),
-      Condition::all().add(audit_log::Column::Id.gt(after_audit_log_id)),
+      Condition::all().add(audit_log::Column::Id.gt(query.after_audit_log_id)),
       max_limit,
       0,
     )
@@ -190,18 +201,16 @@ impl SyncService {
   /// returned.
   pub async fn pull_logs(
     &self,
-    last_audit_log_id: Uuid,
-    base_ids: &[Uuid],
-    limit: Option<u64>,
+    query: PullAuditLogsQuerySpec,
   ) -> Result<PullAuditLogsResponse, ApiError> {
-    let max_limit = limit.unwrap_or(1000).min(1000);
+    let max_limit = bounded_limit(query.limit, 1000);
     let condition = Condition::all()
-      .add(audit_log::Column::Id.gt(last_audit_log_id))
+      .add(audit_log::Column::Id.gt(query.last_audit_log_id))
       .add(audit_log::Column::TableName.is_not_in(excluded_sync_tables()))
-      .add(scope_condition_for(base_ids));
+      .add(scope_condition_for(&query.base_ids));
     let logs = load_audit_log_slice(self.db.as_ref(), condition, max_limit, 0).await?;
 
-    let highest_evaluated_id = logs.last().map(|l| l.id).unwrap_or(last_audit_log_id);
+    let highest_evaluated_id = logs.last().map(|l| l.id).unwrap_or(query.last_audit_log_id);
 
     Ok(PullAuditLogsResponse {
       highest_evaluated_id,

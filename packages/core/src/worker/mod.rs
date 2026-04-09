@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{
   config::{ApiConfig, SyncConfig},
   dtos::SyncStatusResponse,
-  services::sync::SyncService,
+  services::sync::{query::SyncStatusQuerySpec, SyncService},
   utils::http::{get_api_json, normalize_base_url},
 };
 
@@ -98,7 +98,7 @@ pub fn spawn_sync_worker_with_config(
             // to detect changes in our OWN audit log (used to trigger a
             // push). The scope-aware `highest_matching_id` doesn't apply
             // to local change detection, so we pass an empty scope.
-            let local_status = match sync_service.sync_status(&[]).await {
+            let local_status = match sync_service.sync_status(SyncStatusQuerySpec::default()).await {
               Ok(status) => status,
               Err(error) => {
                 warn!(%error, "sync worker could not fetch local status");

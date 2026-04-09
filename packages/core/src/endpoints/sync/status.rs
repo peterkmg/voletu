@@ -8,7 +8,10 @@ use crate::{
   api::ApiError,
   dtos::{SyncStatusResponse, SyncWatermarkResponse},
   enums::SyncDirection,
-  services::{sync::helpers::compute_base_discriminant, system::node_bases::load_node_base_ids},
+  services::{
+    sync::{helpers::compute_base_discriminant, query::SyncStatusQuerySpec},
+    system::node_bases::load_node_base_ids,
+  },
   utils::http::get_api_json,
 };
 
@@ -40,6 +43,12 @@ impl SyncStatusQuery {
   }
 }
 
+impl From<SyncStatusQuery> for SyncStatusQuerySpec {
+  fn from(query: SyncStatusQuery) -> Self {
+    Self::new(query.parse_base_ids())
+  }
+}
+
 #[utoipa::path(
   get,
   tag = "Sync",
@@ -59,9 +68,8 @@ async fn sync_status(
   State(state): State<Arc<ApiState>>,
   Valid(Query(req)): Valid<Query<SyncStatusQuery>>,
 ) -> ApiResult<SyncStatusResponse> {
-  let base_ids = req.parse_base_ids();
   Ok(ApiResponse::success(
-    state.svc.sync.sync_status(&base_ids).await?,
+    state.svc.sync.sync_status(req.into()).await?,
   ))
 }
 
@@ -162,7 +170,11 @@ async fn pending_replication_targets(
   };
 
   let watermarks = state.svc.sync.list_sync_watermarks().await?;
-  let local_status = state.svc.sync.sync_status(&[]).await?;
+  let local_status = state
+    .svc
+    .sync
+    .sync_status(SyncStatusQuerySpec::default())
+    .await?;
   let current_discriminant = compute_base_discriminant(&local_base_ids);
 
   let (push_cursor, _) = watermark_for(&watermarks, central_status.node_id, SyncDirection::Push);
