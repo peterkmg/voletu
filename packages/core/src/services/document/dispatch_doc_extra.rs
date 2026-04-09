@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use sea_orm::{
   entity::prelude::*,
   ColumnTrait,
@@ -35,29 +33,6 @@ use crate::{
 };
 
 impl DocumentService {
-  pub(super) async fn dispatch_exporter_names(
-    &self,
-    exporter_ids: impl IntoIterator<Item = Uuid>,
-  ) -> Result<BTreeMap<Uuid, String>, ApiError> {
-    let mut exporter_ids = exporter_ids.into_iter().collect::<Vec<_>>();
-    exporter_ids.sort_unstable();
-    exporter_ids.dedup();
-
-    if exporter_ids.is_empty() {
-      return Ok(BTreeMap::new());
-    }
-
-    Ok(
-      company::Entity::load()
-        .filter(company::Column::Id.is_in(exporter_ids))
-        .all(self.db.as_ref())
-        .await?
-        .into_iter()
-        .map(|company| (company.id, company.common_name))
-        .collect(),
-    )
-  }
-
   pub(super) async fn dispatch_document_model(
     &self,
     id: Uuid,

@@ -249,19 +249,6 @@ impl From<rail_wagon_manifest::Model> for RailWagonManifestResponse {
 
 impl From<rail_wagon_manifest::ModelEx> for RailWagonManifestResponse {
   fn from(row: rail_wagon_manifest::ModelEx) -> Self {
-    let measurements = row
-      .measurements
-      .iter()
-      .cloned()
-      .map(RailWagonMeasurementResponse::from)
-      .collect::<Vec<_>>();
-    let weights = row
-      .weights
-      .iter()
-      .cloned()
-      .map(RailWagonWeightResponse::from)
-      .collect::<Vec<_>>();
-
     Self {
       id: row.id,
       rail_waybill_id: row.rail_waybill_id,
@@ -270,8 +257,22 @@ impl From<rail_wagon_manifest::ModelEx> for RailWagonManifestResponse {
       declared_volume: row.declared_volume,
       declared_density: row.declared_density,
       declared_mass: row.declared_mass,
-      measurements: (!measurements.is_empty()).then_some(measurements),
-      weights: (!weights.is_empty()).then_some(weights),
+      measurements: (!row.measurements.is_empty()).then(|| {
+        row
+          .measurements
+          .iter()
+          .cloned()
+          .map(RailWagonMeasurementResponse::from)
+          .collect()
+      }),
+      weights: (!row.weights.is_empty()).then(|| {
+        row
+          .weights
+          .iter()
+          .cloned()
+          .map(RailWagonWeightResponse::from)
+          .collect()
+      }),
       product_id_name: row
         .product
         .as_ref()

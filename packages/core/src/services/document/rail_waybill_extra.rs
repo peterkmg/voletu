@@ -171,25 +171,8 @@ impl DocumentService {
     let manifests: Vec<dtos::RailWagonManifestResponse> = doc
       .wagon_manifests
       .iter()
-      .map(|manifest| {
-        let mut response =
-          dtos::RailWagonManifestResponse::from(rail_wagon_manifest::Model::from(manifest.clone()));
-        let measurements = manifest
-          .measurements
-          .iter()
-          .cloned()
-          .map(dtos::RailWagonMeasurementResponse::from)
-          .collect::<Vec<_>>();
-        let weights = manifest
-          .weights
-          .iter()
-          .cloned()
-          .map(dtos::RailWagonWeightResponse::from)
-          .collect::<Vec<_>>();
-        response.measurements = (!measurements.is_empty()).then_some(measurements);
-        response.weights = (!weights.is_empty()).then_some(weights);
-        response
-      })
+      .cloned()
+      .map(dtos::RailWagonManifestResponse::from)
       .collect();
 
     let waybill = dtos::RailWaybillResponse::from(rail_waybill::Model::from(doc));

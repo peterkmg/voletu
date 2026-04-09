@@ -176,6 +176,65 @@ async fn sync_push_restores_company_from_snapshot_and_is_idempotent_on_reapply()
 }
 
 #[tokio::test]
+async fn sync_push_skips_duplicate_log_ids_within_same_batch() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
+
+    let company_id = Uuid::now_v7();
+    let log_id = Uuid::now_v7();
+    let payload = vec![
+      PushAuditLogRequest {
+        id: log_id,
+        table_name: AuditTable::Companies,
+        record_id: company_id,
+        action: AuditAction::Insert,
+        old_values_json: None,
+        new_values_json: Some(format!(
+          "{{\"id\":\"{company_id}\",\"common_name\":\"Batch Dup\",\"legal_name\":null,\
+             \"is_contractor\":true,\"is_exporter\":false,\"is_manufacturer\":false,\
+             \"is_sender\":false}}"
+        )),
+        target_base_ids: String::new(),
+        user_role_weight: 10,
+        user_id: Uuid::now_v7(),
+        timestamp: ts("2026-01-05T00:00:00Z"),
+        origin_db_id: Uuid::now_v7(),
+      },
+      PushAuditLogRequest {
+        id: log_id,
+        table_name: AuditTable::Companies,
+        record_id: company_id,
+        action: AuditAction::Insert,
+        old_values_json: None,
+        new_values_json: Some(format!(
+          "{{\"id\":\"{company_id}\",\"common_name\":\"Batch Dup\",\"legal_name\":null,\
+             \"is_contractor\":true,\"is_exporter\":false,\"is_manufacturer\":false,\
+             \"is_sender\":false}}"
+        )),
+        target_base_ids: String::new(),
+        user_role_weight: 10,
+        user_id: Uuid::now_v7(),
+        timestamp: ts("2026-01-05T00:00:00Z"),
+        origin_db_id: Uuid::now_v7(),
+      },
+    ];
+
+    let result = service.push_logs(&payload).await.unwrap();
+    assert_eq!(result.accepted, 1);
+    assert_eq!(result.rejected, 0);
+
+    let persisted = audit_log::Entity::load()
+      .filter_by_id(log_id)
+      .all(&*db)
+      .await
+      .unwrap();
+    assert_eq!(persisted.len(), 1);
+  })
+  .await;
+}
+
+#[tokio::test]
 async fn sync_watermark_upsert_updates_existing_row_for_same_node_and_direction() {
   let db = Arc::new(setup_db().await);
   let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
@@ -324,6 +383,79 @@ async fn apply_pulled_logs_aborts_when_discriminant_drifted() {
       .unwrap();
     assert_eq!(last_id, Uuid::nil());
     assert_eq!(disc, "");
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn apply_pulled_logs_rejects_lower_role_update_after_earlier_same_batch_apply() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let central_id = Uuid::now_v7();
+    let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
+
+    let seeded_company = company::ActiveModel {
+      common_name: Set("Batch Apply Original".to_string()),
+      legal_name: Set(None),
+      is_contractor: Set(true),
+      is_exporter: Set(false),
+      is_manufacturer: Set(false),
+      is_sender: Set(false),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let mut first_update = seeded_company.clone();
+    first_update.common_name = "Batch Apply High".to_string();
+
+    let mut second_update = seeded_company.clone();
+    second_update.common_name = "Batch Apply Low".to_string();
+
+    let payload = vec![
+      PushAuditLogRequest {
+        id: Uuid::now_v7(),
+        table_name: AuditTable::Companies,
+        record_id: seeded_company.id,
+        action: AuditAction::Update,
+        old_values_json: Some(serde_json::to_string(&seeded_company).unwrap()),
+        new_values_json: Some(serde_json::to_string(&first_update).unwrap()),
+        target_base_ids: String::new(),
+        user_role_weight: 100,
+        user_id: Uuid::now_v7(),
+        timestamp: ts("2030-01-06T00:00:00Z"),
+        origin_db_id: Uuid::now_v7(),
+      },
+      PushAuditLogRequest {
+        id: Uuid::now_v7(),
+        table_name: AuditTable::Companies,
+        record_id: seeded_company.id,
+        action: AuditAction::Update,
+        old_values_json: Some(serde_json::to_string(&first_update).unwrap()),
+        new_values_json: Some(serde_json::to_string(&second_update).unwrap()),
+        target_base_ids: String::new(),
+        user_role_weight: 10,
+        user_id: Uuid::now_v7(),
+        timestamp: ts("2030-01-05T00:00:00Z"),
+        origin_db_id: Uuid::now_v7(),
+      },
+    ];
+
+    let result = service
+      .apply_pulled_logs(&payload, central_id, Uuid::now_v7(), String::new())
+      .await
+      .unwrap();
+    assert_eq!(result.accepted, 1);
+    assert_eq!(result.rejected, 1);
+
+    let reconstructed = company::Entity::load()
+      .filter_by_id(seeded_company.id)
+      .one(&*db)
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(reconstructed.common_name, "Batch Apply High");
   })
   .await;
 }

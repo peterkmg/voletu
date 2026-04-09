@@ -29,11 +29,7 @@ pub(super) async fn sync_once(
   local_base_ids: &[Uuid],
   config: &SyncConfig,
 ) -> anyhow::Result<u64> {
-  let base_ids_param = local_base_ids
-    .iter()
-    .map(|id| id.to_string())
-    .collect::<Vec<_>>()
-    .join(",");
+  let base_ids_param = crate::services::sync::helpers::join_uuid_csv(local_base_ids);
 
   // Scope-aware status: Central returns the highest id that matches our
   // scope (`highest_matching_id`) as well as the overall highest (diagnostic).

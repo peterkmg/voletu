@@ -36,9 +36,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::DispatchResponse, ApiError> {
     let item = self.dispatch_document_model(id).await?;
-    let exporter_names = self
-      .dispatch_exporter_names(item.exporter_id.into_iter())
-      .await?;
+    let exporter_names = self.company_name_map(item.exporter_id.into_iter()).await?;
     let exporter_id_name = item
       .exporter_id
       .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());
@@ -52,7 +50,7 @@ impl DocumentService {
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
     let items = self.dispatch_document_query_models(&query).await?;
     let exporter_names = self
-      .dispatch_exporter_names(items.iter().filter_map(|item| item.exporter_id))
+      .company_name_map(items.iter().filter_map(|item| item.exporter_id))
       .await?;
 
     Ok(
@@ -86,7 +84,7 @@ impl DocumentService {
       .map(dtos::DispatchMeasurementResponse::from)
       .collect();
     let exporter_names = self
-      .dispatch_exporter_names(composite.exporter_id.into_iter())
+      .company_name_map(composite.exporter_id.into_iter())
       .await?;
     let exporter_id_name = composite
       .exporter_id
@@ -253,23 +251,27 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
     let composite = self.truck_waybill_composite_model(id).await?;
-    let items = composite
-      .items
-      .iter()
-      .cloned()
-      .map(dtos::TruckWaybillItemResponse::from)
-      .collect::<Vec<_>>();
-    let weight_docs = composite
-      .weight_docs
-      .iter()
-      .cloned()
-      .map(dtos::TruckWeightDocResponse::from)
-      .collect::<Vec<_>>();
+    let items = (!composite.items.is_empty()).then(|| {
+      composite
+        .items
+        .iter()
+        .cloned()
+        .map(dtos::TruckWaybillItemResponse::from)
+        .collect()
+    });
+    let weight_docs = (!composite.weight_docs.is_empty()).then(|| {
+      composite
+        .weight_docs
+        .iter()
+        .cloned()
+        .map(dtos::TruckWeightDocResponse::from)
+        .collect()
+    });
 
     Ok(dtos::TruckWaybillCompositeResponse {
       waybill: composite.into(),
-      items: (!items.is_empty()).then_some(items),
-      weight_docs: (!weight_docs.is_empty()).then_some(weight_docs),
+      items,
+      weight_docs,
     })
   }
 
@@ -309,16 +311,18 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
     let composite = self.rail_waybill_composite_model(id).await?;
-    let wagon_manifests = composite
-      .wagon_manifests
-      .iter()
-      .cloned()
-      .map(dtos::RailWagonManifestResponse::from)
-      .collect::<Vec<_>>();
+    let wagon_manifests = (!composite.wagon_manifests.is_empty()).then(|| {
+      composite
+        .wagon_manifests
+        .iter()
+        .cloned()
+        .map(dtos::RailWagonManifestResponse::from)
+        .collect()
+    });
 
     Ok(dtos::RailWaybillCompositeResponse {
       waybill: composite.into(),
-      wagon_manifests: (!wagon_manifests.is_empty()).then_some(wagon_manifests),
+      wagon_manifests,
     })
   }
 
@@ -337,15 +341,12 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
     let response = self.physical_transfer_model(id).await?;
-    let to_storage_names = self
-      .physical_transfer_to_storage_names(
-        response
-          .items
-          .iter()
-          .map(|item| item.to_storage_id)
-          .collect::<Vec<_>>(),
-      )
-      .await?;
+    let to_storage_ids = response
+      .items
+      .iter()
+      .map(|item| item.to_storage_id)
+      .collect::<Vec<_>>();
+    let to_storage_names = self.storage_name_map(to_storage_ids).await?;
 
     Ok(dtos::PhysicalTransferResponse::from_loaded_with_names(
       response,
@@ -358,15 +359,12 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
     let response = self.physical_transfer_model(id).await?;
-    let to_storage_names = self
-      .physical_transfer_to_storage_names(
-        response
-          .items
-          .iter()
-          .map(|item| item.to_storage_id)
-          .collect::<Vec<_>>(),
-      )
-      .await?;
+    let to_storage_ids = response
+      .items
+      .iter()
+      .map(|item| item.to_storage_id)
+      .collect::<Vec<_>>();
+    let to_storage_names = self.storage_name_map(to_storage_ids).await?;
 
     Ok(dtos::PhysicalTransferResponse::from_loaded_with_names(
       response,
@@ -387,14 +385,11 @@ impl DocumentService {
     query: PhysicalTransferQuerySpec,
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
     let responses = self.physical_transfer_query_models(&query).await?;
-    let to_storage_names = self
-      .physical_transfer_to_storage_names(
-        responses
-          .iter()
-          .flat_map(|response| response.items.iter().map(|item| item.to_storage_id))
-          .collect::<Vec<_>>(),
-      )
-      .await?;
+    let to_storage_ids = responses
+      .iter()
+      .flat_map(|response| response.items.iter().map(|item| item.to_storage_id))
+      .collect::<Vec<_>>();
+    let to_storage_names = self.storage_name_map(to_storage_ids).await?;
 
     Ok(
       responses
@@ -421,15 +416,12 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::OwnershipTransferResponse, ApiError> {
     let response = self.ownership_transfer_model(id).await?;
-    let contractor_names = self
-      .ownership_transfer_contractor_names(
-        response
-          .items
-          .iter()
-          .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
-          .collect::<Vec<_>>(),
-      )
-      .await?;
+    let contractor_ids = response
+      .items
+      .iter()
+      .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+      .collect::<Vec<_>>();
+    let contractor_names = self.company_name_map(contractor_ids).await?;
 
     Ok(dtos::OwnershipTransferResponse::from_loaded_with_names(
       response,
@@ -442,15 +434,12 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::OwnershipTransferResponse, ApiError> {
     let response = self.ownership_transfer_model(id).await?;
-    let contractor_names = self
-      .ownership_transfer_contractor_names(
-        response
-          .items
-          .iter()
-          .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
-          .collect::<Vec<_>>(),
-      )
-      .await?;
+    let contractor_ids = response
+      .items
+      .iter()
+      .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+      .collect::<Vec<_>>();
+    let contractor_names = self.company_name_map(contractor_ids).await?;
 
     Ok(dtos::OwnershipTransferResponse::from_loaded_with_names(
       response,
@@ -471,19 +460,16 @@ impl DocumentService {
     query: OwnershipTransferQuerySpec,
   ) -> Result<Vec<dtos::OwnershipTransferResponse>, ApiError> {
     let responses = self.ownership_transfer_query_models(&query).await?;
-    let contractor_names = self
-      .ownership_transfer_contractor_names(
-        responses
+    let contractor_ids = responses
+      .iter()
+      .flat_map(|response| {
+        response
+          .items
           .iter()
-          .flat_map(|response| {
-            response
-              .items
-              .iter()
-              .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
-          })
-          .collect::<Vec<_>>(),
-      )
-      .await?;
+          .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
+      })
+      .collect::<Vec<_>>();
+    let contractor_names = self.company_name_map(contractor_ids).await?;
 
     Ok(
       responses

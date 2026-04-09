@@ -8,4 +8,6 @@ mod references_and_transport;
 mod security;
 mod sync_pull;
 mod sync_push;
+mod sync_status;
 mod system_auth_and_users;
+mod worker_loop;

@@ -1,8 +1,11 @@
+use std::collections::{HashMap, HashSet};
+
+use chrono::{DateTime, Utc};
 use sea_orm::{
   ActiveModelTrait,
   ActiveValue::Set,
   ColumnTrait,
-  EntityLoaderTrait,
+  ConnectionTrait,
   QueryFilter,
   QueryOrder,
   TransactionTrait,
@@ -21,46 +24,170 @@ use crate::{
   enums::SyncDirection,
 };
 
+#[derive(Debug, Clone, Copy)]
+struct LatestAuditLogHead {
+  id: Uuid,
+  timestamp: DateTime<Utc>,
+  user_role_weight: i32,
+}
+
+impl LatestAuditLogHead {
+  fn from_row(row: &audit_log::ModelEx) -> Self {
+    Self {
+      id: row.id,
+      timestamp: row.timestamp,
+      user_role_weight: row.user_role_weight,
+    }
+  }
+
+  fn from_incoming(incoming: &PushAuditLogRequest) -> Self {
+    Self {
+      id: incoming.id,
+      timestamp: incoming.timestamp,
+      user_role_weight: incoming.user_role_weight,
+    }
+  }
+
+  fn rejects(self, incoming: &PushAuditLogRequest) -> bool {
+    self.user_role_weight > incoming.user_role_weight && self.timestamp >= incoming.timestamp
+  }
+
+  fn should_replace(self, incoming: &PushAuditLogRequest) -> bool {
+    incoming.timestamp > self.timestamp
+      || (incoming.timestamp == self.timestamp
+        && (incoming.user_role_weight > self.user_role_weight
+          || (incoming.user_role_weight == self.user_role_weight && incoming.id > self.id)))
+  }
+}
+
+#[derive(Debug, Default)]
+struct IncomingAuditBatchState {
+  existing_ids: HashSet<Uuid>,
+  latest_by_record: HashMap<Uuid, LatestAuditLogHead>,
+}
+
+impl IncomingAuditBatchState {
+  fn contains_id(&self, id: Uuid) -> bool {
+    self.existing_ids.contains(&id)
+  }
+
+  fn rejects(&self, incoming: &PushAuditLogRequest) -> bool {
+    self
+      .latest_by_record
+      .get(&incoming.record_id)
+      .is_some_and(|head| head.rejects(incoming))
+  }
+
+  fn observe_insert(&mut self, incoming: &PushAuditLogRequest) {
+    self.existing_ids.insert(incoming.id);
+    match self.latest_by_record.get_mut(&incoming.record_id) {
+      Some(head) if head.should_replace(incoming) => {
+        *head = LatestAuditLogHead::from_incoming(incoming);
+      }
+      Some(_) => {}
+      None => {
+        self.latest_by_record.insert(
+          incoming.record_id,
+          LatestAuditLogHead::from_incoming(incoming),
+        );
+      }
+    }
+  }
+}
+
 impl SyncService {
-  pub async fn push_logs(
-    &self,
+  fn unique_log_ids(logs: &[PushAuditLogRequest]) -> Vec<Uuid> {
+    let mut ids: Vec<Uuid> = logs.iter().map(|log| log.id).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    ids
+  }
+
+  fn unique_record_ids(logs: &[PushAuditLogRequest]) -> Vec<Uuid> {
+    let mut ids: Vec<Uuid> = logs.iter().map(|log| log.record_id).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    ids
+  }
+
+  async fn load_existing_audit_ids<C: ConnectionTrait>(
+    conn: &C,
+    logs: &[PushAuditLogRequest],
+  ) -> Result<HashSet<Uuid>, ApiError> {
+    let log_ids = Self::unique_log_ids(logs);
+    if log_ids.is_empty() {
+      return Ok(HashSet::new());
+    }
+
+    let rows = audit_log::Entity::load()
+      .filter(audit_log::Column::Id.is_in(log_ids))
+      .all(conn)
+      .await?;
+
+    Ok(rows.into_iter().map(|row| row.id).collect())
+  }
+
+  async fn load_latest_audit_heads<C: ConnectionTrait>(
+    conn: &C,
+    logs: &[PushAuditLogRequest],
+  ) -> Result<HashMap<Uuid, LatestAuditLogHead>, ApiError> {
+    let record_ids = Self::unique_record_ids(logs);
+    if record_ids.is_empty() {
+      return Ok(HashMap::new());
+    }
+
+    let rows = audit_log::Entity::load()
+      .filter(audit_log::Column::RecordId.is_in(record_ids.clone()))
+      .order_by_asc(audit_log::Column::RecordId)
+      .order_by_desc(audit_log::Column::Timestamp)
+      .order_by_desc(audit_log::Column::UserRoleWeight)
+      .order_by_desc(audit_log::Column::Id)
+      .all(conn)
+      .await?;
+
+    let mut latest_by_record = HashMap::with_capacity(record_ids.len());
+    for row in rows {
+      latest_by_record
+        .entry(row.record_id)
+        .or_insert_with(|| LatestAuditLogHead::from_row(&row));
+    }
+
+    Ok(latest_by_record)
+  }
+
+  async fn load_incoming_batch_state<C: ConnectionTrait>(
+    conn: &C,
+    logs: &[PushAuditLogRequest],
+  ) -> Result<IncomingAuditBatchState, ApiError> {
+    Ok(IncomingAuditBatchState {
+      existing_ids: Self::load_existing_audit_ids(conn, logs).await?,
+      latest_by_record: Self::load_latest_audit_heads(conn, logs).await?,
+    })
+  }
+
+  async fn apply_incoming_logs_in_txn<C: ConnectionTrait>(
+    conn: &C,
     logs: &[PushAuditLogRequest],
   ) -> Result<PushAuditLogsResponse, ApiError> {
-    tracing::debug!(count = logs.len(), "push_logs: processing incoming batch");
-    let txn = self.db.begin().await?;
+    let mut state = Self::load_incoming_batch_state(conn, logs).await?;
     let mut accepted = 0_u64;
     let mut rejected = 0_u64;
 
     for incoming in logs {
-      let already_exists = audit_log::Entity::load()
-        .filter_by_id(incoming.id)
-        .one(&txn)
-        .await?
-        .is_some();
-      if already_exists {
+      if state.contains_id(incoming.id) {
         continue;
       }
 
-      let latest_for_record = audit_log::Entity::load()
-        .filter(audit_log::Column::RecordId.eq(incoming.record_id))
-        .order_by_desc(audit_log::Column::Timestamp)
-        .one(&txn)
-        .await?;
-      if let Some(existing) = latest_for_record {
-        let incoming_ts = incoming.timestamp;
-        if existing.user_role_weight > incoming.user_role_weight
-          && existing.timestamp >= incoming_ts
-        {
-          rejected += 1;
-          continue;
-        }
+      if state.rejects(incoming) {
+        rejected += 1;
+        continue;
       }
 
       let old_values = parse_json_field(incoming.old_values_json.as_deref(), "oldValuesJson")?;
       let new_values = parse_json_field(incoming.new_values_json.as_deref(), "newValuesJson")?;
 
       apply_audit_log_restore(
-        &txn,
+        conn,
         incoming.table_name,
         incoming.action,
         old_values.as_ref(),
@@ -81,13 +208,25 @@ impl SyncService {
         timestamp: Set(incoming.timestamp),
         origin_db_id: Set(incoming.origin_db_id),
       }
-      .insert(&txn)
+      .insert(conn)
       .await?;
+
       accepted += 1;
+      state.observe_insert(incoming);
     }
 
-    txn.commit().await?;
     Ok(PushAuditLogsResponse { accepted, rejected })
+  }
+
+  pub async fn push_logs(
+    &self,
+    logs: &[PushAuditLogRequest],
+  ) -> Result<PushAuditLogsResponse, ApiError> {
+    tracing::debug!(count = logs.len(), "push_logs: processing incoming batch");
+    let txn = self.db.begin().await?;
+    let result = Self::apply_incoming_logs_in_txn(&txn, logs).await?;
+    txn.commit().await?;
+    Ok(result)
   }
 
   /// Apply a batch of pulled audit logs from a remote peer and advance the
@@ -142,65 +281,7 @@ impl SyncService {
       )));
     }
 
-    let mut accepted = 0_u64;
-    let mut rejected = 0_u64;
-
-    for incoming in logs {
-      let already_exists = audit_log::Entity::load()
-        .filter_by_id(incoming.id)
-        .one(&txn)
-        .await?
-        .is_some();
-      if already_exists {
-        continue;
-      }
-
-      // Conflict resolution (same rule as push_logs): skip this incoming log
-      // if a newer local log with a higher role weight exists for the same
-      // record.
-      let latest_for_record = audit_log::Entity::load()
-        .filter(audit_log::Column::RecordId.eq(incoming.record_id))
-        .order_by_desc(audit_log::Column::Timestamp)
-        .one(&txn)
-        .await?;
-      if let Some(existing) = latest_for_record {
-        if existing.user_role_weight > incoming.user_role_weight
-          && existing.timestamp >= incoming.timestamp
-        {
-          rejected += 1;
-          continue;
-        }
-      }
-
-      let old_values = parse_json_field(incoming.old_values_json.as_deref(), "oldValuesJson")?;
-      let new_values = parse_json_field(incoming.new_values_json.as_deref(), "newValuesJson")?;
-
-      apply_audit_log_restore(
-        &txn,
-        incoming.table_name,
-        incoming.action,
-        old_values.as_ref(),
-        new_values.as_ref(),
-      )
-      .await?;
-
-      audit_log::ActiveModel {
-        id: Set(incoming.id),
-        table_name: Set(incoming.table_name),
-        record_id: Set(incoming.record_id),
-        action: Set(incoming.action),
-        old_values: Set(old_values),
-        new_values: Set(new_values),
-        target_base_ids: Set(normalize_target_base_ids(&incoming.target_base_ids)),
-        user_role_weight: Set(incoming.user_role_weight),
-        user_id: Set(incoming.user_id),
-        timestamp: Set(incoming.timestamp),
-        origin_db_id: Set(incoming.origin_db_id),
-      }
-      .insert(&txn)
-      .await?;
-      accepted += 1;
-    }
+    let result = Self::apply_incoming_logs_in_txn(&txn, logs).await?;
 
     // Advance the PULL watermark atomically in the same transaction.
     Self::upsert_watermark_in_txn(
@@ -213,6 +294,6 @@ impl SyncService {
     .await?;
 
     txn.commit().await?;
-    Ok(PushAuditLogsResponse { accepted, rejected })
+    Ok(result)
   }
 }

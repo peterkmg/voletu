@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
@@ -5,6 +6,7 @@ use crate::{
   enums::{AuditTable, SyncDirection},
   services::sync::query::{
     AuditLogQuerySpec,
+    AwaitCycleQuerySpec,
     OutboundAuditLogsQuerySpec,
     PullAuditLogsQuerySpec,
     SyncStatusQuerySpec,
@@ -123,4 +125,20 @@ pub struct AwaitCycleQueryRequest {
   /// If provided, return immediately if last_sync_at is already after this
   /// timestamp. Format: RFC 3339 (e.g. "2026-01-01T00:00:00Z").
   pub since: Option<String>,
+}
+
+impl AwaitCycleQueryRequest {
+  fn parse_since(&self) -> Option<DateTime<Utc>> {
+    self.since.as_deref().and_then(|value| {
+      DateTime::parse_from_rfc3339(value)
+        .ok()
+        .map(|dt| dt.with_timezone(&Utc))
+    })
+  }
+}
+
+impl From<AwaitCycleQueryRequest> for AwaitCycleQuerySpec {
+  fn from(query: AwaitCycleQueryRequest) -> Self {
+    Self::new(query.timeout.unwrap_or(15), query.parse_since())
+  }
 }

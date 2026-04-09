@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::enums::AuditTable;
@@ -51,5 +52,20 @@ pub struct SyncStatusQuerySpec {
 impl SyncStatusQuerySpec {
   pub fn new(base_ids: Vec<Uuid>) -> Self {
     Self { base_ids }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct AwaitCycleQuerySpec {
+  pub timeout_secs: u64,
+  pub since: Option<DateTime<Utc>>,
+}
+
+impl AwaitCycleQuerySpec {
+  pub fn new(timeout_secs: u64, since: Option<DateTime<Utc>>) -> Self {
+    Self {
+      timeout_secs,
+      since,
+    }
   }
 }

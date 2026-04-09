@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use sea_orm::{
   ColumnTrait,
   Condition,
@@ -135,28 +133,6 @@ impl DocumentService {
       .map_err(Into::into)
   }
 
-  pub(super) async fn physical_transfer_to_storage_names(
-    &self,
-    to_storage_ids: impl IntoIterator<Item = Uuid>,
-  ) -> Result<HashMap<Uuid, String>, ApiError> {
-    let ids = to_storage_ids.into_iter().collect::<HashSet<_>>();
-    if ids.is_empty() {
-      return Ok(HashMap::new());
-    }
-
-    let storages = storage::Entity::load()
-      .filter(storage::Column::Id.is_in(ids.into_iter().collect::<Vec<_>>()))
-      .all(self.db.as_ref())
-      .await?;
-
-    Ok(
-      storages
-        .into_iter()
-        .map(|storage| (storage.id, storage.common_name))
-        .collect(),
-    )
-  }
-
   pub async fn physical_transfer_composite_list(
     &self,
   ) -> Result<Vec<PhysicalTransferResponse>, ApiError> {
@@ -215,7 +191,7 @@ impl DocumentService {
 
     // Collect all to_storage_id values and batch-fetch storage names.
     let to_storage_map = self
-      .physical_transfer_to_storage_names(
+      .storage_name_map(
         docs
           .iter()
           .flat_map(|d| d.items.iter().map(|i| i.to_storage_id))

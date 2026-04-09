@@ -1,3 +1,4 @@
+mod await_cycle;
 pub mod helpers;
 mod logs;
 pub mod query;

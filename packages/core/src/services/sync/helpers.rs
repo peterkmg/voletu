@@ -1,5 +1,8 @@
+use std::fmt::Write;
+
 use sea_orm::{ColumnTrait, Condition};
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::{api::ApiError, entities::audit_log, enums::AuditTable};
 
@@ -10,11 +13,24 @@ use crate::{api::ApiError, entities::audit_log, enums::AuditTable};
 /// (representing catalog-only scope). The result is stable regardless of the
 /// input order, which lets it be compared byte-for-byte against a stored value
 /// on a `sync_watermarks` row.
-pub fn compute_base_discriminant(base_ids: &[uuid::Uuid]) -> String {
-  let mut out: Vec<String> = base_ids.iter().map(|id| id.to_string()).collect();
+pub fn compute_base_discriminant(base_ids: &[Uuid]) -> String {
+  let mut out = base_ids.to_vec();
   out.sort_unstable();
   out.dedup();
-  out.join(",")
+  join_uuid_csv(&out)
+}
+
+pub fn join_uuid_csv(ids: &[Uuid]) -> String {
+  let mut out = String::with_capacity(ids.len().saturating_mul(37));
+
+  for (index, id) in ids.iter().enumerate() {
+    if index > 0 {
+      out.push(',');
+    }
+    let _ = write!(&mut out, "{id}");
+  }
+
+  out
 }
 
 /// The set of audit-log `table_name` values that are never included in sync

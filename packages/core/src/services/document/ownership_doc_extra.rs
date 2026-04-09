@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use sea_orm::{
   ColumnTrait,
   Condition,
@@ -18,7 +16,7 @@ use crate::{
     CreateOwnershipTransferRequest,
     OwnershipTransferResponse,
   },
-  entities::{company, ownership_transfer, ownership_transfer_item, product, storage},
+  entities::{ownership_transfer, ownership_transfer_item, product, storage},
   services::document::{
     query::{OwnershipTransferFlatQuerySpec, OwnershipTransferQuerySpec},
     DocumentService,
@@ -128,28 +126,6 @@ impl DocumentService {
       .map_err(Into::into)
   }
 
-  pub(super) async fn ownership_transfer_contractor_names(
-    &self,
-    contractor_ids: impl IntoIterator<Item = Uuid>,
-  ) -> Result<HashMap<Uuid, String>, ApiError> {
-    let ids = contractor_ids.into_iter().collect::<HashSet<_>>();
-    if ids.is_empty() {
-      return Ok(HashMap::new());
-    }
-
-    let companies = company::Entity::load()
-      .filter(company::Column::Id.is_in(ids.into_iter().collect::<Vec<_>>()))
-      .all(self.db.as_ref())
-      .await?;
-
-    Ok(
-      companies
-        .into_iter()
-        .map(|company| (company.id, company.common_name))
-        .collect(),
-    )
-  }
-
   pub async fn ownership_transfer_composite_list(
     &self,
   ) -> Result<Vec<OwnershipTransferResponse>, ApiError> {
@@ -201,7 +177,7 @@ impl DocumentService {
       .await?;
 
     let contractor_map = self
-      .ownership_transfer_contractor_names(
+      .company_name_map(
         docs
           .iter()
           .flat_map(|doc| {
