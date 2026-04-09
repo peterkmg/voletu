@@ -9,6 +9,7 @@ mod auth_initialization;
 mod auth_password;
 mod auth_session;
 pub mod database_instance;
+pub mod dev_seed;
 pub mod local;
 pub mod node_bases;
 pub mod role;

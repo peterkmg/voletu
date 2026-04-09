@@ -1,5 +1,6 @@
 mod acceptance_and_dispatch;
 mod audit_and_ledger;
+mod dev_seed;
 mod flow;
 mod operations_blending;
 mod operations_reconciliation;

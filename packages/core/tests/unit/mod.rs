@@ -5,5 +5,6 @@ mod audit_table;
 mod dto_surface;
 mod entity_lifecycle;
 mod query_params;
+mod seaorm_active_model_ex;
 mod sync_helpers;
 mod sync_request;
