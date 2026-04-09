@@ -107,7 +107,10 @@ pub use request::{
     UpdateTruckWaybillRequest,
     UpdateTruckWeightDocRequest,
   },
+  ledger::LedgerEntryLookupRequest,
+  sync::UpsertWatermarkRequest,
   system::{
+    AddBaseAssignmentRequest,
     ChangePasswordRequest,
     CompleteInitializationRequest,
     CreateUserRequest,
@@ -164,6 +167,7 @@ pub use response::{
   },
   sync::{PullAuditLogsResponse, PushAuditLogsResponse, SyncStatusResponse, SyncWatermarkResponse},
   system::{
+    BaseAssignmentResponse,
     DatabaseInstanceResponse,
     LocalResponse,
     LoginResponse,
@@ -172,3 +176,26 @@ pub use response::{
     UserResponse,
   },
 };
+
+#[cfg(test)]
+mod tests {
+  use uuid::Uuid;
+
+  #[test]
+  fn shared_transport_dtos_are_exported_from_the_dto_surface() {
+    let _ = crate::dtos::AddBaseAssignmentRequest {
+      base_id: Uuid::nil(),
+    };
+    let _ = crate::dtos::LedgerEntryLookupRequest {
+      storage_id: Uuid::nil(),
+      product_id: Uuid::nil(),
+      contractor_id: Uuid::nil(),
+    };
+    let _ = crate::dtos::UpsertWatermarkRequest {
+      target_node_id: Uuid::nil(),
+      direction: crate::enums::SyncDirection::Push,
+      last_audit_log_id: Uuid::nil(),
+      base_discriminant: None,
+    };
+  }
+}

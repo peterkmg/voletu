@@ -1,27 +1,8 @@
-use serde::Deserialize;
-
 use super::*;
-use crate::services::document::query::RailWaybillQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RailWaybillQueryParams {
-  document_number: Option<String>,
-  sender_id: Option<Uuid>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<RailWaybillQueryParams> for RailWaybillQuerySpec {
-  fn from(value: RailWaybillQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      sender_id: value.sender_id,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::RailWaybillDocumentQueryParams,
+  services::document::query::RailWaybillQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -75,7 +56,7 @@ async fn rail_waybill_list(
 #[axum::debug_handler]
 async fn rail_waybill_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<RailWaybillQueryParams>,
+  Query(query): Query<RailWaybillDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<RailWaybillResponse>> {
   let query = RailWaybillQuerySpec::from(query);

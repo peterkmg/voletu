@@ -1,27 +1,8 @@
 use super::*;
-use crate::services::document::query::BlendingDocumentQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct BlendingQueryParams {
-  document_number: Option<String>,
-  status: Option<enums::DocumentStatus>,
-  contractor_id: Option<Uuid>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<BlendingQueryParams> for BlendingDocumentQuerySpec {
-  fn from(value: BlendingQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      status: value.status,
-      contractor_id: value.contractor_id,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::BlendingDocumentQueryParams,
+  services::document::query::BlendingDocumentQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -120,7 +101,7 @@ async fn blending_document_create_and_execute(
 #[axum::debug_handler]
 async fn blending_document_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<BlendingQueryParams>,
+  Query(query): Query<BlendingDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<BlendingResponse>> {
   let query = BlendingDocumentQuerySpec::from(query);

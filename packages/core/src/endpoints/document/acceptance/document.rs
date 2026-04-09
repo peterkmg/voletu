@@ -6,7 +6,6 @@ use axum::{
   Json,
 };
 use axum_valid::Valid;
-use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
@@ -14,7 +13,7 @@ use crate::{
   dtos::{AcceptanceResponse, CreateAcceptanceRequest},
   endpoints::{
     paths,
-    query::{EmbedParams, NullableFilter, PaginationParams},
+    query::{AcceptanceDocumentQueryParams, EmbedParams, PaginationParams},
   },
   enums,
   services::{
@@ -23,32 +22,6 @@ use crate::{
   },
   utils::jwt::Claims,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct AcceptanceQueryParams {
-  pub(super) document_number: Option<String>,
-  pub(super) status: Option<enums::DocumentStatus>,
-  pub(super) truck_waybill_id: Option<NullableFilter>,
-  pub(super) rail_waybill_id: Option<NullableFilter>,
-  pub(super) transit_dispatch_id: Option<NullableFilter>,
-  #[serde(flatten)]
-  pub(super) pagination: PaginationParams,
-}
-
-impl From<AcceptanceQueryParams> for AcceptanceDocumentQuerySpec {
-  fn from(value: AcceptanceQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      status: value.status,
-      truck_waybill_id: value.truck_waybill_id,
-      rail_waybill_id: value.rail_waybill_id,
-      transit_dispatch_id: value.transit_dispatch_id,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,
@@ -147,7 +120,7 @@ pub(super) async fn acceptance_document_create_and_execute(
 #[axum::debug_handler]
 pub(super) async fn acceptance_document_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<AcceptanceQueryParams>,
+  Query(query): Query<AcceptanceDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<AcceptanceResponse>> {
   let query = AcceptanceDocumentQuerySpec::from(query);

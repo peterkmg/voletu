@@ -1,3 +1,4 @@
+use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
 use crate::enums::NodeType;
@@ -72,4 +73,9 @@ pub struct UpdateUserRequest {
   #[validate(length(min = 2, max = 50))]
   #[schema(example = "ADMIN")]
   pub role_name: Option<String>,
+}
+
+#[request_dto]
+pub struct AddBaseAssignmentRequest {
+  pub base_id: Uuid,
 }

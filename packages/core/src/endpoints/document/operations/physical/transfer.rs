@@ -1,25 +1,8 @@
 use super::*;
-use crate::services::document::query::PhysicalTransferQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PhysicalTransferQueryParams {
-  document_number: Option<String>,
-  status: Option<enums::DocumentStatus>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<PhysicalTransferQueryParams> for PhysicalTransferQuerySpec {
-  fn from(value: PhysicalTransferQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      status: value.status,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::PhysicalTransferDocumentQueryParams,
+  services::document::query::PhysicalTransferQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -110,7 +93,7 @@ async fn physical_transfer_composite_get(
 #[axum::debug_handler]
 async fn physical_transfer_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<PhysicalTransferQueryParams>,
+  Query(query): Query<PhysicalTransferDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<PhysicalTransferResponse>> {
   let query = PhysicalTransferQuerySpec::from(query);

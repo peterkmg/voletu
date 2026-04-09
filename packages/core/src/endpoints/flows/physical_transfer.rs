@@ -1,34 +1,14 @@
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::PhysicalTransferFlatRow,
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{paths, query::PhysicalTransferFlatQueryParams},
   enums::DocumentStatus,
-  services::document::query::PhysicalTransferFlatQuerySpec,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PhysicalTransferFlatQueryParams {
-  status: Option<DocumentStatus>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<PhysicalTransferFlatQueryParams> for PhysicalTransferFlatQuerySpec {
-  fn from(params: PhysicalTransferFlatQueryParams) -> Self {
-    Self {
-      status: params.status,
-      page: params.pagination.page,
-      per_page: params.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,

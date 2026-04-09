@@ -1,31 +1,8 @@
 use super::*;
-use crate::services::document::query::DispatchDocumentQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DispatchQueryParams {
-  document_number: Option<String>,
-  status: Option<enums::DocumentStatus>,
-  contractor_id: Option<Uuid>,
-  dispatch_method: Option<enums::DispatchMethod>,
-  dispatch_purpose: Option<enums::DispatchPurpose>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<DispatchQueryParams> for DispatchDocumentQuerySpec {
-  fn from(value: DispatchQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      status: value.status,
-      contractor_id: value.contractor_id,
-      dispatch_method: value.dispatch_method,
-      dispatch_purpose: value.dispatch_purpose,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::DispatchDocumentQueryParams,
+  services::document::query::DispatchDocumentQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -128,7 +105,7 @@ async fn dispatch_document_create_and_execute(
 #[axum::debug_handler]
 async fn dispatch_document_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<DispatchQueryParams>,
+  Query(query): Query<DispatchDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<DispatchResponse>> {
   let query = DispatchDocumentQuerySpec::from(query);

@@ -2,50 +2,16 @@ use std::sync::Arc;
 
 use axum::extract::{Path, State};
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
   api::{ApiError, ApiResponse, ApiResult, ApiState},
+  dtos::{AddBaseAssignmentRequest, BaseAssignmentResponse},
   endpoints::paths,
   entities::node_base_assignment,
   services::system::node_bases::{load_node_base_assignment, load_node_base_assignments},
 };
-
-#[derive(Debug, Deserialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct AddBaseAssignmentRequest {
-  base_id: Uuid,
-}
-
-#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct BaseAssignmentResponse {
-  id: Uuid,
-  node_id: Uuid,
-  base_id: Uuid,
-}
-
-impl From<node_base_assignment::Model> for BaseAssignmentResponse {
-  fn from(m: node_base_assignment::Model) -> Self {
-    Self {
-      id: m.id,
-      node_id: m.node_id,
-      base_id: m.base_id,
-    }
-  }
-}
-
-impl From<&node_base_assignment::ModelEx> for BaseAssignmentResponse {
-  fn from(m: &node_base_assignment::ModelEx) -> Self {
-    Self {
-      id: m.id,
-      node_id: m.node_id,
-      base_id: m.base_id,
-    }
-  }
-}
 
 #[utoipa::path(
   get,

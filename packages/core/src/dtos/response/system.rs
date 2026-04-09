@@ -1,7 +1,10 @@
 use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
-use crate::entities::system::{database_instance, local, refresh_token, role, user::ModelEx};
+use crate::entities::{
+  node_base_assignment,
+  system::{database_instance, local, refresh_token, role, user::ModelEx},
+};
 
 /// Response DTO for the `user` entity.
 #[response_dto(service_fields(common))]
@@ -57,6 +60,14 @@ pub struct RefreshTokenResponse {
   pub expires_at: String,
   pub is_revoked: bool,
   pub device_info: Option<String>,
+}
+
+/// Functional DTO describing node/base assignment configuration.
+#[response_dto]
+pub struct BaseAssignmentResponse {
+  pub id: Uuid,
+  pub node_id: Uuid,
+  pub base_id: Uuid,
 }
 
 impl TryFrom<&ModelEx> for UserResponse {
@@ -184,6 +195,26 @@ impl From<&refresh_token::ModelEx> for RefreshTokenResponse {
       device_info: model.device_info.clone(),
       created_at: model.created_at.to_rfc3339(),
       updated_at: model.updated_at.to_rfc3339(),
+    }
+  }
+}
+
+impl From<node_base_assignment::Model> for BaseAssignmentResponse {
+  fn from(model: node_base_assignment::Model) -> Self {
+    Self {
+      id: model.id,
+      node_id: model.node_id,
+      base_id: model.base_id,
+    }
+  }
+}
+
+impl From<&node_base_assignment::ModelEx> for BaseAssignmentResponse {
+  fn from(model: &node_base_assignment::ModelEx) -> Self {
+    Self {
+      id: model.id,
+      node_id: model.node_id,
+      base_id: model.base_id,
     }
   }
 }

@@ -1,38 +1,14 @@
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::DispatchFlatRow,
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{paths, query::DispatchFlatQueryParams},
   enums::{DispatchMethod, DispatchPurpose, DocumentStatus},
-  services::document::query::DispatchFlatQuerySpec,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DispatchFlatQueryParams {
-  status: Option<DocumentStatus>,
-  dispatch_method: Option<DispatchMethod>,
-  dispatch_purpose: Option<DispatchPurpose>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<DispatchFlatQueryParams> for DispatchFlatQuerySpec {
-  fn from(params: DispatchFlatQueryParams) -> Self {
-    Self {
-      status: params.status,
-      dispatch_method: params.dispatch_method,
-      dispatch_purpose: params.dispatch_purpose,
-      page: params.pagination.page,
-      per_page: params.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,

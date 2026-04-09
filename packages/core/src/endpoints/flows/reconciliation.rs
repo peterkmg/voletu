@@ -1,34 +1,14 @@
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::ReconciliationFlatRow,
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{paths, query::ReconciliationFlatQueryParams},
   enums::DocumentStatus,
-  services::document::query::ReconciliationFlatQuerySpec,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ReconciliationFlatQueryParams {
-  status: Option<DocumentStatus>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<ReconciliationFlatQueryParams> for ReconciliationFlatQuerySpec {
-  fn from(params: ReconciliationFlatQueryParams) -> Self {
-    Self {
-      status: params.status,
-      page: params.pagination.page,
-      per_page: params.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,

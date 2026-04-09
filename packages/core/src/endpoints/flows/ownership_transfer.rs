@@ -1,34 +1,14 @@
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::OwnershipTransferFlatRow,
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{paths, query::OwnershipTransferFlatQueryParams},
   enums::DocumentStatus,
-  services::document::query::OwnershipTransferFlatQuerySpec,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct OwnershipTransferFlatQueryParams {
-  status: Option<DocumentStatus>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<OwnershipTransferFlatQueryParams> for OwnershipTransferFlatQuerySpec {
-  fn from(params: OwnershipTransferFlatQueryParams) -> Self {
-    Self {
-      status: params.status,
-      page: params.pagination.page,
-      per_page: params.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,

@@ -1,20 +1,5 @@
 use super::*;
 
-#[derive(Debug, Deserialize, Validate, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct UpsertWatermarkRequest {
-  target_node_id: Uuid,
-  direction: SyncDirection,
-  last_audit_log_id: Uuid,
-  /// Canonical base discriminant to store alongside the cursor. Optional;
-  /// defaults to empty string ("catalog-only scope") when omitted. This
-  /// endpoint is a manual override — the normal pull path goes through
-  /// `apply_pulled_logs`, which sets the discriminant atomically from the
-  /// peripheral's actual assignments.
-  #[serde(default)]
-  base_discriminant: Option<String>,
-}
-
 #[utoipa::path(
   get,
   tag = "Sync",

@@ -1,37 +1,14 @@
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::TruckReceiptPipelineResponse,
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{paths, query::TruckReceiptPipelineQueryParams},
   enums::PipelineStatus,
-  services::document::query::TruckReceiptPipelineQuerySpec,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct TruckReceiptFlowQueryParams {
-  pipeline_status: Option<PipelineStatus>,
-  contractor_id: Option<Uuid>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<TruckReceiptFlowQueryParams> for TruckReceiptPipelineQuerySpec {
-  fn from(params: TruckReceiptFlowQueryParams) -> Self {
-    Self {
-      pipeline_status: params.pipeline_status,
-      contractor_id: params.contractor_id,
-      page: params.pagination.page,
-      per_page: params.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,
@@ -51,7 +28,7 @@ impl From<TruckReceiptFlowQueryParams> for TruckReceiptPipelineQuerySpec {
 #[axum::debug_handler]
 async fn truck_receipt_query(
   State(state): State<Arc<ApiState>>,
-  Query(params): Query<TruckReceiptFlowQueryParams>,
+  Query(params): Query<TruckReceiptPipelineQueryParams>,
 ) -> ApiResult<Vec<TruckReceiptPipelineResponse>> {
   let rows = state
     .svc

@@ -1,27 +1,8 @@
 use super::*;
-use crate::services::document::query::ReconciliationQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ReconciliationQueryParams {
-  document_number: Option<String>,
-  status: Option<enums::DocumentStatus>,
-  warehouse_id: Option<Uuid>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<ReconciliationQueryParams> for ReconciliationQuerySpec {
-  fn from(value: ReconciliationQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      status: value.status,
-      warehouse_id: value.warehouse_id,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::ReconciliationDocumentQueryParams,
+  services::document::query::ReconciliationQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -75,7 +56,7 @@ async fn reconciliation_list(
 #[axum::debug_handler]
 async fn reconciliation_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<ReconciliationQueryParams>,
+  Query(query): Query<ReconciliationDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<InventoryReconciliationResponse>> {
   let query = ReconciliationQuerySpec::from(query);

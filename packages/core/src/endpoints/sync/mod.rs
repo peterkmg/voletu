@@ -20,9 +20,9 @@ use crate::{
     PushAuditLogsRequest,
     PushAuditLogsResponse,
     SyncWatermarkResponse,
+    UpsertWatermarkRequest,
   },
   endpoints::paths,
-  enums::SyncDirection,
 };
 
 mod audit;

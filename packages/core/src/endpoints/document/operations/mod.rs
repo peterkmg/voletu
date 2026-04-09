@@ -6,7 +6,6 @@ use axum::{
   Json,
 };
 use axum_valid::Valid;
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 

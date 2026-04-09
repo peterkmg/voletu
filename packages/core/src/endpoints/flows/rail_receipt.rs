@@ -1,37 +1,14 @@
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::response::pipeline::RailReceiptPipelineResponse,
-  endpoints::{paths, query::PaginationParams},
+  endpoints::{paths, query::RailReceiptPipelineQueryParams},
   enums::PipelineStatus,
-  services::document::query::RailReceiptPipelineQuerySpec,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RailReceiptPipelineQueryParams {
-  pipeline_status: Option<PipelineStatus>,
-  contractor_id: Option<Uuid>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<RailReceiptPipelineQueryParams> for RailReceiptPipelineQuerySpec {
-  fn from(params: RailReceiptPipelineQueryParams) -> Self {
-    Self {
-      pipeline_status: params.pipeline_status,
-      contractor_id: params.contractor_id,
-      page: params.pagination.page,
-      per_page: params.pagination.per_page,
-    }
-  }
-}
 
 #[utoipa::path(
   get,

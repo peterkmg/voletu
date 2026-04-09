@@ -1,27 +1,8 @@
-use serde::Deserialize;
-
 use super::*;
-use crate::services::document::query::TruckWaybillQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct TruckWaybillQueryParams {
-  document_number: Option<String>,
-  sender_id: Option<Uuid>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<TruckWaybillQueryParams> for TruckWaybillQuerySpec {
-  fn from(value: TruckWaybillQueryParams) -> Self {
-    Self {
-      document_number: value.document_number,
-      sender_id: value.sender_id,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::TruckWaybillDocumentQueryParams,
+  services::document::query::TruckWaybillQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -75,7 +56,7 @@ async fn truck_waybill_list(
 #[axum::debug_handler]
 async fn truck_waybill_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<TruckWaybillQueryParams>,
+  Query(query): Query<TruckWaybillDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<TruckWaybillResponse>> {
   let query = TruckWaybillQuerySpec::from(query);

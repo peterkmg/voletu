@@ -1,23 +1,8 @@
 use super::*;
-use crate::services::document::query::OwnershipTransferQuerySpec;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct OwnershipTransferQueryParams {
-  status: Option<enums::DocumentStatus>,
-  #[serde(flatten)]
-  pagination: PaginationParams,
-}
-
-impl From<OwnershipTransferQueryParams> for OwnershipTransferQuerySpec {
-  fn from(value: OwnershipTransferQueryParams) -> Self {
-    Self {
-      status: value.status,
-      page: value.pagination.page,
-      per_page: value.pagination.per_page,
-    }
-  }
-}
+use crate::{
+  endpoints::query::OwnershipTransferDocumentQueryParams,
+  services::document::query::OwnershipTransferQuerySpec,
+};
 
 #[utoipa::path(
   get,
@@ -107,7 +92,7 @@ async fn ownership_transfer_composite_get(
 #[axum::debug_handler]
 async fn ownership_transfer_query(
   State(state): State<Arc<ApiState>>,
-  Query(query): Query<OwnershipTransferQueryParams>,
+  Query(query): Query<OwnershipTransferDocumentQueryParams>,
   Query(embed): Query<EmbedParams>,
 ) -> ApiResult<Vec<OwnershipTransferResponse>> {
   let query = OwnershipTransferQuerySpec::from(query);

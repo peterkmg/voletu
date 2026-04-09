@@ -2,25 +2,13 @@ use std::sync::Arc;
 
 use axum::{extract::State, Json};
 use axum_valid::Valid;
-use serde::Deserialize;
-use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
-use validator::Validate;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::LedgerEntryResponse,
+  dtos::{LedgerEntryLookupRequest, LedgerEntryResponse},
   endpoints::paths,
 };
-
-#[derive(Debug, Deserialize, Validate, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct LedgerEntryLookupRequest {
-  storage_id: Uuid,
-  product_id: Uuid,
-  contractor_id: Uuid,
-}
 
 #[utoipa::path(
   get,
