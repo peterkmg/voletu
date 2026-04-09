@@ -1,5 +1,10 @@
 use sea_orm::{
-  prelude::ChronoUtc, ActiveModelTrait, ActiveValue::Set, DbErr, EntityTrait, TransactionTrait,
+  prelude::ChronoUtc,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  DbErr,
+  EntityTrait,
+  TransactionTrait,
 };
 use uuid::Uuid;
 

@@ -8,8 +8,13 @@ use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  await_sync_cycle, create_acceptance_via_api, get_acceptance_composite_json, seed_catalog_via_api,
-  setup_central_via_api, setup_peripheral_via_api, temp_db_path,
+  await_sync_cycle,
+  create_acceptance_via_api,
+  get_acceptance_composite_json,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -20,19 +25,13 @@ async fn routing_isolation_peripheral_gets_only_its_base_documents() {
   let central = setup_central_via_api(&client, &temp_db_path("r2-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let pa = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r2-pa"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("r2-pa"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
-  let pb = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r2-pb"),
-    &central,
-    &[catalog.base_beta],
-  )
+  let pb = setup_peripheral_via_api(&client, &temp_db_path("r2-pb"), &central, &[
+    catalog.base_beta
+  ])
   .await;
 
   // Create two documents: one for alpha, one for beta

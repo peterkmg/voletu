@@ -8,8 +8,12 @@ use serde_json::Value;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  assert_audit_log_targets, create_acceptance_via_api, query_audit_logs, seed_catalog_via_api,
-  setup_central_via_api, temp_db_path,
+  assert_audit_log_targets,
+  create_acceptance_via_api,
+  query_audit_logs,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  temp_db_path,
 };
 
 #[tokio::test]

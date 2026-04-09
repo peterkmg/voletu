@@ -11,9 +11,17 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
-    CompanyResponse, CreateCompanyRequest, CreateProductGroupRequest, CreateProductRequest,
-    CreateProductTypeRequest, ProductGroupResponse, ProductResponse, ProductTypeResponse,
-    UpdateCompanyRequest, UpdateProductGroupRequest, UpdateProductRequest,
+    CompanyResponse,
+    CreateCompanyRequest,
+    CreateProductGroupRequest,
+    CreateProductRequest,
+    CreateProductTypeRequest,
+    ProductGroupResponse,
+    ProductResponse,
+    ProductTypeResponse,
+    UpdateCompanyRequest,
+    UpdateProductGroupRequest,
+    UpdateProductRequest,
     UpdateProductTypeRequest,
   },
   endpoints::{

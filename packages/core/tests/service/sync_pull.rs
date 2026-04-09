@@ -13,7 +13,8 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_sync_node},
-  setup_db, test_config,
+  setup_db,
+  test_config,
 };
 
 const TEST_SYNC_NODE_ID: Uuid = Uuid::from_u128(11);

@@ -5,7 +5,8 @@ use crate::{
   dtos::SyncWatermarkResponse,
   enums::SyncDirection,
   services::system::{
-    database_instance::load_active_database_instance, local::load_local_bootstrap,
+    database_instance::load_active_database_instance,
+    local::load_local_bootstrap,
     node_bases::load_node_base_ids as load_assigned_base_ids,
   },
 };

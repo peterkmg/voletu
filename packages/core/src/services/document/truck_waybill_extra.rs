@@ -1,5 +1,10 @@
 use sea_orm::{
-  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder,
+  entity::prelude::*,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
   TransactionTrait,
 };
 use uuid::Uuid;
@@ -8,7 +13,12 @@ use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::TruckReceiptPipelineResponse},
   entities::{
-    acceptance_document, acceptance_item, company, product, truck_waybill, truck_waybill_item,
+    acceptance_document,
+    acceptance_item,
+    company,
+    product,
+    truck_waybill,
+    truck_waybill_item,
     truck_weight_doc,
   },
   enums::PipelineStatus,

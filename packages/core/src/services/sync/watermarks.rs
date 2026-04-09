@@ -1,12 +1,20 @@
 use sea_orm::{
-  ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition, ConnectionTrait, EntityLoaderTrait,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  Condition,
+  ConnectionTrait,
+  EntityLoaderTrait,
   QueryFilter,
 };
 use uuid::Uuid;
 
 use super::SyncService;
 use crate::{
-  api::ApiError, dtos::SyncWatermarkResponse, entities::sync_watermark, enums::SyncDirection,
+  api::ApiError,
+  dtos::SyncWatermarkResponse,
+  entities::sync_watermark,
+  enums::SyncDirection,
 };
 
 impl SyncService {

@@ -1,8 +1,14 @@
+use std::collections::BTreeMap;
+
 use sea_orm::{
-  entity::prelude::*, ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder,
+  entity::prelude::*,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
   TransactionTrait,
 };
-use std::collections::BTreeMap;
 use uuid::Uuid;
 
 use crate::{
@@ -12,7 +18,13 @@ use crate::{
     response::pipeline::{DispatchFlatRow, TruckDispatchPipelineResponse},
   },
   entities::{
-    base, company, dispatch_document, dispatch_item, dispatch_storage_measurement, port, product,
+    base,
+    company,
+    dispatch_document,
+    dispatch_item,
+    dispatch_storage_measurement,
+    port,
+    product,
     storage,
   },
   enums::{DispatchMethod, DocumentStatus, PipelineStatus},

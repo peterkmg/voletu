@@ -9,8 +9,13 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::common::integration::{
-  await_sync_cycle, create_physical_transfer_via_api, get_physical_transfer_composite_json,
-  query_audit_logs, seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api,
+  await_sync_cycle,
+  create_physical_transfer_via_api,
+  get_physical_transfer_composite_json,
+  query_audit_logs,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
   temp_db_path,
 };
 
@@ -22,19 +27,13 @@ async fn cross_base_physical_transfer_routes_to_both_peripherals() {
   let central = setup_central_via_api(&client, &temp_db_path("r3-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let pa = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r3-pa"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("r3-pa"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
-  let pb = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r3-pb"),
-    &central,
-    &[catalog.base_beta],
-  )
+  let pb = setup_peripheral_via_api(&client, &temp_db_path("r3-pb"), &central, &[
+    catalog.base_beta
+  ])
   .await;
 
   let transfer = create_physical_transfer_via_api(

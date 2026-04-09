@@ -1,5 +1,10 @@
 use sea_orm::{
-  ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityLoaderTrait, QueryFilter, QueryOrder,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
   TransactionTrait,
 };
 use uuid::Uuid;

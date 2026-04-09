@@ -1,5 +1,10 @@
 use sea_orm::{
-  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -8,8 +13,14 @@ use crate::{
   dtos::{self, response::pipeline::AcceptanceFlatRow},
   endpoints::query::NullableFilter,
   entities::{
-    acceptance_document, acceptance_item, company, dispatch_document, product, rail_waybill,
-    storage, truck_waybill,
+    acceptance_document,
+    acceptance_item,
+    company,
+    dispatch_document,
+    product,
+    rail_waybill,
+    storage,
+    truck_waybill,
   },
   services::document::{
     query::{AcceptanceDocumentQuerySpec, AcceptanceFlatQuerySpec},

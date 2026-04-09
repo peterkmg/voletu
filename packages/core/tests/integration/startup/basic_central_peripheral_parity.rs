@@ -12,8 +12,13 @@ use std::time::Duration;
 use serde_json::json;
 
 use crate::common::integration::{
-  api_post, await_sync_cycle, has_catalog_entity, seed_catalog_via_api, setup_central_via_api,
-  setup_peripheral_via_api, temp_db_path,
+  api_post,
+  await_sync_cycle,
+  has_catalog_entity,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
 };
 
 #[tokio::test]
@@ -22,12 +27,9 @@ async fn sync_worker_central_and_one_peripheral_reconstructs_to_parity() {
   let central = setup_central_via_api(&client, &temp_db_path("s2-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let pa = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("s2-pa"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("s2-pa"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
 
   // Create a company on the Peripheral

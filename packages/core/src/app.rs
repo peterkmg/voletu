@@ -17,7 +17,8 @@ use crate::{
   db::init_database,
   services::system::local::load_local_bootstrap,
   worker::{spawn_sync_worker, spawn_sync_worker_with_config, WorkerStatus},
-  DbConfig, JwtConfig,
+  DbConfig,
+  JwtConfig,
 };
 
 pub async fn serve_api(

@@ -9,8 +9,14 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::common::integration::{
-  api_get, assert_audit_log_targets, await_sync_cycle, create_reconciliation_via_api,
-  query_audit_logs, seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api,
+  api_get,
+  assert_audit_log_targets,
+  await_sync_cycle,
+  create_reconciliation_via_api,
+  query_audit_logs,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
   temp_db_path,
 };
 
@@ -21,12 +27,9 @@ async fn reconciliation_routing_via_warehouse() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r12-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
-  let pa = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r12-pa"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("r12-pa"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
 
   let recon = create_reconciliation_via_api(

@@ -7,8 +7,12 @@ use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   dtos::{
-    AcceptanceItemCompositeRequest, CreateAcceptanceItemRequest, CreateAcceptanceRequest,
-    CreateDispatchItemRequest, CreateDispatchRequest, DispatchItemCompositeRequest,
+    AcceptanceItemCompositeRequest,
+    CreateAcceptanceItemRequest,
+    CreateAcceptanceRequest,
+    CreateDispatchItemRequest,
+    CreateDispatchRequest,
+    DispatchItemCompositeRequest,
   },
   entities::{acceptance_document, audit_log, product_type, storage},
   enums::{self, ArrivalType, DispatchMethod, DispatchPurpose},
@@ -17,7 +21,8 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
-  setup_db, test_config,
+  setup_db,
+  test_config,
 };
 
 fn ts(value: &str) -> DateTime<Utc> {

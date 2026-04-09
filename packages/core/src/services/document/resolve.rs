@@ -7,9 +7,14 @@ use crate::{
   entities::{company, rail_waybill, truck_waybill},
   services::{
     document::query::{
-      AcceptanceDocumentQuerySpec, BlendingDocumentQuerySpec, DispatchDocumentQuerySpec,
-      OwnershipTransferQuerySpec, PhysicalTransferQuerySpec, RailWaybillQuerySpec,
-      ReconciliationQuerySpec, TruckWaybillQuerySpec,
+      AcceptanceDocumentQuerySpec,
+      BlendingDocumentQuerySpec,
+      DispatchDocumentQuerySpec,
+      OwnershipTransferQuerySpec,
+      PhysicalTransferQuerySpec,
+      RailWaybillQuerySpec,
+      ReconciliationQuerySpec,
+      TruckWaybillQuerySpec,
     },
     DocumentService,
   },

@@ -1,15 +1,22 @@
 use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
-  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::PhysicalTransferFlatRow, CreatePhysicalTransferItemRequest,
-    CreatePhysicalTransferRequest, PhysicalTransferResponse,
+    response::pipeline::PhysicalTransferFlatRow,
+    CreatePhysicalTransferItemRequest,
+    CreatePhysicalTransferRequest,
+    PhysicalTransferResponse,
   },
   entities::{company, physical_storage_transfer, physical_transfer_item, product, storage},
   services::document::{

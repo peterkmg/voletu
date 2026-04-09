@@ -5,7 +5,12 @@ use crate::{
   api::ApiError,
   dtos::{response::pipeline::ReconciliationFlatRow, InventoryReconciliationResponse},
   entities::{
-    company, inventory_adjustment, inventory_reconciliation, product, storage, warehouse,
+    company,
+    inventory_adjustment,
+    inventory_reconciliation,
+    product,
+    storage,
+    warehouse,
   },
   services::{
     document::query::{ReconciliationFlatQuerySpec, ReconciliationQuerySpec},

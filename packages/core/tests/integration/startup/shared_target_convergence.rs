@@ -11,8 +11,13 @@ use std::time::Duration;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  await_sync_cycle, create_physical_transfer_via_api, get_physical_transfer_composite_json,
-  seed_catalog_via_api, setup_central_via_api, setup_peripheral_via_api, temp_db_path,
+  await_sync_cycle,
+  create_physical_transfer_via_api,
+  get_physical_transfer_composite_json,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
 };
 
 #[tokio::test]
@@ -21,19 +26,13 @@ async fn shared_target_physical_transfer_converges_via_worker() {
   let central = setup_central_via_api(&client, &temp_db_path("s4-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  let pa = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("s4-pa"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let pa = setup_peripheral_via_api(&client, &temp_db_path("s4-pa"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
-  let pb = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("s4-pb"),
-    &central,
-    &[catalog.base_beta],
-  )
+  let pb = setup_peripheral_via_api(&client, &temp_db_path("s4-pb"), &central, &[
+    catalog.base_beta
+  ])
   .await;
 
   // Create a physical transfer from storage_alpha to storage_beta (cross-base, routes to both)

@@ -10,7 +10,8 @@ use crate::{
   entities::{database_instance, local, user},
   enums::RoleType,
   services::system::{
-    database_instance::load_active_database_instance, local::load_local_bootstrap,
+    database_instance::load_active_database_instance,
+    local::load_local_bootstrap,
     user::helpers::load_local_active_user_by_username,
   },
   utils::password::{hash_password, verify_password},

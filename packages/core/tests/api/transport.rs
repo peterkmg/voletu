@@ -5,13 +5,23 @@ use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entr
 use crate::common::{
   catalog_seed::seed_inventory_catalog,
   http::{
-    assert_api_error, assert_api_success, get, post_json, setup_seeded_app_with_admin_token,
+    assert_api_error,
+    assert_api_success,
+    get,
+    post_json,
+    setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{
-    transport_rail_intake_with_acceptance, transport_rail_manifest, transport_rail_measurement,
-    transport_rail_waybill, transport_rail_weight, transport_truck_intake_save,
-    transport_truck_item, transport_truck_waybill, transport_truck_weight_doc,
+    transport_rail_intake_with_acceptance,
+    transport_rail_manifest,
+    transport_rail_measurement,
+    transport_rail_waybill,
+    transport_rail_weight,
+    transport_truck_intake_save,
+    transport_truck_item,
+    transport_truck_waybill,
+    transport_truck_weight_doc,
   },
 };
 

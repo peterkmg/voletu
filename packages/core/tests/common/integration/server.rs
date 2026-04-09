@@ -5,7 +5,12 @@ use serde_json::{json, Value};
 use tokio::sync::oneshot;
 use uuid::Uuid;
 use voletu_core::{
-  serve_api, serve_api_with_sync_config, DbConfig, DbParams, JwtConfig, SyncConfig,
+  serve_api,
+  serve_api_with_sync_config,
+  DbConfig,
+  DbParams,
+  JwtConfig,
+  SyncConfig,
 };
 
 use super::api_client::ensure_shared_memory_db_alive;

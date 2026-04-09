@@ -2,7 +2,11 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use sea_orm::{
-  entity::prelude::Decimal, ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityLoaderTrait,
+  entity::prelude::Decimal,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  EntityLoaderTrait,
   QueryFilter,
 };
 use uuid::Uuid;

@@ -5,7 +5,9 @@ use crate::{
   dtos,
   entities::rail_wagon_weight,
   services::{
-    common::set_if_some, document::rail_manifest::ensure_parent_manifest_active, DocumentService,
+    common::set_if_some,
+    document::rail_manifest::ensure_parent_manifest_active,
+    DocumentService,
   },
 };
 

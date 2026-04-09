@@ -5,7 +5,9 @@ use voletu_core::{api::router::build_router, endpoints::paths as api_paths};
 
 use crate::common::{
   http::{get, response_json},
-  setup_db, test_api_state_with_default_restart_controls, test_config_for_db,
+  setup_db,
+  test_api_state_with_default_restart_controls,
+  test_config_for_db,
 };
 
 #[tokio::test]

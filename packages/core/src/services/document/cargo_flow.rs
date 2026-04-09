@@ -4,8 +4,13 @@ use crate::{
   enums,
   services::document::{
     query::{
-      AcceptanceFlatQuerySpec, BlendingFlatQuerySpec, CargoFlowQuerySpec, DispatchFlatQuerySpec,
-      OwnershipTransferFlatQuerySpec, PhysicalTransferFlatQuerySpec, ReconciliationFlatQuerySpec,
+      AcceptanceFlatQuerySpec,
+      BlendingFlatQuerySpec,
+      CargoFlowQuerySpec,
+      DispatchFlatQuerySpec,
+      OwnershipTransferFlatQuerySpec,
+      PhysicalTransferFlatQuerySpec,
+      ReconciliationFlatQuerySpec,
     },
     DocumentService,
   },

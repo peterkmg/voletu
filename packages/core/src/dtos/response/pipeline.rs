@@ -3,7 +3,11 @@ use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
 use crate::enums::{
-  AdjustmentType, DispatchMethod, DispatchPurpose, DocumentStatus, PipelineStatus,
+  AdjustmentType,
+  DispatchMethod,
+  DispatchPurpose,
+  DocumentStatus,
+  PipelineStatus,
 };
 
 #[response_dto]

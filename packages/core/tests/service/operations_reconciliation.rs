@@ -12,7 +12,8 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
-  setup_db, test_config,
+  setup_db,
+  test_config,
 };
 
 fn ts(value: &str) -> DateTime<Utc> {

@@ -6,8 +6,13 @@ use voletu_core::endpoints::paths as api_paths;
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
   http::{
-    assert_api_error, assert_api_success, delete, get, post_json,
-    setup_seeded_app_with_admin_token, with_auth_token,
+    assert_api_error,
+    assert_api_success,
+    delete,
+    get,
+    post_json,
+    setup_seeded_app_with_admin_token,
+    with_auth_token,
   },
   payloads::{ledger_query, sync_push_invalid_action},
 };

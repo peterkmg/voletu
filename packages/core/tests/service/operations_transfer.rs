@@ -6,8 +6,10 @@ use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   dtos::{
-    CreateOwnershipTransferRequest, CreatePhysicalTransferRequest,
-    OwnershipTransferItemCompositeRequest, PhysicalTransferItemCompositeRequest,
+    CreateOwnershipTransferRequest,
+    CreatePhysicalTransferRequest,
+    OwnershipTransferItemCompositeRequest,
+    PhysicalTransferItemCompositeRequest,
   },
   entities::{ownership_transfer, physical_storage_transfer},
   enums::DocumentStatus,
@@ -16,7 +18,8 @@ use voletu_core::{
 
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_ledger_balance},
-  setup_db, test_config,
+  setup_db,
+  test_config,
 };
 
 fn ts(value: &str) -> DateTime<Utc> {

@@ -1,5 +1,10 @@
 use sea_orm::{
-  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 

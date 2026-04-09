@@ -3,7 +3,14 @@ use uuid::Uuid;
 use voletu_core_macros::response_dto;
 
 use crate::entities::{
-  base, company, port, product, product_group, product_type, storage, warehouse,
+  base,
+  company,
+  port,
+  product,
+  product_group,
+  product_type,
+  storage,
+  warehouse,
 };
 
 /// Response DTO for the `company` entity.

@@ -4,12 +4,22 @@ use voletu_core::endpoints::paths as api_paths;
 
 use crate::common::{
   http::{
-    assert_api_error, assert_api_success, get, post_json, setup_seeded_app_with_admin_token,
+    assert_api_error,
+    assert_api_success,
+    get,
+    post_json,
+    setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{
-    catalog_base, catalog_company, catalog_port, catalog_product, catalog_product_group,
-    catalog_product_type, catalog_storage, catalog_warehouse,
+    catalog_base,
+    catalog_company,
+    catalog_port,
+    catalog_product,
+    catalog_product_group,
+    catalog_product_type,
+    catalog_storage,
+    catalog_warehouse,
   },
 };
 

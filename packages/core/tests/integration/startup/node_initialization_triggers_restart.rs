@@ -15,7 +15,10 @@ use uuid::Uuid;
 
 use crate::common::{
   integration::{
-    spawn_server_with_sync_config, temp_db_path, test_sync_config, wait_for_health,
+    spawn_server_with_sync_config,
+    temp_db_path,
+    test_sync_config,
+    wait_for_health,
     wait_for_login_token,
   },
   payloads::{auth_login, node_initialize_replace_with_node_type},

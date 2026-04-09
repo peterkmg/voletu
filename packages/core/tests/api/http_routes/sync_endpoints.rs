@@ -9,10 +9,17 @@ const INITIAL_AUDIT_CURSOR: Uuid = Uuid::from_u128(1);
 use crate::common::{
   catalog_seed::{seed_inventory_catalog, seed_sync_node},
   http::{
-    assert_api_error, assert_api_success, get, login_admin_token, post_json, with_auth_token,
+    assert_api_error,
+    assert_api_success,
+    get,
+    login_admin_token,
+    post_json,
+    with_auth_token,
   },
   payloads::{sync_push_insert_company, sync_watermark_upsert},
-  setup_db, test_api_state_with_default_restart_controls, test_config_for_db,
+  setup_db,
+  test_api_state_with_default_restart_controls,
+  test_config_for_db,
 };
 
 #[tokio::test]

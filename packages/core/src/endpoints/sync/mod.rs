@@ -14,8 +14,12 @@ use validator::Validate;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
-    AuditLogResponse, PullAuditLogsResponse, PushAuditLogRequest, PushAuditLogsRequest,
-    PushAuditLogsResponse, SyncWatermarkResponse,
+    AuditLogResponse,
+    PullAuditLogsResponse,
+    PushAuditLogRequest,
+    PushAuditLogsRequest,
+    PushAuditLogsResponse,
+    SyncWatermarkResponse,
   },
   endpoints::paths,
   enums::SyncDirection,

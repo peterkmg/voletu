@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
 use sea_orm::{
-  ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityLoaderTrait, EntityTrait, QueryFilter,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  EntityLoaderTrait,
+  EntityTrait,
+  QueryFilter,
 };
 use uuid::Uuid;
 use voletu_core::{
@@ -9,7 +14,10 @@ use voletu_core::{
   context::audit::with_audit_context,
   db::seed_defaults,
   dtos::{
-    ChangePasswordRequest, CompleteInitializationRequest, CreateUserRequest, LoginRequest,
+    ChangePasswordRequest,
+    CompleteInitializationRequest,
+    CreateUserRequest,
+    LoginRequest,
     UpdateUserRequest,
   },
   entities::{database_instance, local, node_base_assignment, refresh_token, user},
@@ -246,29 +254,23 @@ async fn user_lifecycle_mutations_only_touch_local_users_and_restore_cleanly() {
       .unwrap();
 
     let remote_update = service
-      .user_update(
-        remote_user_id,
-        &UpdateUserRequest {
-          username: Some("remote-edit-2".to_string()),
-          fullname: None,
-          password: None,
-          role_name: None,
-        },
-      )
+      .user_update(remote_user_id, &UpdateUserRequest {
+        username: Some("remote-edit-2".to_string()),
+        fullname: None,
+        password: None,
+        role_name: None,
+      })
       .await
       .unwrap_err();
     assert!(matches!(remote_update, ApiError::NotFound(_)));
 
     let updated_user = service
-      .user_update(
-        created_user.id,
-        &UpdateUserRequest {
-          username: Some("local-edit-updated".to_string()),
-          fullname: Some("Local Edit Updated".to_string()),
-          password: Some("local-pass-new".to_string()),
-          role_name: Some("admin".to_string()),
-        },
-      )
+      .user_update(created_user.id, &UpdateUserRequest {
+        username: Some("local-edit-updated".to_string()),
+        fullname: Some("Local Edit Updated".to_string()),
+        password: Some("local-pass-new".to_string()),
+        role_name: Some("admin".to_string()),
+      })
       .await
       .unwrap();
     assert_eq!(updated_user.username, "local-edit-updated");

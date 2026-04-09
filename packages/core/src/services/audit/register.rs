@@ -1,5 +1,10 @@
 use sea_orm::{
-  ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityName, ModelTrait,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  ConnectionTrait,
+  EntityName,
+  ModelTrait,
   QueryFilter,
 };
 use serde::Serialize;

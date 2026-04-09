@@ -1,6 +1,12 @@
 use sea_orm::{
-  entity::prelude::*, ColumnTrait, Condition, ConnectionTrait, EntityLoaderTrait, QueryFilter,
-  QueryOrder, TransactionTrait,
+  entity::prelude::*,
+  ColumnTrait,
+  Condition,
+  ConnectionTrait,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -8,8 +14,14 @@ use crate::{
   api::ApiError,
   dtos::{self, response::pipeline::RailReceiptPipelineResponse},
   entities::{
-    acceptance_document, acceptance_item, company, product, rail_wagon_manifest,
-    rail_wagon_measurement, rail_wagon_weight, rail_waybill,
+    acceptance_document,
+    acceptance_item,
+    company,
+    product,
+    rail_wagon_manifest,
+    rail_wagon_measurement,
+    rail_wagon_weight,
+    rail_waybill,
   },
   enums::PipelineStatus,
   services::{

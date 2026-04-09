@@ -10,10 +10,16 @@ use uuid::Uuid;
 
 use super::parse_doc_id;
 use crate::common::integration::{
-  add_base_assignment_via_api, await_sync_cycle, create_acceptance_via_api,
-  create_physical_transfer_via_api, get_acceptance_composite_json,
-  get_physical_transfer_composite_json, seed_catalog_via_api, setup_central_via_api,
-  setup_peripheral_via_api, temp_db_path,
+  add_base_assignment_via_api,
+  await_sync_cycle,
+  create_acceptance_via_api,
+  create_physical_transfer_via_api,
+  get_acceptance_composite_json,
+  get_physical_transfer_composite_json,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
 };
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
@@ -25,26 +31,17 @@ async fn three_peripheral_convergence_with_overlapping_bases() {
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
   // P1: alpha only, P2: beta only, P3: alpha+beta
-  let p1 = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r19-p1"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let p1 = setup_peripheral_via_api(&client, &temp_db_path("r19-p1"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
-  let p2 = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r19-p2"),
-    &central,
-    &[catalog.base_beta],
-  )
+  let p2 = setup_peripheral_via_api(&client, &temp_db_path("r19-p2"), &central, &[
+    catalog.base_beta
+  ])
   .await;
-  let p3 = setup_peripheral_via_api(
-    &client,
-    &temp_db_path("r19-p3"),
-    &central,
-    &[catalog.base_alpha],
-  )
+  let p3 = setup_peripheral_via_api(&client, &temp_db_path("r19-p3"), &central, &[
+    catalog.base_alpha
+  ])
   .await;
   add_base_assignment_via_api(&client, &p3.url, &p3.token, catalog.base_beta).await;
 

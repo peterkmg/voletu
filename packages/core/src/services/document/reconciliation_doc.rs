@@ -1,5 +1,9 @@
 use sea_orm::{
-  entity::prelude::Decimal, ColumnTrait, ConnectionTrait, EntityLoaderTrait, IntoActiveModel,
+  entity::prelude::Decimal,
+  ColumnTrait,
+  ConnectionTrait,
+  EntityLoaderTrait,
+  IntoActiveModel,
   QueryFilter,
 };
 use uuid::Uuid;

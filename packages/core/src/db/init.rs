@@ -1,6 +1,11 @@
 use sea_orm::{
-  entity::prelude::ChronoUtc, ActiveModelTrait, ActiveValue::Set, ConnectOptions, Database,
-  DatabaseConnection, TransactionTrait,
+  entity::prelude::ChronoUtc,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ConnectOptions,
+  Database,
+  DatabaseConnection,
+  TransactionTrait,
 };
 use strum::VariantArray;
 use tracing::{debug, log::LevelFilter, trace};
@@ -13,7 +18,8 @@ use crate::{
   entities::{database_instance, local, role, user},
   enums,
   services::system::{
-    database_instance::load_active_database_instance, local::load_local_bootstrap,
+    database_instance::load_active_database_instance,
+    local::load_local_bootstrap,
   },
   utils::{jwt, password::hash_password, paths::ensure_parent_dir},
 };

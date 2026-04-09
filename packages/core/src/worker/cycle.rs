@@ -6,7 +6,10 @@ use crate::{
   api::ApiError,
   config::SyncConfig,
   dtos::{
-    PullAuditLogsResponse, PushAuditLogRequest, PushAuditLogsRequest, PushAuditLogsResponse,
+    PullAuditLogsResponse,
+    PushAuditLogRequest,
+    PushAuditLogsRequest,
+    PushAuditLogsResponse,
     SyncStatusResponse,
   },
   enums::SyncDirection,

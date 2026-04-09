@@ -11,10 +11,17 @@ use uuid::Uuid;
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
-    CreateTruckWaybillItemRequest, CreateTruckWaybillRequest, CreateTruckWeightDocRequest,
-    TruckWaybillCompositeRequest, TruckWaybillCompositeResponse, TruckWaybillItemResponse,
-    TruckWaybillResponse, TruckWeightDocResponse, UpdateTruckWaybillItemRequest,
-    UpdateTruckWaybillRequest, UpdateTruckWeightDocRequest,
+    CreateTruckWaybillItemRequest,
+    CreateTruckWaybillRequest,
+    CreateTruckWeightDocRequest,
+    TruckWaybillCompositeRequest,
+    TruckWaybillCompositeResponse,
+    TruckWaybillItemResponse,
+    TruckWaybillResponse,
+    TruckWeightDocResponse,
+    UpdateTruckWaybillItemRequest,
+    UpdateTruckWaybillRequest,
+    UpdateTruckWeightDocRequest,
   },
   endpoints::{
     paths,

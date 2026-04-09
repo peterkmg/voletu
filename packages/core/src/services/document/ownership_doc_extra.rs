@@ -1,15 +1,22 @@
 use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
-  ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder, TransactionTrait,
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::OwnershipTransferFlatRow, CreateOwnershipTransferItemRequest,
-    CreateOwnershipTransferRequest, OwnershipTransferResponse,
+    response::pipeline::OwnershipTransferFlatRow,
+    CreateOwnershipTransferItemRequest,
+    CreateOwnershipTransferRequest,
+    OwnershipTransferResponse,
   },
   entities::{company, ownership_transfer, ownership_transfer_item, product, storage},
   services::document::{

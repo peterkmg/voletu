@@ -7,8 +7,12 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
   dtos::{
-    ChangePasswordRequest, CompleteInitializationRequest, LoginRequest, LoginResponse,
-    RefreshTokenRequest, UserResponse,
+    ChangePasswordRequest,
+    CompleteInitializationRequest,
+    LoginRequest,
+    LoginResponse,
+    RefreshTokenRequest,
+    UserResponse,
   },
   endpoints::paths,
   utils::{jwt::Claims, lifecycle::request_restart},

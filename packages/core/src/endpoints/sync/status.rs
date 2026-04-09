@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
-use super::*;
 use reqwest::Client;
 use uuid::Uuid;
 
+use super::*;
 use crate::{
   api::ApiError,
   dtos::{SyncStatusResponse, SyncWatermarkResponse},
   enums::SyncDirection,
-  services::sync::helpers::compute_base_discriminant,
-  services::system::node_bases::load_node_base_ids,
+  services::{sync::helpers::compute_base_discriminant, system::node_bases::load_node_base_ids},
   utils::http::get_api_json,
 };
 

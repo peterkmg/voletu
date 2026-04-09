@@ -6,11 +6,17 @@ use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entr
 use super::seed_inventory_context;
 use crate::common::{
   http::{
-    assert_api_success, get, post_empty, post_json, setup_seeded_app_with_admin_token,
+    assert_api_success,
+    get,
+    post_empty,
+    post_json,
+    setup_seeded_app_with_admin_token,
     with_auth_token,
   },
   payloads::{
-    acceptance_composite_save, acceptance_composite_save_and_execute, transport_truck_waybill,
+    acceptance_composite_save,
+    acceptance_composite_save_and_execute,
+    transport_truck_waybill,
   },
 };
 
