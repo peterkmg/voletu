@@ -108,7 +108,13 @@ pub use request::{
     UpdateTruckWeightDocRequest,
   },
   ledger::LedgerEntryLookupRequest,
-  sync::UpsertWatermarkRequest,
+  sync::{
+    AwaitCycleQueryRequest,
+    OutboundLogsQueryRequest,
+    PullAuditLogsQueryRequest,
+    SyncStatusQueryRequest,
+    UpsertWatermarkRequest,
+  },
   system::{
     AddBaseAssignmentRequest,
     ChangePasswordRequest,
@@ -165,12 +171,21 @@ pub use response::{
     TruckDispatchPipelineResponse,
     TruckReceiptPipelineResponse,
   },
-  sync::{PullAuditLogsResponse, PushAuditLogsResponse, SyncStatusResponse, SyncWatermarkResponse},
+  sync::{
+    AwaitCycleResponse,
+    PullAuditLogsResponse,
+    PushAuditLogsResponse,
+    SyncStatusResponse,
+    SyncWatermarkResponse,
+  },
   system::{
     BaseAssignmentResponse,
     DatabaseInstanceResponse,
+    HealthData,
     LocalResponse,
     LoginResponse,
+    NodeStatusResponse,
+    OperationMessageResponse,
     RefreshTokenResponse,
     RoleResponse,
     UserResponse,
@@ -196,6 +211,43 @@ mod tests {
       direction: crate::enums::SyncDirection::Push,
       last_audit_log_id: Uuid::nil(),
       base_discriminant: None,
+    };
+    let _ = crate::dtos::OutboundLogsQueryRequest {
+      after_audit_log_id: Uuid::nil(),
+      limit: Some(50),
+    };
+    let _ = crate::dtos::PullAuditLogsQueryRequest {
+      last_audit_log_id: Uuid::nil(),
+      base_ids: Some(format!("{},{}", Uuid::nil(), Uuid::nil())),
+      limit: Some(25),
+    };
+    let _ = crate::dtos::SyncStatusQueryRequest {
+      base_ids: Some(Uuid::nil().to_string()),
+    };
+    let _ = crate::dtos::AwaitCycleQueryRequest {
+      timeout: Some(15),
+      since: Some("2026-01-01T00:00:00Z".into()),
+    };
+    let _ = crate::dtos::AwaitCycleResponse {
+      worker_state: "OnlineIdle".into(),
+      last_sync_at: Some("2026-01-01T00:00:00Z".into()),
+      completed: true,
+    };
+    let _ = crate::dtos::OperationMessageResponse {
+      message: "ok".into(),
+    };
+    let _ = crate::dtos::HealthData {
+      status: "ok".into(),
+      is_initialized: true,
+      node_type: "CENTRAL".into(),
+      node_name: "Node".into(),
+    };
+    let _ = crate::dtos::NodeStatusResponse {
+      is_initialized: true,
+      node_type: "PERIPHERAL".into(),
+      node_name: "Node".into(),
+      worker_state: "OnlineIdle".into(),
+      last_sync_at: None,
     };
   }
 }

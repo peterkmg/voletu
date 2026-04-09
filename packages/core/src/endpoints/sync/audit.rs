@@ -1,18 +1,5 @@
 use super::*;
-use crate::services::sync::query::OutboundAuditLogsQuerySpec;
-
-#[derive(Debug, Deserialize, Validate, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct OutboundLogsQuery {
-  after_audit_log_id: Uuid,
-  limit: Option<u64>,
-}
-
-impl From<OutboundLogsQuery> for OutboundAuditLogsQuerySpec {
-  fn from(query: OutboundLogsQuery) -> Self {
-    Self::new(query.after_audit_log_id, query.limit)
-  }
-}
+use crate::dtos::OutboundLogsQueryRequest;
 
 #[utoipa::path(
   get,
@@ -51,7 +38,7 @@ async fn audit_log_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<Aud
 #[axum::debug_handler]
 async fn outbound_log_list(
   State(state): State<Arc<ApiState>>,
-  Valid(Query(req)): Valid<Query<OutboundLogsQuery>>,
+  Valid(Query(req)): Valid<Query<OutboundLogsQueryRequest>>,
 ) -> ApiResult<Vec<PushAuditLogRequest>> {
   Ok(ApiResponse::success(
     state.svc.sync.outbound_logs(req.into()).await?,

@@ -1,23 +1,14 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use axum::{extract::State, Json};
-use serde::Serialize;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiState},
+  dtos::HealthData,
   endpoints::paths,
   services::system::database_instance::load_active_database_instance,
 };
-
-#[derive(Debug, Serialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct HealthData {
-  pub status: String,
-  pub is_initialized: bool,
-  pub node_type: String,
-  pub node_name: String,
-}
 
 #[utoipa::path(
   get,

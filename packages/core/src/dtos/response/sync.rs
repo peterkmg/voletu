@@ -79,3 +79,11 @@ pub struct PullAuditLogsResponse {
   pub highest_evaluated_id: Uuid,
   pub logs: Vec<crate::dtos::AuditLogResponse>,
 }
+
+/// Functional DTO returned by the sync await-cycle endpoint.
+#[response_dto]
+pub struct AwaitCycleResponse {
+  pub worker_state: String,
+  pub last_sync_at: Option<String>,
+  pub completed: bool,
+}

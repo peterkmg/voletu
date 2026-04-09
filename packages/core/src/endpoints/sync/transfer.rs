@@ -1,40 +1,5 @@
 use super::*;
-use crate::services::sync::query::PullAuditLogsQuerySpec;
-
-#[derive(Debug, Deserialize, Validate, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct PullAuditLogsQuery {
-  last_audit_log_id: Uuid,
-  /// Comma-separated base UUIDs the requesting node handles. Empty = catalog-only sync.
-  #[serde(default)]
-  base_ids: Option<String>,
-  limit: Option<u64>,
-}
-
-impl PullAuditLogsQuery {
-  fn parse_base_ids(&self) -> Vec<Uuid> {
-    self
-      .base_ids
-      .as_deref()
-      .unwrap_or("")
-      .split(',')
-      .filter_map(|s| {
-        let trimmed = s.trim();
-        if trimmed.is_empty() {
-          None
-        } else {
-          Uuid::try_parse(trimmed).ok()
-        }
-      })
-      .collect()
-  }
-}
-
-impl From<PullAuditLogsQuery> for PullAuditLogsQuerySpec {
-  fn from(query: PullAuditLogsQuery) -> Self {
-    Self::new(query.last_audit_log_id, query.parse_base_ids(), query.limit)
-  }
-}
+use crate::dtos::PullAuditLogsQueryRequest;
 
 #[utoipa::path(
   post,
@@ -79,7 +44,7 @@ async fn log_push(
 #[axum::debug_handler]
 async fn log_pull(
   State(state): State<Arc<ApiState>>,
-  Valid(Query(req)): Valid<Query<PullAuditLogsQuery>>,
+  Valid(Query(req)): Valid<Query<PullAuditLogsQueryRequest>>,
 ) -> ApiResult<PullAuditLogsResponse> {
   Ok(ApiResponse::success(
     state.svc.sync.pull_logs(req.into()).await?,

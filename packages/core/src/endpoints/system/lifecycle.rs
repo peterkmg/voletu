@@ -5,27 +5,12 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiError, ApiResponse, ApiResult, ApiState},
+  dtos::{NodeStatusResponse, OperationMessageResponse},
   endpoints::paths,
   enums::RoleType,
   services::system::database_instance::load_active_database_instance,
   utils::{jwt::Claims, lifecycle::request_restart},
 };
-
-#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct RestartResponse {
-  message: String,
-}
-
-#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct NodeStatusResponse {
-  is_initialized: bool,
-  node_type: String,
-  node_name: String,
-  worker_state: String,
-  last_sync_at: Option<String>,
-}
 
 #[utoipa::path(
   post,
@@ -35,7 +20,7 @@ struct NodeStatusResponse {
   description = "Triggers a controlled API restart signal. This endpoint is restricted to admin role.",
   path = paths::node::RESTART,
   responses(
-    (status = 200, description = "Restart initiated", body = ApiResponse<RestartResponse>),
+    (status = 200, description = "Restart initiated", body = ApiResponse<OperationMessageResponse>),
     (status = 403, description = "Forbidden envelope when caller role is not admin."),
     (status = 409, description = "Conflict envelope when a restart is already in progress.")
   )
@@ -44,7 +29,7 @@ struct NodeStatusResponse {
 async fn restart_api(
   State(state): State<Arc<ApiState>>,
   Extension(claims): Extension<Claims>,
-) -> ApiResult<RestartResponse> {
+) -> ApiResult<OperationMessageResponse> {
   let role: RoleType = claims
     .role
     .parse()
@@ -58,7 +43,7 @@ async fn restart_api(
 
   request_restart(&state.restart_tx)?;
 
-  Ok(ApiResponse::success(RestartResponse {
+  Ok(ApiResponse::success(OperationMessageResponse {
     message: "API restart initiated".to_string(),
   }))
 }

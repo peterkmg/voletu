@@ -11,24 +11,13 @@ use crate::{
     CompleteInitializationRequest,
     LoginRequest,
     LoginResponse,
+    OperationMessageResponse,
     RefreshTokenRequest,
     UserResponse,
   },
   endpoints::paths,
   utils::{jwt::Claims, lifecycle::request_restart},
 };
-
-#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct ChangePasswordResponse {
-  message: String,
-}
-
-#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct CompleteInitializationResponse {
-  message: String,
-}
 
 #[utoipa::path(
   post,
@@ -87,7 +76,7 @@ async fn refresh(
   path = paths::auth::CHANGE_PASSWORD,
   request_body = ChangePasswordRequest,
   responses(
-    (status = 200, description = "Password changed", body = ApiResponse<ChangePasswordResponse>),
+    (status = 200, description = "Password changed", body = ApiResponse<OperationMessageResponse>),
     (status = 401, description = "Unauthorized envelope when credentials or token are invalid.")
   )
 )]
@@ -95,9 +84,9 @@ async fn refresh(
 async fn change_password(
   State(state): State<Arc<ApiState>>,
   Valid(Json(req)): Valid<Json<ChangePasswordRequest>>,
-) -> ApiResult<ChangePasswordResponse> {
+) -> ApiResult<OperationMessageResponse> {
   state.svc.system.change_password(&req).await?;
-  Ok(ApiResponse::success(ChangePasswordResponse {
+  Ok(ApiResponse::success(OperationMessageResponse {
     message: "Password changed".to_string(),
   }))
 }
@@ -111,7 +100,7 @@ async fn change_password(
   path = paths::node::INITIALIZE,
   request_body = CompleteInitializationRequest,
   responses(
-    (status = 200, description = "Initialization completed", body = ApiResponse<CompleteInitializationResponse>),
+    (status = 200, description = "Initialization completed", body = ApiResponse<OperationMessageResponse>),
     (status = 400, description = "Validation error envelope for malformed payload."),
     (status = 401, description = "Unauthorized envelope for invalid credentials."),
     (status = 409, description = "Conflict envelope when initialization is already completed or current state disallows action.")
@@ -121,13 +110,13 @@ async fn change_password(
 async fn complete_initialization(
   State(state): State<Arc<ApiState>>,
   Valid(Json(req)): Valid<Json<CompleteInitializationRequest>>,
-) -> ApiResult<CompleteInitializationResponse> {
+) -> ApiResult<OperationMessageResponse> {
   state.svc.system.complete_initialization(&req).await?;
   state
     .is_initialized
     .store(true, std::sync::atomic::Ordering::Relaxed);
   request_restart(&state.restart_tx)?;
-  Ok(ApiResponse::success(CompleteInitializationResponse {
+  Ok(ApiResponse::success(OperationMessageResponse {
     message: "Initialization completed".to_string(),
   }))
 }

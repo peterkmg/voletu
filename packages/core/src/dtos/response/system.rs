@@ -70,6 +70,32 @@ pub struct BaseAssignmentResponse {
   pub base_id: Uuid,
 }
 
+/// Functional DTO used by command-style endpoints that only return a status
+/// message.
+#[response_dto]
+pub struct OperationMessageResponse {
+  pub message: String,
+}
+
+/// Functional DTO returned by the health endpoint.
+#[response_dto]
+pub struct HealthData {
+  pub status: String,
+  pub is_initialized: bool,
+  pub node_type: String,
+  pub node_name: String,
+}
+
+/// Functional DTO returned by the node status endpoint.
+#[response_dto]
+pub struct NodeStatusResponse {
+  pub is_initialized: bool,
+  pub node_type: String,
+  pub node_name: String,
+  pub worker_state: String,
+  pub last_sync_at: Option<String>,
+}
+
 impl TryFrom<&ModelEx> for UserResponse {
   type Error = anyhow::Error;
 

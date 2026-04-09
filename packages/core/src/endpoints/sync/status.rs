@@ -6,7 +6,13 @@ use uuid::Uuid;
 use super::*;
 use crate::{
   api::ApiError,
-  dtos::{SyncStatusResponse, SyncWatermarkResponse},
+  dtos::{
+    AwaitCycleQueryRequest,
+    AwaitCycleResponse,
+    SyncStatusQueryRequest,
+    SyncStatusResponse,
+    SyncWatermarkResponse,
+  },
   enums::SyncDirection,
   services::{
     sync::{helpers::compute_base_discriminant, query::SyncStatusQuerySpec},
@@ -14,40 +20,6 @@ use crate::{
   },
   utils::http::get_api_json,
 };
-
-#[derive(Debug, Deserialize, Validate, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct SyncStatusQuery {
-  /// Comma-separated base UUIDs the caller handles. Absent or empty means
-  /// catalog-only scope.
-  #[serde(default)]
-  base_ids: Option<String>,
-}
-
-impl SyncStatusQuery {
-  fn parse_base_ids(&self) -> Vec<Uuid> {
-    self
-      .base_ids
-      .as_deref()
-      .unwrap_or("")
-      .split(',')
-      .filter_map(|s| {
-        let trimmed = s.trim();
-        if trimmed.is_empty() {
-          None
-        } else {
-          Uuid::try_parse(trimmed).ok()
-        }
-      })
-      .collect()
-  }
-}
-
-impl From<SyncStatusQuery> for SyncStatusQuerySpec {
-  fn from(query: SyncStatusQuery) -> Self {
-    Self::new(query.parse_base_ids())
-  }
-}
 
 #[utoipa::path(
   get,
@@ -66,31 +38,11 @@ impl From<SyncStatusQuery> for SyncStatusQuerySpec {
 #[axum::debug_handler]
 async fn sync_status(
   State(state): State<Arc<ApiState>>,
-  Valid(Query(req)): Valid<Query<SyncStatusQuery>>,
+  Valid(Query(req)): Valid<Query<SyncStatusQueryRequest>>,
 ) -> ApiResult<SyncStatusResponse> {
   Ok(ApiResponse::success(
     state.svc.sync.sync_status(req.into()).await?,
   ))
-}
-
-#[derive(Debug, Deserialize, Validate, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct AwaitCycleQuery {
-  /// Maximum time to wait in seconds (default: 15, max: 60).
-  #[validate(range(min = 1, max = 60))]
-  timeout: Option<u64>,
-  /// If provided, return immediately if last_sync_at is already after this timestamp.
-  /// Format: RFC 3339 (e.g., "2026-01-01T00:00:00Z").
-  since: Option<String>,
-}
-
-/// Response shape for the await-cycle endpoint.
-#[derive(Debug, serde::Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-struct AwaitCycleResponse {
-  worker_state: String,
-  last_sync_at: Option<String>,
-  completed: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -235,7 +187,7 @@ async fn fence_satisfied(
 #[axum::debug_handler]
 async fn sync_await_cycle(
   State(state): State<Arc<ApiState>>,
-  Valid(Query(query)): Valid<Query<AwaitCycleQuery>>,
+  Valid(Query(query)): Valid<Query<AwaitCycleQueryRequest>>,
 ) -> ApiResult<AwaitCycleResponse> {
   let timeout_secs = query.timeout.unwrap_or(15);
 
