@@ -3,14 +3,7 @@
 //! Called during audit log registration to populate `target_base_ids`.
 //! Resolution chain: entity → storage_id → storage.warehouse_id → warehouse.base_id
 
-use sea_orm::{
-  ColumnTrait,
-  ConnectionTrait,
-  EntityLoaderTrait,
-  EntityName,
-  ModelTrait,
-  QueryFilter,
-};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -42,38 +35,8 @@ use crate::{
     user,
     warehouse,
   },
-  enums::RoleType,
+  enums::{AuditTable, RoleType},
 };
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AuditTable {
-  AcceptanceItems,
-  DispatchItems,
-  BlendingComponents,
-  BlendingResults,
-  OwnershipTransferItems,
-  InventoryAdjustments,
-  PhysicalTransferItems,
-  AcceptanceDocuments,
-  DispatchDocuments,
-  PhysicalStorageTransfers,
-  OwnershipTransfers,
-  BlendingDocuments,
-  InventoryReconciliations,
-  Storages,
-  Warehouses,
-  Bases,
-  TruckWaybills,
-  RailWaybills,
-  TruckWaybillItems,
-  TruckWeightDocs,
-  RailWagonManifests,
-  RailWagonMeasurements,
-  RailWagonWeights,
-  DispatchStorageMeasurements,
-  InventoryLedgerEntries,
-  Broadcast,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuditTableCategory {
@@ -97,76 +60,59 @@ pub enum TransportRouteKind {
   RailWagonWeight,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DocumentHeaderRouteKind {
+  Acceptance,
+  Dispatch,
+  PhysicalTransfer,
+  OwnershipTransfer,
+  Blending,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReferenceRouteKind {
+  Storage,
+  Warehouse,
+  Base,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StorageItemRouteKind {
+  SingleStorage,
+  PhysicalTransfer,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AuditRouteProfile {
+  pub category: AuditTableCategory,
+  pub storage_item: Option<StorageItemRouteKind>,
+  pub document_header: Option<DocumentHeaderRouteKind>,
+  pub reference: Option<ReferenceRouteKind>,
+  pub transport: Option<TransportRouteKind>,
+}
+
 impl AuditTable {
-  pub fn from_table_name(table_name: &str) -> Self {
-    match table_name {
-      "acceptance_items" => Self::AcceptanceItems,
-      "dispatch_items" => Self::DispatchItems,
-      "blending_components" => Self::BlendingComponents,
-      "blending_results" => Self::BlendingResults,
-      "ownership_transfer_items" => Self::OwnershipTransferItems,
-      "inventory_adjustments" => Self::InventoryAdjustments,
-      "physical_transfer_items" => Self::PhysicalTransferItems,
-      "acceptance_documents" => Self::AcceptanceDocuments,
-      "dispatch_documents" => Self::DispatchDocuments,
-      "physical_storage_transfers" => Self::PhysicalStorageTransfers,
-      "ownership_transfers" => Self::OwnershipTransfers,
-      "blending_documents" => Self::BlendingDocuments,
-      "inventory_reconciliations" => Self::InventoryReconciliations,
-      "storages" => Self::Storages,
-      "warehouses" => Self::Warehouses,
-      "bases" => Self::Bases,
-      "truck_waybills" => Self::TruckWaybills,
-      "rail_waybills" => Self::RailWaybills,
-      "truck_waybill_items" => Self::TruckWaybillItems,
-      "truck_weight_docs" => Self::TruckWeightDocs,
-      "rail_wagon_manifests" => Self::RailWagonManifests,
-      "rail_wagon_measurements" => Self::RailWagonMeasurements,
-      "rail_wagon_weights" => Self::RailWagonWeights,
-      "dispatch_storage_measurements" => Self::DispatchStorageMeasurements,
-      "inventory_ledger_entries" => Self::InventoryLedgerEntries,
-      _ => Self::Broadcast,
-    }
-  }
-
-  pub fn for_model<M: ModelTrait>() -> Self {
-    Self::from_table_name(<<M as ModelTrait>::Entity as EntityName>::table_name(
-      &Default::default(),
-    ))
-  }
-
-  pub fn table_name(self) -> &'static str {
-    match self {
-      Self::AcceptanceItems => "acceptance_items",
-      Self::DispatchItems => "dispatch_items",
-      Self::BlendingComponents => "blending_components",
-      Self::BlendingResults => "blending_results",
-      Self::OwnershipTransferItems => "ownership_transfer_items",
-      Self::InventoryAdjustments => "inventory_adjustments",
-      Self::PhysicalTransferItems => "physical_transfer_items",
-      Self::AcceptanceDocuments => "acceptance_documents",
-      Self::DispatchDocuments => "dispatch_documents",
-      Self::PhysicalStorageTransfers => "physical_storage_transfers",
-      Self::OwnershipTransfers => "ownership_transfers",
-      Self::BlendingDocuments => "blending_documents",
-      Self::InventoryReconciliations => "inventory_reconciliations",
-      Self::Storages => "storages",
-      Self::Warehouses => "warehouses",
-      Self::Bases => "bases",
-      Self::TruckWaybills => "truck_waybills",
-      Self::RailWaybills => "rail_waybills",
-      Self::TruckWaybillItems => "truck_waybill_items",
-      Self::TruckWeightDocs => "truck_weight_docs",
-      Self::RailWagonManifests => "rail_wagon_manifests",
-      Self::RailWagonMeasurements => "rail_wagon_measurements",
-      Self::RailWagonWeights => "rail_wagon_weights",
-      Self::DispatchStorageMeasurements => "dispatch_storage_measurements",
-      Self::InventoryLedgerEntries => "inventory_ledger_entries",
-      Self::Broadcast => "",
-    }
-  }
-
   pub fn category(self) -> AuditTableCategory {
+    self.route_profile().category
+  }
+
+  pub fn transport_route_kind(self) -> Option<TransportRouteKind> {
+    self.route_profile().transport
+  }
+
+  pub fn document_header_route_kind(self) -> Option<DocumentHeaderRouteKind> {
+    self.route_profile().document_header
+  }
+
+  pub fn reference_route_kind(self) -> Option<ReferenceRouteKind> {
+    self.route_profile().reference
+  }
+
+  pub fn storage_item_route_kind(self) -> Option<StorageItemRouteKind> {
+    self.route_profile().storage_item
+  }
+
+  pub fn route_profile(self) -> AuditRouteProfile {
     match self {
       Self::AcceptanceItems
       | Self::DispatchItems
@@ -174,37 +120,157 @@ impl AuditTable {
       | Self::BlendingResults
       | Self::OwnershipTransferItems
       | Self::InventoryAdjustments
-      | Self::PhysicalTransferItems
-      | Self::InventoryLedgerEntries => AuditTableCategory::StorageItems,
-      Self::AcceptanceDocuments
-      | Self::DispatchDocuments
-      | Self::PhysicalStorageTransfers
-      | Self::OwnershipTransfers
-      | Self::BlendingDocuments => AuditTableCategory::DocumentHeaders,
-      Self::InventoryReconciliations => AuditTableCategory::Reconciliation,
-      Self::Storages | Self::Warehouses | Self::Bases => AuditTableCategory::References,
-      Self::TruckWaybills
-      | Self::RailWaybills
-      | Self::TruckWaybillItems
-      | Self::TruckWeightDocs
-      | Self::RailWagonManifests
-      | Self::RailWagonMeasurements
-      | Self::RailWagonWeights => AuditTableCategory::Transport,
-      Self::DispatchStorageMeasurements => AuditTableCategory::DispatchMeasurements,
-      Self::Broadcast => AuditTableCategory::Broadcast,
-    }
-  }
-
-  pub fn transport_route_kind(self) -> Option<TransportRouteKind> {
-    match self {
-      Self::TruckWaybills => Some(TransportRouteKind::TruckWaybill),
-      Self::RailWaybills => Some(TransportRouteKind::RailWaybill),
-      Self::TruckWaybillItems => Some(TransportRouteKind::TruckWaybillItem),
-      Self::TruckWeightDocs => Some(TransportRouteKind::TruckWeightDoc),
-      Self::RailWagonManifests => Some(TransportRouteKind::RailWagonManifest),
-      Self::RailWagonMeasurements => Some(TransportRouteKind::RailWagonMeasurement),
-      Self::RailWagonWeights => Some(TransportRouteKind::RailWagonWeight),
-      _ => None,
+      | Self::InventoryLedgerEntries => AuditRouteProfile {
+        category: AuditTableCategory::StorageItems,
+        storage_item: Some(StorageItemRouteKind::SingleStorage),
+        document_header: None,
+        reference: None,
+        transport: None,
+      },
+      Self::PhysicalTransferItems => AuditRouteProfile {
+        category: AuditTableCategory::StorageItems,
+        storage_item: Some(StorageItemRouteKind::PhysicalTransfer),
+        document_header: None,
+        reference: None,
+        transport: None,
+      },
+      Self::AcceptanceDocuments => AuditRouteProfile {
+        category: AuditTableCategory::DocumentHeaders,
+        storage_item: None,
+        document_header: Some(DocumentHeaderRouteKind::Acceptance),
+        reference: None,
+        transport: None,
+      },
+      Self::DispatchDocuments => AuditRouteProfile {
+        category: AuditTableCategory::DocumentHeaders,
+        storage_item: None,
+        document_header: Some(DocumentHeaderRouteKind::Dispatch),
+        reference: None,
+        transport: None,
+      },
+      Self::PhysicalStorageTransfers => AuditRouteProfile {
+        category: AuditTableCategory::DocumentHeaders,
+        storage_item: None,
+        document_header: Some(DocumentHeaderRouteKind::PhysicalTransfer),
+        reference: None,
+        transport: None,
+      },
+      Self::OwnershipTransfers => AuditRouteProfile {
+        category: AuditTableCategory::DocumentHeaders,
+        storage_item: None,
+        document_header: Some(DocumentHeaderRouteKind::OwnershipTransfer),
+        reference: None,
+        transport: None,
+      },
+      Self::BlendingDocuments => AuditRouteProfile {
+        category: AuditTableCategory::DocumentHeaders,
+        storage_item: None,
+        document_header: Some(DocumentHeaderRouteKind::Blending),
+        reference: None,
+        transport: None,
+      },
+      Self::InventoryReconciliations => AuditRouteProfile {
+        category: AuditTableCategory::Reconciliation,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: None,
+      },
+      Self::Storages => AuditRouteProfile {
+        category: AuditTableCategory::References,
+        storage_item: None,
+        document_header: None,
+        reference: Some(ReferenceRouteKind::Storage),
+        transport: None,
+      },
+      Self::Warehouses => AuditRouteProfile {
+        category: AuditTableCategory::References,
+        storage_item: None,
+        document_header: None,
+        reference: Some(ReferenceRouteKind::Warehouse),
+        transport: None,
+      },
+      Self::Bases => AuditRouteProfile {
+        category: AuditTableCategory::References,
+        storage_item: None,
+        document_header: None,
+        reference: Some(ReferenceRouteKind::Base),
+        transport: None,
+      },
+      Self::TruckWaybills => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::TruckWaybill),
+      },
+      Self::RailWaybills => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::RailWaybill),
+      },
+      Self::TruckWaybillItems => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::TruckWaybillItem),
+      },
+      Self::TruckWeightDocs => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::TruckWeightDoc),
+      },
+      Self::RailWagonManifests => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::RailWagonManifest),
+      },
+      Self::RailWagonMeasurements => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::RailWagonMeasurement),
+      },
+      Self::RailWagonWeights => AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::RailWagonWeight),
+      },
+      Self::DispatchStorageMeasurements => AuditRouteProfile {
+        category: AuditTableCategory::DispatchMeasurements,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: None,
+      },
+      Self::AuditLogs
+      | Self::Companies
+      | Self::DatabaseInstances
+      | Self::Local
+      | Self::Ports
+      | Self::ProductGroups
+      | Self::Products
+      | Self::ProductTypes
+      | Self::RefreshTokens
+      | Self::Roles
+      | Self::SyncWatermarks
+      | Self::Users => AuditRouteProfile {
+        category: AuditTableCategory::Broadcast,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: None,
+      },
     }
   }
 }
@@ -230,49 +296,28 @@ async fn resolve_target_base_ids_by_category<C: ConnectionTrait>(
   record_id: Uuid,
   new_values: Option<&Value>,
 ) -> Result<Vec<Uuid>, ApiError> {
-  match table {
-    AuditTable::AcceptanceItems
-    | AuditTable::DispatchItems
-    | AuditTable::BlendingComponents
-    | AuditTable::BlendingResults
-    | AuditTable::OwnershipTransferItems
-    | AuditTable::InventoryAdjustments
-    | AuditTable::PhysicalTransferItems
-    | AuditTable::InventoryLedgerEntries => {
+  match table.category() {
+    AuditTableCategory::StorageItems => {
       resolve_storage_item_bases(conn, table, record_id, new_values).await
     }
-
-    AuditTable::AcceptanceDocuments
-    | AuditTable::DispatchDocuments
-    | AuditTable::PhysicalStorageTransfers
-    | AuditTable::OwnershipTransfers
-    | AuditTable::BlendingDocuments => resolve_document_header_bases(conn, table, record_id).await,
-
-    AuditTable::InventoryReconciliations => {
+    AuditTableCategory::DocumentHeaders => {
+      resolve_document_header_bases(conn, table, record_id).await
+    }
+    AuditTableCategory::Reconciliation => {
       resolve_reconciliation_bases(conn, new_values, record_id).await
     }
-
-    AuditTable::Storages | AuditTable::Warehouses | AuditTable::Bases => {
+    AuditTableCategory::References => {
       resolve_reference_bases(conn, table, record_id, new_values).await
     }
-
-    AuditTable::TruckWaybills
-    | AuditTable::RailWaybills
-    | AuditTable::TruckWaybillItems
-    | AuditTable::TruckWeightDocs
-    | AuditTable::RailWagonManifests
-    | AuditTable::RailWagonMeasurements
-    | AuditTable::RailWagonWeights => {
+    AuditTableCategory::Transport => {
       resolve_transport_bases(conn, table, record_id, new_values).await
     }
-
     // --- Dispatch measurements: inherit from parent dispatch document ---
-    AuditTable::DispatchStorageMeasurements => {
+    AuditTableCategory::DispatchMeasurements => {
       resolve_dispatch_measurement_base(conn, new_values, record_id).await
     }
-
     // --- Global tables (catalog, system): broadcast to all ---
-    AuditTable::Broadcast => Ok(vec![]),
+    AuditTableCategory::Broadcast => Ok(vec![]),
   }
 }
 
@@ -429,25 +474,36 @@ async fn resolve_storage_item_bases<C: ConnectionTrait>(
   record_id: Uuid,
   new_values: Option<&Value>,
 ) -> Result<Vec<Uuid>, ApiError> {
-  match table {
-    AuditTable::PhysicalTransferItems => {
-      let mut bases = Vec::new();
-      bases.extend(resolve_via_storage(conn, new_values, "from_storage_id").await?);
-      bases.extend(resolve_via_storage(conn, new_values, "to_storage_id").await?);
-      Ok(dedupe_base_ids(bases))
+  match table.storage_item_route_kind() {
+    Some(StorageItemRouteKind::SingleStorage) => {
+      resolve_single_storage_item_bases(conn, record_id, new_values).await
     }
-    AuditTable::AcceptanceItems
-    | AuditTable::DispatchItems
-    | AuditTable::BlendingComponents
-    | AuditTable::BlendingResults
-    | AuditTable::OwnershipTransferItems
-    | AuditTable::InventoryAdjustments
-    | AuditTable::InventoryLedgerEntries => {
-      let _ = record_id;
-      resolve_via_storage(conn, new_values, "storage_id").await
+    Some(StorageItemRouteKind::PhysicalTransfer) => {
+      resolve_physical_transfer_item_bases(conn, record_id, new_values).await
     }
-    _ => unreachable!("non-storage-item table passed to resolve_storage_item_bases"),
+    None => unreachable!("non-storage-item table passed to resolve_storage_item_bases"),
   }
+}
+
+async fn resolve_single_storage_item_bases<C: ConnectionTrait>(
+  conn: &C,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  let _ = record_id;
+  resolve_via_storage(conn, new_values, "storage_id").await
+}
+
+async fn resolve_physical_transfer_item_bases<C: ConnectionTrait>(
+  conn: &C,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  let _ = record_id;
+  let mut bases = Vec::new();
+  bases.extend(resolve_via_storage(conn, new_values, "from_storage_id").await?);
+  bases.extend(resolve_via_storage(conn, new_values, "to_storage_id").await?);
+  Ok(dedupe_base_ids(bases))
 }
 
 async fn resolve_document_header_bases<C: ConnectionTrait>(
@@ -455,15 +511,19 @@ async fn resolve_document_header_bases<C: ConnectionTrait>(
   table: AuditTable,
   record_id: Uuid,
 ) -> Result<Vec<Uuid>, ApiError> {
-  match table {
-    AuditTable::AcceptanceDocuments => resolve_acceptance_doc_bases(conn, record_id).await,
-    AuditTable::DispatchDocuments => resolve_dispatch_doc_bases(conn, record_id).await,
-    AuditTable::PhysicalStorageTransfers => {
+  match table.document_header_route_kind() {
+    Some(DocumentHeaderRouteKind::Acceptance) => {
+      resolve_acceptance_doc_bases(conn, record_id).await
+    }
+    Some(DocumentHeaderRouteKind::Dispatch) => resolve_dispatch_doc_bases(conn, record_id).await,
+    Some(DocumentHeaderRouteKind::PhysicalTransfer) => {
       resolve_physical_transfer_doc_bases(conn, record_id).await
     }
-    AuditTable::OwnershipTransfers => resolve_ownership_doc_bases(conn, record_id).await,
-    AuditTable::BlendingDocuments => resolve_blending_doc_bases(conn, record_id).await,
-    _ => unreachable!("non-document-header table passed to resolve_document_header_bases"),
+    Some(DocumentHeaderRouteKind::OwnershipTransfer) => {
+      resolve_ownership_doc_bases(conn, record_id).await
+    }
+    Some(DocumentHeaderRouteKind::Blending) => resolve_blending_doc_bases(conn, record_id).await,
+    None => unreachable!("non-document-header table passed to resolve_document_header_bases"),
   }
 }
 
@@ -481,34 +541,50 @@ async fn resolve_reference_bases<C: ConnectionTrait>(
   record_id: Uuid,
   new_values: Option<&Value>,
 ) -> Result<Vec<Uuid>, ApiError> {
-  match table {
-    AuditTable::Storages => {
-      if let Some(warehouse_id) = extract_uuid_field(new_values, "warehouse_id") {
-        resolve_warehouse_to_base(conn, warehouse_id).await
-      } else {
-        match resolve_storage_to_base(conn, record_id).await? {
-          Some(base_id) => Ok(vec![base_id]),
-          None => Ok(vec![]),
-        }
-      }
+  match table.reference_route_kind() {
+    Some(ReferenceRouteKind::Storage) => {
+      resolve_storage_reference_bases(conn, record_id, new_values).await
     }
-    AuditTable::Warehouses => {
-      if let Some(base_id) = extract_uuid_field(new_values, "base_id") {
-        Ok(vec![base_id])
-      } else {
-        let warehouse: Option<warehouse::ModelEx> = warehouse::Entity::load()
-          .filter_by_id(record_id)
-          .one(conn)
-          .await?;
-        Ok(
-          warehouse
-            .map(|warehouse| vec![warehouse.base_id])
-            .unwrap_or_default(),
-        )
-      }
+    Some(ReferenceRouteKind::Warehouse) => {
+      resolve_warehouse_reference_bases(conn, record_id, new_values).await
     }
-    AuditTable::Bases => Ok(vec![record_id]),
-    _ => unreachable!("non-reference table passed to resolve_reference_bases"),
+    Some(ReferenceRouteKind::Base) => Ok(vec![record_id]),
+    None => unreachable!("non-reference table passed to resolve_reference_bases"),
+  }
+}
+
+async fn resolve_storage_reference_bases<C: ConnectionTrait>(
+  conn: &C,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  if let Some(warehouse_id) = extract_uuid_field(new_values, "warehouse_id") {
+    resolve_warehouse_to_base(conn, warehouse_id).await
+  } else {
+    match resolve_storage_to_base(conn, record_id).await? {
+      Some(base_id) => Ok(vec![base_id]),
+      None => Ok(vec![]),
+    }
+  }
+}
+
+async fn resolve_warehouse_reference_bases<C: ConnectionTrait>(
+  conn: &C,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  if let Some(base_id) = extract_uuid_field(new_values, "base_id") {
+    Ok(vec![base_id])
+  } else {
+    let warehouse: Option<warehouse::ModelEx> = warehouse::Entity::load()
+      .filter_by_id(record_id)
+      .one(conn)
+      .await?;
+    Ok(
+      warehouse
+        .map(|warehouse| vec![warehouse.base_id])
+        .unwrap_or_default(),
+    )
   }
 }
 
@@ -902,14 +978,22 @@ async fn resolve_dispatch_measurement_base<C: ConnectionTrait>(
 
 #[cfg(test)]
 mod tests {
-  use super::{AuditTable, AuditTableCategory, TransportRouteKind};
+  use super::{
+    AuditRouteProfile,
+    AuditTable,
+    AuditTableCategory,
+    DocumentHeaderRouteKind,
+    ReferenceRouteKind,
+    StorageItemRouteKind,
+    TransportRouteKind,
+  };
   use crate::entities::{dispatch_document, local};
 
   #[test]
   fn audit_tables_use_canonical_entity_names() {
     assert_eq!(
       AuditTable::for_model::<dispatch_document::Model>(),
-      AuditTable::DispatchDocuments
+      Some(AuditTable::DispatchDocuments)
     );
     assert_eq!(
       AuditTable::DispatchDocuments.table_name(),
@@ -918,12 +1002,9 @@ mod tests {
 
     assert_eq!(
       AuditTable::for_model::<local::Model>(),
-      AuditTable::Broadcast
+      Some(AuditTable::Local)
     );
-    assert_eq!(
-      AuditTable::from_table_name("unknown_table"),
-      AuditTable::Broadcast
-    );
+    assert_eq!(AuditTable::for_entity_name("unknown_table"), None);
   }
 
   #[test]
@@ -957,7 +1038,7 @@ mod tests {
       AuditTableCategory::DispatchMeasurements
     );
     assert_eq!(
-      AuditTable::Broadcast.category(),
+      AuditTable::Companies.category(),
       AuditTableCategory::Broadcast
     );
   }
@@ -993,5 +1074,112 @@ mod tests {
       Some(TransportRouteKind::RailWagonWeight)
     );
     assert_eq!(AuditTable::DispatchDocuments.transport_route_kind(), None);
+  }
+
+  #[test]
+  fn document_header_tables_map_into_concrete_route_kinds() {
+    assert_eq!(
+      AuditTable::AcceptanceDocuments.document_header_route_kind(),
+      Some(DocumentHeaderRouteKind::Acceptance)
+    );
+    assert_eq!(
+      AuditTable::DispatchDocuments.document_header_route_kind(),
+      Some(DocumentHeaderRouteKind::Dispatch)
+    );
+    assert_eq!(
+      AuditTable::PhysicalStorageTransfers.document_header_route_kind(),
+      Some(DocumentHeaderRouteKind::PhysicalTransfer)
+    );
+    assert_eq!(
+      AuditTable::OwnershipTransfers.document_header_route_kind(),
+      Some(DocumentHeaderRouteKind::OwnershipTransfer)
+    );
+    assert_eq!(
+      AuditTable::BlendingDocuments.document_header_route_kind(),
+      Some(DocumentHeaderRouteKind::Blending)
+    );
+    assert_eq!(AuditTable::Storages.document_header_route_kind(), None);
+  }
+
+  #[test]
+  fn reference_tables_map_into_concrete_route_kinds() {
+    assert_eq!(
+      AuditTable::Storages.reference_route_kind(),
+      Some(ReferenceRouteKind::Storage)
+    );
+    assert_eq!(
+      AuditTable::Warehouses.reference_route_kind(),
+      Some(ReferenceRouteKind::Warehouse)
+    );
+    assert_eq!(
+      AuditTable::Bases.reference_route_kind(),
+      Some(ReferenceRouteKind::Base)
+    );
+    assert_eq!(AuditTable::TruckWaybills.reference_route_kind(), None);
+  }
+
+  #[test]
+  fn storage_item_tables_map_into_concrete_route_kinds() {
+    assert_eq!(
+      AuditTable::AcceptanceItems.storage_item_route_kind(),
+      Some(StorageItemRouteKind::SingleStorage)
+    );
+    assert_eq!(
+      AuditTable::DispatchItems.storage_item_route_kind(),
+      Some(StorageItemRouteKind::SingleStorage)
+    );
+    assert_eq!(
+      AuditTable::PhysicalTransferItems.storage_item_route_kind(),
+      Some(StorageItemRouteKind::PhysicalTransfer)
+    );
+    assert_eq!(
+      AuditTable::InventoryLedgerEntries.storage_item_route_kind(),
+      Some(StorageItemRouteKind::SingleStorage)
+    );
+    assert_eq!(
+      AuditTable::DispatchDocuments.storage_item_route_kind(),
+      None
+    );
+  }
+
+  #[test]
+  fn route_profiles_expose_consistent_category_and_subroute_metadata() {
+    assert_eq!(
+      AuditTable::PhysicalTransferItems.route_profile(),
+      AuditRouteProfile {
+        category: AuditTableCategory::StorageItems,
+        storage_item: Some(StorageItemRouteKind::PhysicalTransfer),
+        document_header: None,
+        reference: None,
+        transport: None,
+      }
+    );
+    assert_eq!(
+      AuditTable::DispatchDocuments.route_profile(),
+      AuditRouteProfile {
+        category: AuditTableCategory::DocumentHeaders,
+        storage_item: None,
+        document_header: Some(DocumentHeaderRouteKind::Dispatch),
+        reference: None,
+        transport: None,
+      }
+    );
+    assert_eq!(AuditTable::Storages.route_profile(), AuditRouteProfile {
+      category: AuditTableCategory::References,
+      storage_item: None,
+      document_header: None,
+      reference: Some(ReferenceRouteKind::Storage),
+      transport: None,
+    });
+    assert_eq!(
+      AuditTable::RailWagonWeights.route_profile(),
+      AuditRouteProfile {
+        category: AuditTableCategory::Transport,
+        storage_item: None,
+        document_header: None,
+        reference: None,
+        transport: Some(TransportRouteKind::RailWagonWeight),
+      }
+    );
   }
 }

@@ -2,7 +2,7 @@ use uuid::{uuid, Uuid};
 use voletu_core_macros::enum_type;
 
 mod audit_table;
-pub(crate) use audit_table::AuditTable;
+pub use audit_table::AuditTable;
 
 #[enum_type]
 pub enum ArrivalType {

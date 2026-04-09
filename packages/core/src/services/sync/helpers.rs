@@ -1,7 +1,7 @@
 use sea_orm::{ColumnTrait, Condition};
 use serde_json::Value;
 
-use crate::{api::ApiError, entities::audit_log};
+use crate::{api::ApiError, entities::audit_log, enums::AuditTable};
 
 /// Compute a canonical "base discriminant" string for a set of base UUIDs.
 ///
@@ -20,12 +20,8 @@ pub fn compute_base_discriminant(base_ids: &[uuid::Uuid]) -> String {
 /// The set of audit-log `table_name` values that are never included in sync
 /// pulls regardless of scope. These are node-local control / config tables
 /// whose rows should never leave the node that owns them.
-pub fn excluded_sync_tables() -> Vec<String> {
-  vec![
-    "roles".to_string(),
-    "local".to_string(),
-    "node_base_assignments".to_string(),
-  ]
+pub fn excluded_sync_tables() -> Vec<AuditTable> {
+  AuditTable::sync_excluded_tables().to_vec()
 }
 
 /// Build the audit-log scope filter shared by `pull_logs` and `sync_status`.
@@ -42,22 +38,9 @@ pub fn excluded_sync_tables() -> Vec<String> {
 /// `tableName NOT IN excluded_sync_tables()` exclusion. This helper covers
 /// only the positive "what's in scope" part.
 pub fn scope_condition_for(base_ids: &[uuid::Uuid]) -> Condition {
-  let global_tables = [
-    "companies",
-    "products",
-    "product_groups",
-    "product_types",
-    "bases",
-    "warehouses",
-    "storages",
-    "ports",
-    "users",
-    "database_instances",
-  ];
-
   let mut cond = Condition::any().add(
     crate::entities::audit_log::Column::TableName
-      .is_in(global_tables.iter().map(|s| s.to_string())),
+      .is_in(AuditTable::sync_global_tables().iter().copied()),
   );
 
   for base_id in base_ids {
@@ -158,6 +141,7 @@ mod scope_condition_tests {
   use uuid::Uuid;
 
   use super::{excluded_sync_tables, scope_condition_for};
+  use crate::enums::AuditTable;
 
   /// Smoke test: the helper must compile, accept &[], and return a `Condition`.
   /// Structural assertions on `Condition` are impractical with SeaORM's public
@@ -183,8 +167,6 @@ mod scope_condition_tests {
   #[test]
   fn excluded_sync_tables_includes_expected_tables() {
     let excluded = excluded_sync_tables();
-    assert!(excluded.iter().any(|t| t == "roles"));
-    assert!(excluded.iter().any(|t| t == "local"));
-    assert!(excluded.iter().any(|t| t == "node_base_assignments"));
+    assert_eq!(excluded, vec![AuditTable::Local, AuditTable::Roles]);
   }
 }

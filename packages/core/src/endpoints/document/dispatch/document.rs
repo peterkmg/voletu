@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::DispatchDocumentQueryParams,
+  dtos::{DispatchDocumentQueryParams, EmbedParams, PaginationParams},
+  endpoints::paths,
   services::document::query::DispatchDocumentQuerySpec,
 };
 

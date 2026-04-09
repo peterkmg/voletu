@@ -16,6 +16,8 @@ use crate::{
     CreatePortRequest,
     CreateStorageRequest,
     CreateWarehouseRequest,
+    EmbedParams,
+    PaginationParams,
     PortResponse,
     StorageResponse,
     UpdateBaseRequest,
@@ -24,10 +26,7 @@ use crate::{
     UpdateWarehouseRequest,
     WarehouseResponse,
   },
-  endpoints::{
-    paths,
-    query::{EmbedParams, PaginationParams},
-  },
+  endpoints::paths,
 };
 
 mod base;

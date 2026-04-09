@@ -108,7 +108,29 @@ pub use request::{
     UpdateTruckWeightDocRequest,
   },
   ledger::LedgerEntryLookupRequest,
+  query::{
+    AcceptanceDocumentQueryParams,
+    AcceptanceFlatQueryParams,
+    BlendingDocumentQueryParams,
+    BlendingFlatQueryParams,
+    DispatchDocumentQueryParams,
+    DispatchFlatQueryParams,
+    EmbedParams,
+    OwnershipTransferDocumentQueryParams,
+    OwnershipTransferFlatQueryParams,
+    PaginationParams,
+    PhysicalTransferDocumentQueryParams,
+    PhysicalTransferFlatQueryParams,
+    RailReceiptPipelineQueryParams,
+    RailWaybillDocumentQueryParams,
+    ReconciliationDocumentQueryParams,
+    ReconciliationFlatQueryParams,
+    TruckDispatchPipelineQueryParams,
+    TruckReceiptPipelineQueryParams,
+    TruckWaybillDocumentQueryParams,
+  },
   sync::{
+    AuditLogQueryRequest,
     AwaitCycleQueryRequest,
     OutboundLogsQueryRequest,
     PullAuditLogsQueryRequest,
@@ -224,6 +246,28 @@ mod tests {
     };
     let _ = crate::dtos::SyncStatusQueryRequest {
       base_ids: Some(Uuid::nil().to_string()),
+    };
+    let _ = crate::dtos::AuditLogQueryRequest {
+      table_name: Some(crate::enums::AuditTable::Companies),
+      record_id: Some(Uuid::nil()),
+      origin_db_id: Some(Uuid::nil()),
+      limit: Some(10),
+      offset: Some(5),
+    };
+    let _ = crate::dtos::PaginationParams {
+      page: Some(1),
+      per_page: Some(25),
+    };
+    let _ = crate::dtos::AcceptanceDocumentQueryParams {
+      document_number: Some("ACC-1".into()),
+      status: Some(crate::enums::DocumentStatus::Draft),
+      truck_waybill_id: None,
+      rail_waybill_id: None,
+      transit_dispatch_id: None,
+      pagination: crate::dtos::PaginationParams {
+        page: Some(1),
+        per_page: Some(25),
+      },
     };
     let _ = crate::dtos::AwaitCycleQueryRequest {
       timeout: Some(15),

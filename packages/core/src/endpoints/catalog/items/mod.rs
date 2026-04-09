@@ -16,6 +16,8 @@ use crate::{
     CreateProductGroupRequest,
     CreateProductRequest,
     CreateProductTypeRequest,
+    EmbedParams,
+    PaginationParams,
     ProductGroupResponse,
     ProductResponse,
     ProductTypeResponse,
@@ -24,10 +26,7 @@ use crate::{
     UpdateProductRequest,
     UpdateProductTypeRequest,
   },
-  endpoints::{
-    paths,
-    query::{EmbedParams, PaginationParams},
-  },
+  endpoints::paths,
 };
 
 mod company;

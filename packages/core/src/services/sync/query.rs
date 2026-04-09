@@ -1,8 +1,10 @@
 use uuid::Uuid;
 
+use crate::enums::AuditTable;
+
 #[derive(Debug, Clone, Default)]
 pub struct AuditLogQuerySpec {
-  pub table_name: Option<String>,
+  pub table_name: Option<AuditTable>,
   pub record_id: Option<Uuid>,
   pub origin_db_id: Option<Uuid>,
   pub limit: Option<u64>,

@@ -98,11 +98,6 @@ impl SyncService {
     )
   }
 
-  pub async fn list_audit_logs(&self) -> Result<Vec<crate::dtos::AuditLogResponse>, ApiError> {
-    let rows: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(self.db.as_ref()).await?;
-    Ok(rows.into_iter().map(AuditLogResponse::from).collect())
-  }
-
   pub async fn audit_log_get(&self, id: Uuid) -> Result<crate::dtos::AuditLogResponse, ApiError> {
     let row: audit_log::ModelEx = audit_log::Entity::load()
       .filter_by_id(id)
@@ -120,7 +115,7 @@ impl SyncService {
     let max_limit = bounded_limit(query.limit, 100);
     let offset = query.offset.unwrap_or(0);
 
-    if let Some(table_name) = query.table_name.as_deref() {
+    if let Some(table_name) = query.table_name {
       condition = condition.add(audit_log::Column::TableName.eq(table_name));
     }
 

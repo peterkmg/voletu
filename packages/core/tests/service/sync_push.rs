@@ -14,7 +14,7 @@ use voletu_core::{
   context::audit::with_audit_context,
   dtos::PushAuditLogRequest,
   entities::{audit_log, company, database_instance, local, node_base_assignment, sync_watermark},
-  enums::{self, AuditAction, SyncDirection},
+  enums::{self, AuditAction, AuditTable, SyncDirection},
   services::sync::{query::SyncStatusQuerySpec, SyncService},
 };
 
@@ -47,7 +47,7 @@ async fn sync_push_rejects_lower_role_update_when_newer_higher_role_log_exists()
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("dispatch_documents".to_string()),
+      table_name: Set(AuditTable::DispatchDocuments),
       record_id: Set(record_id),
       action: Set(enums::AuditAction::Update),
       old_values: Set(None),
@@ -65,7 +65,7 @@ async fn sync_push_rejects_lower_role_update_when_newer_higher_role_log_exists()
     let payload = vec![
       PushAuditLogRequest {
         id: Uuid::now_v7(),
-        table_name: "dispatch_documents".to_string(),
+        table_name: AuditTable::DispatchDocuments,
         record_id,
         action: AuditAction::Update,
         old_values_json: None,
@@ -78,7 +78,7 @@ async fn sync_push_rejects_lower_role_update_when_newer_higher_role_log_exists()
       },
       PushAuditLogRequest {
         id: Uuid::now_v7(),
-        table_name: "companies".to_string(),
+        table_name: AuditTable::Companies,
         record_id: Uuid::now_v7(),
         action: AuditAction::Insert,
         old_values_json: None,
@@ -135,7 +135,7 @@ async fn sync_push_restores_company_from_snapshot_and_is_idempotent_on_reapply()
     let restore_log_id = Uuid::now_v7();
     let payload = vec![PushAuditLogRequest {
       id: restore_log_id,
-      table_name: "companies".to_string(),
+      table_name: AuditTable::Companies,
       record_id: seeded_company.id,
       action: AuditAction::Insert,
       old_values_json: None,

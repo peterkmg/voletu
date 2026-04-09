@@ -1,5 +1,5 @@
 use super::*;
-use crate::dtos::OutboundLogsQueryRequest;
+use crate::dtos::{AuditLogQueryRequest, OutboundLogsQueryRequest};
 
 #[utoipa::path(
   get,
@@ -8,14 +8,24 @@ use crate::dtos::OutboundLogsQueryRequest;
   summary = "List audit logs",
   description = "Returns persisted local audit logs in ascending order for diagnostics and replication inspection.",
   path = paths::sync::AUDIT_LOGS,
+  params(
+    ("tableName" = Option<crate::enums::AuditTable>, Query, description = "Filter to a specific audited table"),
+    ("recordId" = Option<Uuid>, Query, description = "Filter to audit events for one record"),
+    ("originDbId" = Option<Uuid>, Query, description = "Filter to audit events originating from one node"),
+    ("limit" = Option<u64>, Query, description = "Max number of logs to return"),
+    ("offset" = Option<u64>, Query, description = "Skip this many matching logs before returning results")
+  ),
   responses(
     (status = 200, body = ApiResponse<Vec<AuditLogResponse>>, description = "Audit log list envelope. Example: {\"success\":true,\"data\":[{\"id\":\"...\",\"action\":\"create\"}]}" )
   )
 )]
 #[axum::debug_handler]
-async fn audit_log_list(State(state): State<Arc<ApiState>>) -> ApiResult<Vec<AuditLogResponse>> {
+async fn audit_log_list(
+  State(state): State<Arc<ApiState>>,
+  Valid(Query(query)): Valid<Query<AuditLogQueryRequest>>,
+) -> ApiResult<Vec<AuditLogResponse>> {
   Ok(ApiResponse::success(
-    state.svc.sync.list_audit_logs().await?,
+    state.svc.sync.audit_log_query(query.into()).await?,
   ))
 }
 

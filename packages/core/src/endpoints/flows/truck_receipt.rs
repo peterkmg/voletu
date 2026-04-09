@@ -5,8 +5,8 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::response::pipeline::TruckReceiptPipelineResponse,
-  endpoints::{paths, query::TruckReceiptPipelineQueryParams},
+  dtos::{response::pipeline::TruckReceiptPipelineResponse, TruckReceiptPipelineQueryParams},
+  endpoints::paths,
   enums::PipelineStatus,
 };
 

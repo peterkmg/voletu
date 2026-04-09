@@ -35,7 +35,7 @@ async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
     seeded_bases >= 5,
     "seed should create at least 5 bases, got {seeded_bases}"
   );
-  let seeded_ledger_entries: usize = seed_result["ledger_entries"].as_u64().unwrap_or(0) as usize;
+  let seeded_ledger_entries: usize = seed_result["ledgerEntries"].as_u64().unwrap_or(0) as usize;
   assert!(
     seeded_ledger_entries > 0,
     "seed should create ledger entries"

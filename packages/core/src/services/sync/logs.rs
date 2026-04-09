@@ -18,7 +18,7 @@ use crate::{
   api::ApiError,
   dtos::{PushAuditLogRequest, PushAuditLogsResponse},
   entities::{audit_log, node_base_assignment},
-  enums::{AuditTable, SyncDirection},
+  enums::SyncDirection,
 };
 
 impl SyncService {
@@ -59,15 +59,9 @@ impl SyncService {
       let old_values = parse_json_field(incoming.old_values_json.as_deref(), "oldValuesJson")?;
       let new_values = parse_json_field(incoming.new_values_json.as_deref(), "newValuesJson")?;
 
-      if AuditTable::resolve(&incoming.table_name).is_none() {
-        return Err(ApiError::BadRequest(format!(
-          "Unsupported audit table '{}' for sync log ingestion",
-          incoming.table_name
-        )));
-      }
       apply_audit_log_restore(
         &txn,
-        &incoming.table_name,
+        incoming.table_name,
         incoming.action,
         old_values.as_ref(),
         new_values.as_ref(),
@@ -76,7 +70,7 @@ impl SyncService {
 
       audit_log::ActiveModel {
         id: Set(incoming.id),
-        table_name: Set(incoming.table_name.clone()),
+        table_name: Set(incoming.table_name),
         record_id: Set(incoming.record_id),
         action: Set(incoming.action),
         old_values: Set(old_values),
@@ -181,15 +175,9 @@ impl SyncService {
       let old_values = parse_json_field(incoming.old_values_json.as_deref(), "oldValuesJson")?;
       let new_values = parse_json_field(incoming.new_values_json.as_deref(), "newValuesJson")?;
 
-      if AuditTable::resolve(&incoming.table_name).is_none() {
-        return Err(ApiError::BadRequest(format!(
-          "Unsupported audit table '{}' for pulled log ingestion",
-          incoming.table_name
-        )));
-      }
       apply_audit_log_restore(
         &txn,
-        &incoming.table_name,
+        incoming.table_name,
         incoming.action,
         old_values.as_ref(),
         new_values.as_ref(),
@@ -198,7 +186,7 @@ impl SyncService {
 
       audit_log::ActiveModel {
         id: Set(incoming.id),
-        table_name: Set(incoming.table_name.clone()),
+        table_name: Set(incoming.table_name),
         record_id: Set(incoming.record_id),
         action: Set(incoming.action),
         old_values: Set(old_values),

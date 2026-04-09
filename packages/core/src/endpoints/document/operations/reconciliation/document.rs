@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::ReconciliationDocumentQueryParams,
+  dtos::{EmbedParams, PaginationParams, ReconciliationDocumentQueryParams},
+  endpoints::paths,
   services::document::query::ReconciliationQuerySpec,
 };
 

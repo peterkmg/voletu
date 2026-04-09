@@ -13,7 +13,7 @@ use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   entities::{audit_log, company},
-  enums,
+  enums::{self, AuditTable},
   services::{audit::AuditService, ledger::LedgerService},
 };
 
@@ -75,7 +75,7 @@ async fn audit_service_insert_and_update_persist_expected_fields_and_payloads() 
       .iter()
       .find(|r| r.action == enums::AuditAction::Insert)
       .unwrap();
-    assert_eq!(insert_row.table_name, "companies");
+    assert_eq!(insert_row.table_name, AuditTable::Companies);
     assert_eq!(insert_row.origin_db_id, context_origin_db_id);
     assert_eq!(insert_row.old_values, None);
     let expected_insert = serde_json::to_value(&saved).unwrap();

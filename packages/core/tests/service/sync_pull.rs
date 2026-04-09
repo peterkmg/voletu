@@ -7,7 +7,7 @@ use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
   entities::{audit_log, base},
-  enums::{self, AuditAction},
+  enums::{self, AuditAction, AuditTable},
   services::sync::{
     query::{AuditLogQuerySpec, OutboundAuditLogsQuerySpec, PullAuditLogsQuerySpec},
     SyncService,
@@ -68,7 +68,7 @@ async fn sync_pull_target_matching_is_delimiter_safe_for_base_ids() {
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("dispatch_documents".to_string()),
+      table_name: Set(AuditTable::DispatchDocuments),
       record_id: Set(Uuid::now_v7()),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -96,7 +96,7 @@ async fn sync_pull_target_matching_is_delimiter_safe_for_base_ids() {
     let targeted_logs: Vec<_> = response
       .logs
       .iter()
-      .filter(|l| l.table_name == "dispatch_documents")
+      .filter(|l| l.table_name == AuditTable::DispatchDocuments)
       .collect();
     assert!(
       targeted_logs.is_empty(),
@@ -114,7 +114,7 @@ async fn sync_outbound_returns_push_payload_shape_with_json_strings() {
 
   audit_log::ActiveModel {
     id: Set(log_id),
-    table_name: Set("companies".to_string()),
+    table_name: Set(AuditTable::Companies),
     record_id: Set(Uuid::now_v7()),
     action: Set(enums::AuditAction::Update),
     old_values: Set(Some(serde_json::json!({"name":"Old"}))),
@@ -160,13 +160,13 @@ async fn sync_audit_log_query_applies_offset_and_limit_in_ascending_id_order() {
   let third_id = Uuid::from_u128(30);
 
   for (id, table_name) in [
-    (first_id, "query-audit-a"),
-    (second_id, "query-audit-b"),
-    (third_id, "query-audit-c"),
+    (first_id, AuditTable::Companies),
+    (second_id, AuditTable::DispatchDocuments),
+    (third_id, AuditTable::Storages),
   ] {
     audit_log::ActiveModel {
       id: Set(id),
-      table_name: Set(table_name.to_string()),
+      table_name: Set(table_name),
       record_id: Set(Uuid::now_v7()),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -184,17 +184,17 @@ async fn sync_audit_log_query_applies_offset_and_limit_in_ascending_id_order() {
 
   let rows = service
     .audit_log_query(AuditLogQuerySpec {
+      table_name: Some(AuditTable::DispatchDocuments),
       origin_db_id: Some(origin_db_id),
       limit: Some(2),
-      offset: Some(1),
+      offset: Some(0),
       ..Default::default()
     })
     .await
     .unwrap();
 
-  assert_eq!(rows.len(), 2);
+  assert_eq!(rows.len(), 1);
   assert_eq!(rows[0].id, second_id);
-  assert_eq!(rows[1].id, third_id);
 }
 
 #[tokio::test]
@@ -226,7 +226,7 @@ async fn sync_pull_empty_scope_advances_to_highest_evaluated_id() {
 
     let _log = audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("dispatch_documents".to_string()),
+      table_name: Set(AuditTable::DispatchDocuments),
       record_id: Set(Uuid::now_v7()),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -253,7 +253,7 @@ async fn sync_pull_empty_scope_advances_to_highest_evaluated_id() {
     let targeted_logs: Vec<_> = response
       .logs
       .iter()
-      .filter(|l| l.table_name == "dispatch_documents")
+      .filter(|l| l.table_name == AuditTable::DispatchDocuments)
       .collect();
     assert!(targeted_logs.is_empty());
     assert!(
@@ -289,7 +289,7 @@ async fn sync_pull_returns_global_and_targeted_logs_for_requesting_base_scope() 
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("companies".to_string()),
+      table_name: Set(AuditTable::Companies),
       record_id: Set(global_log_record),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -306,7 +306,7 @@ async fn sync_pull_returns_global_and_targeted_logs_for_requesting_base_scope() 
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("dispatch_documents".to_string()),
+      table_name: Set(AuditTable::DispatchDocuments),
       record_id: Set(target_a_record),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -323,7 +323,7 @@ async fn sync_pull_returns_global_and_targeted_logs_for_requesting_base_scope() 
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("dispatch_documents".to_string()),
+      table_name: Set(AuditTable::DispatchDocuments),
       record_id: Set(target_b_record),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -340,7 +340,7 @@ async fn sync_pull_returns_global_and_targeted_logs_for_requesting_base_scope() 
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("storages".to_string()),
+      table_name: Set(AuditTable::Storages),
       record_id: Set(global_storage_record),
       action: Set(enums::AuditAction::Update),
       old_values: Set(None),
@@ -395,7 +395,7 @@ async fn sync_pull_excludes_roles_and_local_tables_from_scope() {
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("companies".to_string()),
+      table_name: Set(AuditTable::Companies),
       record_id: Set(allowed_record),
       action: Set(enums::AuditAction::Insert),
       old_values: Set(None),
@@ -412,7 +412,7 @@ async fn sync_pull_excludes_roles_and_local_tables_from_scope() {
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("roles".to_string()),
+      table_name: Set(AuditTable::Roles),
       record_id: Set(roles_record),
       action: Set(enums::AuditAction::Update),
       old_values: Set(None),
@@ -429,7 +429,7 @@ async fn sync_pull_excludes_roles_and_local_tables_from_scope() {
 
     audit_log::ActiveModel {
       id: Set(Uuid::now_v7()),
-      table_name: Set("local".to_string()),
+      table_name: Set(AuditTable::Local),
       record_id: Set(local_record),
       action: Set(enums::AuditAction::Update),
       old_values: Set(None),

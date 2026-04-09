@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::OwnershipTransferDocumentQueryParams,
+  dtos::{EmbedParams, OwnershipTransferDocumentQueryParams, PaginationParams},
+  endpoints::paths,
   services::document::query::OwnershipTransferQuerySpec,
 };
 

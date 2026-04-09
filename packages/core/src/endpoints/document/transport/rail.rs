@@ -15,6 +15,7 @@ use crate::{
     CreateRailWagonMeasurementRequest,
     CreateRailWagonWeightRequest,
     CreateRailWaybillRequest,
+    EmbedParams,
     RailWagonManifestResponse,
     RailWagonMeasurementResponse,
     RailWagonWeightResponse,
@@ -26,10 +27,7 @@ use crate::{
     UpdateRailWagonWeightRequest,
     UpdateRailWaybillRequest,
   },
-  endpoints::{
-    paths,
-    query::{EmbedParams, PaginationParams},
-  },
+  endpoints::paths,
 };
 
 mod composite;

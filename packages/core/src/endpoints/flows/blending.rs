@@ -5,8 +5,8 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::response::pipeline::BlendingFlatRow,
-  endpoints::{paths, query::BlendingFlatQueryParams},
+  dtos::{response::pipeline::BlendingFlatRow, BlendingFlatQueryParams},
+  endpoints::paths,
   enums::DocumentStatus,
 };
 

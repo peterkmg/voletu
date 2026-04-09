@@ -14,6 +14,7 @@ use crate::{
     CreateTruckWaybillItemRequest,
     CreateTruckWaybillRequest,
     CreateTruckWeightDocRequest,
+    EmbedParams,
     TruckWaybillCompositeRequest,
     TruckWaybillCompositeResponse,
     TruckWaybillItemResponse,
@@ -23,10 +24,7 @@ use crate::{
     UpdateTruckWaybillRequest,
     UpdateTruckWeightDocRequest,
   },
-  endpoints::{
-    paths,
-    query::{EmbedParams, PaginationParams},
-  },
+  endpoints::paths,
 };
 
 mod composite;

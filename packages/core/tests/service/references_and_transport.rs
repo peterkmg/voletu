@@ -27,7 +27,7 @@ use voletu_core::{
     TruckWeightDocCompositeRequest,
   },
   entities::audit_log,
-  enums,
+  enums::{self, AuditTable},
   services::{
     audit::AuditService,
     catalog::CatalogService,
@@ -145,7 +145,7 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
     let company_insert_log = logs
       .iter()
       .find(|row| {
-        row.table_name == "companies"
+        row.table_name == AuditTable::Companies
           && row.record_id == company.id
           && row.action == enums::AuditAction::Insert
       })

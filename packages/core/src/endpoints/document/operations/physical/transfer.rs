@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::PhysicalTransferDocumentQueryParams,
+  dtos::{EmbedParams, PaginationParams, PhysicalTransferDocumentQueryParams},
+  endpoints::paths,
   services::document::query::PhysicalTransferQuerySpec,
 };
 

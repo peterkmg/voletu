@@ -15,7 +15,7 @@ use voletu_core::{
     DispatchItemCompositeRequest,
   },
   entities::{acceptance_document, audit_log, product_type, storage},
-  enums::{self, ArrivalType, DispatchMethod, DispatchPurpose},
+  enums::{self, ArrivalType, AuditTable, DispatchMethod, DispatchPurpose},
   services::{audit::AuditService, document::DocumentService, ledger::LedgerService},
 };
 
@@ -103,7 +103,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
     let insert_log = audit_rows
       .iter()
       .find(|row| {
-        row.table_name == "acceptance_documents"
+        row.table_name == AuditTable::AcceptanceDocuments
           && row.record_id == doc.id
           && row.action == enums::AuditAction::Insert
       })
@@ -114,7 +114,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
     let update_log = audit_rows
       .iter()
       .find(|row| {
-        row.table_name == "acceptance_documents"
+        row.table_name == AuditTable::AcceptanceDocuments
           && row.record_id == doc.id
           && row.action == enums::AuditAction::Update
       })

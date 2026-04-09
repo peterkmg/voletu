@@ -13,18 +13,11 @@ fn is_nonfatal_restore_error(error: &DbErr) -> bool {
 
 pub(super) async fn apply_audit_log_restore<C: ConnectionTrait>(
   conn: &C,
-  table_name: &str,
+  table: AuditTable,
   action: AuditAction,
   old_values: Option<&Value>,
   new_values: Option<&Value>,
 ) -> Result<(), ApiError> {
-  let table = AuditTable::resolve(table_name).ok_or_else(|| {
-    ApiError::BadRequest(format!(
-      "Unsupported audit table '{}' for restore",
-      table_name
-    ))
-  })?;
-
   macro_rules! restore_table {
     ($active_model:path) => {{
       match action {
@@ -83,7 +76,7 @@ pub(super) async fn apply_audit_log_restore<C: ConnectionTrait>(
   }
 
   match table {
-    AuditTable::AuditLogs => Ok(()),
+    AuditTable::AuditLogs | AuditTable::Local | AuditTable::Roles => Ok(()),
     AuditTable::AcceptanceDocuments => restore_table!(acceptance_document::ActiveModel),
     AuditTable::AcceptanceItems => restore_table!(acceptance_item::ActiveModel),
     AuditTable::Bases => restore_table!(base::ActiveModel),

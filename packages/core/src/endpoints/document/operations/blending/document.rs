@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::BlendingDocumentQueryParams,
+  dtos::{BlendingDocumentQueryParams, EmbedParams, PaginationParams},
+  endpoints::paths,
   services::document::query::BlendingDocumentQuerySpec,
 };
 

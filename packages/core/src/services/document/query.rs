@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::{endpoints::query::NullableFilter, enums};
+use crate::{dtos::request::query::NullableFilter, enums};
 
 #[derive(Debug, Clone, Default)]
 pub struct AcceptanceDocumentQuerySpec {

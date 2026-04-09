@@ -10,8 +10,7 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, response::pipeline::AcceptanceFlatRow},
-  endpoints::query::NullableFilter,
+  dtos::{self, request::query::NullableFilter, response::pipeline::AcceptanceFlatRow},
   entities::{
     acceptance_document,
     acceptance_item,

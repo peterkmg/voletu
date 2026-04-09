@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::TruckWaybillDocumentQueryParams,
+  dtos::{EmbedParams, PaginationParams, TruckWaybillDocumentQueryParams},
+  endpoints::paths,
   services::document::query::TruckWaybillQuerySpec,
 };
 

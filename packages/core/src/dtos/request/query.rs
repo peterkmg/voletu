@@ -102,13 +102,13 @@ impl EmbedParams {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AcceptanceDocumentQueryParams {
-  document_number: Option<String>,
-  status: Option<DocumentStatus>,
-  truck_waybill_id: Option<NullableFilter>,
-  rail_waybill_id: Option<NullableFilter>,
-  transit_dispatch_id: Option<NullableFilter>,
+  pub document_number: Option<String>,
+  pub status: Option<DocumentStatus>,
+  pub truck_waybill_id: Option<NullableFilter>,
+  pub rail_waybill_id: Option<NullableFilter>,
+  pub transit_dispatch_id: Option<NullableFilter>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<AcceptanceDocumentQueryParams> for AcceptanceDocumentQuerySpec {
@@ -128,13 +128,13 @@ impl From<AcceptanceDocumentQueryParams> for AcceptanceDocumentQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DispatchDocumentQueryParams {
-  document_number: Option<String>,
-  status: Option<DocumentStatus>,
-  contractor_id: Option<Uuid>,
-  dispatch_method: Option<DispatchMethod>,
-  dispatch_purpose: Option<DispatchPurpose>,
+  pub document_number: Option<String>,
+  pub status: Option<DocumentStatus>,
+  pub contractor_id: Option<Uuid>,
+  pub dispatch_method: Option<DispatchMethod>,
+  pub dispatch_purpose: Option<DispatchPurpose>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<DispatchDocumentQueryParams> for DispatchDocumentQuerySpec {
@@ -154,11 +154,11 @@ impl From<DispatchDocumentQueryParams> for DispatchDocumentQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlendingDocumentQueryParams {
-  document_number: Option<String>,
-  status: Option<DocumentStatus>,
-  contractor_id: Option<Uuid>,
+  pub document_number: Option<String>,
+  pub status: Option<DocumentStatus>,
+  pub contractor_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<BlendingDocumentQueryParams> for BlendingDocumentQuerySpec {
@@ -176,11 +176,11 @@ impl From<BlendingDocumentQueryParams> for BlendingDocumentQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReconciliationDocumentQueryParams {
-  document_number: Option<String>,
-  status: Option<DocumentStatus>,
-  warehouse_id: Option<Uuid>,
+  pub document_number: Option<String>,
+  pub status: Option<DocumentStatus>,
+  pub warehouse_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<ReconciliationDocumentQueryParams> for ReconciliationQuerySpec {
@@ -198,10 +198,10 @@ impl From<ReconciliationDocumentQueryParams> for ReconciliationQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PhysicalTransferDocumentQueryParams {
-  document_number: Option<String>,
-  status: Option<DocumentStatus>,
+  pub document_number: Option<String>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<PhysicalTransferDocumentQueryParams> for PhysicalTransferQuerySpec {
@@ -218,9 +218,9 @@ impl From<PhysicalTransferDocumentQueryParams> for PhysicalTransferQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OwnershipTransferDocumentQueryParams {
-  status: Option<DocumentStatus>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<OwnershipTransferDocumentQueryParams> for OwnershipTransferQuerySpec {
@@ -236,10 +236,10 @@ impl From<OwnershipTransferDocumentQueryParams> for OwnershipTransferQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TruckWaybillDocumentQueryParams {
-  document_number: Option<String>,
-  sender_id: Option<Uuid>,
+  pub document_number: Option<String>,
+  pub sender_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<TruckWaybillDocumentQueryParams> for TruckWaybillQuerySpec {
@@ -256,10 +256,10 @@ impl From<TruckWaybillDocumentQueryParams> for TruckWaybillQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RailWaybillDocumentQueryParams {
-  document_number: Option<String>,
-  sender_id: Option<Uuid>,
+  pub document_number: Option<String>,
+  pub sender_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<RailWaybillDocumentQueryParams> for RailWaybillQuerySpec {
@@ -276,9 +276,9 @@ impl From<RailWaybillDocumentQueryParams> for RailWaybillQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AcceptanceFlatQueryParams {
-  status: Option<DocumentStatus>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<AcceptanceFlatQueryParams> for AcceptanceFlatQuerySpec {
@@ -294,11 +294,11 @@ impl From<AcceptanceFlatQueryParams> for AcceptanceFlatQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DispatchFlatQueryParams {
-  status: Option<DocumentStatus>,
-  dispatch_method: Option<DispatchMethod>,
-  dispatch_purpose: Option<DispatchPurpose>,
+  pub status: Option<DocumentStatus>,
+  pub dispatch_method: Option<DispatchMethod>,
+  pub dispatch_purpose: Option<DispatchPurpose>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<DispatchFlatQueryParams> for DispatchFlatQuerySpec {
@@ -316,9 +316,9 @@ impl From<DispatchFlatQueryParams> for DispatchFlatQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlendingFlatQueryParams {
-  status: Option<DocumentStatus>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<BlendingFlatQueryParams> for BlendingFlatQuerySpec {
@@ -334,9 +334,9 @@ impl From<BlendingFlatQueryParams> for BlendingFlatQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReconciliationFlatQueryParams {
-  status: Option<DocumentStatus>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<ReconciliationFlatQueryParams> for ReconciliationFlatQuerySpec {
@@ -352,9 +352,9 @@ impl From<ReconciliationFlatQueryParams> for ReconciliationFlatQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PhysicalTransferFlatQueryParams {
-  status: Option<DocumentStatus>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<PhysicalTransferFlatQueryParams> for PhysicalTransferFlatQuerySpec {
@@ -370,9 +370,9 @@ impl From<PhysicalTransferFlatQueryParams> for PhysicalTransferFlatQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OwnershipTransferFlatQueryParams {
-  status: Option<DocumentStatus>,
+  pub status: Option<DocumentStatus>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<OwnershipTransferFlatQueryParams> for OwnershipTransferFlatQuerySpec {
@@ -388,10 +388,10 @@ impl From<OwnershipTransferFlatQueryParams> for OwnershipTransferFlatQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TruckDispatchPipelineQueryParams {
-  pipeline_status: Option<PipelineStatus>,
-  contractor_id: Option<Uuid>,
+  pub pipeline_status: Option<PipelineStatus>,
+  pub contractor_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<TruckDispatchPipelineQueryParams> for TruckDispatchPipelineQuerySpec {
@@ -408,10 +408,10 @@ impl From<TruckDispatchPipelineQueryParams> for TruckDispatchPipelineQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TruckReceiptPipelineQueryParams {
-  pipeline_status: Option<PipelineStatus>,
-  contractor_id: Option<Uuid>,
+  pub pipeline_status: Option<PipelineStatus>,
+  pub contractor_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<TruckReceiptPipelineQueryParams> for TruckReceiptPipelineQuerySpec {
@@ -428,10 +428,10 @@ impl From<TruckReceiptPipelineQueryParams> for TruckReceiptPipelineQuerySpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RailReceiptPipelineQueryParams {
-  pipeline_status: Option<PipelineStatus>,
-  contractor_id: Option<Uuid>,
+  pub pipeline_status: Option<PipelineStatus>,
+  pub contractor_id: Option<Uuid>,
   #[serde(flatten)]
-  pagination: PaginationParams,
+  pub pagination: PaginationParams,
 }
 
 impl From<RailReceiptPipelineQueryParams> for RailReceiptPipelineQuerySpec {
@@ -449,7 +449,23 @@ impl From<RailReceiptPipelineQueryParams> for RailReceiptPipelineQuerySpec {
 mod tests {
   use uuid::Uuid;
 
-  use super::{NullableFilter, PaginationParams};
+  use super::{
+    AcceptanceDocumentQueryParams,
+    AcceptanceFlatQueryParams,
+    DispatchDocumentQueryParams,
+    DispatchFlatQueryParams,
+    NullableFilter,
+    OwnershipTransferDocumentQueryParams,
+    OwnershipTransferFlatQueryParams,
+    PaginationParams,
+    PhysicalTransferDocumentQueryParams,
+    PhysicalTransferFlatQueryParams,
+    RailReceiptPipelineQueryParams,
+    RailWaybillDocumentQueryParams,
+    TruckDispatchPipelineQueryParams,
+    TruckReceiptPipelineQueryParams,
+    TruckWaybillDocumentQueryParams,
+  };
   use crate::{
     enums::{DispatchMethod, DispatchPurpose, DocumentStatus, PipelineStatus},
     services::document::query::{
@@ -471,19 +487,18 @@ mod tests {
 
   #[test]
   fn shared_document_and_flow_query_params_convert_into_specs() {
-    let acceptance_document: AcceptanceDocumentQuerySpec =
-      crate::endpoints::query::AcceptanceDocumentQueryParams {
-        document_number: Some("ACC-42".into()),
-        status: Some(DocumentStatus::Draft),
-        truck_waybill_id: Some(NullableFilter::IsNull),
-        rail_waybill_id: Some(NullableFilter::IsNotNull),
-        transit_dispatch_id: None,
-        pagination: PaginationParams {
-          page: Some(2),
-          per_page: Some(25),
-        },
-      }
-      .into();
+    let acceptance_document: AcceptanceDocumentQuerySpec = AcceptanceDocumentQueryParams {
+      document_number: Some("ACC-42".into()),
+      status: Some(DocumentStatus::Draft),
+      truck_waybill_id: Some(NullableFilter::IsNull),
+      rail_waybill_id: Some(NullableFilter::IsNotNull),
+      transit_dispatch_id: None,
+      pagination: PaginationParams {
+        page: Some(2),
+        per_page: Some(25),
+      },
+    }
+    .into();
     assert_eq!(
       acceptance_document.document_number.as_deref(),
       Some("ACC-42")
@@ -500,19 +515,18 @@ mod tests {
     assert_eq!(acceptance_document.page, Some(2));
     assert_eq!(acceptance_document.per_page, Some(25));
 
-    let dispatch_document: DispatchDocumentQuerySpec =
-      crate::endpoints::query::DispatchDocumentQueryParams {
-        document_number: Some("DSP-7".into()),
-        status: Some(DocumentStatus::Executed),
-        contractor_id: Some(Uuid::nil()),
-        dispatch_method: Some(DispatchMethod::Truck),
-        dispatch_purpose: Some(DispatchPurpose::External),
-        pagination: PaginationParams {
-          page: Some(1),
-          per_page: Some(10),
-        },
-      }
-      .into();
+    let dispatch_document: DispatchDocumentQuerySpec = DispatchDocumentQueryParams {
+      document_number: Some("DSP-7".into()),
+      status: Some(DocumentStatus::Executed),
+      contractor_id: Some(Uuid::nil()),
+      dispatch_method: Some(DispatchMethod::Truck),
+      dispatch_purpose: Some(DispatchPurpose::External),
+      pagination: PaginationParams {
+        page: Some(1),
+        per_page: Some(10),
+      },
+    }
+    .into();
     assert_eq!(dispatch_document.status, Some(DocumentStatus::Executed));
     assert_eq!(dispatch_document.contractor_id, Some(Uuid::nil()));
     assert_eq!(
@@ -526,20 +540,19 @@ mod tests {
     assert_eq!(dispatch_document.page, Some(1));
     assert_eq!(dispatch_document.per_page, Some(10));
 
-    let acceptance_flat: AcceptanceFlatQuerySpec =
-      crate::endpoints::query::AcceptanceFlatQueryParams {
-        status: Some(DocumentStatus::Draft),
-        pagination: PaginationParams {
-          page: Some(3),
-          per_page: Some(15),
-        },
-      }
-      .into();
+    let acceptance_flat: AcceptanceFlatQuerySpec = AcceptanceFlatQueryParams {
+      status: Some(DocumentStatus::Draft),
+      pagination: PaginationParams {
+        page: Some(3),
+        per_page: Some(15),
+      },
+    }
+    .into();
     assert_eq!(acceptance_flat.status, Some(DocumentStatus::Draft));
     assert_eq!(acceptance_flat.page, Some(3));
     assert_eq!(acceptance_flat.per_page, Some(15));
 
-    let dispatch_flat: DispatchFlatQuerySpec = crate::endpoints::query::DispatchFlatQueryParams {
+    let dispatch_flat: DispatchFlatQuerySpec = DispatchFlatQueryParams {
       status: Some(DocumentStatus::Executed),
       dispatch_method: Some(DispatchMethod::Truck),
       dispatch_purpose: Some(DispatchPurpose::Internal),
@@ -558,92 +571,86 @@ mod tests {
     assert_eq!(dispatch_flat.page, Some(4));
     assert_eq!(dispatch_flat.per_page, Some(20));
 
-    let physical_document: PhysicalTransferQuerySpec =
-      crate::endpoints::query::PhysicalTransferDocumentQueryParams {
-        document_number: Some("PHY-9".into()),
-        status: Some(DocumentStatus::Draft),
-        pagination: PaginationParams {
-          page: Some(5),
-          per_page: Some(30),
-        },
-      }
-      .into();
+    let physical_document: PhysicalTransferQuerySpec = PhysicalTransferDocumentQueryParams {
+      document_number: Some("PHY-9".into()),
+      status: Some(DocumentStatus::Draft),
+      pagination: PaginationParams {
+        page: Some(5),
+        per_page: Some(30),
+      },
+    }
+    .into();
     assert_eq!(physical_document.document_number.as_deref(), Some("PHY-9"));
     assert_eq!(physical_document.status, Some(DocumentStatus::Draft));
     assert_eq!(physical_document.page, Some(5));
     assert_eq!(physical_document.per_page, Some(30));
 
-    let ownership_document: OwnershipTransferQuerySpec =
-      crate::endpoints::query::OwnershipTransferDocumentQueryParams {
-        status: Some(DocumentStatus::Executed),
-        pagination: PaginationParams {
-          page: Some(6),
-          per_page: Some(12),
-        },
-      }
-      .into();
+    let ownership_document: OwnershipTransferQuerySpec = OwnershipTransferDocumentQueryParams {
+      status: Some(DocumentStatus::Executed),
+      pagination: PaginationParams {
+        page: Some(6),
+        per_page: Some(12),
+      },
+    }
+    .into();
     assert_eq!(ownership_document.status, Some(DocumentStatus::Executed));
     assert_eq!(ownership_document.page, Some(6));
     assert_eq!(ownership_document.per_page, Some(12));
 
-    let truck_waybill: TruckWaybillQuerySpec =
-      crate::endpoints::query::TruckWaybillDocumentQueryParams {
-        document_number: Some("TW-1".into()),
-        sender_id: Some(Uuid::nil()),
-        pagination: PaginationParams {
-          page: Some(7),
-          per_page: Some(18),
-        },
-      }
-      .into();
+    let truck_waybill: TruckWaybillQuerySpec = TruckWaybillDocumentQueryParams {
+      document_number: Some("TW-1".into()),
+      sender_id: Some(Uuid::nil()),
+      pagination: PaginationParams {
+        page: Some(7),
+        per_page: Some(18),
+      },
+    }
+    .into();
     assert_eq!(truck_waybill.document_number.as_deref(), Some("TW-1"));
     assert_eq!(truck_waybill.sender_id, Some(Uuid::nil()));
     assert_eq!(truck_waybill.page, Some(7));
     assert_eq!(truck_waybill.per_page, Some(18));
 
-    let rail_waybill: RailWaybillQuerySpec =
-      crate::endpoints::query::RailWaybillDocumentQueryParams {
-        document_number: Some("RW-2".into()),
-        sender_id: Some(Uuid::nil()),
-        pagination: PaginationParams {
-          page: Some(8),
-          per_page: Some(22),
-        },
-      }
-      .into();
+    let rail_waybill: RailWaybillQuerySpec = RailWaybillDocumentQueryParams {
+      document_number: Some("RW-2".into()),
+      sender_id: Some(Uuid::nil()),
+      pagination: PaginationParams {
+        page: Some(8),
+        per_page: Some(22),
+      },
+    }
+    .into();
     assert_eq!(rail_waybill.document_number.as_deref(), Some("RW-2"));
     assert_eq!(rail_waybill.sender_id, Some(Uuid::nil()));
     assert_eq!(rail_waybill.page, Some(8));
     assert_eq!(rail_waybill.per_page, Some(22));
 
-    let physical_flat: PhysicalTransferFlatQuerySpec =
-      crate::endpoints::query::PhysicalTransferFlatQueryParams {
-        status: Some(DocumentStatus::Draft),
-        pagination: PaginationParams {
-          page: Some(9),
-          per_page: Some(16),
-        },
-      }
-      .into();
+    let physical_flat: PhysicalTransferFlatQuerySpec = PhysicalTransferFlatQueryParams {
+      status: Some(DocumentStatus::Draft),
+      pagination: PaginationParams {
+        page: Some(9),
+        per_page: Some(16),
+      },
+    }
+    .into();
     assert_eq!(physical_flat.status, Some(DocumentStatus::Draft));
     assert_eq!(physical_flat.page, Some(9));
     assert_eq!(physical_flat.per_page, Some(16));
 
-    let ownership_flat: OwnershipTransferFlatQuerySpec =
-      crate::endpoints::query::OwnershipTransferFlatQueryParams {
-        status: Some(DocumentStatus::Executed),
-        pagination: PaginationParams {
-          page: Some(10),
-          per_page: Some(14),
-        },
-      }
-      .into();
+    let ownership_flat: OwnershipTransferFlatQuerySpec = OwnershipTransferFlatQueryParams {
+      status: Some(DocumentStatus::Executed),
+      pagination: PaginationParams {
+        page: Some(10),
+        per_page: Some(14),
+      },
+    }
+    .into();
     assert_eq!(ownership_flat.status, Some(DocumentStatus::Executed));
     assert_eq!(ownership_flat.page, Some(10));
     assert_eq!(ownership_flat.per_page, Some(14));
 
     let truck_dispatch_pipeline: TruckDispatchPipelineQuerySpec =
-      crate::endpoints::query::TruckDispatchPipelineQueryParams {
+      TruckDispatchPipelineQueryParams {
         pipeline_status: Some(PipelineStatus::Draft),
         contractor_id: Some(Uuid::nil()),
         pagination: PaginationParams {
@@ -660,16 +667,15 @@ mod tests {
     assert_eq!(truck_dispatch_pipeline.page, Some(11));
     assert_eq!(truck_dispatch_pipeline.per_page, Some(13));
 
-    let truck_receipt_pipeline: TruckReceiptPipelineQuerySpec =
-      crate::endpoints::query::TruckReceiptPipelineQueryParams {
-        pipeline_status: Some(PipelineStatus::Executed),
-        contractor_id: Some(Uuid::nil()),
-        pagination: PaginationParams {
-          page: Some(12),
-          per_page: Some(11),
-        },
-      }
-      .into();
+    let truck_receipt_pipeline: TruckReceiptPipelineQuerySpec = TruckReceiptPipelineQueryParams {
+      pipeline_status: Some(PipelineStatus::Executed),
+      contractor_id: Some(Uuid::nil()),
+      pagination: PaginationParams {
+        page: Some(12),
+        per_page: Some(11),
+      },
+    }
+    .into();
     assert_eq!(
       truck_receipt_pipeline.pipeline_status,
       Some(PipelineStatus::Executed)
@@ -678,16 +684,15 @@ mod tests {
     assert_eq!(truck_receipt_pipeline.page, Some(12));
     assert_eq!(truck_receipt_pipeline.per_page, Some(11));
 
-    let rail_receipt_pipeline: RailReceiptPipelineQuerySpec =
-      crate::endpoints::query::RailReceiptPipelineQueryParams {
-        pipeline_status: Some(PipelineStatus::Pending),
-        contractor_id: Some(Uuid::nil()),
-        pagination: PaginationParams {
-          page: Some(13),
-          per_page: Some(9),
-        },
-      }
-      .into();
+    let rail_receipt_pipeline: RailReceiptPipelineQuerySpec = RailReceiptPipelineQueryParams {
+      pipeline_status: Some(PipelineStatus::Pending),
+      contractor_id: Some(Uuid::nil()),
+      pagination: PaginationParams {
+        page: Some(13),
+        per_page: Some(9),
+      },
+    }
+    .into();
     assert_eq!(
       rail_receipt_pipeline.pipeline_status,
       Some(PipelineStatus::Pending)

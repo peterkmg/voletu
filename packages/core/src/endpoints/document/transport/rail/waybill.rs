@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-  endpoints::query::RailWaybillDocumentQueryParams,
+  dtos::{EmbedParams, PaginationParams, RailWaybillDocumentQueryParams},
+  endpoints::paths,
   services::document::query::RailWaybillQuerySpec,
 };
 

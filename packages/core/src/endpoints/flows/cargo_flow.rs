@@ -5,8 +5,8 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::response::pipeline::CargoFlowFlatRow,
-  endpoints::{paths, query::PaginationParams},
+  dtos::{response::pipeline::CargoFlowFlatRow, PaginationParams},
+  endpoints::paths,
   services::document::query::CargoFlowQuerySpec,
 };
 

@@ -2,8 +2,9 @@ use uuid::Uuid;
 use voletu_core_macros::request_dto;
 
 use crate::{
-  enums::SyncDirection,
+  enums::{AuditTable, SyncDirection},
   services::sync::query::{
+    AuditLogQuerySpec,
     OutboundAuditLogsQuerySpec,
     PullAuditLogsQuerySpec,
     SyncStatusQuerySpec,
@@ -37,6 +38,27 @@ fn parse_base_ids(base_ids: Option<&str>) -> Vec<Uuid> {
       }
     })
     .collect()
+}
+
+#[request_dto]
+pub struct AuditLogQueryRequest {
+  pub table_name: Option<AuditTable>,
+  pub record_id: Option<Uuid>,
+  pub origin_db_id: Option<Uuid>,
+  pub limit: Option<u64>,
+  pub offset: Option<u64>,
+}
+
+impl From<AuditLogQueryRequest> for AuditLogQuerySpec {
+  fn from(query: AuditLogQueryRequest) -> Self {
+    Self {
+      table_name: query.table_name,
+      record_id: query.record_id,
+      origin_db_id: query.origin_db_id,
+      limit: query.limit,
+      offset: query.offset,
+    }
+  }
 }
 
 #[request_dto]
@@ -107,7 +129,8 @@ pub struct AwaitCycleQueryRequest {
 mod tests {
   use uuid::Uuid;
 
-  use super::{PullAuditLogsQueryRequest, SyncStatusQueryRequest};
+  use super::{AuditLogQueryRequest, PullAuditLogsQueryRequest, SyncStatusQueryRequest};
+  use crate::{enums::AuditTable, services::sync::query::AuditLogQuerySpec};
 
   #[test]
   fn sync_query_requests_parse_comma_separated_base_ids() {
@@ -125,5 +148,26 @@ mod tests {
       base_ids: Some(format!(" , {second}")),
     };
     assert_eq!(status.parse_base_ids(), vec![second]);
+  }
+
+  #[test]
+  fn audit_log_query_request_preserves_typed_table_filters() {
+    let record_id = Uuid::now_v7();
+    let origin_db_id = Uuid::now_v7();
+
+    let spec: AuditLogQuerySpec = AuditLogQueryRequest {
+      table_name: Some(AuditTable::DispatchDocuments),
+      record_id: Some(record_id),
+      origin_db_id: Some(origin_db_id),
+      limit: Some(20),
+      offset: Some(5),
+    }
+    .into();
+
+    assert_eq!(spec.table_name, Some(AuditTable::DispatchDocuments));
+    assert_eq!(spec.record_id, Some(record_id));
+    assert_eq!(spec.origin_db_id, Some(origin_db_id));
+    assert_eq!(spec.limit, Some(20));
+    assert_eq!(spec.offset, Some(5));
   }
 }

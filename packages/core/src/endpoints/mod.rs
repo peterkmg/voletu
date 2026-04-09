@@ -5,7 +5,6 @@ pub mod document;
 pub mod flows;
 pub mod ledger;
 pub mod paths;
-pub mod query;
 pub mod sync;
 pub mod system;
 

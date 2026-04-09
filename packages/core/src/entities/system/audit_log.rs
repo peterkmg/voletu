@@ -9,7 +9,7 @@ use crate::enums;
 pub struct Model {
   #[sea_orm(primary_key)]
   pub id: Uuid,
-  pub table_name: String,
+  pub table_name: enums::AuditTable,
   pub record_id: Uuid,
   pub action: enums::AuditAction,
   pub old_values: Option<Json>,

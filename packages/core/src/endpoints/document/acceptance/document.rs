@@ -10,11 +10,14 @@ use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::{AcceptanceResponse, CreateAcceptanceRequest},
-  endpoints::{
-    paths,
-    query::{AcceptanceDocumentQueryParams, EmbedParams, PaginationParams},
+  dtos::{
+    AcceptanceDocumentQueryParams,
+    AcceptanceResponse,
+    CreateAcceptanceRequest,
+    EmbedParams,
+    PaginationParams,
   },
+  endpoints::paths,
   enums,
   services::{
     common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},

@@ -18,11 +18,9 @@ use crate::{
     DispatchCompositeResponse,
     DispatchMeasurementResponse,
     DispatchResponse,
+    EmbedParams,
   },
-  endpoints::{
-    paths,
-    query::{EmbedParams, PaginationParams},
-  },
+  endpoints::paths,
   enums,
   services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
   utils::jwt::Claims,

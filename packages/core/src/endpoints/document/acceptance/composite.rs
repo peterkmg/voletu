@@ -10,8 +10,8 @@ use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::{AcceptanceCompositeResponse, CreateAcceptanceCompositeRequest},
-  endpoints::{paths, query::EmbedParams},
+  dtos::{AcceptanceCompositeResponse, CreateAcceptanceCompositeRequest, EmbedParams},
+  endpoints::paths,
   services::common::ensure_supervisor_or_higher,
   utils::jwt::Claims,
 };
