@@ -14,14 +14,13 @@ use fake::{
 };
 use rand::{RngExt, SeedableRng};
 use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, DatabaseConnection};
-use serde::Serialize;
-use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
   api::{response::ApiResponse, result::ApiResult, state::ApiState, ApiError},
   context::audit::with_audit_context,
+  dtos::SeedResult,
   entities::{
     acceptance_document,
     acceptance_item,
@@ -55,28 +54,6 @@ use crate::{
   services::system::local::load_local_bootstrap,
   utils::password::hash_password,
 };
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct SeedResult {
-  pub product_types: usize,
-  pub product_groups: usize,
-  pub products: usize,
-  pub companies: usize,
-  pub ports: usize,
-  pub bases: usize,
-  pub warehouses: usize,
-  pub storages: usize,
-  pub users: usize,
-  pub truck_waybills: usize,
-  pub rail_waybills: usize,
-  pub acceptance_docs: usize,
-  pub dispatch_docs: usize,
-  pub blending_docs: usize,
-  pub ownership_transfers: usize,
-  pub physical_transfers: usize,
-  pub reconciliations: usize,
-  pub ledger_entries: usize,
-}
 
 #[utoipa::path(
   post,
@@ -590,7 +567,7 @@ async fn do_seed(
         .or_default() -= Decimal::from(amount);
     }
     audit
-      .backfill_document_routing(db, "dispatch_documents", doc.id)
+      .backfill_document_routing::<dispatch_document::Entity>(db, doc.id)
       .await?;
   }
 
@@ -695,7 +672,7 @@ async fn do_seed(
         .or_default() += Decimal::from(amount);
     }
     audit
-      .backfill_document_routing(db, "acceptance_documents", doc.id)
+      .backfill_document_routing::<acceptance_document::Entity>(db, doc.id)
       .await?;
   }
 
@@ -769,7 +746,7 @@ async fn do_seed(
         .or_default() += Decimal::from(produced);
     }
     audit
-      .backfill_document_routing(db, "blending_documents", doc.id)
+      .backfill_document_routing::<blending_document::Entity>(db, doc.id)
       .await?;
   }
 
@@ -821,7 +798,7 @@ async fn do_seed(
       .await?;
     }
     audit
-      .backfill_document_routing(db, "ownership_transfers", doc.id)
+      .backfill_document_routing::<ownership_transfer::Entity>(db, doc.id)
       .await?;
   }
 
@@ -881,7 +858,7 @@ async fn do_seed(
       .await?;
     }
     audit
-      .backfill_document_routing(db, "physical_storage_transfers", doc.id)
+      .backfill_document_routing::<physical_storage_transfer::Entity>(db, doc.id)
       .await?;
   }
 

@@ -185,7 +185,7 @@ impl DocumentService {
 
     self
       .audit
-      .backfill_document_routing(conn, "acceptance_documents", document.id)
+      .backfill_document_routing::<acceptance_document::Entity>(conn, document.id)
       .await?;
 
     Ok(dtos::AcceptanceCompositeResponse { document, items })

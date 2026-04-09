@@ -203,7 +203,7 @@ impl DocumentService {
 
     self
       .audit
-      .backfill_document_routing(conn, "dispatch_documents", document.id)
+      .backfill_document_routing::<dispatch_document::Entity>(conn, document.id)
       .await?;
 
     Ok(dtos::DispatchCompositeResponse {

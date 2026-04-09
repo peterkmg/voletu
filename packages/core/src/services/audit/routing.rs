@@ -3,7 +3,14 @@
 //! Called during audit log registration to populate `target_base_ids`.
 //! Resolution chain: entity → storage_id → storage.warehouse_id → warehouse.base_id
 
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+use sea_orm::{
+  ColumnTrait,
+  ConnectionTrait,
+  EntityLoaderTrait,
+  EntityName,
+  ModelTrait,
+  QueryFilter,
+};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -38,6 +45,170 @@ use crate::{
   enums::RoleType,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AuditTable {
+  AcceptanceItems,
+  DispatchItems,
+  BlendingComponents,
+  BlendingResults,
+  OwnershipTransferItems,
+  InventoryAdjustments,
+  PhysicalTransferItems,
+  AcceptanceDocuments,
+  DispatchDocuments,
+  PhysicalStorageTransfers,
+  OwnershipTransfers,
+  BlendingDocuments,
+  InventoryReconciliations,
+  Storages,
+  Warehouses,
+  Bases,
+  TruckWaybills,
+  RailWaybills,
+  TruckWaybillItems,
+  TruckWeightDocs,
+  RailWagonManifests,
+  RailWagonMeasurements,
+  RailWagonWeights,
+  DispatchStorageMeasurements,
+  InventoryLedgerEntries,
+  Broadcast,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AuditTableCategory {
+  StorageItems,
+  DocumentHeaders,
+  Reconciliation,
+  References,
+  Transport,
+  DispatchMeasurements,
+  Broadcast,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransportRouteKind {
+  TruckWaybill,
+  RailWaybill,
+  TruckWaybillItem,
+  TruckWeightDoc,
+  RailWagonManifest,
+  RailWagonMeasurement,
+  RailWagonWeight,
+}
+
+impl AuditTable {
+  pub fn from_table_name(table_name: &str) -> Self {
+    match table_name {
+      "acceptance_items" => Self::AcceptanceItems,
+      "dispatch_items" => Self::DispatchItems,
+      "blending_components" => Self::BlendingComponents,
+      "blending_results" => Self::BlendingResults,
+      "ownership_transfer_items" => Self::OwnershipTransferItems,
+      "inventory_adjustments" => Self::InventoryAdjustments,
+      "physical_transfer_items" => Self::PhysicalTransferItems,
+      "acceptance_documents" => Self::AcceptanceDocuments,
+      "dispatch_documents" => Self::DispatchDocuments,
+      "physical_storage_transfers" => Self::PhysicalStorageTransfers,
+      "ownership_transfers" => Self::OwnershipTransfers,
+      "blending_documents" => Self::BlendingDocuments,
+      "inventory_reconciliations" => Self::InventoryReconciliations,
+      "storages" => Self::Storages,
+      "warehouses" => Self::Warehouses,
+      "bases" => Self::Bases,
+      "truck_waybills" => Self::TruckWaybills,
+      "rail_waybills" => Self::RailWaybills,
+      "truck_waybill_items" => Self::TruckWaybillItems,
+      "truck_weight_docs" => Self::TruckWeightDocs,
+      "rail_wagon_manifests" => Self::RailWagonManifests,
+      "rail_wagon_measurements" => Self::RailWagonMeasurements,
+      "rail_wagon_weights" => Self::RailWagonWeights,
+      "dispatch_storage_measurements" => Self::DispatchStorageMeasurements,
+      "inventory_ledger_entries" => Self::InventoryLedgerEntries,
+      _ => Self::Broadcast,
+    }
+  }
+
+  pub fn for_model<M: ModelTrait>() -> Self {
+    Self::from_table_name(<<M as ModelTrait>::Entity as EntityName>::table_name(
+      &Default::default(),
+    ))
+  }
+
+  pub fn table_name(self) -> &'static str {
+    match self {
+      Self::AcceptanceItems => "acceptance_items",
+      Self::DispatchItems => "dispatch_items",
+      Self::BlendingComponents => "blending_components",
+      Self::BlendingResults => "blending_results",
+      Self::OwnershipTransferItems => "ownership_transfer_items",
+      Self::InventoryAdjustments => "inventory_adjustments",
+      Self::PhysicalTransferItems => "physical_transfer_items",
+      Self::AcceptanceDocuments => "acceptance_documents",
+      Self::DispatchDocuments => "dispatch_documents",
+      Self::PhysicalStorageTransfers => "physical_storage_transfers",
+      Self::OwnershipTransfers => "ownership_transfers",
+      Self::BlendingDocuments => "blending_documents",
+      Self::InventoryReconciliations => "inventory_reconciliations",
+      Self::Storages => "storages",
+      Self::Warehouses => "warehouses",
+      Self::Bases => "bases",
+      Self::TruckWaybills => "truck_waybills",
+      Self::RailWaybills => "rail_waybills",
+      Self::TruckWaybillItems => "truck_waybill_items",
+      Self::TruckWeightDocs => "truck_weight_docs",
+      Self::RailWagonManifests => "rail_wagon_manifests",
+      Self::RailWagonMeasurements => "rail_wagon_measurements",
+      Self::RailWagonWeights => "rail_wagon_weights",
+      Self::DispatchStorageMeasurements => "dispatch_storage_measurements",
+      Self::InventoryLedgerEntries => "inventory_ledger_entries",
+      Self::Broadcast => "",
+    }
+  }
+
+  pub fn category(self) -> AuditTableCategory {
+    match self {
+      Self::AcceptanceItems
+      | Self::DispatchItems
+      | Self::BlendingComponents
+      | Self::BlendingResults
+      | Self::OwnershipTransferItems
+      | Self::InventoryAdjustments
+      | Self::PhysicalTransferItems
+      | Self::InventoryLedgerEntries => AuditTableCategory::StorageItems,
+      Self::AcceptanceDocuments
+      | Self::DispatchDocuments
+      | Self::PhysicalStorageTransfers
+      | Self::OwnershipTransfers
+      | Self::BlendingDocuments => AuditTableCategory::DocumentHeaders,
+      Self::InventoryReconciliations => AuditTableCategory::Reconciliation,
+      Self::Storages | Self::Warehouses | Self::Bases => AuditTableCategory::References,
+      Self::TruckWaybills
+      | Self::RailWaybills
+      | Self::TruckWaybillItems
+      | Self::TruckWeightDocs
+      | Self::RailWagonManifests
+      | Self::RailWagonMeasurements
+      | Self::RailWagonWeights => AuditTableCategory::Transport,
+      Self::DispatchStorageMeasurements => AuditTableCategory::DispatchMeasurements,
+      Self::Broadcast => AuditTableCategory::Broadcast,
+    }
+  }
+
+  pub fn transport_route_kind(self) -> Option<TransportRouteKind> {
+    match self {
+      Self::TruckWaybills => Some(TransportRouteKind::TruckWaybill),
+      Self::RailWaybills => Some(TransportRouteKind::RailWaybill),
+      Self::TruckWaybillItems => Some(TransportRouteKind::TruckWaybillItem),
+      Self::TruckWeightDocs => Some(TransportRouteKind::TruckWeightDoc),
+      Self::RailWagonManifests => Some(TransportRouteKind::RailWagonManifest),
+      Self::RailWagonMeasurements => Some(TransportRouteKind::RailWagonMeasurement),
+      Self::RailWagonWeights => Some(TransportRouteKind::RailWagonWeight),
+      _ => None,
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -46,108 +217,62 @@ use crate::{
 /// Returns empty vec for global/broadcast tables (catalog, system).
 pub async fn resolve_target_base_ids<C: ConnectionTrait>(
   conn: &C,
-  table_name: &str,
+  table: AuditTable,
   record_id: Uuid,
   new_values: Option<&Value>,
 ) -> Result<Vec<Uuid>, ApiError> {
-  match table_name {
-    // --- Item tables: resolve via storage_id ---
-    "acceptance_items" => resolve_via_storage(conn, new_values, "storage_id").await,
-    "dispatch_items" => resolve_via_storage(conn, new_values, "storage_id").await,
-    "blending_components" => resolve_via_storage(conn, new_values, "storage_id").await,
-    "blending_results" => resolve_via_storage(conn, new_values, "storage_id").await,
-    "ownership_transfer_items" => resolve_via_storage(conn, new_values, "storage_id").await,
-    "inventory_adjustments" => resolve_via_storage(conn, new_values, "storage_id").await,
+  resolve_target_base_ids_by_category(conn, table, record_id, new_values).await
+}
 
-    // --- Physical transfer items: TWO storage references ---
-    "physical_transfer_items" => {
-      let mut bases = Vec::new();
-      bases.extend(resolve_via_storage(conn, new_values, "from_storage_id").await?);
-      bases.extend(resolve_via_storage(conn, new_values, "to_storage_id").await?);
-      Ok(dedupe_base_ids(bases))
-    }
-
-    // --- Document headers: resolve via their items ---
-    "acceptance_documents" => resolve_acceptance_doc_bases(conn, record_id).await,
-    "dispatch_documents" => resolve_dispatch_doc_bases(conn, record_id).await,
-    "physical_storage_transfers" => resolve_physical_transfer_doc_bases(conn, record_id).await,
-    "ownership_transfers" => resolve_ownership_doc_bases(conn, record_id).await,
-    "blending_documents" => resolve_blending_doc_bases(conn, record_id).await,
-
-    // --- Reconciliation: direct warehouse_id on document ---
-    "inventory_reconciliations" => resolve_via_warehouse(conn, new_values, record_id).await,
-
-    // --- Reference tables ---
-    "storages" => {
-      if let Some(warehouse_id) = extract_uuid_field(new_values, "warehouse_id") {
-        resolve_warehouse_to_base(conn, warehouse_id).await
-      } else {
-        match resolve_storage_to_base(conn, record_id).await? {
-          Some(base_id) => Ok(vec![base_id]),
-          None => Ok(vec![]),
-        }
-      }
-    }
-    "warehouses" => {
-      if let Some(base_id) = extract_uuid_field(new_values, "base_id") {
-        Ok(vec![base_id])
-      } else {
-        let warehouse: Option<warehouse::ModelEx> = warehouse::Entity::load()
-          .filter_by_id(record_id)
-          .one(conn)
-          .await?;
-        Ok(
-          warehouse
-            .map(|warehouse| vec![warehouse.base_id])
-            .unwrap_or_default(),
-        )
-      }
-    }
-    "bases" => Ok(vec![record_id]),
-
-    // --- Transport waybills: route via base_id on the waybill ---
-    "truck_waybills" => {
-      resolve_via_base_id(new_values, record_id, |id| async move {
-        let waybill: Option<truck_waybill::ModelEx> = truck_waybill::Entity::load()
-          .filter_by_id(id)
-          .one(conn)
-          .await?;
-        Ok(waybill.map(|waybill| waybill.base_id))
-      })
-      .await
-    }
-    "rail_waybills" => {
-      resolve_via_base_id(new_values, record_id, |id| async move {
-        let waybill: Option<rail_waybill::ModelEx> = rail_waybill::Entity::load()
-          .filter_by_id(id)
-          .one(conn)
-          .await?;
-        Ok(waybill.map(|waybill| waybill.base_id))
-      })
-      .await
+async fn resolve_target_base_ids_by_category<C: ConnectionTrait>(
+  conn: &C,
+  table: AuditTable,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  match table {
+    AuditTable::AcceptanceItems
+    | AuditTable::DispatchItems
+    | AuditTable::BlendingComponents
+    | AuditTable::BlendingResults
+    | AuditTable::OwnershipTransferItems
+    | AuditTable::InventoryAdjustments
+    | AuditTable::PhysicalTransferItems
+    | AuditTable::InventoryLedgerEntries => {
+      resolve_storage_item_bases(conn, table, record_id, new_values).await
     }
 
-    // --- Waybill children: resolve via parent waybill's base_id ---
-    "truck_waybill_items" => {
-      resolve_truck_child_base(conn, new_values, record_id, "truck_waybill_id").await
+    AuditTable::AcceptanceDocuments
+    | AuditTable::DispatchDocuments
+    | AuditTable::PhysicalStorageTransfers
+    | AuditTable::OwnershipTransfers
+    | AuditTable::BlendingDocuments => resolve_document_header_bases(conn, table, record_id).await,
+
+    AuditTable::InventoryReconciliations => {
+      resolve_reconciliation_bases(conn, new_values, record_id).await
     }
-    "truck_weight_docs" => {
-      resolve_truck_child_base(conn, new_values, record_id, "truck_waybill_id").await
+
+    AuditTable::Storages | AuditTable::Warehouses | AuditTable::Bases => {
+      resolve_reference_bases(conn, table, record_id, new_values).await
     }
-    "rail_wagon_manifests" => resolve_rail_manifest_base(conn, new_values, record_id).await,
-    "rail_wagon_measurements" => resolve_rail_nested_base(conn, record_id).await,
-    "rail_wagon_weights" => resolve_rail_nested_base(conn, record_id).await,
+
+    AuditTable::TruckWaybills
+    | AuditTable::RailWaybills
+    | AuditTable::TruckWaybillItems
+    | AuditTable::TruckWeightDocs
+    | AuditTable::RailWagonManifests
+    | AuditTable::RailWagonMeasurements
+    | AuditTable::RailWagonWeights => {
+      resolve_transport_bases(conn, table, record_id, new_values).await
+    }
 
     // --- Dispatch measurements: inherit from parent dispatch document ---
-    "dispatch_storage_measurements" => {
+    AuditTable::DispatchStorageMeasurements => {
       resolve_dispatch_measurement_base(conn, new_values, record_id).await
     }
 
-    // --- Ledger entries: resolve via storage_id ---
-    "inventory_ledger_entries" => resolve_via_storage(conn, new_values, "storage_id").await,
-
     // --- Global tables (catalog, system): broadcast to all ---
-    _ => Ok(vec![]),
+    AuditTable::Broadcast => Ok(vec![]),
   }
 }
 
@@ -298,6 +423,95 @@ async fn resolve_warehouse_to_base<C: ConnectionTrait>(
   )
 }
 
+async fn resolve_storage_item_bases<C: ConnectionTrait>(
+  conn: &C,
+  table: AuditTable,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  match table {
+    AuditTable::PhysicalTransferItems => {
+      let mut bases = Vec::new();
+      bases.extend(resolve_via_storage(conn, new_values, "from_storage_id").await?);
+      bases.extend(resolve_via_storage(conn, new_values, "to_storage_id").await?);
+      Ok(dedupe_base_ids(bases))
+    }
+    AuditTable::AcceptanceItems
+    | AuditTable::DispatchItems
+    | AuditTable::BlendingComponents
+    | AuditTable::BlendingResults
+    | AuditTable::OwnershipTransferItems
+    | AuditTable::InventoryAdjustments
+    | AuditTable::InventoryLedgerEntries => {
+      let _ = record_id;
+      resolve_via_storage(conn, new_values, "storage_id").await
+    }
+    _ => unreachable!("non-storage-item table passed to resolve_storage_item_bases"),
+  }
+}
+
+async fn resolve_document_header_bases<C: ConnectionTrait>(
+  conn: &C,
+  table: AuditTable,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  match table {
+    AuditTable::AcceptanceDocuments => resolve_acceptance_doc_bases(conn, record_id).await,
+    AuditTable::DispatchDocuments => resolve_dispatch_doc_bases(conn, record_id).await,
+    AuditTable::PhysicalStorageTransfers => {
+      resolve_physical_transfer_doc_bases(conn, record_id).await
+    }
+    AuditTable::OwnershipTransfers => resolve_ownership_doc_bases(conn, record_id).await,
+    AuditTable::BlendingDocuments => resolve_blending_doc_bases(conn, record_id).await,
+    _ => unreachable!("non-document-header table passed to resolve_document_header_bases"),
+  }
+}
+
+async fn resolve_reconciliation_bases<C: ConnectionTrait>(
+  conn: &C,
+  new_values: Option<&Value>,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  resolve_via_warehouse(conn, new_values, record_id).await
+}
+
+async fn resolve_reference_bases<C: ConnectionTrait>(
+  conn: &C,
+  table: AuditTable,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  match table {
+    AuditTable::Storages => {
+      if let Some(warehouse_id) = extract_uuid_field(new_values, "warehouse_id") {
+        resolve_warehouse_to_base(conn, warehouse_id).await
+      } else {
+        match resolve_storage_to_base(conn, record_id).await? {
+          Some(base_id) => Ok(vec![base_id]),
+          None => Ok(vec![]),
+        }
+      }
+    }
+    AuditTable::Warehouses => {
+      if let Some(base_id) = extract_uuid_field(new_values, "base_id") {
+        Ok(vec![base_id])
+      } else {
+        let warehouse: Option<warehouse::ModelEx> = warehouse::Entity::load()
+          .filter_by_id(record_id)
+          .one(conn)
+          .await?;
+        Ok(
+          warehouse
+            .map(|warehouse| vec![warehouse.base_id])
+            .unwrap_or_default(),
+        )
+      }
+    }
+    AuditTable::Bases => Ok(vec![record_id]),
+    _ => unreachable!("non-reference table passed to resolve_reference_bases"),
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Document header resolvers — load headers with child rows, collect storage_ids
 // ---------------------------------------------------------------------------
@@ -437,15 +651,11 @@ async fn resolve_truck_waybill_base<C: ConnectionTrait>(
   conn: &C,
   waybill_id: Uuid,
 ) -> Result<Vec<Uuid>, ApiError> {
-  let waybill: Option<truck_waybill::ModelEx> = truck_waybill::Entity::load()
-    .filter_by_id(waybill_id)
-    .one(conn)
-    .await?;
-
   Ok(
-    waybill
-      .map(|waybill| vec![waybill.base_id])
-      .unwrap_or_default(),
+    load_truck_waybill_base_id(conn, waybill_id)
+      .await?
+      .into_iter()
+      .collect(),
   )
 }
 
@@ -453,15 +663,11 @@ async fn resolve_rail_waybill_base<C: ConnectionTrait>(
   conn: &C,
   waybill_id: Uuid,
 ) -> Result<Vec<Uuid>, ApiError> {
-  let waybill: Option<rail_waybill::ModelEx> = rail_waybill::Entity::load()
-    .filter_by_id(waybill_id)
-    .one(conn)
-    .await?;
-
   Ok(
-    waybill
-      .map(|waybill| vec![waybill.base_id])
-      .unwrap_or_default(),
+    load_rail_waybill_base_id(conn, waybill_id)
+      .await?
+      .into_iter()
+      .collect(),
   )
 }
 
@@ -480,35 +686,171 @@ async fn resolve_manifest_waybill_base<C: ConnectionTrait>(
   }
 }
 
-/// Resolve truck waybill child (item or weight_doc) → parent waybill → base_id.
-async fn resolve_truck_child_base<C: ConnectionTrait>(
+async fn resolve_transport_bases<C: ConnectionTrait>(
+  conn: &C,
+  table: AuditTable,
+  record_id: Uuid,
+  new_values: Option<&Value>,
+) -> Result<Vec<Uuid>, ApiError> {
+  match table.transport_route_kind() {
+    Some(TransportRouteKind::TruckWaybill) => {
+      resolve_truck_waybill_route(conn, new_values, record_id).await
+    }
+    Some(TransportRouteKind::RailWaybill) => {
+      resolve_rail_waybill_route(conn, new_values, record_id).await
+    }
+    Some(TransportRouteKind::TruckWaybillItem) => {
+      resolve_truck_waybill_item_base(conn, new_values, record_id).await
+    }
+    Some(TransportRouteKind::TruckWeightDoc) => {
+      resolve_truck_weight_doc_base(conn, new_values, record_id).await
+    }
+    Some(TransportRouteKind::RailWagonManifest) => {
+      resolve_rail_manifest_base(conn, new_values, record_id).await
+    }
+    Some(TransportRouteKind::RailWagonMeasurement) => {
+      resolve_rail_wagon_measurement_base(conn, new_values, record_id).await
+    }
+    Some(TransportRouteKind::RailWagonWeight) => {
+      resolve_rail_wagon_weight_base(conn, new_values, record_id).await
+    }
+    None => unreachable!("non-transport table passed to resolve_transport_bases"),
+  }
+}
+
+async fn resolve_truck_waybill_route<C: ConnectionTrait>(
   conn: &C,
   new_values: Option<&Value>,
   record_id: Uuid,
-  parent_fk_field: &str,
 ) -> Result<Vec<Uuid>, ApiError> {
-  let waybill_id = match extract_uuid_field(new_values, parent_fk_field) {
+  resolve_via_base_id(new_values, record_id, |id| {
+    load_truck_waybill_base_id(conn, id)
+  })
+  .await
+}
+
+async fn resolve_rail_waybill_route<C: ConnectionTrait>(
+  conn: &C,
+  new_values: Option<&Value>,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  resolve_via_base_id(new_values, record_id, |id| {
+    load_rail_waybill_base_id(conn, id)
+  })
+  .await
+}
+
+async fn resolve_truck_waybill_item_base<C: ConnectionTrait>(
+  conn: &C,
+  new_values: Option<&Value>,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  let waybill_id = match extract_uuid_field(new_values, "truck_waybill_id") {
     Some(id) => id,
     None => {
-      if let Some(item) = truck_waybill_item::Entity::load()
+      let item: Option<truck_waybill_item::ModelEx> = truck_waybill_item::Entity::load()
         .filter_by_id(record_id)
         .one(conn)
-        .await?
-      {
-        item.truck_waybill_id
-      } else if let Some(weight_doc) = truck_weight_doc::Entity::load()
-        .filter_by_id(record_id)
-        .one(conn)
-        .await?
-      {
-        weight_doc.truck_waybill_id
-      } else {
-        return Ok(vec![]);
+        .await?;
+      match item {
+        Some(item) => item.truck_waybill_id,
+        None => return Ok(vec![]),
       }
     }
   };
 
   resolve_truck_waybill_base(conn, waybill_id).await
+}
+
+async fn resolve_truck_weight_doc_base<C: ConnectionTrait>(
+  conn: &C,
+  new_values: Option<&Value>,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  let waybill_id = match extract_uuid_field(new_values, "truck_waybill_id") {
+    Some(id) => id,
+    None => {
+      let weight_doc: Option<truck_weight_doc::ModelEx> = truck_weight_doc::Entity::load()
+        .filter_by_id(record_id)
+        .one(conn)
+        .await?;
+      match weight_doc {
+        Some(weight_doc) => weight_doc.truck_waybill_id,
+        None => return Ok(vec![]),
+      }
+    }
+  };
+
+  resolve_truck_waybill_base(conn, waybill_id).await
+}
+
+async fn resolve_rail_wagon_measurement_base<C: ConnectionTrait>(
+  conn: &C,
+  new_values: Option<&Value>,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  let manifest_id = match extract_uuid_field(new_values, "wagon_manifest_id") {
+    Some(id) => id,
+    None => {
+      let measurement: Option<rail_wagon_measurement::ModelEx> =
+        rail_wagon_measurement::Entity::load()
+          .filter_by_id(record_id)
+          .one(conn)
+          .await?;
+      match measurement {
+        Some(measurement) => measurement.wagon_manifest_id,
+        None => return Ok(vec![]),
+      }
+    }
+  };
+
+  resolve_manifest_waybill_base(conn, manifest_id).await
+}
+
+async fn resolve_rail_wagon_weight_base<C: ConnectionTrait>(
+  conn: &C,
+  new_values: Option<&Value>,
+  record_id: Uuid,
+) -> Result<Vec<Uuid>, ApiError> {
+  let manifest_id = match extract_uuid_field(new_values, "wagon_manifest_id") {
+    Some(id) => id,
+    None => {
+      let weight: Option<rail_wagon_weight::ModelEx> = rail_wagon_weight::Entity::load()
+        .filter_by_id(record_id)
+        .one(conn)
+        .await?;
+      match weight {
+        Some(weight) => weight.wagon_manifest_id,
+        None => return Ok(vec![]),
+      }
+    }
+  };
+
+  resolve_manifest_waybill_base(conn, manifest_id).await
+}
+
+async fn load_truck_waybill_base_id<C: ConnectionTrait>(
+  conn: &C,
+  waybill_id: Uuid,
+) -> Result<Option<Uuid>, sea_orm::DbErr> {
+  let waybill: Option<truck_waybill::ModelEx> = truck_waybill::Entity::load()
+    .filter_by_id(waybill_id)
+    .one(conn)
+    .await?;
+
+  Ok(waybill.map(|waybill| waybill.base_id))
+}
+
+async fn load_rail_waybill_base_id<C: ConnectionTrait>(
+  conn: &C,
+  waybill_id: Uuid,
+) -> Result<Option<Uuid>, sea_orm::DbErr> {
+  let waybill: Option<rail_waybill::ModelEx> = rail_waybill::Entity::load()
+    .filter_by_id(waybill_id)
+    .one(conn)
+    .await?;
+
+  Ok(waybill.map(|waybill| waybill.base_id))
 }
 
 /// Resolve rail wagon manifest → parent rail waybill → base_id.
@@ -534,30 +876,6 @@ async fn resolve_rail_manifest_base<C: ConnectionTrait>(
   resolve_rail_waybill_base(conn, waybill_id).await
 }
 
-/// Resolve rail wagon measurement/weight → manifest → waybill → base_id.
-async fn resolve_rail_nested_base(
-  conn: &impl ConnectionTrait,
-  record_id: Uuid,
-) -> Result<Vec<Uuid>, ApiError> {
-  if let Some(measurement) = rail_wagon_measurement::Entity::load()
-    .filter_by_id(record_id)
-    .one(conn)
-    .await?
-  {
-    return resolve_manifest_waybill_base(conn, measurement.wagon_manifest_id).await;
-  }
-
-  if let Some(weight) = rail_wagon_weight::Entity::load()
-    .filter_by_id(record_id)
-    .one(conn)
-    .await?
-  {
-    return resolve_manifest_waybill_base(conn, weight.wagon_manifest_id).await;
-  }
-
-  Ok(vec![])
-}
-
 /// Resolve dispatch_storage_measurement → parent dispatch document → routing.
 async fn resolve_dispatch_measurement_base<C: ConnectionTrait>(
   conn: &C,
@@ -580,4 +898,100 @@ async fn resolve_dispatch_measurement_base<C: ConnectionTrait>(
   };
 
   resolve_dispatch_doc_bases(conn, doc_id).await
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{AuditTable, AuditTableCategory, TransportRouteKind};
+  use crate::entities::{dispatch_document, local};
+
+  #[test]
+  fn audit_tables_use_canonical_entity_names() {
+    assert_eq!(
+      AuditTable::for_model::<dispatch_document::Model>(),
+      AuditTable::DispatchDocuments
+    );
+    assert_eq!(
+      AuditTable::DispatchDocuments.table_name(),
+      "dispatch_documents"
+    );
+
+    assert_eq!(
+      AuditTable::for_model::<local::Model>(),
+      AuditTable::Broadcast
+    );
+    assert_eq!(
+      AuditTable::from_table_name("unknown_table"),
+      AuditTable::Broadcast
+    );
+  }
+
+  #[test]
+  fn audit_tables_map_into_stable_domain_categories() {
+    assert_eq!(
+      AuditTable::AcceptanceItems.category(),
+      AuditTableCategory::StorageItems
+    );
+    assert_eq!(
+      AuditTable::PhysicalTransferItems.category(),
+      AuditTableCategory::StorageItems
+    );
+    assert_eq!(
+      AuditTable::DispatchDocuments.category(),
+      AuditTableCategory::DocumentHeaders
+    );
+    assert_eq!(
+      AuditTable::InventoryReconciliations.category(),
+      AuditTableCategory::Reconciliation
+    );
+    assert_eq!(
+      AuditTable::Warehouses.category(),
+      AuditTableCategory::References
+    );
+    assert_eq!(
+      AuditTable::RailWagonWeights.category(),
+      AuditTableCategory::Transport
+    );
+    assert_eq!(
+      AuditTable::DispatchStorageMeasurements.category(),
+      AuditTableCategory::DispatchMeasurements
+    );
+    assert_eq!(
+      AuditTable::Broadcast.category(),
+      AuditTableCategory::Broadcast
+    );
+  }
+
+  #[test]
+  fn transport_tables_map_into_concrete_route_kinds() {
+    assert_eq!(
+      AuditTable::TruckWaybills.transport_route_kind(),
+      Some(TransportRouteKind::TruckWaybill)
+    );
+    assert_eq!(
+      AuditTable::RailWaybills.transport_route_kind(),
+      Some(TransportRouteKind::RailWaybill)
+    );
+    assert_eq!(
+      AuditTable::TruckWaybillItems.transport_route_kind(),
+      Some(TransportRouteKind::TruckWaybillItem)
+    );
+    assert_eq!(
+      AuditTable::TruckWeightDocs.transport_route_kind(),
+      Some(TransportRouteKind::TruckWeightDoc)
+    );
+    assert_eq!(
+      AuditTable::RailWagonManifests.transport_route_kind(),
+      Some(TransportRouteKind::RailWagonManifest)
+    );
+    assert_eq!(
+      AuditTable::RailWagonMeasurements.transport_route_kind(),
+      Some(TransportRouteKind::RailWagonMeasurement)
+    );
+    assert_eq!(
+      AuditTable::RailWagonWeights.transport_route_kind(),
+      Some(TransportRouteKind::RailWagonWeight)
+    );
+    assert_eq!(AuditTable::DispatchDocuments.transport_route_kind(), None);
+  }
 }

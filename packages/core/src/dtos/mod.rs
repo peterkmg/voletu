@@ -137,6 +137,7 @@ pub use response::{
     StorageResponse,
     WarehouseResponse,
   },
+  dev::SeedResult,
   document::{
     AcceptanceCompositeResponse,
     AcceptanceItemResponse,
@@ -248,6 +249,26 @@ mod tests {
       node_name: "Node".into(),
       worker_state: "OnlineIdle".into(),
       last_sync_at: None,
+    };
+    let _ = crate::dtos::SeedResult {
+      product_types: 1,
+      product_groups: 2,
+      products: 3,
+      companies: 4,
+      ports: 5,
+      bases: 6,
+      warehouses: 7,
+      storages: 8,
+      users: 9,
+      truck_waybills: 10,
+      rail_waybills: 11,
+      acceptance_docs: 12,
+      dispatch_docs: 13,
+      blending_docs: 14,
+      ownership_transfers: 15,
+      physical_transfers: 16,
+      reconciliations: 17,
+      ledger_entries: 18,
     };
   }
 }

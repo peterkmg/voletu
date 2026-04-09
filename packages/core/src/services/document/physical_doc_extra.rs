@@ -83,7 +83,7 @@ impl DocumentService {
 
     self
       .audit
-      .backfill_document_routing(conn, "physical_storage_transfers", response.id)
+      .backfill_document_routing::<physical_storage_transfer::Entity>(conn, response.id)
       .await?;
 
     Ok(response)

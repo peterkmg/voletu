@@ -83,7 +83,7 @@ impl DocumentService {
 
     self
       .audit
-      .backfill_document_routing(conn, "ownership_transfers", response.id)
+      .backfill_document_routing::<ownership_transfer::Entity>(conn, response.id)
       .await?;
 
     Ok(response)
