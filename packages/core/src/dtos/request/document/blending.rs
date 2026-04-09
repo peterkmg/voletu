@@ -1,0 +1,110 @@
+use chrono::{DateTime, Utc};
+use sea_orm::entity::prelude::Decimal;
+use uuid::Uuid;
+use validator::Validate;
+use voletu_core_macros::request_dto;
+
+#[request_dto]
+pub struct CreateBlendingRequest {
+  #[validate(length(min = 1))]
+  pub document_number: String,
+  pub date: DateTime<Utc>,
+  pub contractor_id: Uuid,
+  pub target_product_id: Uuid,
+}
+
+#[request_dto]
+pub struct UpdateBlendingRequest {
+  #[validate(length(min = 1))]
+  pub document_number: Option<String>,
+  pub date: Option<DateTime<Utc>>,
+  pub contractor_id: Option<Uuid>,
+  pub target_product_id: Option<Uuid>,
+}
+
+#[request_dto]
+pub struct CreateBlendingComponentRequest {
+  pub blending_doc_id: Uuid,
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub component: BlendingComponentCompositeRequest,
+}
+
+impl CreateBlendingComponentRequest {
+  pub fn from_composite(
+    blending_doc_id: Uuid,
+    component: &BlendingComponentCompositeRequest,
+  ) -> Self {
+    Self {
+      blending_doc_id,
+      component: component.clone(),
+    }
+  }
+}
+
+#[request_dto]
+pub struct UpdateBlendingComponentRequest {
+  pub storage_id: Option<Uuid>,
+  pub source_product_id: Option<Uuid>,
+  pub amount_used: Option<Decimal>,
+}
+
+#[request_dto]
+pub struct CreateBlendingResultRequest {
+  pub blending_doc_id: Uuid,
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub result: BlendingResultCompositeRequest,
+}
+
+impl CreateBlendingResultRequest {
+  pub fn from_composite(blending_doc_id: Uuid, result: &BlendingResultCompositeRequest) -> Self {
+    Self {
+      blending_doc_id,
+      result: result.clone(),
+    }
+  }
+}
+
+#[request_dto]
+pub struct UpdateBlendingResultRequest {
+  pub storage_id: Option<Uuid>,
+  pub produced_amount: Option<Decimal>,
+}
+
+#[request_dto]
+pub struct BlendingComponentCompositeRequest {
+  pub storage_id: Uuid,
+  pub source_product_id: Uuid,
+  pub amount_used: Decimal,
+}
+
+#[request_dto]
+pub struct BlendingResultCompositeRequest {
+  pub storage_id: Uuid,
+  pub produced_amount: Decimal,
+}
+
+#[request_dto]
+pub struct CreateBlendingCompositeRequest {
+  #[validate(length(min = 1))]
+  pub document_number: String,
+  pub date: DateTime<Utc>,
+  pub contractor_id: Uuid,
+  pub target_product_id: Uuid,
+  #[validate(length(min = 1), nested)]
+  pub components: Vec<BlendingComponentCompositeRequest>,
+  #[validate(length(min = 1), nested)]
+  pub results: Vec<BlendingResultCompositeRequest>,
+}
+
+impl CreateBlendingRequest {
+  pub fn from_composite(req: &CreateBlendingCompositeRequest) -> Self {
+    Self {
+      document_number: req.document_number.clone(),
+      date: req.date,
+      contractor_id: req.contractor_id,
+      target_product_id: req.target_product_id,
+    }
+  }
+}
