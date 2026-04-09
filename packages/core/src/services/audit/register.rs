@@ -245,21 +245,3 @@ impl AuditService {
     Ok(())
   }
 }
-
-#[cfg(test)]
-mod tests {
-  use super::audit_model_metadata;
-  use crate::entities::{dispatch_document, local};
-
-  #[test]
-  fn audit_model_metadata_keeps_canonical_table_and_routing_key_in_sync() {
-    let dispatch = audit_model_metadata::<dispatch_document::Model>().unwrap();
-    assert_eq!(dispatch.table, crate::enums::AuditTable::DispatchDocuments);
-  }
-
-  #[test]
-  fn audit_model_metadata_maps_broadcast_tables_without_string_fallbacks() {
-    let local = audit_model_metadata::<local::Model>().unwrap();
-    assert_eq!(local.table, crate::enums::AuditTable::Local);
-  }
-}

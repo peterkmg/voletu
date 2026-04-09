@@ -1,2 +1,9 @@
 mod api_errors;
+mod audit_request_response;
+mod audit_routing;
+mod audit_table;
+mod dto_surface;
 mod entity_lifecycle;
+mod query_params;
+mod sync_helpers;
+mod sync_request;
