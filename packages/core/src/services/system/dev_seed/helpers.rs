@@ -11,6 +11,10 @@ use fake::{
   Fake,
 };
 use rand::RngExt;
+use sea_orm::ActiveValue;
+use uuid::Uuid;
+
+use crate::api::ApiError;
 
 pub const PRODUCT_FAMILIES: &[&str] = &[
   "Crude Oil",
@@ -160,4 +164,13 @@ pub fn random_date(now: DateTime<Utc>, rng: &mut rand::rngs::StdRng) -> chrono::
 
 pub fn random_datetime(now: DateTime<Utc>, rng: &mut rand::rngs::StdRng) -> DateTime<Utc> {
   now - Duration::days(rng.random_range(0..=730) as i64)
+}
+
+pub fn saved_uuid(value: ActiveValue<Uuid>, label: &'static str) -> Result<Uuid, ApiError> {
+  match value {
+    ActiveValue::Set(id) | ActiveValue::Unchanged(id) => Ok(id),
+    ActiveValue::NotSet => Err(ApiError::Internal(anyhow::anyhow!(
+      "{label} graph save returned no id"
+    ))),
+  }
 }

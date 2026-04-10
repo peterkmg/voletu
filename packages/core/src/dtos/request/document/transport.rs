@@ -1,8 +1,18 @@
 use chrono::NaiveDate;
-use sea_orm::entity::prelude::Decimal;
+use sea_orm::{entity::prelude::Decimal, ActiveValue::Set};
 use uuid::Uuid;
 use validator::Validate;
 use voletu_core_macros::request_dto;
+
+use crate::entities::{
+  rail_wagon_manifest,
+  rail_wagon_measurement,
+  rail_wagon_weight,
+  rail_waybill,
+  truck_waybill,
+  truck_waybill_item,
+  truck_weight_doc,
+};
 
 #[request_dto]
 pub struct CreateTruckWaybillRequest {
@@ -258,6 +268,124 @@ impl CreateRailWaybillRequest {
       date: req.date,
       sender_id: req.sender_id,
       base_id: req.base_id,
+    }
+  }
+}
+
+impl From<&TruckWaybillItemCompositeRequest> for truck_waybill_item::ActiveModelEx {
+  fn from(item: &TruckWaybillItemCompositeRequest) -> Self {
+    Self {
+      product_id: Set(item.product_id),
+      declared_amount: Set(item.declared_amount),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&TruckWeightDocCompositeRequest> for truck_weight_doc::ActiveModelEx {
+  fn from(weight_doc: &TruckWeightDocCompositeRequest) -> Self {
+    Self {
+      total_weight: Set(weight_doc.total_weight),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&TruckWaybillCompositeRequest> for truck_waybill::ActiveModelEx {
+  fn from(req: &TruckWaybillCompositeRequest) -> Self {
+    Self {
+      document_number: Set(req.document_number.clone()),
+      date: Set(req.date),
+      sender_id: Set(req.sender_id),
+      base_id: Set(req.base_id),
+      items: req
+        .items
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(truck_waybill_item::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      weight_docs: req
+        .weight_docs
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(truck_weight_doc::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&RailWagonMeasurementCompositeRequest> for rail_wagon_measurement::ActiveModelEx {
+  fn from(measurement: &RailWagonMeasurementCompositeRequest) -> Self {
+    Self {
+      measured_height: Set(measurement.measured_height),
+      lab_density: Set(measurement.lab_density),
+      calculated_mass: Set(measurement.calculated_mass),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&RailWagonWeightCompositeRequest> for rail_wagon_weight::ActiveModelEx {
+  fn from(weight: &RailWagonWeightCompositeRequest) -> Self {
+    Self {
+      gross_weight: Set(weight.gross_weight),
+      tare_weight: Set(weight.tare_weight),
+      net_product_weight: Set(weight.net_product_weight),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&RailWagonManifestCompositeRequest> for rail_wagon_manifest::ActiveModelEx {
+  fn from(manifest: &RailWagonManifestCompositeRequest) -> Self {
+    Self {
+      wagon_number: Set(manifest.wagon_number.clone()),
+      product_id: Set(manifest.product_id),
+      declared_volume: Set(manifest.declared_volume),
+      declared_density: Set(manifest.declared_density),
+      declared_mass: Set(manifest.declared_mass),
+      measurements: manifest
+        .measurements
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(rail_wagon_measurement::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      weights: manifest
+        .weights
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(rail_wagon_weight::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&RailWaybillCompositeRequest> for rail_waybill::ActiveModelEx {
+  fn from(req: &RailWaybillCompositeRequest) -> Self {
+    Self {
+      document_number: Set(req.document_number.clone()),
+      date: Set(req.date),
+      sender_id: Set(req.sender_id),
+      base_id: Set(req.base_id),
+      wagon_manifests: req
+        .manifests
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(rail_wagon_manifest::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
     }
   }
 }

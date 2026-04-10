@@ -11,8 +11,7 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::OwnershipTransferFlatRow,
-    CreateOwnershipTransferItemRequest,
+    response::pipeline::{OwnershipTransferFlatRow, OwnershipTransferFlatRowRef},
     CreateOwnershipTransferRequest,
     OwnershipTransferResponse,
   },
@@ -66,25 +65,35 @@ impl DocumentService {
     conn: &sea_orm::DatabaseTransaction,
     req: &CreateOwnershipTransferRequest,
   ) -> Result<OwnershipTransferResponse, ApiError> {
-    let mut response = self.ownership_transfer_create_no_tx(conn, req).await?;
-
-    for item_req in &req.items {
-      response.items.push(
-        self
-          .ownership_item_create_no_tx(
-            conn,
-            &CreateOwnershipTransferItemRequest::from_composite(response.id, item_req),
-          )
-          .await?,
-      );
-    }
+    let saved = ownership_transfer::ActiveModelEx::from(req)
+      .save(conn)
+      .await?;
+    let transfer_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "ownership transfer graph save returned no id"
+        )));
+      }
+    };
 
     self
       .audit
-      .backfill_document_routing::<ownership_transfer::Entity>(conn, response.id)
+      .backfill_document_routing::<ownership_transfer::Entity>(conn, transfer_id)
       .await?;
 
-    Ok(response)
+    OwnershipTransferResponse::try_from(
+      ownership_transfer::Entity::load()
+        .filter_by_id(transfer_id)
+        .filter(ownership_transfer::Column::DeletedAt.is_null())
+        .with((ownership_transfer_item::Entity, product::Entity))
+        .with((ownership_transfer_item::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Ownership transfer '{}' not found", transfer_id))
+        })?,
+    )
   }
 
   pub(super) async fn ownership_transfer_model(
@@ -190,51 +199,36 @@ impl DocumentService {
       )
       .await?;
 
-    let dash = "\u{2014}".to_string();
-
     let mut rows = Vec::new();
     for doc in &docs {
       if doc.items.is_empty() {
-        rows.push(OwnershipTransferFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          date: doc.date.to_string(),
-          status: doc.status,
-          item_id: doc.id,
-          product_id_name: dash.clone(),
-          storage_id_name: dash.clone(),
-          from_contractor_id_name: dash.clone(),
-          to_contractor_id_name: dash.clone(),
-          amount: Default::default(),
-        });
+        rows.push(OwnershipTransferFlatRow::from(
+          OwnershipTransferFlatRowRef {
+            document: doc,
+            item: None,
+            from_contractor_id_name: "\u{2014}",
+            to_contractor_id_name: "\u{2014}",
+          },
+        ));
       }
       for item in &doc.items {
-        rows.push(OwnershipTransferFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          date: doc.date.to_string(),
-          status: doc.status,
-          item_id: item.id,
-          product_id_name: item
-            .product
-            .as_ref()
-            .map(|p| p.common_name.clone())
-            .unwrap_or_default(),
-          storage_id_name: item
-            .storage
-            .as_ref()
-            .map(|s| s.common_name.clone())
-            .unwrap_or_default(),
-          from_contractor_id_name: contractor_map
-            .get(&item.from_contractor_id)
-            .cloned()
-            .unwrap_or(dash.clone()),
-          to_contractor_id_name: contractor_map
-            .get(&item.to_contractor_id)
-            .cloned()
-            .unwrap_or(dash.clone()),
-          amount: item.amount,
-        });
+        let from_contractor_id_name = contractor_map
+          .get(&item.from_contractor_id)
+          .map(String::as_str)
+          .unwrap_or("\u{2014}");
+        let to_contractor_id_name = contractor_map
+          .get(&item.to_contractor_id)
+          .map(String::as_str)
+          .unwrap_or("\u{2014}");
+
+        rows.push(OwnershipTransferFlatRow::from(
+          OwnershipTransferFlatRowRef {
+            document: doc,
+            item: Some(item),
+            from_contractor_id_name,
+            to_contractor_id_name,
+          },
+        ));
       }
     }
 

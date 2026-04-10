@@ -101,43 +101,49 @@ impl DocumentService {
     conn: &sea_orm::DatabaseTransaction,
     req: &dtos::TruckWaybillCompositeRequest,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
-    let waybill = self
-      .truck_waybill_create_no_tx(conn, &dtos::CreateTruckWaybillRequest::from_composite(req))
-      .await?;
-
-    let mut items: Option<Vec<dtos::TruckWaybillItemResponse>> = None;
-    let mut weight_docs: Option<Vec<dtos::TruckWeightDocResponse>> = None;
-
-    if let Some(item_reqs) = &req.items {
-      for item_req in item_reqs {
-        let item = self
-          .truck_waybill_item_create_no_tx(
-            conn,
-            &dtos::CreateTruckWaybillItemRequest::from_composite(waybill.id, item_req),
-          )
-          .await?;
-
-        items.get_or_insert_with(Vec::new).push(item);
+    let saved = truck_waybill::ActiveModelEx::from(req).save(conn).await?;
+    let waybill_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "truck waybill graph save returned no id"
+        )));
       }
-    }
+    };
+    let doc = truck_waybill::Entity::load()
+      .filter_by_id(waybill_id)
+      .filter(truck_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with((truck_waybill_item::Entity, product::Entity))
+      .with(truck_weight_doc::Entity)
+      .one(conn)
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Truck waybill '{}' not found", waybill_id)))?;
 
-    if let Some(weight_doc_reqs) = &req.weight_docs {
-      for weight_doc_req in weight_doc_reqs {
-        let weight_doc = self
-          .truck_weight_doc_create_no_tx(
-            conn,
-            &dtos::CreateTruckWeightDocRequest::from_composite(waybill.id, weight_doc_req),
-          )
-          .await?;
+    let items: Vec<dtos::TruckWaybillItemResponse> = doc
+      .items
+      .iter()
+      .map(|item| {
+        dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone()))
+      })
+      .collect();
+    let weight_docs: Vec<dtos::TruckWeightDocResponse> = doc
+      .weight_docs
+      .iter()
+      .cloned()
+      .map(dtos::TruckWeightDocResponse::from)
+      .collect();
 
-        weight_docs.get_or_insert_with(Vec::new).push(weight_doc);
-      }
-    }
+    let waybill = dtos::TruckWaybillResponse::from(truck_waybill::Model::from(doc));
 
     Ok(dtos::TruckWaybillCompositeResponse {
       waybill,
-      items,
-      weight_docs,
+      items: if items.is_empty() { None } else { Some(items) },
+      weight_docs: if weight_docs.is_empty() {
+        None
+      } else {
+        Some(weight_docs)
+      },
     })
   }
 

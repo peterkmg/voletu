@@ -1,10 +1,13 @@
 use chrono::{DateTime, Utc};
-use sea_orm::entity::prelude::Decimal;
+use sea_orm::{entity::prelude::Decimal, ActiveValue::Set};
 use uuid::Uuid;
 use validator::Validate;
 use voletu_core_macros::request_dto;
 
-use crate::enums::{BunkerType, DispatchMethod, DispatchPurpose};
+use crate::{
+  entities::{dispatch_document, dispatch_item, dispatch_storage_measurement},
+  enums::{BunkerType, DispatchMethod, DispatchPurpose, DocumentStatus},
+};
 
 #[request_dto]
 #[validate(schema(function = "crate::dtos::validators::validate_dispatch_request"))]
@@ -129,4 +132,72 @@ pub struct CreateDispatchCompositeRequest {
   pub items: Vec<DispatchItemCompositeRequest>,
   #[validate(length(min = 1), nested)]
   pub storage_measurements: Option<Vec<DispatchMeasurementCompositeRequest>>,
+}
+
+impl From<&DispatchItemCompositeRequest> for dispatch_item::ActiveModelEx {
+  fn from(item: &DispatchItemCompositeRequest) -> Self {
+    Self {
+      product_id: Set(item.product_id),
+      storage_id: Set(item.storage_id),
+      dispatched_amount: Set(item.dispatched_amount),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&DispatchMeasurementCompositeRequest> for dispatch_storage_measurement::ActiveModelEx {
+  fn from(measurement: &DispatchMeasurementCompositeRequest) -> Self {
+    Self {
+      storage_id: Set(measurement.storage_id),
+      before_height: Set(measurement.before_height),
+      before_volume: Set(measurement.before_volume),
+      before_density: Set(measurement.before_density),
+      before_mass: Set(measurement.before_mass),
+      after_height: Set(measurement.after_height),
+      after_volume: Set(measurement.after_volume),
+      after_density: Set(measurement.after_density),
+      after_mass: Set(measurement.after_mass),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&CreateDispatchCompositeRequest> for dispatch_document::ActiveModelEx {
+  fn from(req: &CreateDispatchCompositeRequest) -> Self {
+    Self {
+      document_number: Set(req.dispatch.document_number.clone()),
+      date: Set(req.dispatch.date),
+      status: Set(DocumentStatus::Draft),
+      version: Set(1),
+      executed_at: Set(None),
+      executed_by: Set(None),
+      reverted_at: Set(None),
+      reverted_by: Set(None),
+      dispatch_purpose: Set(req.dispatch.dispatch_purpose),
+      dispatch_method: Set(req.dispatch.dispatch_method),
+      contractor_id: Set(req.dispatch.contractor_id),
+      destination_base_id: Set(req.dispatch.destination_base_id),
+      receiver_entity: Set(req.dispatch.receiver_entity.clone()),
+      start_cargo_ops: Set(req.dispatch.start_cargo_ops),
+      end_cargo_ops: Set(req.dispatch.end_cargo_ops),
+      bunker_type: Set(req.dispatch.bunker_type),
+      exporter_id: Set(req.dispatch.exporter_id),
+      port_id: Set(req.dispatch.port_id),
+      items: req
+        .items
+        .iter()
+        .map(dispatch_item::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      storage_measurements: req
+        .storage_measurements
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(dispatch_storage_measurement::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
+    }
+  }
 }

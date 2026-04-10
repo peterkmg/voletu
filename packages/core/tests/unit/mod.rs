@@ -2,6 +2,7 @@ mod api_errors;
 mod audit_request_response;
 mod audit_routing;
 mod audit_table;
+mod composite_active_model_ex;
 mod dto_surface;
 mod entity_lifecycle;
 mod query_params;

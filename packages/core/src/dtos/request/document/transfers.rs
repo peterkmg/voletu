@@ -1,8 +1,18 @@
 use chrono::{DateTime, Utc};
-use sea_orm::entity::prelude::Decimal;
+use sea_orm::{entity::prelude::Decimal, ActiveValue::Set};
 use uuid::Uuid;
 use validator::Validate;
 use voletu_core_macros::request_dto;
+
+use crate::{
+  entities::{
+    ownership_transfer,
+    ownership_transfer_item,
+    physical_storage_transfer,
+    physical_transfer_item,
+  },
+  enums::DocumentStatus,
+};
 
 #[request_dto]
 #[validate(schema(function = "crate::dtos::validators::validate_physical_transfer_request"))]
@@ -111,4 +121,75 @@ pub struct UpdateOwnershipTransferItemRequest {
   pub from_contractor_id: Option<Uuid>,
   pub to_contractor_id: Option<Uuid>,
   pub amount: Option<Decimal>,
+}
+
+impl From<&PhysicalTransferItemCompositeRequest> for physical_transfer_item::ActiveModelEx {
+  fn from(item: &PhysicalTransferItemCompositeRequest) -> Self {
+    Self {
+      product_id: Set(item.product_id),
+      from_storage_id: Set(item.from_storage_id),
+      to_storage_id: Set(item.to_storage_id),
+      amount: Set(item.amount),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&CreatePhysicalTransferRequest> for physical_storage_transfer::ActiveModelEx {
+  fn from(req: &CreatePhysicalTransferRequest) -> Self {
+    Self {
+      document_number: Set(req.document_number.clone()),
+      date: Set(req.date),
+      status: Set(DocumentStatus::Draft),
+      version: Set(1),
+      executed_at: Set(None),
+      executed_by: Set(None),
+      reverted_at: Set(None),
+      reverted_by: Set(None),
+      contractor_id: Set(req.contractor_id),
+      start_cargo_ops: Set(req.start_cargo_ops),
+      end_cargo_ops: Set(req.end_cargo_ops),
+      items: req
+        .items
+        .iter()
+        .map(physical_transfer_item::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&OwnershipTransferItemCompositeRequest> for ownership_transfer_item::ActiveModelEx {
+  fn from(item: &OwnershipTransferItemCompositeRequest) -> Self {
+    Self {
+      storage_id: Set(item.storage_id),
+      product_id: Set(item.product_id),
+      from_contractor_id: Set(item.from_contractor_id),
+      to_contractor_id: Set(item.to_contractor_id),
+      amount: Set(item.amount),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&CreateOwnershipTransferRequest> for ownership_transfer::ActiveModelEx {
+  fn from(req: &CreateOwnershipTransferRequest) -> Self {
+    Self {
+      date: Set(req.date),
+      status: Set(DocumentStatus::Draft),
+      version: Set(1),
+      executed_at: Set(None),
+      executed_by: Set(None),
+      reverted_at: Set(None),
+      reverted_by: Set(None),
+      items: req
+        .items
+        .iter()
+        .map(ownership_transfer_item::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
+    }
+  }
 }

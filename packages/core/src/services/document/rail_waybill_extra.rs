@@ -2,7 +2,6 @@ use sea_orm::{
   entity::prelude::*,
   ColumnTrait,
   Condition,
-  ConnectionTrait,
   EntityLoaderTrait,
   QueryFilter,
   QueryOrder,
@@ -101,64 +100,45 @@ impl DocumentService {
 
   pub(crate) async fn rail_waybill_composite_create_no_tx(
     &self,
-    conn: &impl ConnectionTrait,
+    conn: &sea_orm::DatabaseTransaction,
     req: &dtos::RailWaybillCompositeRequest,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
-    let waybill = self
-      .rail_waybill_create_no_tx(conn, &dtos::CreateRailWaybillRequest::from_composite(req))
-      .await?;
-
-    let mut wagon_manifests: Option<Vec<dtos::RailWagonManifestResponse>> = None;
-
-    if let Some(manifests_req) = &req.manifests {
-      for manifest_req in manifests_req {
-        let mut manifest = self
-          .rail_manifest_create_no_tx(
-            conn,
-            &dtos::CreateRailWagonManifestRequest::from_composite(waybill.id, manifest_req),
-          )
-          .await?;
-
-        let mut measurements: Option<Vec<dtos::RailWagonMeasurementResponse>> = None;
-        let mut weights: Option<Vec<dtos::RailWagonWeightResponse>> = None;
-
-        if let Some(measurement_reqs) = &manifest_req.measurements {
-          for measurement_req in measurement_reqs {
-            let measurement = self
-              .rail_measurement_create_no_tx(
-                conn,
-                &dtos::CreateRailWagonMeasurementRequest::from_composite(
-                  manifest.id,
-                  measurement_req,
-                ),
-              )
-              .await?;
-            measurements.get_or_insert_with(Vec::new).push(measurement);
-          }
-        }
-
-        if let Some(weight_reqs) = &manifest_req.weights {
-          for weight_req in weight_reqs {
-            let weight = self
-              .rail_weight_create_no_tx(
-                conn,
-                &dtos::CreateRailWagonWeightRequest::from_composite(manifest.id, weight_req),
-              )
-              .await?;
-            weights.get_or_insert_with(Vec::new).push(weight);
-          }
-        }
-
-        manifest.measurements = measurements;
-        manifest.weights = weights;
-
-        wagon_manifests.get_or_insert_with(Vec::new).push(manifest);
+    let saved = rail_waybill::ActiveModelEx::from(req).save(conn).await?;
+    let waybill_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "rail waybill graph save returned no id"
+        )));
       }
-    }
+    };
+    let doc = rail_waybill::Entity::load()
+      .filter_by_id(waybill_id)
+      .filter(rail_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with((rail_wagon_manifest::Entity, product::Entity))
+      .with((rail_wagon_manifest::Entity, rail_wagon_measurement::Entity))
+      .with((rail_wagon_manifest::Entity, rail_wagon_weight::Entity))
+      .one(conn)
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Rail waybill '{}' not found", waybill_id)))?;
+
+    let manifests: Vec<dtos::RailWagonManifestResponse> = doc
+      .wagon_manifests
+      .iter()
+      .cloned()
+      .map(dtos::RailWagonManifestResponse::from)
+      .collect();
+
+    let waybill = dtos::RailWaybillResponse::from(rail_waybill::Model::from(doc));
 
     Ok(dtos::RailWaybillCompositeResponse {
       waybill,
-      wagon_manifests,
+      wagon_manifests: if manifests.is_empty() {
+        None
+      } else {
+        Some(manifests)
+      },
     })
   }
 

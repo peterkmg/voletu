@@ -13,7 +13,7 @@ use crate::{
   api::ApiError,
   dtos::{
     self,
-    response::pipeline::{DispatchFlatRow, TruckDispatchPipelineResponse},
+    response::pipeline::{DispatchFlatRow, DispatchFlatRowRef, TruckDispatchPipelineResponse},
   },
   entities::{
     base,
@@ -145,47 +145,39 @@ impl DocumentService {
     conn: &sea_orm::DatabaseTransaction,
     req: &dtos::CreateDispatchCompositeRequest,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
-    let document = self
-      .dispatch_document_create_no_tx(conn, &req.dispatch)
+    let saved = dispatch_document::ActiveModelEx::from(req)
+      .save(conn)
       .await?;
-
-    let mut items = Vec::new();
-    for item_req in &req.items {
-      items.push(
-        self
-          .dispatch_item_create_no_tx(
-            conn,
-            &dtos::CreateDispatchItemRequest::from_composite(document.id, item_req),
-          )
-          .await?,
-      );
-    }
-
-    let mut storage_measurements = Vec::new();
-
-    if let Some(measurements_reqs) = &req.storage_measurements {
-      for req in measurements_reqs {
-        storage_measurements.push(
-          self
-            .dispatch_storage_measurement_create_no_tx(
-              conn,
-              &dtos::CreateDispatchMeasurementRequest::from_composite(document.id, req),
-            )
-            .await?,
-        );
+    let document_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "dispatch graph save returned no id"
+        )));
       }
-    }
+    };
 
     self
       .audit
-      .backfill_document_routing::<dispatch_document::Entity>(conn, document.id)
+      .backfill_document_routing::<dispatch_document::Entity>(conn, document_id)
       .await?;
 
-    Ok(dtos::DispatchCompositeResponse {
-      document,
-      items,
-      storage_measurements,
-    })
+    dtos::DispatchCompositeResponse::try_from(
+      dispatch_document::Entity::load()
+        .filter_by_id(document_id)
+        .filter(dispatch_document::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with(base::Entity)
+        .with(port::Entity)
+        .with((dispatch_item::Entity, product::Entity))
+        .with((dispatch_item::Entity, storage::Entity))
+        .with((dispatch_storage_measurement::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Dispatch document '{}' not found", document_id))
+        })?,
+    )
   }
 
   pub async fn dispatch_document_query(
@@ -307,51 +299,17 @@ impl DocumentService {
 
     let mut rows = Vec::new();
     for doc in &docs {
-      let contractor_name = doc
-        .contractor
-        .as_ref()
-        .map(|c| c.common_name.clone())
-        .unwrap_or("\u{2014}".to_string());
-
       if doc.items.is_empty() {
-        rows.push(DispatchFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          document_number: doc.document_number.clone(),
-          date: doc.date.to_string(),
-          status: doc.status,
-          dispatch_method: doc.dispatch_method,
-          dispatch_purpose: doc.dispatch_purpose,
-          contractor_id_name: contractor_name.clone(),
-          item_id: doc.id,
-          product_id_name: "\u{2014}".to_string(),
-          storage_id_name: "\u{2014}".to_string(),
-          dispatched_amount: Default::default(),
-        });
+        rows.push(DispatchFlatRow::from(DispatchFlatRowRef {
+          document: doc,
+          item: None,
+        }));
       }
       for item in &doc.items {
-        rows.push(DispatchFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          document_number: doc.document_number.clone(),
-          date: doc.date.to_string(),
-          status: doc.status,
-          dispatch_method: doc.dispatch_method,
-          dispatch_purpose: doc.dispatch_purpose,
-          contractor_id_name: contractor_name.clone(),
-          item_id: item.id,
-          product_id_name: item
-            .product
-            .as_ref()
-            .map(|p| p.common_name.clone())
-            .unwrap_or_default(),
-          storage_id_name: item
-            .storage
-            .as_ref()
-            .map(|s| s.common_name.clone())
-            .unwrap_or_default(),
-          dispatched_amount: item.dispatched_amount,
-        });
+        rows.push(DispatchFlatRow::from(DispatchFlatRowRef {
+          document: doc,
+          item: Some(item),
+        }));
       }
     }
 

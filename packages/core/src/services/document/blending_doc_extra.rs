@@ -119,44 +119,38 @@ impl DocumentService {
     conn: &sea_orm::DatabaseTransaction,
     req: &dtos::CreateBlendingCompositeRequest,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
-    let doc = self
-      .blending_document_create_no_tx(conn, &dtos::CreateBlendingRequest::from_composite(req))
+    let saved = blending_document::ActiveModelEx::from(req)
+      .save(conn)
       .await?;
-
-    let mut components = Vec::new();
-    for comp_req in &req.components {
-      components.push(
-        self
-          .blending_component_create_no_tx(
-            conn,
-            &dtos::CreateBlendingComponentRequest::from_composite(doc.id, comp_req),
-          )
-          .await?,
-      );
-    }
-
-    let mut results = Vec::new();
-    for res_req in &req.results {
-      results.push(
-        self
-          .blending_result_create_no_tx(
-            conn,
-            &dtos::CreateBlendingResultRequest::from_composite(doc.id, res_req),
-          )
-          .await?,
-      );
-    }
+    let document_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "blending graph save returned no id"
+        )));
+      }
+    };
 
     self
       .audit
-      .backfill_document_routing::<blending_document::Entity>(conn, doc.id)
+      .backfill_document_routing::<blending_document::Entity>(conn, document_id)
       .await?;
 
-    Ok(dtos::BlendingCompositeResponse {
-      document: doc,
-      components,
-      results,
-    })
+    dtos::BlendingCompositeResponse::try_from(
+      blending_document::Entity::load()
+        .filter_by_id(document_id)
+        .filter(blending_document::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with(product::Entity)
+        .with((blending_component::Entity, product::Entity))
+        .with((blending_component::Entity, storage::Entity))
+        .with((blending_result::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Blending document '{}' not found", document_id))
+        })?,
+    )
   }
 
   pub async fn blending_document_query(

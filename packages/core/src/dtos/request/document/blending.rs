@@ -1,8 +1,13 @@
 use chrono::{DateTime, Utc};
-use sea_orm::entity::prelude::Decimal;
+use sea_orm::{entity::prelude::Decimal, ActiveValue::Set};
 use uuid::Uuid;
 use validator::Validate;
 use voletu_core_macros::request_dto;
+
+use crate::{
+  entities::{blending_component, blending_document, blending_result},
+  enums::DocumentStatus,
+};
 
 #[request_dto]
 pub struct CreateBlendingRequest {
@@ -105,6 +110,57 @@ impl CreateBlendingRequest {
       date: req.date,
       contractor_id: req.contractor_id,
       target_product_id: req.target_product_id,
+    }
+  }
+}
+
+impl From<&BlendingComponentCompositeRequest> for blending_component::ActiveModelEx {
+  fn from(component: &BlendingComponentCompositeRequest) -> Self {
+    Self {
+      storage_id: Set(component.storage_id),
+      source_product_id: Set(component.source_product_id),
+      amount_used: Set(component.amount_used),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&BlendingResultCompositeRequest> for blending_result::ActiveModelEx {
+  fn from(result: &BlendingResultCompositeRequest) -> Self {
+    Self {
+      storage_id: Set(result.storage_id),
+      produced_amount: Set(result.produced_amount),
+      ..Default::default()
+    }
+  }
+}
+
+impl From<&CreateBlendingCompositeRequest> for blending_document::ActiveModelEx {
+  fn from(req: &CreateBlendingCompositeRequest) -> Self {
+    Self {
+      document_number: Set(req.document_number.clone()),
+      date: Set(req.date),
+      status: Set(DocumentStatus::Draft),
+      version: Set(1),
+      executed_at: Set(None),
+      executed_by: Set(None),
+      reverted_at: Set(None),
+      reverted_by: Set(None),
+      contractor_id: Set(req.contractor_id),
+      target_product_id: Set(req.target_product_id),
+      components: req
+        .components
+        .iter()
+        .map(blending_component::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      results: req
+        .results
+        .iter()
+        .map(blending_result::ActiveModelEx::from)
+        .collect::<Vec<_>>()
+        .into(),
+      ..Default::default()
     }
   }
 }

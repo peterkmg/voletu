@@ -5,7 +5,7 @@ use sea_orm::{prelude::Decimal, ActiveValue::Set};
 use uuid::Uuid;
 
 use super::{
-  helpers::{maybe, pick, random_date, random_datetime, random_document_number},
+  helpers::{maybe, pick, random_date, random_datetime, random_document_number, saved_uuid},
   DocumentContext,
   DocumentCounts,
   LocationSeed,
@@ -122,7 +122,7 @@ async fn create_truck_waybill(
   .await?;
 
   Ok(WaybillSeed {
-    id: model.id.unwrap(),
+    id: saved_uuid(model.id, "truck waybill")?,
     base_id: location.base_id,
   })
 }
@@ -163,7 +163,7 @@ async fn create_rail_waybill(
   .await?;
 
   Ok(WaybillSeed {
-    id: model.id.unwrap(),
+    id: saved_uuid(model.id, "rail waybill")?,
     base_id: location.base_id,
   })
 }
@@ -250,10 +250,11 @@ async fn seed_dispatches(
     .save(ctx.conn)
     .await?;
 
+    let dispatch_id = saved_uuid(saved.id, "dispatch")?;
     counts.dispatch_docs += 1;
     ctx
       .audit
-      .backfill_document_routing::<dispatch_document::Entity>(ctx.conn, saved.id.unwrap())
+      .backfill_document_routing::<dispatch_document::Entity>(ctx.conn, dispatch_id)
       .await?;
   }
 
@@ -320,10 +321,11 @@ async fn seed_acceptances(
     .save(ctx.conn)
     .await?;
 
+    let acceptance_id = saved_uuid(saved.id, "acceptance")?;
     counts.acceptance_docs += 1;
     ctx
       .audit
-      .backfill_document_routing::<acceptance_document::Entity>(ctx.conn, saved.id.unwrap())
+      .backfill_document_routing::<acceptance_document::Entity>(ctx.conn, acceptance_id)
       .await?;
   }
 
@@ -373,10 +375,11 @@ async fn seed_blends(
     .save(ctx.conn)
     .await?;
 
+    let blending_id = saved_uuid(saved.id, "blending")?;
     counts.blending_docs += 1;
     ctx
       .audit
-      .backfill_document_routing::<blending_document::Entity>(ctx.conn, saved.id.unwrap())
+      .backfill_document_routing::<blending_document::Entity>(ctx.conn, blending_id)
       .await?;
   }
 
@@ -425,10 +428,11 @@ async fn seed_ownership_transfers(
     .save(ctx.conn)
     .await?;
 
+    let ownership_id = saved_uuid(saved.id, "ownership transfer")?;
     counts.ownership_transfers += 1;
     ctx
       .audit
-      .backfill_document_routing::<ownership_transfer::Entity>(ctx.conn, saved.id.unwrap())
+      .backfill_document_routing::<ownership_transfer::Entity>(ctx.conn, ownership_id)
       .await?;
   }
 
@@ -485,10 +489,11 @@ async fn seed_physical_transfers(
     .save(ctx.conn)
     .await?;
 
+    let physical_id = saved_uuid(saved.id, "physical transfer")?;
     counts.physical_transfers += 1;
     ctx
       .audit
-      .backfill_document_routing::<physical_storage_transfer::Entity>(ctx.conn, saved.id.unwrap())
+      .backfill_document_routing::<physical_storage_transfer::Entity>(ctx.conn, physical_id)
       .await?;
   }
 
@@ -535,10 +540,11 @@ async fn seed_reconciliations(
     .save(ctx.conn)
     .await?;
 
+    let reconciliation_id = saved_uuid(saved.id, "reconciliation")?;
     counts.reconciliations += 1;
     ctx
       .audit
-      .backfill_document_routing::<inventory_reconciliation::Entity>(ctx.conn, saved.id.unwrap())
+      .backfill_document_routing::<inventory_reconciliation::Entity>(ctx.conn, reconciliation_id)
       .await?;
   }
 

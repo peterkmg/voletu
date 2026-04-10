@@ -10,7 +10,11 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, request::query::NullableFilter, response::pipeline::AcceptanceFlatRow},
+  dtos::{
+    self,
+    request::query::NullableFilter,
+    response::pipeline::{AcceptanceFlatRow, AcceptanceFlatRowRef},
+  },
   entities::{
     acceptance_document,
     acceptance_item,
@@ -165,29 +169,39 @@ impl DocumentService {
     conn: &sea_orm::DatabaseTransaction,
     req: &dtos::CreateAcceptanceCompositeRequest,
   ) -> Result<dtos::AcceptanceCompositeResponse, ApiError> {
-    let document = self
-      .acceptance_document_create_no_tx(conn, &req.acceptance)
+    let saved = acceptance_document::ActiveModelEx::from(req)
+      .save(conn)
       .await?;
-
-    let mut items = Vec::new();
-
-    for item_req in &req.items {
-      items.push(
-        self
-          .acceptance_item_create_no_tx(
-            conn,
-            &dtos::CreateAcceptanceItemRequest::from_composite(document.id, item_req),
-          )
-          .await?,
-      );
-    }
+    let document_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "acceptance graph save returned no id"
+        )));
+      }
+    };
 
     self
       .audit
-      .backfill_document_routing::<acceptance_document::Entity>(conn, document.id)
+      .backfill_document_routing::<acceptance_document::Entity>(conn, document_id)
       .await?;
 
-    Ok(dtos::AcceptanceCompositeResponse { document, items })
+    dtos::AcceptanceCompositeResponse::try_from(
+      acceptance_document::Entity::load()
+        .filter_by_id(document_id)
+        .filter(acceptance_document::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with(truck_waybill::Entity)
+        .with(rail_waybill::Entity)
+        .with(dispatch_document::Entity)
+        .with((acceptance_item::Entity, product::Entity))
+        .with((acceptance_item::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Acceptance document '{}' not found", document_id))
+        })?,
+    )
   }
 
   pub async fn acceptance_document_query(
@@ -240,49 +254,17 @@ impl DocumentService {
 
     let mut rows = Vec::new();
     for doc in &docs {
-      let contractor_name = doc
-        .contractor
-        .as_ref()
-        .map(|c| c.common_name.clone())
-        .unwrap_or("\u{2014}".to_string());
-
       if doc.items.is_empty() {
-        rows.push(AcceptanceFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          document_number: doc.document_number.clone(),
-          date_accepted: doc.date_accepted.to_string(),
-          status: doc.status,
-          source_entity: doc.source_entity.clone(),
-          item_id: doc.id,
-          product_id_name: "\u{2014}".to_string(),
-          storage_id_name: "\u{2014}".to_string(),
-          contractor_id_name: contractor_name.clone(),
-          accepted_amount: Default::default(),
-        });
+        rows.push(AcceptanceFlatRow::from(AcceptanceFlatRowRef {
+          document: doc,
+          item: None,
+        }));
       }
       for item in &doc.items {
-        rows.push(AcceptanceFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          document_number: doc.document_number.clone(),
-          date_accepted: doc.date_accepted.to_string(),
-          status: doc.status,
-          source_entity: doc.source_entity.clone(),
-          item_id: item.id,
-          product_id_name: item
-            .product
-            .as_ref()
-            .map(|p| p.common_name.clone())
-            .unwrap_or_default(),
-          storage_id_name: item
-            .storage
-            .as_ref()
-            .map(|s| s.common_name.clone())
-            .unwrap_or_default(),
-          contractor_id_name: contractor_name.clone(),
-          accepted_amount: item.accepted_amount,
-        });
+        rows.push(AcceptanceFlatRow::from(AcceptanceFlatRowRef {
+          document: doc,
+          item: Some(item),
+        }));
       }
     }
 

@@ -11,8 +11,7 @@ use uuid::Uuid;
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::PhysicalTransferFlatRow,
-    CreatePhysicalTransferItemRequest,
+    response::pipeline::{PhysicalTransferFlatRow, PhysicalTransferFlatRowRef},
     CreatePhysicalTransferRequest,
     PhysicalTransferResponse,
   },
@@ -66,25 +65,36 @@ impl DocumentService {
     conn: &sea_orm::DatabaseTransaction,
     req: &CreatePhysicalTransferRequest,
   ) -> Result<PhysicalTransferResponse, ApiError> {
-    let mut response = self.physical_transfer_create_no_tx(conn, req).await?;
-
-    for item_req in &req.items {
-      response.items.push(
-        self
-          .physical_item_create_no_tx(
-            conn,
-            &CreatePhysicalTransferItemRequest::from_composite(response.id, item_req),
-          )
-          .await?,
-      );
-    }
+    let saved = physical_storage_transfer::ActiveModelEx::from(req)
+      .save(conn)
+      .await?;
+    let transfer_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "physical transfer graph save returned no id"
+        )));
+      }
+    };
 
     self
       .audit
-      .backfill_document_routing::<physical_storage_transfer::Entity>(conn, response.id)
+      .backfill_document_routing::<physical_storage_transfer::Entity>(conn, transfer_id)
       .await?;
 
-    Ok(response)
+    PhysicalTransferResponse::try_from(
+      physical_storage_transfer::Entity::load()
+        .filter_by_id(transfer_id)
+        .filter(physical_storage_transfer::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with((physical_transfer_item::Entity, product::Entity))
+        .with((physical_transfer_item::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Physical transfer '{}' not found", transfer_id))
+        })?,
+    )
   }
 
   pub(super) async fn physical_transfer_model(
@@ -201,52 +211,32 @@ impl DocumentService {
 
     let mut rows = Vec::new();
     for doc in &docs {
-      let contractor_name = doc
+      let contractor_id_name = doc
         .contractor
         .as_ref()
-        .map(|c| c.common_name.clone())
-        .unwrap_or("\u{2014}".to_string());
+        .map(|contractor| contractor.common_name.as_str())
+        .unwrap_or("\u{2014}");
 
       if doc.items.is_empty() {
-        rows.push(PhysicalTransferFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          document_number: doc.document_number.clone(),
-          date: doc.date.to_string(),
-          status: doc.status,
-          contractor_id_name: contractor_name.clone(),
-          item_id: doc.id,
-          product_id_name: "\u{2014}".to_string(),
-          from_storage_id_name: "\u{2014}".to_string(),
-          to_storage_id_name: "\u{2014}".to_string(),
-          amount: Default::default(),
-        });
+        rows.push(PhysicalTransferFlatRow::from(PhysicalTransferFlatRowRef {
+          document: doc,
+          item: None,
+          contractor_id_name,
+          to_storage_id_name: "\u{2014}",
+        }));
       }
       for item in &doc.items {
-        rows.push(PhysicalTransferFlatRow {
-          id: doc.id,
-          document_id: doc.id,
-          document_number: doc.document_number.clone(),
-          date: doc.date.to_string(),
-          status: doc.status,
-          contractor_id_name: contractor_name.clone(),
-          item_id: item.id,
-          product_id_name: item
-            .product
-            .as_ref()
-            .map(|p| p.common_name.clone())
-            .unwrap_or_default(),
-          from_storage_id_name: item
-            .from_storage
-            .as_ref()
-            .map(|s| s.common_name.clone())
-            .unwrap_or_default(),
-          to_storage_id_name: to_storage_map
-            .get(&item.to_storage_id)
-            .cloned()
-            .unwrap_or_default(),
-          amount: item.amount,
-        });
+        let to_storage_id_name = to_storage_map
+          .get(&item.to_storage_id)
+          .map(String::as_str)
+          .unwrap_or_default();
+
+        rows.push(PhysicalTransferFlatRow::from(PhysicalTransferFlatRowRef {
+          document: doc,
+          item: Some(item),
+          contractor_id_name,
+          to_storage_id_name,
+        }));
       }
     }
 
