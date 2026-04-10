@@ -21,7 +21,7 @@ use crate::{
   utils::http::{get_api_json, post_api_json},
 };
 
-pub(super) async fn sync_once(
+pub(super) async fn execute_sync_cycle(
   client: &Client,
   sync_service: &SyncService,
   central_base_url: &str,
@@ -48,7 +48,7 @@ pub(super) async fn sync_once(
   // PUSH phase: unchanged. Push has no scope concept — the peripheral pushes
   // every locally-originated log above the push watermark.
   let (push_after, _push_disc) =
-    super::topology::watermark_for(&watermarks, central_status.node_id, "PUSH");
+    super::topology::find_sync_watermark(&watermarks, central_status.node_id, "PUSH");
   let outbound = sync_service
     .outbound_logs(OutboundAuditLogsQuerySpec::new(
       push_after,
@@ -88,7 +88,7 @@ pub(super) async fn sync_once(
   // PULL phase: discriminant-aware cursor + atomic apply.
   let current_discriminant = compute_base_discriminant(local_base_ids);
   let (stored_last_id, stored_discriminant) =
-    super::topology::watermark_for(&watermarks, central_status.node_id, "PULL");
+    super::topology::find_sync_watermark(&watermarks, central_status.node_id, "PULL");
 
   let pull_cursor = if stored_discriminant == current_discriminant {
     stored_last_id

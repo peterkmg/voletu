@@ -108,7 +108,7 @@ pub async fn setup_peripheral_via_api(
   let token = wait_for_login_token(client, &url, "root", "rootpass", Duration::from_secs(10)).await;
 
   // Wait for the REAL sync worker to come online and complete initial catalog sync.
-  // The worker transitions to OnlineIdle only AFTER a successful sync_once cycle,
+  // The worker transitions to OnlineIdle only AFTER a successful sync cycle,
   // so by the time this returns, catalog is already synced.
   // Catalog must sync BEFORE adding base assignments (bases must exist locally).
   wait_for_worker_online(client, &url, &token, Duration::from_secs(15)).await;

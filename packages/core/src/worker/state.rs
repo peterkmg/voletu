@@ -71,7 +71,7 @@ impl WorkerStatus {
   }
 
   /// Increment the cycle counter. Called by the worker after each
-  /// successful `sync_once`.
+  /// successful sync cycle.
   pub fn bump_cycle_count(&self) {
     self.cycles_completed.fetch_add(1, Ordering::Release);
   }
@@ -84,7 +84,7 @@ impl WorkerStatus {
   }
 
   /// Increment the tick counter. Called by the worker at the end of
-  /// every tick processing, regardless of whether sync_once ran.
+  /// every tick processing, regardless of whether a sync cycle ran.
   pub fn bump_tick_count(&self) {
     self.ticks_observed.fetch_add(1, Ordering::Release);
   }

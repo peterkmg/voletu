@@ -11,9 +11,15 @@ use crate::{
   },
 };
 
-pub(super) async fn load_runtime_topology(
+pub(super) struct WorkerTopology {
+  pub(super) local_node_id: Uuid,
+  pub(super) node_type: String,
+  pub(super) central_sync_api_url: Option<String>,
+}
+
+pub(super) async fn load_worker_topology(
   db: &DatabaseConnection,
-) -> anyhow::Result<(Uuid, String, Option<String>)> {
+) -> anyhow::Result<WorkerTopology> {
   let local_row = load_local_bootstrap(db)
     .await
     .map_err(|err| anyhow::anyhow!(err.to_string()))?;
@@ -32,7 +38,11 @@ pub(super) async fn load_runtime_topology(
     None
   };
 
-  Ok((instance.id, instance.node_type.to_string(), central_api_url))
+  Ok(WorkerTopology {
+    local_node_id: instance.id,
+    node_type: instance.node_type.to_string(),
+    central_sync_api_url: central_api_url,
+  })
 }
 
 /// Load base IDs assigned to the local node from the node_base_assignment table.
@@ -48,7 +58,7 @@ pub(super) async fn load_local_base_ids(
 /// Find the `(last_audit_log_id, base_discriminant)` pair for a given target
 /// node and direction. Returns `(Uuid::nil(), String::new())` when no
 /// watermark row exists yet.
-pub(super) fn watermark_for(
+pub(super) fn find_sync_watermark(
   watermarks: &[SyncWatermarkResponse],
   target_node_id: Uuid,
   direction: &str,

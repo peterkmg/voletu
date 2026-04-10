@@ -6,9 +6,12 @@ use tracing::info;
 
 use crate::config::{ApiConfig, SyncConfig};
 
+mod context;
 mod cycle;
+mod engine;
+mod policy;
+mod probe;
 mod state;
-mod tick;
 mod topology;
 
 pub use state::{WorkerState, WorkerStatus};
@@ -30,9 +33,9 @@ pub fn spawn_sync_worker_with_config(
   shared_status: Arc<tokio::sync::RwLock<WorkerStatus>>,
 ) -> tokio::task::JoinHandle<()> {
   tokio::spawn(async move {
-    let mut tick = time::interval(config.tick_interval);
-    tick.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
-    let mut runtime = tick::WorkerRuntime::default(db, cfg, config);
+    let mut interval = time::interval(config.tick_interval);
+    interval.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
+    let mut runtime = engine::WorkerRuntime::new(db, cfg, config);
 
     info!("sync worker started");
 
@@ -42,9 +45,9 @@ pub fn spawn_sync_worker_with_config(
           info!("sync worker shutdown requested");
           break;
         }
-        _ = tick.tick() => {
-          let outcome = tick::run_tick(&mut runtime).await;
-          tick::publish_tick_outcome(&shared_status, outcome).await;
+        _ = interval.tick() => {
+          let outcome = engine::execute_worker_tick(&mut runtime).await;
+          engine::publish_worker_tick_outcome(&shared_status, outcome).await;
         }
       }
     }
