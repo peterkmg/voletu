@@ -2,7 +2,7 @@ use super::*;
 use crate::{
   dtos::{EmbedParams, OwnershipTransferDocumentQueryParams, PaginationParams},
   endpoints::paths,
-  services::document::query::OwnershipTransferQuerySpec,
+  services::document::specs::OwnershipTransferQuerySpec,
 };
 
 #[utoipa::path(

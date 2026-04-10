@@ -2,7 +2,7 @@ use super::*;
 use crate::{
   dtos::{EmbedParams, PaginationParams, TruckWaybillDocumentQueryParams},
   endpoints::paths,
-  services::document::query::TruckWaybillQuerySpec,
+  services::document::specs::TruckWaybillQuerySpec,
 };
 
 #[utoipa::path(

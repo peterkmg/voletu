@@ -4,6 +4,7 @@ use voletu_core::{
     request::query::NullableFilter,
     AcceptanceDocumentQueryParams,
     AcceptanceFlatQueryParams,
+    CargoFlowQueryParams,
     DispatchDocumentQueryParams,
     DispatchFlatQueryParams,
     OwnershipTransferDocumentQueryParams,
@@ -18,9 +19,10 @@ use voletu_core::{
     TruckWaybillDocumentQueryParams,
   },
   enums::{DispatchMethod, DispatchPurpose, DocumentStatus, PipelineStatus},
-  services::document::query::{
+  services::document::specs::{
     AcceptanceDocumentQuerySpec,
     AcceptanceFlatQuerySpec,
+    CargoFlowQuerySpec,
     DispatchDocumentQuerySpec,
     DispatchFlatQuerySpec,
     OwnershipTransferFlatQuerySpec,
@@ -249,4 +251,14 @@ fn shared_document_and_flow_query_params_convert_into_specs() {
   assert_eq!(rail_receipt_pipeline.contractor_id, Some(Uuid::nil()));
   assert_eq!(rail_receipt_pipeline.page, Some(13));
   assert_eq!(rail_receipt_pipeline.per_page, Some(9));
+
+  let cargo_flow: CargoFlowQuerySpec = CargoFlowQueryParams {
+    page: Some(14),
+    per_page: Some(8),
+    filter: Some("truck".into()),
+  }
+  .into();
+  assert_eq!(cargo_flow.page, Some(14));
+  assert_eq!(cargo_flow.per_page, Some(8));
+  assert_eq!(cargo_flow.filter.as_deref(), Some("truck"));
 }

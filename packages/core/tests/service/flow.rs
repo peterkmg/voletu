@@ -1,16 +1,25 @@
 use std::sync::Arc;
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
-  entities::{acceptance_document, acceptance_item, truck_waybill, truck_waybill_item},
+  entities::{
+    acceptance_document,
+    acceptance_item,
+    dispatch_document,
+    dispatch_item,
+    physical_storage_transfer,
+    physical_transfer_item,
+    truck_waybill,
+    truck_waybill_item,
+  },
   enums::{self, PipelineStatus},
   services::{
     audit::AuditService,
     document::{
-      query::{AcceptanceFlatQuerySpec, TruckReceiptPipelineQuerySpec},
+      specs::{AcceptanceFlatQuerySpec, CargoFlowQuerySpec, TruckReceiptPipelineQuerySpec},
       DocumentService,
     },
     ledger::LedgerService,
@@ -21,6 +30,12 @@ use crate::common::{catalog_seed::seed_inventory_catalog, setup_db};
 
 fn date(s: &str) -> NaiveDate {
   NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
+}
+
+fn timestamp(s: &str) -> chrono::DateTime<Utc> {
+  chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+    .unwrap()
+    .and_utc()
 }
 
 #[tokio::test]
@@ -353,6 +368,156 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
       .unwrap();
     assert_eq!(posted.len(), 1, "Only posted doc's 1 item");
     assert_eq!(posted[0].document_number, "ACC-FLAT-002");
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn cargo_flow_flat_query_pages_and_filters_in_sql() {
+  let actor = Uuid::now_v7();
+  let origin = Uuid::now_v7();
+
+  with_audit_context(actor, origin, || async {
+    let db = Arc::new(setup_db().await);
+    let fix = seed_inventory_catalog(&db).await;
+    let mut cfg = crate::common::test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let svc = DocumentService::new(db.clone(), ledger, audit);
+
+    let acceptance = acceptance_document::ActiveModel {
+      document_number: Set("ACC-CARGO-001".into()),
+      date_accepted: Set(timestamp("2026-04-01 08:00:00")),
+      status: Set(enums::DocumentStatus::Executed),
+      version: Set(1),
+      arrival_type: Set(enums::ArrivalType::External),
+      contractor_id: Set(fix.contractor_a_id),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    acceptance_item::ActiveModel {
+      acceptance_doc_id: Set(acceptance.id),
+      product_id: Set(fix.product_a_id),
+      storage_id: Set(fix.storage_a_id),
+      accepted_amount: Set(Decimal::new(1000, 0)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let dispatch = dispatch_document::ActiveModel {
+      document_number: Set("DSP-CARGO-001".into()),
+      date: Set(timestamp("2026-04-02 08:00:00")),
+      status: Set(enums::DocumentStatus::Executed),
+      version: Set(1),
+      dispatch_purpose: Set(enums::DispatchPurpose::External),
+      dispatch_method: Set(enums::DispatchMethod::Truck),
+      contractor_id: Set(fix.contractor_a_id),
+      destination_base_id: Set(None),
+      receiver_entity: Set(None),
+      start_cargo_ops: Set(None),
+      end_cargo_ops: Set(None),
+      bunker_type: Set(None),
+      exporter_id: Set(None),
+      port_id: Set(None),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    dispatch_item::ActiveModel {
+      dispatch_doc_id: Set(dispatch.id),
+      product_id: Set(fix.product_a_id),
+      storage_id: Set(fix.storage_a_id),
+      dispatched_amount: Set(Decimal::new(300, 0)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let physical = physical_storage_transfer::ActiveModel {
+      document_number: Set("PHT-CARGO-001".into()),
+      date: Set(timestamp("2026-04-03 08:00:00")),
+      status: Set(enums::DocumentStatus::Executed),
+      version: Set(1),
+      contractor_id: Set(fix.contractor_a_id),
+      start_cargo_ops: Set(timestamp("2026-04-03 08:00:00")),
+      end_cargo_ops: Set(timestamp("2026-04-03 09:00:00")),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    physical_transfer_item::ActiveModel {
+      physical_transfer_id: Set(physical.id),
+      product_id: Set(fix.product_a_id),
+      from_storage_id: Set(fix.storage_a_id),
+      to_storage_id: Set(fix.storage_b_id),
+      amount: Set(Decimal::new(200, 0)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let page_one = svc
+      .cargo_flow_flat_query(CargoFlowQuerySpec {
+        page: Some(1),
+        per_page: Some(2),
+        filter: None,
+      })
+      .await
+      .unwrap();
+    assert_eq!(page_one.total, 4);
+    assert_eq!(page_one.items.len(), 2);
+    assert!(page_one
+      .items
+      .iter()
+      .all(|row| row.document_number == "PHT-CARGO-001"));
+
+    let page_two = svc
+      .cargo_flow_flat_query(CargoFlowQuerySpec {
+        page: Some(2),
+        per_page: Some(2),
+        filter: None,
+      })
+      .await
+      .unwrap();
+    assert_eq!(page_two.total, 4);
+    assert_eq!(page_two.items.len(), 2);
+    assert_eq!(page_two.items[0].document_number, "DSP-CARGO-001");
+    assert_eq!(page_two.items[1].document_number, "ACC-CARGO-001");
+
+    let physical_only = svc
+      .cargo_flow_flat_query(CargoFlowQuerySpec {
+        page: Some(1),
+        per_page: Some(10),
+        filter: Some("physical".into()),
+      })
+      .await
+      .unwrap();
+    assert_eq!(physical_only.total, 2);
+    assert_eq!(physical_only.items.len(), 2);
+    assert!(physical_only
+      .items
+      .iter()
+      .all(|row| row.operation == "Physical Transfer"));
+    assert!(physical_only
+      .items
+      .iter()
+      .any(|row| row.item_type.as_deref() == Some("inflow")));
+    assert!(physical_only
+      .items
+      .iter()
+      .any(|row| row.item_type.as_deref() == Some("outflow")));
   })
   .await;
 }

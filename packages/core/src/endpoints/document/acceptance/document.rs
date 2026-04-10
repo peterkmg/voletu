@@ -21,7 +21,7 @@ use crate::{
   enums,
   services::{
     common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
-    document::query::AcceptanceDocumentQuerySpec,
+    document::specs::AcceptanceDocumentQuerySpec,
   },
   utils::jwt::Claims,
 };

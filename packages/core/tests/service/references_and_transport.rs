@@ -2,7 +2,7 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use chrono::NaiveDate;
-use sea_orm::{prelude::Decimal, EntityLoaderTrait};
+use sea_orm::{prelude::Decimal, EntityTrait};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
@@ -150,8 +150,7 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
           && row.action == enums::AuditAction::Insert
       })
       .unwrap();
-    let company_model = voletu_core::entities::company::Entity::load()
-      .filter_by_id(company.id)
+    let company_model = voletu_core::entities::company::Entity::find_by_id(company.id)
       .one(&*db)
       .await
       .unwrap()

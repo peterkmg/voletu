@@ -8,16 +8,17 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
+use super::types::OwnershipTransferFlatRowRef;
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::{OwnershipTransferFlatRow, OwnershipTransferFlatRowRef},
+    response::document::OwnershipTransferFlatRow,
     CreateOwnershipTransferRequest,
     OwnershipTransferResponse,
   },
   entities::{ownership_transfer, ownership_transfer_item, product, storage},
   services::document::{
-    query::{OwnershipTransferFlatQuerySpec, OwnershipTransferQuerySpec},
+    specs::{OwnershipTransferFlatQuerySpec, OwnershipTransferQuerySpec},
     DocumentService,
   },
 };

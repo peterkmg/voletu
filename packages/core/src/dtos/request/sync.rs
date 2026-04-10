@@ -4,7 +4,7 @@ use voletu_core_macros::request_dto;
 
 use crate::{
   enums::{AuditTable, SyncDirection},
-  services::sync::query::{
+  services::sync::specs::{
     AuditLogQuerySpec,
     AwaitCycleQuerySpec,
     OutboundAuditLogsQuerySpec,

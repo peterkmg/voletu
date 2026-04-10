@@ -10,10 +10,10 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, response::pipeline::BlendingFlatRow},
+  dtos::{self, response::document::BlendingFlatRow},
   entities::{blending_component, blending_document, blending_result, company, product, storage},
   services::document::{
-    query::{BlendingDocumentQuerySpec, BlendingFlatQuerySpec},
+    specs::{BlendingDocumentQuerySpec, BlendingFlatQuerySpec},
     DocumentService,
   },
 };

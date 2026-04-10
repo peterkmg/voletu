@@ -2,7 +2,7 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use chrono::{DateTime, Utc};
-use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, EntityLoaderTrait};
+use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, EntityTrait};
 use uuid::Uuid;
 use voletu_core::{
   context::audit::with_audit_context,
@@ -74,8 +74,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
 
     assert_eq!(item.storage_id, catalog.storage_a_id);
 
-    let created_doc_model = acceptance_document::Entity::load()
-      .filter_by_id(doc.id)
+    let created_doc_model = acceptance_document::Entity::find_by_id(doc.id)
       .one(&*db)
       .await
       .unwrap()
@@ -119,8 +118,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
           && row.action == enums::AuditAction::Update
       })
       .unwrap();
-    let updated_doc = acceptance_document::Entity::load()
-      .filter_by_id(doc.id)
+    let updated_doc = acceptance_document::Entity::find_by_id(doc.id)
       .one(&*db)
       .await
       .unwrap()

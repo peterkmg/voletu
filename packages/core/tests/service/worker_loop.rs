@@ -20,29 +20,6 @@ fn test_sync_config() -> SyncConfig {
   }
 }
 
-async fn wait_for_state(
-  worker_status: &Arc<RwLock<WorkerStatus>>,
-  expected: WorkerState,
-  timeout: Duration,
-) -> WorkerStatus {
-  let deadline = tokio::time::Instant::now() + timeout;
-  loop {
-    let snapshot = worker_status.read().await.clone();
-    if snapshot.state == expected {
-      return snapshot;
-    }
-
-    assert!(
-      tokio::time::Instant::now() < deadline,
-      "worker did not reach {:?} within {:?}; current={:?}",
-      expected,
-      timeout,
-      snapshot.state
-    );
-    tokio::time::sleep(Duration::from_millis(25)).await;
-  }
-}
-
 async fn wait_for_tick(
   worker_status: &Arc<RwLock<WorkerStatus>>,
   expected: WorkerState,
@@ -108,7 +85,7 @@ async fn worker_stays_sleeping_for_non_peripheral_topology_and_bumps_ticks() {
     worker_status.clone(),
   );
 
-  let snapshot = wait_for_tick(
+  let _snapshot = wait_for_tick(
     &worker_status,
     WorkerState::Sleeping,
     Duration::from_secs(2),
@@ -160,7 +137,7 @@ async fn worker_marks_offline_when_central_probe_fails() {
     worker_status.clone(),
   );
 
-  let snapshot = wait_for_tick(&worker_status, WorkerState::Offline, Duration::from_secs(2)).await;
+  let _snapshot = wait_for_tick(&worker_status, WorkerState::Offline, Duration::from_secs(2)).await;
 
   let _ = shutdown_tx.send(());
   handle.await.unwrap();

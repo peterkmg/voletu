@@ -32,8 +32,8 @@ async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
   let seed_result = dev_seed_via_api(&client, &central.url, &central.token).await;
   let seeded_bases: usize = seed_result["bases"].as_u64().unwrap_or(0) as usize;
   assert!(
-    seeded_bases >= 5,
-    "seed should create at least 5 bases, got {seeded_bases}"
+    seeded_bases >= 2,
+    "seed should create at least 2 bases so scoped-vs-other ledger parity can be verified, got {seeded_bases}"
   );
   let seeded_ledger_entries: usize = seed_result["ledgerEntries"].as_u64().unwrap_or(0) as usize;
   assert!(

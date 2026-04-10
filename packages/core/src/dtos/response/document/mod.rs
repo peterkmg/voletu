@@ -35,6 +35,7 @@ use crate::{
 mod acceptance;
 mod blending;
 mod dispatch;
+mod flat;
 mod reconciliation;
 mod transfers;
 mod transport;
@@ -51,6 +52,14 @@ pub use dispatch::{
   DispatchItemResponse,
   DispatchMeasurementResponse,
   DispatchResponse,
+};
+pub use flat::{
+  AcceptanceFlatRow,
+  BlendingFlatRow,
+  DispatchFlatRow,
+  OwnershipTransferFlatRow,
+  PhysicalTransferFlatRow,
+  ReconciliationFlatRow,
 };
 pub use reconciliation::{InventoryAdjustmentResponse, InventoryReconciliationResponse};
 pub use transfers::{

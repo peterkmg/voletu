@@ -2,7 +2,7 @@ use super::*;
 use crate::{
   dtos::{EmbedParams, PaginationParams, RailWaybillDocumentQueryParams},
   endpoints::paths,
-  services::document::query::RailWaybillQuerySpec,
+  services::document::specs::RailWaybillQuerySpec,
 };
 
 #[utoipa::path(

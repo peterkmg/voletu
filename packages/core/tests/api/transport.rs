@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
+use sea_orm::{ColumnTrait, QueryFilter};
 use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entry};
 
 use crate::common::{

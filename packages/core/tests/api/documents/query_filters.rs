@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use sea_orm::{prelude::Decimal, ColumnTrait, EntityLoaderTrait, EntityTrait, QueryFilter};
+use sea_orm::{prelude::Decimal, EntityLoaderTrait};
 use uuid::Uuid;
 use voletu_core::{endpoints::paths as api_paths, entities::ownership_transfer};
 

@@ -315,10 +315,15 @@ impl OwnershipTransferFlatQuerySpec {
 pub struct CargoFlowQuerySpec {
   pub page: Option<u64>,
   pub per_page: Option<u64>,
+  pub filter: Option<String>,
 }
 
 impl CargoFlowQuerySpec {
   pub fn list(page: Option<u64>, per_page: Option<u64>) -> Self {
-    Self { page, per_page }
+    Self {
+      page,
+      per_page,
+      ..Self::default()
+    }
   }
 }

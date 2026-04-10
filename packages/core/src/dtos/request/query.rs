@@ -5,11 +5,12 @@ use uuid::Uuid;
 
 use crate::{
   enums::{DispatchMethod, DispatchPurpose, DocumentStatus, PipelineStatus},
-  services::document::query::{
+  services::document::specs::{
     AcceptanceDocumentQuerySpec,
     AcceptanceFlatQuerySpec,
     BlendingDocumentQuerySpec,
     BlendingFlatQuerySpec,
+    CargoFlowQuerySpec,
     DispatchDocumentQuerySpec,
     DispatchFlatQuerySpec,
     OwnershipTransferFlatQuerySpec,
@@ -381,6 +382,24 @@ impl From<OwnershipTransferFlatQueryParams> for OwnershipTransferFlatQuerySpec {
       status: params.status,
       page: params.pagination.page,
       per_page: params.pagination.per_page,
+    }
+  }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CargoFlowQueryParams {
+  pub page: Option<u64>,
+  pub per_page: Option<u64>,
+  pub filter: Option<String>,
+}
+
+impl From<CargoFlowQueryParams> for CargoFlowQuerySpec {
+  fn from(params: CargoFlowQueryParams) -> Self {
+    Self {
+      page: params.page,
+      per_page: params.per_page,
+      filter: params.filter,
     }
   }
 }

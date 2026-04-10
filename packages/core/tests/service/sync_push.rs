@@ -15,7 +15,7 @@ use voletu_core::{
   dtos::PushAuditLogRequest,
   entities::{audit_log, company, database_instance, local, node_base_assignment, sync_watermark},
   enums::{self, AuditAction, AuditTable, SyncDirection},
-  services::sync::{query::SyncStatusQuerySpec, SyncService},
+  services::sync::{specs::SyncStatusQuerySpec, SyncService},
 };
 
 use crate::common::{

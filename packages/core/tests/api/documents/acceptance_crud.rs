@@ -1,4 +1,4 @@
-use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter};
+use sea_orm::{ColumnTrait, QueryFilter};
 use serde_json::json;
 use uuid::Uuid;
 use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entry};

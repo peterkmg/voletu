@@ -8,13 +8,10 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
+use super::types::AcceptanceFlatRowRef;
 use crate::{
   api::ApiError,
-  dtos::{
-    self,
-    request::query::NullableFilter,
-    response::pipeline::{AcceptanceFlatRow, AcceptanceFlatRowRef},
-  },
+  dtos::{self, request::query::NullableFilter, response::document::AcceptanceFlatRow},
   entities::{
     acceptance_document,
     acceptance_item,
@@ -26,7 +23,7 @@ use crate::{
     truck_waybill,
   },
   services::document::{
-    query::{AcceptanceDocumentQuerySpec, AcceptanceFlatQuerySpec},
+    specs::{AcceptanceDocumentQuerySpec, AcceptanceFlatQuerySpec},
     DocumentService,
   },
 };

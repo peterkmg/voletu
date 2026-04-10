@@ -2,7 +2,7 @@ use super::*;
 use crate::{
   dtos::{BlendingDocumentQueryParams, EmbedParams, PaginationParams},
   endpoints::paths,
-  services::document::query::BlendingDocumentQuerySpec,
+  services::document::specs::BlendingDocumentQuerySpec,
 };
 
 #[utoipa::path(

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 use voletu_core::{
-  services::sync::{query::AwaitCycleQuerySpec, SyncService},
+  services::sync::{specs::AwaitCycleQuerySpec, SyncService},
   worker::{WorkerState, WorkerStatus},
 };
 

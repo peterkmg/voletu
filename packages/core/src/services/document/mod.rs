@@ -23,7 +23,6 @@ pub mod ownership_item;
 pub mod physical_doc;
 pub mod physical_doc_extra;
 pub mod physical_item;
-pub mod query;
 pub mod rail_manifest;
 pub mod rail_measurement;
 pub mod rail_waybill;
@@ -33,10 +32,12 @@ pub mod reconciliation_adjustment;
 pub mod reconciliation_doc;
 pub mod reconciliation_doc_extra;
 pub mod resolve;
+pub mod specs;
 pub mod truck_waybill;
 pub mod truck_waybill_extra;
 pub mod truck_waybill_item;
 pub mod truck_weight_doc;
+mod types;
 
 pub struct DocumentService {
   pub(super) db: Arc<DatabaseConnection>,

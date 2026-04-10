@@ -6,7 +6,7 @@ use crate::{
   dtos,
   entities::{company, rail_waybill, truck_waybill},
   services::{
-    document::query::{
+    document::specs::{
       AcceptanceDocumentQuerySpec,
       BlendingDocumentQuerySpec,
       DispatchDocumentQuerySpec,
@@ -181,7 +181,7 @@ impl DocumentService {
     &self,
     id: Uuid,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
-    Ok(self.blending_composite_model(id).await?.try_into()?)
+    self.blending_composite_model(id).await?.try_into()
   }
 
   // ── Reconciliation ────────────────────────

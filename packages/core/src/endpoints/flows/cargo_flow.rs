@@ -5,9 +5,8 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::{response::pipeline::CargoFlowFlatRow, PaginationParams},
+  dtos::{CargoFlowPageResponse, CargoFlowQueryParams},
   endpoints::paths,
-  services::document::query::CargoFlowQuerySpec,
 };
 
 #[utoipa::path(
@@ -19,19 +18,20 @@ use crate::{
   path = paths::flows::CARGO_FLOW_FLAT_QUERY,
   params(
     ("page" = Option<u64>, Query),
-    ("per_page" = Option<u64>, Query),
+    ("perPage" = Option<u64>, Query),
+    ("filter" = Option<String>, Query),
   ),
-  responses((status = 200, body = ApiResponse<Vec<CargoFlowFlatRow>>))
+  responses((status = 200, body = ApiResponse<CargoFlowPageResponse>))
 )]
 #[axum::debug_handler]
 async fn cargo_flow_flat_query(
   State(state): State<Arc<ApiState>>,
-  Query(params): Query<PaginationParams>,
-) -> ApiResult<Vec<CargoFlowFlatRow>> {
+  Query(params): Query<CargoFlowQueryParams>,
+) -> ApiResult<CargoFlowPageResponse> {
   let rows = state
     .svc
     .document
-    .cargo_flow_flat_query(CargoFlowQuerySpec::list(params.page, params.per_page))
+    .cargo_flow_flat_query(params.into())
     .await?;
   Ok(ApiResponse::success(rows))
 }

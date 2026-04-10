@@ -118,6 +118,15 @@ async fn openapi_query_parameter_contract_enforces_pagination_and_filter_params(
       );
     }
   }
+
+  let cargo_flow_params = param_names_for(api_paths::flows::CARGO_FLOW_FLAT_QUERY, "get");
+  for expected in ["page", "perPage", "filter"] {
+    assert!(
+      cargo_flow_params.contains(expected),
+      "missing query parameter {expected} for GET {}",
+      api_paths::flows::CARGO_FLOW_FLAT_QUERY
+    );
+  }
 }
 
 #[tokio::test]
@@ -174,6 +183,15 @@ async fn openapi_sync_query_parameter_contract_enforces_pull_and_outbound_params
       pull_params.contains(expected),
       "missing query parameter {expected} for GET {}",
       api_paths::sync::PULL
+    );
+  }
+
+  let audit_log_params = param_names_for(api_paths::sync::AUDIT_LOGS, "get");
+  for expected in ["tableName", "recordId", "originDbId", "limit", "offset"] {
+    assert!(
+      audit_log_params.contains(expected),
+      "missing query parameter {expected} for GET {}",
+      api_paths::sync::AUDIT_LOGS
     );
   }
 }
@@ -235,7 +253,11 @@ async fn openapi_sync_query_routes_document_validation_error_response() {
     .as_object()
     .expect("openapi paths object");
 
-  let query_routes = [api_paths::sync::OUTBOUND, api_paths::sync::PULL];
+  let query_routes = [
+    api_paths::sync::AUDIT_LOGS,
+    api_paths::sync::OUTBOUND,
+    api_paths::sync::PULL,
+  ];
 
   for path in query_routes {
     let responses = paths

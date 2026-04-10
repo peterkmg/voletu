@@ -1,9 +1,9 @@
 mod await_cycle;
 pub mod helpers;
 mod logs;
-pub mod query;
 mod restore;
 mod service;
+pub mod specs;
 mod status;
 mod watermarks;
 

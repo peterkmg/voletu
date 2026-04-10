@@ -5,7 +5,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::{response::pipeline::DispatchFlatRow, DispatchFlatQueryParams},
+  dtos::{response::document::DispatchFlatRow, DispatchFlatQueryParams},
   endpoints::paths,
   enums::{DispatchMethod, DispatchPurpose, DocumentStatus},
 };

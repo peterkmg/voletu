@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use sea_orm::EntityLoaderTrait;
 use voletu_core::{
   db::seed_defaults,
   entities::{

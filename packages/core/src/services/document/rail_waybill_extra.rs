@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, response::pipeline::RailReceiptPipelineResponse},
+  dtos::{self, response::flow::RailReceiptPipelineResponse},
   entities::{
     acceptance_document,
     acceptance_item,
@@ -24,7 +24,7 @@ use crate::{
   },
   enums::PipelineStatus,
   services::{
-    document::query::{RailReceiptPipelineQuerySpec, RailWaybillQuerySpec},
+    document::specs::{RailReceiptPipelineQuerySpec, RailWaybillQuerySpec},
     DocumentService,
   },
 };

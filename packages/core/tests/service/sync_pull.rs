@@ -9,7 +9,7 @@ use voletu_core::{
   entities::{audit_log, base},
   enums::{self, AuditAction, AuditTable},
   services::sync::{
-    query::{AuditLogQuerySpec, OutboundAuditLogsQuerySpec, PullAuditLogsQuerySpec},
+    specs::{AuditLogQuerySpec, OutboundAuditLogsQuerySpec, PullAuditLogsQuerySpec},
     SyncService,
   },
 };
@@ -184,10 +184,9 @@ async fn sync_audit_log_query_applies_offset_and_limit_in_ascending_id_order() {
 
   let rows = service
     .audit_log_query(AuditLogQuerySpec {
-      table_name: Some(AuditTable::DispatchDocuments),
       origin_db_id: Some(origin_db_id),
-      limit: Some(2),
-      offset: Some(0),
+      limit: Some(1),
+      offset: Some(1),
       ..Default::default()
     })
     .await

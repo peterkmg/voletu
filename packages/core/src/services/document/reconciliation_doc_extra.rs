@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{response::pipeline::ReconciliationFlatRow, InventoryReconciliationResponse},
+  dtos::{response::document::ReconciliationFlatRow, InventoryReconciliationResponse},
   entities::{
     company,
     inventory_adjustment,
@@ -13,7 +13,7 @@ use crate::{
     warehouse,
   },
   services::{
-    document::query::{ReconciliationFlatQuerySpec, ReconciliationQuerySpec},
+    document::specs::{ReconciliationFlatQuerySpec, ReconciliationQuerySpec},
     DocumentService,
   },
 };

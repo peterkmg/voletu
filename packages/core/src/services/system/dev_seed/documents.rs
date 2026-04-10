@@ -557,10 +557,13 @@ fn pick_waybill_for_base(
   base_id: Uuid,
 ) -> Option<Uuid> {
   let mut selected = None;
-  let mut seen = 0usize;
 
-  for waybill in waybills.iter().filter(|waybill| waybill.base_id == base_id) {
-    seen += 1;
+  for (seen, waybill) in waybills
+    .iter()
+    .filter(|waybill| waybill.base_id == base_id)
+    .enumerate()
+  {
+    let seen = seen + 1;
     if rng.random_range(0..seen) == 0 {
       selected = Some(waybill.id);
     }

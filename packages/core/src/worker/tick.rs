@@ -10,7 +10,7 @@ use super::{cycle, state, topology, WorkerState, WorkerStatus};
 use crate::{
   config::{ApiConfig, SyncConfig},
   dtos::SyncStatusResponse,
-  services::sync::{helpers::compute_base_discriminant, query::SyncStatusQuerySpec, SyncService},
+  services::sync::{helpers::compute_base_discriminant, specs::SyncStatusQuerySpec, SyncService},
   utils::http::{get_api_json, normalize_base_url},
 };
 

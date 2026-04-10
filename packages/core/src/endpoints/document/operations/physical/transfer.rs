@@ -2,7 +2,7 @@ use super::*;
 use crate::{
   dtos::{EmbedParams, PaginationParams, PhysicalTransferDocumentQueryParams},
   endpoints::paths,
-  services::document::query::PhysicalTransferQuerySpec,
+  services::document::specs::PhysicalTransferQuerySpec,
 };
 
 #[utoipa::path(

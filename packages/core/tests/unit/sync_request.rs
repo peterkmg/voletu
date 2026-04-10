@@ -2,7 +2,7 @@ use uuid::Uuid;
 use voletu_core::{
   dtos::{AuditLogQueryRequest, PullAuditLogsQueryRequest, SyncStatusQueryRequest},
   enums::AuditTable,
-  services::sync::query::{AuditLogQuerySpec, PullAuditLogsQuerySpec, SyncStatusQuerySpec},
+  services::sync::specs::{AuditLogQuerySpec, PullAuditLogsQuerySpec, SyncStatusQuerySpec},
 };
 
 #[test]

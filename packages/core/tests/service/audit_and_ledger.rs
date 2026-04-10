@@ -6,7 +6,6 @@ use sea_orm::{
   ActiveModelTrait,
   ActiveValue::Set,
   ColumnTrait,
-  EntityLoaderTrait,
   QueryFilter,
 };
 use uuid::Uuid;

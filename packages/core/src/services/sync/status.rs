@@ -3,15 +3,17 @@ use sea_orm::{
   Condition,
   DatabaseConnection,
   EntityLoaderTrait,
+  EntityTrait,
   Order,
   QueryFilter,
   QueryOrder,
+  QuerySelect,
 };
 use uuid::Uuid;
 
 use super::{
   helpers::{excluded_sync_tables, scope_condition_for},
-  query::{
+  specs::{
     AuditLogQuerySpec,
     OutboundAuditLogsQuerySpec,
     PullAuditLogsQuerySpec,
@@ -34,29 +36,15 @@ async fn load_audit_log_slice(
   condition: Condition,
   limit: u64,
   offset: u64,
-) -> Result<Vec<audit_log::ModelEx>, ApiError> {
-  let per_page = limit.max(1);
-  let page_index = offset / per_page;
-  let intra_page_offset = (offset % per_page) as usize;
-
-  let paginator = audit_log::Entity::load()
+) -> Result<Vec<audit_log::Model>, ApiError> {
+  audit_log::Entity::find()
     .filter(condition)
     .order_by(audit_log::Column::Id, Order::Asc)
-    .paginate(db, per_page);
-
-  let mut rows = paginator.fetch_page(page_index).await?;
-
-  if intra_page_offset > 0 {
-    rows = rows.into_iter().skip(intra_page_offset).collect();
-
-    if rows.len() < per_page as usize {
-      let needed = per_page as usize - rows.len();
-      let next_page = paginator.fetch_page(page_index + 1).await?;
-      rows.extend(next_page.into_iter().take(needed));
-    }
-  }
-
-  Ok(rows)
+    .offset(offset)
+    .limit(limit.max(1))
+    .all(db)
+    .await
+    .map_err(ApiError::from)
 }
 
 impl SyncService {

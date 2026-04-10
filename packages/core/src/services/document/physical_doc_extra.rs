@@ -8,16 +8,17 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
+use super::types::PhysicalTransferFlatRowRef;
 use crate::{
   api::ApiError,
   dtos::{
-    response::pipeline::{PhysicalTransferFlatRow, PhysicalTransferFlatRowRef},
+    response::document::PhysicalTransferFlatRow,
     CreatePhysicalTransferRequest,
     PhysicalTransferResponse,
   },
   entities::{company, physical_storage_transfer, physical_transfer_item, product, storage},
   services::document::{
-    query::{PhysicalTransferFlatQuerySpec, PhysicalTransferQuerySpec},
+    specs::{PhysicalTransferFlatQuerySpec, PhysicalTransferQuerySpec},
     DocumentService,
   },
 };

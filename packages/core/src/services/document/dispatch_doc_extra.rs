@@ -9,11 +9,12 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
+use super::types::DispatchFlatRowRef;
 use crate::{
   api::ApiError,
   dtos::{
     self,
-    response::pipeline::{DispatchFlatRow, DispatchFlatRowRef, TruckDispatchPipelineResponse},
+    response::{document::DispatchFlatRow, flow::TruckDispatchPipelineResponse},
   },
   entities::{
     base,
@@ -27,7 +28,7 @@ use crate::{
   },
   enums::{DispatchMethod, DocumentStatus, PipelineStatus},
   services::document::{
-    query::{DispatchDocumentQuerySpec, DispatchFlatQuerySpec, TruckDispatchPipelineQuerySpec},
+    specs::{DispatchDocumentQuerySpec, DispatchFlatQuerySpec, TruckDispatchPipelineQuerySpec},
     DocumentService,
   },
 };

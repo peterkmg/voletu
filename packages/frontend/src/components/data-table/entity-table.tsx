@@ -1,4 +1,9 @@
-import type { ColumnDef, Row, SortingState, VisibilityState } from '@tanstack/react-table'
+import type {
+  ColumnDef,
+  Row,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { BulkAction } from './bulk-actions-bar'
 import type { TableMode } from './table-mode-toggle'
@@ -27,15 +32,24 @@ function getStoredTableMode(tableId: string | undefined): TableMode {
     if (stored === 'paginated' || stored === 'virtual')
       return stored
   }
-  catch { /* ignore */ }
+  catch {
+    /* ignore */
+  }
   return 'virtual'
 }
 
 interface EntityTableProps<T> {
   data: T[]
   getColumns: (t: TFunction) => ColumnDef<T>[]
-  routeApi: { useSearch: () => Record<string, unknown>, useNavigate: () => any }
-  globalFilterFn: (row: Row<T>, columnId: string, filterValue: string) => boolean
+  routeApi: {
+    useSearch: () => Record<string, unknown>
+    useNavigate: () => any
+  }
+  globalFilterFn: (
+    row: Row<T>,
+    columnId: string,
+    filterValue: string,
+  ) => boolean
   i18nNamespaces: string[]
   isLoading?: boolean
   bulkActions?: (t: TFunction) => BulkAction<T>[]
@@ -45,6 +59,14 @@ interface EntityTableProps<T> {
   groupKey?: keyof T & string
   /** Optional action buttons rendered in the toolbar (e.g. Create button). */
   actions?: React.ReactNode
+  /** Force a specific table mode and hide the mode toggle. */
+  forcedTableMode?: TableMode
+  /** Use server-provided pagination instead of slicing locally. */
+  serverPagination?: {
+    pageCount: number
+  }
+  /** Keep filter state in the URL while applying it on the server. */
+  manualFiltering?: boolean
 }
 
 export function EntityTable<T>({
@@ -58,34 +80,49 @@ export function EntityTable<T>({
   tableId,
   groupKey,
   actions,
+  forcedTableMode,
+  serverPagination,
+  manualFiltering = false,
 }: EntityTableProps<T>) {
   const { t } = useTranslation(i18nNamespaces)
   const columns = useMemo(() => getColumns(t), [t, getColumns])
 
-  const [tableMode, setTableMode] = useState<TableMode>(() => getStoredTableMode(tableId))
+  const [storedTableMode, setStoredTableMode] = useState<TableMode>(
+    () => forcedTableMode ?? getStoredTableMode(tableId),
+  )
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
-    const defaults: VisibilityState = {}
-    for (const col of columns) {
-      if (col.meta?.requiresRole) {
-        const key = (col as { accessorKey?: string }).accessorKey ?? col.id
-        if (key)
-          defaults[key] = false
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    () => {
+      const defaults: VisibilityState = {}
+      for (const col of columns) {
+        if (col.meta?.requiresRole) {
+          const key = (col as { accessorKey?: string }).accessorKey ?? col.id
+          if (key)
+            defaults[key] = false
+        }
       }
-    }
-    return defaults
-  })
+      return defaults
+    },
+  )
+  const tableMode = forcedTableMode ?? storedTableMode
 
-  const handleModeChange = useCallback((mode: TableMode) => {
-    setTableMode(mode)
-    if (tableId) {
-      try {
-        localStorage.setItem(`table-mode-${tableId}`, mode)
+  const handleModeChange = useCallback(
+    (mode: TableMode) => {
+      if (forcedTableMode)
+        return
+      setStoredTableMode(mode)
+      if (tableId) {
+        try {
+          localStorage.setItem(`table-mode-${tableId}`, mode)
+        }
+        catch {
+          /* ignore */
+        }
       }
-      catch { /* ignore */ }
-    }
-  }, [tableId])
+    },
+    [forcedTableMode, tableId],
+  )
 
   const {
     globalFilter,
@@ -98,33 +135,51 @@ export function EntityTable<T>({
   } = useTableUrlState({
     search: routeApi.useSearch(),
     navigate: routeApi.useNavigate(),
-    pagination: { defaultPage: 1, defaultPageSize: tableMode === 'virtual' ? 9999 : 10 },
+    pagination: {
+      defaultPage: 1,
+      defaultPageSize: tableMode === 'virtual' ? 9999 : 10,
+    },
     globalFilter: { enabled: true, key: 'filter' },
   })
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnVisibility, rowSelection, columnFilters, globalFilter, pagination },
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+      globalFilter,
+      pagination,
+    },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: manualFiltering ? undefined : getFilteredRowModel(),
+    getPaginationRowModel: serverPagination
+      ? undefined
+      : getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     onPaginationChange,
     onGlobalFilterChange,
     onColumnFiltersChange,
+    manualFiltering,
+    manualPagination: !!serverPagination,
+    pageCount: serverPagination?.pageCount,
   })
 
-  const resolvedBulkActions = useMemo(() => bulkActions?.(t) ?? [], [t, bulkActions])
+  const resolvedBulkActions = useMemo(
+    () => bulkActions?.(t) ?? [],
+    [t, bulkActions],
+  )
 
-  const pageCount = table.getPageCount()
+  const pageCount = serverPagination?.pageCount ?? table.getPageCount()
   useEffect(() => {
     ensurePageInRange(pageCount)
   }, [pageCount, ensurePageInRange])
@@ -135,8 +190,8 @@ export function EntityTable<T>({
         table={table}
         searchPlaceholder={`${t('common:actions.search')}...`}
         filters={[]}
-        tableMode={tableMode}
-        onTableModeChange={handleModeChange}
+        tableMode={forcedTableMode ? undefined : tableMode}
+        onTableModeChange={forcedTableMode ? undefined : handleModeChange}
         actions={actions}
       />
       <div className="flex-1 min-h-0">

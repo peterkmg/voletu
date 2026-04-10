@@ -15,7 +15,7 @@ use crate::{
   enums::SyncDirection,
   services::sync::{
     helpers::compute_base_discriminant,
-    query::OutboundAuditLogsQuerySpec,
+    specs::OutboundAuditLogsQuerySpec,
     SyncService,
   },
   utils::http::{get_api_json, post_api_json},

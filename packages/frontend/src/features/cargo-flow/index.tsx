@@ -2,15 +2,39 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
 import type { CargoFlowFlatRow } from '~/generated/types'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, ArrowUpRight, ChevronDown, Plus } from 'lucide-react'
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpFromLine,
+  ArrowUpRight,
+  ChevronDown,
+  Plus,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { actionsColumn, createGlobalFilter, DataTableColumnHeader, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
+import {
+  actionsColumn,
+  createGlobalFilter,
+  DataTableColumnHeader,
+  dateColumn,
+  EntityTable,
+  numericColumn,
+  statusColumn,
+  textColumn,
+} from '~/components/data-table'
 import { RowActions } from '~/components/data-table/row-actions'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
 import { Skeleton } from '~/components/ui/skeleton'
 import { useFlowCargoFlowFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowCargoFlowFlatQuery'
 import { usePageTitle } from '~/hooks/use-page-title'
@@ -28,7 +52,10 @@ function CargoFlowRowActions({ row }: { row: { original: CargoFlowFlatRow } }) {
           label: t('actions.viewDetails'),
           icon: ArrowUpRight,
           inline: true,
-          onClick: () => navigate({ to: `${row.original.flowRoute}/${row.original.documentId}` }),
+          onClick: () =>
+            navigate({
+              to: `${row.original.flowRoute}/${row.original.documentId}`,
+            }),
         },
       ]}
     />
@@ -42,40 +69,169 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
     // Document-level columns (groupRole: 'doc' — shown only on first row of group)
     {
       accessorKey: 'type',
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('common:columns.type')} />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t('common:columns.type')}
+        />
+      ),
+      enableSorting: false,
       minSize: 130,
       maxSize: 130,
-      meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'doc' as const },
+      meta: {
+        label: t('common:columns.type'),
+        sizingCategory: 'capped',
+        groupRole: 'doc' as const,
+      },
       cell: ({ row }) => {
         const type = row.getValue('type') as string
-        const Icon = type === 'Incoming' ? ArrowDownToLine : type === 'Outgoing' ? ArrowUpFromLine : ArrowLeftRight
+        const Icon
+          = type === 'Incoming'
+            ? ArrowDownToLine
+            : type === 'Outgoing'
+              ? ArrowUpFromLine
+              : ArrowLeftRight
         return (
-          <Badge variant="outline" className={cn('shrink-0', flowTypeColors[type])}>
+          <Badge
+            variant="outline"
+            className={cn('shrink-0', flowTypeColors[type])}
+          >
             <Icon className="size-3" />
             {type}
           </Badge>
         )
       },
     },
-    { ...textColumn<CargoFlowFlatRow>('operation', t('common:columns.operation'), { primary: false, sizing: 'capped', maxSize: 180 }), meta: { label: t('common:columns.operation'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    { ...textColumn<CargoFlowFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    { ...dateColumn<CargoFlowFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
-    { ...textColumn<CargoFlowFlatRow>('contractorName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
+    {
+      ...textColumn<CargoFlowFlatRow>(
+        'operation',
+        t('common:columns.operation'),
+        { primary: false, sizing: 'capped', maxSize: 180 },
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:columns.operation'),
+        sizingCategory: 'capped',
+        groupRole: 'doc' as const,
+      },
+    },
+    {
+      ...textColumn<CargoFlowFlatRow>(
+        'documentNumber',
+        t('common:table.documentNumber'),
+        { sizing: 'capped', maxSize: 200 },
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:table.documentNumber'),
+        sizingCategory: 'capped',
+        groupRole: 'doc' as const,
+      },
+    },
+    {
+      ...dateColumn<CargoFlowFlatRow>('date', t('common:table.date')),
+      enableSorting: false,
+      meta: {
+        label: t('common:table.date'),
+        sizingCategory: 'capped',
+        align: 'left' as const,
+        groupRole: 'doc' as const,
+      },
+    },
+    {
+      ...textColumn<CargoFlowFlatRow>(
+        'contractorName',
+        t('common:table.contractor'),
+        { primary: false },
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:table.contractor'),
+        sizingCategory: 'flex',
+        groupRole: 'doc' as const,
+      },
+    },
     // Item-level columns (groupRole: 'item' — shown on every row)
-    { ...textColumn<CargoFlowFlatRow>('productName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...textColumn<CargoFlowFlatRow>('storageName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
-    { ...numericColumn<CargoFlowFlatRow>('quantity', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
+    {
+      ...textColumn<CargoFlowFlatRow>(
+        'productName',
+        t('common:table.product'),
+        { primary: false },
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:table.product'),
+        sizingCategory: 'flex',
+        groupRole: 'item' as const,
+      },
+    },
+    {
+      ...textColumn<CargoFlowFlatRow>(
+        'storageName',
+        t('common:columns.storage'),
+        { primary: false },
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:columns.storage'),
+        sizingCategory: 'flex',
+        groupRole: 'item' as const,
+      },
+    },
+    {
+      ...numericColumn<CargoFlowFlatRow>(
+        'quantity',
+        t('common:table.quantity'),
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:table.quantity'),
+        sizingCategory: 'capped',
+        align: 'right' as const,
+        groupRole: 'item' as const,
+      },
+    },
     // Status last before actions (doc-level)
-    { ...statusColumn<CargoFlowFlatRow>('status', t('common:table.status'), cargoFlowStatusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
+    {
+      ...statusColumn<CargoFlowFlatRow>(
+        'status',
+        t('common:table.status'),
+        cargoFlowStatusColors,
+      ),
+      enableSorting: false,
+      meta: {
+        label: t('common:table.status'),
+        sizingCategory: 'capped',
+        groupRole: 'doc' as const,
+      },
+    },
     // Actions (doc-level)
-    { ...actionsColumn<CargoFlowFlatRow>(CargoFlowRowActions, 1), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
+    {
+      ...actionsColumn<CargoFlowFlatRow>(CargoFlowRowActions, 1),
+      enableSorting: false,
+      meta: { sizingCategory: 'fixed', groupRole: 'doc' as const },
+    },
   ]
 }
 
 const route = getRouteApi('/_authenticated/cargo-flow/')
-const globalFilterFn = createGlobalFilter<CargoFlowFlatRow>('documentNumber', 'contractorName', 'operation', 'productName', 'storageName')
+const globalFilterFn = createGlobalFilter<CargoFlowFlatRow>(
+  'documentNumber',
+  'contractorName',
+  'operation',
+  'productName',
+  'storageName',
+)
 
-function CargoFlowTable({ data, actions }: { data: CargoFlowFlatRow[], actions?: React.ReactNode }) {
+function CargoFlowTable({
+  data,
+  pageCount,
+  actions,
+}: {
+  data: CargoFlowFlatRow[]
+  pageCount: number
+  actions?: React.ReactNode
+}) {
   return (
     <EntityTable
       tableId="cargo-flow"
@@ -86,6 +242,9 @@ function CargoFlowTable({ data, actions }: { data: CargoFlowFlatRow[], actions?:
       i18nNamespaces={['common']}
       groupKey="documentId"
       actions={actions}
+      forcedTableMode="paginated"
+      serverPagination={{ pageCount }}
+      manualFiltering
     />
   )
 }
@@ -106,24 +265,83 @@ function CreateDropdown() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>{t('nav.incoming')}</DropdownMenuLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate({ to: '/incoming/truck', search: { create: true } })}>{t('nav.truckReceipt')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/incoming/rail', search: { create: true } })}>{t('nav.railReceipt')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/incoming/external', search: { create: true } })}>{t('nav.externalAcceptance')}</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/incoming/truck', search: { create: true } })}
+          >
+            {t('nav.truckReceipt')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/incoming/rail', search: { create: true } })}
+          >
+            {t('nav.railReceipt')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/incoming/external', search: { create: true } })}
+          >
+            {t('nav.externalAcceptance')}
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t('nav.outgoing')}</DropdownMenuLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate({ to: '/outgoing/truck', search: { create: true } })}>{t('nav.truckDispatch')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/outgoing/direct', search: { create: true } })}>{t('nav.directDispatch')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/outgoing/bunkering', search: { create: true } })}>{t('nav.bunkering')}</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/outgoing/truck', search: { create: true } })}
+          >
+            {t('nav.truckDispatch')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/outgoing/direct', search: { create: true } })}
+          >
+            {t('nav.directDispatch')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/outgoing/bunkering', search: { create: true } })}
+          >
+            {t('nav.bunkering')}
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t('nav.internal')}</DropdownMenuLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate({ to: '/internal/physical-transfer', search: { create: true } })}>{t('nav.physicalTransfer')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/internal/ownership-transfer', search: { create: true } })}>{t('nav.ownershipTransfer')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/internal/blending', search: { create: true } })}>{t('nav.blending')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/internal/reconciliation', search: { create: true } })}>{t('nav.reconciliation')}</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({
+                to: '/internal/physical-transfer',
+                search: { create: true },
+              })}
+          >
+            {t('nav.physicalTransfer')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({
+                to: '/internal/ownership-transfer',
+                search: { create: true },
+              })}
+          >
+            {t('nav.ownershipTransfer')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({ to: '/internal/blending', search: { create: true } })}
+          >
+            {t('nav.blending')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate({
+                to: '/internal/reconciliation',
+                search: { create: true },
+              })}
+          >
+            {t('nav.reconciliation')}
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -132,8 +350,18 @@ function CreateDropdown() {
 
 export function CargoFlowPage() {
   const { t } = useTranslation('common')
-  const { data, isLoading } = useFlowCargoFlowFlatQuery()
+  const search = route.useSearch()
+  const page = search.page ?? 1
+  const pageSize = search.pageSize ?? 10
+  const filter = search.filter?.trim() || undefined
+  const { data, isLoading } = useFlowCargoFlowFlatQuery({
+    page,
+    perPage: pageSize,
+    filter,
+  })
   usePageTitle(t('nav.cargoFlow'))
+  const payload = data?.data
+  const pageCount = payload ? Math.ceil(payload.total / pageSize) : 0
 
   return (
     <>
@@ -145,14 +373,20 @@ export function CargoFlowPage() {
                 <Skeleton className="h-9 w-64" />
                 <div className="flex-1 rounded-md border">
                   <div className="space-y-3 p-4">
-                    {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+                    {Array.from({ length: 8 }, (_, i) => (
+                      <Skeleton key={i} className="h-8 w-full" />
+                    ))}
                   </div>
                 </div>
               </div>
             )
           : (
               <div className="flex flex-1 flex-col min-h-0">
-                <CargoFlowTable data={data?.data ?? []} actions={<CreateDropdown />} />
+                <CargoFlowTable
+                  data={payload?.items ?? []}
+                  pageCount={pageCount}
+                  actions={<CreateDropdown />}
+                />
               </div>
             )}
       </Main>

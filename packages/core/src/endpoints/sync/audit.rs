@@ -16,7 +16,8 @@ use crate::dtos::{AuditLogQueryRequest, OutboundLogsQueryRequest};
     ("offset" = Option<u64>, Query, description = "Skip this many matching logs before returning results")
   ),
   responses(
-    (status = 200, body = ApiResponse<Vec<AuditLogResponse>>, description = "Audit log list envelope. Example: {\"success\":true,\"data\":[{\"id\":\"...\",\"action\":\"create\"}]}" )
+    (status = 200, body = ApiResponse<Vec<AuditLogResponse>>, description = "Audit log list envelope. Example: {\"success\":true,\"data\":[{\"id\":\"...\",\"action\":\"create\"}]}" ),
+    (status = 400, description = "Validation envelope for malformed query params. Example: {\"success\":false,\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Validation error: ...\"}}")
   )
 )]
 #[axum::debug_handler]

@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use super::{
   helpers::{compute_base_discriminant, join_uuid_csv},
-  query::{AwaitCycleQuerySpec, SyncStatusQuerySpec},
+  specs::{AwaitCycleQuerySpec, SyncStatusQuerySpec},
   SyncService,
 };
 use crate::{

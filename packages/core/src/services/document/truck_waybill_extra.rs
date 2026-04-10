@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{self, response::pipeline::TruckReceiptPipelineResponse},
+  dtos::{self, response::flow::TruckReceiptPipelineResponse},
   entities::{
     acceptance_document,
     acceptance_item,
@@ -23,7 +23,7 @@ use crate::{
   },
   enums::PipelineStatus,
   services::{
-    document::query::{TruckReceiptPipelineQuerySpec, TruckWaybillQuerySpec},
+    document::specs::{TruckReceiptPipelineQuerySpec, TruckWaybillQuerySpec},
     DocumentService,
   },
 };
