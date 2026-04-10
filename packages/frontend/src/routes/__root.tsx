@@ -7,7 +7,7 @@ import { Titlebar } from '~/components/layout/titlebar'
 import { Toaster } from '~/components/ui/sonner'
 import { GeneralError, NotFound } from '~/features/errors'
 import { useDevToolsVisible } from '~/lib/devtools'
-import { useAuthStore } from '~/stores/auth-store'
+import { ensureBootstrapped } from '~/platform/runtime/bootstrap'
 import { useStartupStore } from '~/stores/startup-store'
 
 function RootComponent() {
@@ -41,16 +41,7 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   beforeLoad: async () => {
-    // 1. Ensure Tauri startup state is loaded.
-    const { startupState, refresh } = useStartupStore.getState()
-    if (!startupState) {
-      await refresh()
-    }
-
-    // 2. Boot auth state machine (validate / refresh stored session).
-    const { status, boot } = useAuthStore.getState()
-    if (status === 'unknown')
-      await boot()
+    await ensureBootstrapped()
   },
   component: RootComponent,
   notFoundComponent: NotFound,

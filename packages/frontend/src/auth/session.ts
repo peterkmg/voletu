@@ -1,6 +1,6 @@
 import type { LoginResponse } from '~/generated/types/LoginResponse'
 import type { UserResponse } from '~/generated/types/UserResponse'
-import { TRAILING_SLASHES } from '~/lib/utils'
+import { getApiBaseUrl } from '~/platform/runtime/api-base-url'
 
 // ---------------------------------------------------------------------------
 // JWT utilities
@@ -77,13 +77,6 @@ export function clearSession(): void {
 // ---------------------------------------------------------------------------
 // Backend API calls (used by the auth store)
 // ---------------------------------------------------------------------------
-
-/** Resolve API base URL without importing the kubb client (avoids circular deps). */
-function getApiBaseUrl(): string {
-  return ((globalThis as { __VOLETU_API_BASE_URL__?: string }).__VOLETU_API_BASE_URL__
-    ?? import.meta.env.VITE_API_BASE_URL
-    ?? 'http://127.0.0.1:3000').replace(TRAILING_SLASHES, '')
-}
 
 /** Verify the access token by calling GET /auth/me. Returns the user on success. */
 export async function verifyToken(accessToken: string): Promise<UserResponse> {

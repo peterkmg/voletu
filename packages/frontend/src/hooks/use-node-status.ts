@@ -1,58 +1,28 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { getBaseUrl } from '~/api/client'
+import { getApiBaseUrl } from '~/platform/runtime/api-base-url'
+import {
+  applyHealthSnapshot,
+  applyNodeStatusSnapshot,
+  fetchHealth,
+  fetchNodeStatus,
+} from '~/platform/runtime/health'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
-
-interface HealthData {
-  status: string
-  isInitialized: boolean
-  nodeType: string
-  nodeName: string
-}
-
-interface HealthResponse {
-  success: true
-  data: HealthData
-}
-
-interface NodeStatusData {
-  isInitialized: boolean
-  nodeType: string
-  nodeName: string
-  workerState: string
-  lastSyncAt: string | null
-}
-
-interface NodeStatusResponse {
-  success: true
-  data: NodeStatusData
-}
 
 export function useHealthCheck() {
   const accessToken = useAuthStore(s => s.accessToken)
 
-  const query = useQuery<HealthResponse>({
+  const query = useQuery({
     queryKey: ['health'],
-    queryFn: async () => {
-      const res = await fetch(`${getBaseUrl()}/health`)
-      if (!res.ok) {
-        throw new Error(`Health check failed with status ${res.status}`)
-      }
-      return res.json() as Promise<HealthResponse>
-    },
+    queryFn: () => fetchHealth(),
     refetchInterval: 60_000,
     enabled: !!accessToken,
   })
 
   useEffect(() => {
-    if (query.data?.success) {
-      const { isInitialized, nodeType, nodeName } = query.data.data
-      useNodeStore.getState().setStatus({
-        isInitialized,
-        nodeType: nodeType as import('~/stores/node-store').NodeType,
-        nodeName,
-      })
+    if (query.data) {
+      applyHealthSnapshot(query.data)
     }
   }, [query.data])
 
@@ -63,20 +33,9 @@ export function useNodeStatus() {
   const accessToken = useAuthStore(s => s.accessToken)
   const isInitialized = useNodeStore(s => s.status.isInitialized)
 
-  const query = useQuery<NodeStatusResponse>({
+  const query = useQuery({
     queryKey: ['node', 'status'],
-    queryFn: async () => {
-      const token = useAuthStore.getState().accessToken
-      const res = await fetch(`${getBaseUrl()}/node/status`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (!res.ok) {
-        throw new Error(`Node status request failed with status ${res.status}`)
-      }
-      return res.json() as Promise<NodeStatusResponse>
-    },
+    queryFn: () => fetchNodeStatus(),
     refetchInterval: 30_000,
     enabled: isInitialized && !!accessToken,
   })
@@ -87,7 +46,7 @@ export function useNodeStatus() {
     queryKey: ['node', 'bases'],
     queryFn: async () => {
       const token = useAuthStore.getState().accessToken
-      const res = await fetch(`${getBaseUrl()}/node/bases`, {
+      const res = await fetch(`${getApiBaseUrl()}/node/bases`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok)
@@ -99,15 +58,8 @@ export function useNodeStatus() {
   })
 
   useEffect(() => {
-    if (query.data?.success) {
-      const { isInitialized, nodeType, nodeName, workerState, lastSyncAt } = query.data.data
-      useNodeStore.getState().setStatus({
-        isInitialized,
-        nodeType: nodeType as import('~/stores/node-store').NodeType,
-        nodeName,
-        workerState: workerState as import('~/stores/node-store').WorkerState,
-        lastSyncAt,
-      })
+    if (query.data) {
+      applyNodeStatusSnapshot(query.data)
     }
   }, [query.data])
 

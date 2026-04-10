@@ -15,7 +15,8 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
-import { checkHealth, useSetupFlow } from '~/features/setup/hooks/use-setup-flow'
+import { useSetupFlow } from '~/features/setup/hooks/use-setup-flow'
+import { checkHealth } from '~/platform/runtime/health'
 
 const remoteSchema = z.object({
   apiUrl: z.string().url().min(1),

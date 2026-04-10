@@ -1,42 +1,19 @@
 import type { SaveLocalConfigPayload } from '~/tauri/commands'
 import { useState } from 'react'
-import { setApiBaseUrl } from '~/api/client'
 import { extractErrorMessage } from '~/lib/error'
-import { TRAILING_SLASHES } from '~/lib/utils'
+import { setApiBaseUrl } from '~/platform/runtime/api-base-url'
+import {
+  applyHealthSnapshot,
+  fetchHealth,
+  waitForApiHealthy,
+} from '~/platform/runtime/health'
+import { useRuntimeStore } from '~/platform/runtime/runtime-store'
 import { useStartupStore } from '~/stores/startup-store'
 import {
   saveLocalConfig,
   saveRemoteConfig,
   startLocalApi,
 } from '~/tauri/commands'
-
-async function checkHealth(baseUrl: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${baseUrl.replace(TRAILING_SLASHES, '')}/health`)
-    return res.ok
-  }
-  catch {
-    return false
-  }
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-async function waitForApiHealthy(baseUrl: string): Promise<void> {
-  const maxAttempts = 30
-  const interval = 500
-
-  for (let i = 0; i < maxAttempts; i++) {
-    const healthy = await checkHealth(baseUrl)
-    if (healthy)
-      return
-    await delay(interval)
-  }
-
-  throw new Error('API did not become healthy in time')
-}
 
 export function useSetupFlow() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,14 +25,12 @@ export function useSetupFlow() {
     setError(null)
 
     try {
-      setApiBaseUrl(remoteApiUrl)
-
-      const healthy = await checkHealth(remoteApiUrl)
-      if (!healthy) {
-        throw new Error('Cannot connect to remote API')
-      }
-
+      const health = await fetchHealth({ baseUrl: remoteApiUrl })
       const state = await saveRemoteConfig({ remoteApiUrl })
+
+      applyHealthSnapshot(health)
+      useRuntimeStore.getState().markHealthHydrated()
+      setApiBaseUrl(state.apiBaseUrl ?? remoteApiUrl)
       applyStartupState(state)
       // Keep isSubmitting=true — page will navigate away
     }
@@ -76,9 +51,11 @@ export function useSetupFlow() {
       const state = await startLocalApi()
 
       const baseUrl = state.apiBaseUrl!
-      setApiBaseUrl(baseUrl)
+      const health = await waitForApiHealthy(baseUrl)
 
-      await waitForApiHealthy(baseUrl)
+      applyHealthSnapshot(health)
+      useRuntimeStore.getState().markHealthHydrated()
+      setApiBaseUrl(baseUrl)
       applyStartupState(state)
       // Keep isSubmitting=true — page will navigate away
     }
@@ -92,5 +69,3 @@ export function useSetupFlow() {
 
   return { isSubmitting, error, submitRemoteConfig, submitLocalConfig }
 }
-
-export { checkHealth }

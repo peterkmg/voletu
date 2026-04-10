@@ -16,7 +16,7 @@ export function SyncDashboard() {
   const status = statusData?.data
 
   const { data: nodeStatusData, isLoading: nodeStatusLoading } = useNodeStatus()
-  const nodeStatus = nodeStatusData?.data
+  const nodeStatus = nodeStatusData
 
   const { data: watermarksData, isLoading: watermarksLoading } = useSyncWatermarkList()
   const watermarks = watermarksData?.data ?? []

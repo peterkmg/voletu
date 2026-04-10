@@ -1,5 +1,8 @@
 import { isTokenExpiringSoon } from '~/auth/session'
-import { TRAILING_SLASHES } from '~/lib/utils'
+import {
+  getApiBaseUrl,
+  setApiBaseUrl as setRuntimeApiBaseUrl,
+} from '~/platform/runtime/api-base-url'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 
@@ -21,25 +24,12 @@ export interface ResponseConfig<TData = unknown> {
 
 export type ResponseErrorConfig<TError = unknown> = TError
 
-// ---------------------------------------------------------------------------
-// Base URL
-// ---------------------------------------------------------------------------
-
-function normalizeBaseUrl(value: string): string {
-  return value.replace(TRAILING_SLASHES, '')
-}
-
 export function getBaseUrl(): string {
-  return normalizeBaseUrl(
-    (globalThis as { __VOLETU_API_BASE_URL__?: string }).__VOLETU_API_BASE_URL__
-    ?? import.meta.env.VITE_API_BASE_URL
-    ?? 'http://127.0.0.1:3000',
-  )
+  return getApiBaseUrl()
 }
 
 export function setApiBaseUrl(baseUrl: string): void {
-  ;(globalThis as { __VOLETU_API_BASE_URL__?: string }).__VOLETU_API_BASE_URL__
-    = normalizeBaseUrl(baseUrl)
+  setRuntimeApiBaseUrl(baseUrl)
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +56,13 @@ const PROACTIVE_REFRESH_SECONDS = 300 // 5 minutes before expiry
 export async function client<TData, _TError = unknown, TVariables = unknown>(
   config: RequestConfig<TVariables>,
 ): Promise<ResponseConfig<TData>> {
+  return executeClient(config)
+}
+
+async function executeClient<TData, TVariables>(
+  config: RequestConfig<TVariables>,
+  retryContext?: { idempotencyKey?: string },
+): Promise<ResponseConfig<TData>> {
   const store = useAuthStore.getState()
 
   // Proactive refresh: if token is valid but nearing expiry, refresh before sending
@@ -76,6 +73,16 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
 
   const { accessToken } = useAuthStore.getState()
   const isMutating = MUTATING_METHODS.has(config.method.toUpperCase())
+  const requestHeaders = new Headers(config.headers)
+  const idempotencyKey = isMutating
+    ? retryContext?.idempotencyKey
+    ?? requestHeaders.get('Idempotency-Key')
+    ?? crypto.randomUUID()
+    : undefined
+
+  if (idempotencyKey) {
+    requestHeaders.set('Idempotency-Key', idempotencyKey)
+  }
 
   // Serialize params as query string
   let url = `${getBaseUrl()}${config.url}`
@@ -98,19 +105,23 @@ export async function client<TData, _TError = unknown, TVariables = unknown>(
         ? JSON.stringify(config.data)
         : undefined,
     signal: config.signal,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...(isMutating ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
-      ...(config.headers ?? {}),
-    },
+    headers: (() => {
+      if (!(config.data instanceof FormData) && config.data !== undefined) {
+        requestHeaders.set('Content-Type', 'application/json')
+      }
+      if (accessToken) {
+        requestHeaders.set('Authorization', `Bearer ${accessToken}`)
+      }
+      return requestHeaders
+    })(),
   })
 
   // 401 → refresh → replay
   if (response.status === 401) {
     const refreshed = await useAuthStore.getState().onUnauthorized()
-    if (refreshed)
-      return client(config)
+    if (refreshed) {
+      return executeClient(config, { idempotencyKey })
+    }
     throw new Error('Session expired')
   }
 

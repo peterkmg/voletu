@@ -9,9 +9,9 @@ import { cn } from '~/lib/utils'
 
 interface NodeStatusData {
   isInitialized: boolean
-  nodeType: string
-  nodeName: string
-  workerState: string
+  nodeType: string | null
+  nodeName: string | null
+  workerState: string | null
   lastSyncAt: string | null
 }
 
@@ -67,11 +67,13 @@ export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
                       <span
                         className={cn(
                           'size-2.5 rounded-full',
-                          STATE_COLORS[data.workerState] ?? 'bg-gray-400',
+                          STATE_COLORS[data.workerState ?? ''] ?? 'bg-gray-400',
                         )}
                       />
                       <span className="font-mono text-sm">
-                        {t(`system:sync.states.${data.workerState.charAt(0).toLowerCase() + data.workerState.slice(1)}` as any, data.workerState)}
+                        {data.workerState
+                          ? t(`system:sync.states.${data.workerState.charAt(0).toLowerCase() + data.workerState.slice(1)}` as any, data.workerState)
+                          : t('system:sync.unknown')}
                       </span>
                     </dd>
                   </div>
@@ -89,13 +91,13 @@ export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
                     <dt className="text-sm font-medium text-muted-foreground">
                       {t('system:sync.nodeType')}
                     </dt>
-                    <dd className="mt-1 font-mono text-sm">{data.nodeType}</dd>
+                    <dd className="mt-1 font-mono text-sm">{data.nodeType ?? t('system:sync.unknown')}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
                       Node
                     </dt>
-                    <dd className="mt-1 font-mono text-sm">{data.nodeName}</dd>
+                    <dd className="mt-1 font-mono text-sm">{data.nodeName ?? t('system:sync.unknown')}</dd>
                   </div>
                 </dl>
               )

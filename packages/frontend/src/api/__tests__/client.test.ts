@@ -33,6 +33,18 @@ function jsonResponse(body: object, status = 200) {
   })
 }
 
+function getHeaderValue(headersInit: HeadersInit | undefined, name: string): string | undefined {
+  if (!headersInit)
+    return undefined
+  if (headersInit instanceof Headers)
+    return headersInit.get(name) ?? undefined
+  if (Array.isArray(headersInit)) {
+    const found = headersInit.find(([key]) => key.toLowerCase() === name.toLowerCase())
+    return found?.[1]
+  }
+  return (headersInit as Record<string, string>)[name]
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -43,8 +55,8 @@ describe('client()', () => {
 
     await client({ method: 'GET', url: '/test' })
 
-    const headers = fetchSpy.mock.calls[0]![1]!.headers as Record<string, string>
-    expect(headers.Authorization).toBe('Bearer test-token')
+    const headers = fetchSpy.mock.calls[0]![1]!.headers
+    expect(getHeaderValue(headers, 'Authorization')).toBe('Bearer test-token')
   })
 
   it('omits Authorization header when no token', async () => {
@@ -53,8 +65,8 @@ describe('client()', () => {
 
     await client({ method: 'GET', url: '/test' })
 
-    const headers = fetchSpy.mock.calls[0]![1]!.headers as Record<string, string>
-    expect(headers.Authorization).toBeUndefined()
+    const headers = fetchSpy.mock.calls[0]![1]!.headers
+    expect(getHeaderValue(headers, 'Authorization')).toBeUndefined()
   })
 
   it('adds Idempotency-Key header for mutating requests', async () => {
@@ -62,9 +74,10 @@ describe('client()', () => {
 
     await client({ method: 'POST', url: '/test', data: {} })
 
-    const headers = fetchSpy.mock.calls[0]![1]!.headers as Record<string, string>
-    expect(headers['Idempotency-Key']).toBeDefined()
-    expect(headers['Idempotency-Key']).toMatch(
+    const headers = fetchSpy.mock.calls[0]![1]!.headers
+    const key = getHeaderValue(headers, 'Idempotency-Key')
+    expect(key).toBeDefined()
+    expect(key).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     )
   })
@@ -74,8 +87,20 @@ describe('client()', () => {
 
     await client({ method: 'GET', url: '/test' })
 
-    const headers = fetchSpy.mock.calls[0]![1]!.headers as Record<string, string>
-    expect(headers['Idempotency-Key']).toBeUndefined()
+    const headers = fetchSpy.mock.calls[0]![1]!.headers
+    expect(getHeaderValue(headers, 'Idempotency-Key')).toBeUndefined()
+  })
+
+  it('does not force JSON Content-Type for FormData payloads', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse({ success: true, data: {} }))
+
+    const formData = new FormData()
+    formData.set('file', 'payload')
+
+    await client({ method: 'POST', url: '/upload', data: formData })
+
+    const headers = fetchSpy.mock.calls[0]![1]!.headers
+    expect(getHeaderValue(headers, 'Content-Type')).toBeUndefined()
   })
 
   it('parses success envelope correctly', async () => {
@@ -133,6 +158,25 @@ describe('client()', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
     expect(fetchSpy).toHaveBeenCalledTimes(2)
     expect(result.data).toEqual({ success: true, data: {} })
+  })
+
+  it('reuses the same Idempotency-Key when replaying a mutating request after 401', async () => {
+    const onUnauthorized = vi.fn().mockResolvedValue(true)
+    useAuthStore.setState({ onUnauthorized } as any)
+
+    fetchSpy
+      .mockResolvedValueOnce(new Response('Unauthorized', { status: 401 }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: {} }))
+
+    await client({ method: 'POST', url: '/test', data: { ok: true } })
+
+    const firstHeaders = fetchSpy.mock.calls[0]![1]!.headers
+    const secondHeaders = fetchSpy.mock.calls[1]![1]!.headers
+    const firstKey = getHeaderValue(firstHeaders, 'Idempotency-Key')
+    const secondKey = getHeaderValue(secondHeaders, 'Idempotency-Key')
+
+    expect(firstKey).toBeDefined()
+    expect(secondKey).toBe(firstKey)
   })
 
   it('on 401: throws if onUnauthorized returns false', async () => {
