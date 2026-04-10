@@ -30,74 +30,78 @@ fn map_hard_delete_db_error(err: DbErr, entity_name: &str) -> ApiError {
 
 impl SystemService {
   pub async fn user_soft_delete(&self, id: Uuid) -> Result<(), ApiError> {
-    self.user_set_soft_deleted_state(id, false).await
+    tracing::info!(id = %id, "Soft deleting user");
+    let user_id = self.load_local_user_for_soft_delete(id).await?;
+    let actor_id = current_actor_id()
+      .ok_or_else(|| ApiError::Unauthorized("Missing authenticated actor context".to_string()))?;
+
+    self
+      .write_soft_delete_state(user_id, Some(ChronoUtc::now()), Some(actor_id))
+      .await?;
+    tracing::info!(id = %id, "User soft deleted");
+    Ok(())
   }
 
   pub async fn user_soft_delete_undo(&self, id: Uuid) -> Result<(), ApiError> {
-    self.user_set_soft_deleted_state(id, true).await
+    tracing::info!(id = %id, "Restoring soft deleted user");
+    let user_id = self.load_local_user_for_restore(id).await?;
+
+    self.write_soft_delete_state(user_id, None, None).await?;
+    tracing::info!(id = %id, "User soft delete restored");
+    Ok(())
   }
 
-  async fn user_set_soft_deleted_state(&self, id: Uuid, undo: bool) -> Result<(), ApiError> {
-    if undo {
-      tracing::info!(id = %id, "Restoring soft deleted user");
-    } else {
-      tracing::info!(id = %id, "Soft deleting user");
-    }
-
+  async fn load_local_user_for_soft_delete(&self, id: Uuid) -> Result<Uuid, ApiError> {
     let local_db_id = self.user_local_db_id().await?;
-
     let existing = load_local_user_by_id(self.db.as_ref(), local_db_id, id).await?;
-
     let Some(existing) = existing else {
-      if undo {
-        tracing::warn!(id = %id, "Soft deleted user not found for restore");
-      } else {
-        tracing::warn!(id = %id, "User not found for deletion");
-      }
-
-      return Err(ApiError::NotFound(if undo {
-        format!("Deleted user '{}' not found", id)
-      } else {
-        format!("User '{}' not found", id)
-      }));
+      tracing::warn!(id = %id, "User not found for deletion");
+      return Err(ApiError::NotFound(format!("User '{}' not found", id)));
     };
 
-    let has_matching_deleted_state = if undo {
-      existing.deleted_at.is_some()
-    } else {
-      existing.deleted_at.is_none()
-    };
-
-    if !has_matching_deleted_state {
-      if undo {
-        tracing::warn!(id = %id, "Soft deleted user not found for restore");
-        return Err(ApiError::NotFound(format!(
-          "Deleted user '{}' not found",
-          id
-        )));
-      }
-
+    if existing.deleted_at.is_some() {
       tracing::warn!(id = %id, "User not found for deletion");
       return Err(ApiError::NotFound(format!("User '{}' not found", id)));
     }
 
-    let actor_id = current_actor_id()
-      .ok_or_else(|| ApiError::Unauthorized("Missing authenticated actor context".to_string()))?;
-    let mut model = user::ActiveModel {
-      id: Set(existing.id),
-      ..Default::default()
-    };
-    let now = ChronoUtc::now();
-    model.deleted_at = Set(if undo { None } else { Some(now) });
-    model.deleted_by = Set(if undo { None } else { Some(actor_id) });
-    model.update(self.db.as_ref()).await?;
+    Ok(existing.id)
+  }
 
-    if undo {
-      tracing::info!(id = %id, "User soft delete restored");
-    } else {
-      tracing::info!(id = %id, "User soft deleted");
+  async fn load_local_user_for_restore(&self, id: Uuid) -> Result<Uuid, ApiError> {
+    let local_db_id = self.user_local_db_id().await?;
+    let existing = load_local_user_by_id(self.db.as_ref(), local_db_id, id).await?;
+    let Some(existing) = existing else {
+      tracing::warn!(id = %id, "Soft deleted user not found for restore");
+      return Err(ApiError::NotFound(format!(
+        "Deleted user '{}' not found",
+        id
+      )));
+    };
+
+    if existing.deleted_at.is_none() {
+      tracing::warn!(id = %id, "Soft deleted user not found for restore");
+      return Err(ApiError::NotFound(format!(
+        "Deleted user '{}' not found",
+        id
+      )));
     }
 
+    Ok(existing.id)
+  }
+
+  async fn write_soft_delete_state(
+    &self,
+    id: Uuid,
+    deleted_at: Option<chrono::DateTime<ChronoUtc>>,
+    deleted_by: Option<Uuid>,
+  ) -> Result<(), ApiError> {
+    let mut model = user::ActiveModel {
+      id: Set(id),
+      ..Default::default()
+    };
+    model.deleted_at = Set(deleted_at);
+    model.deleted_by = Set(deleted_by);
+    model.update(self.db.as_ref()).await?;
     Ok(())
   }
 
