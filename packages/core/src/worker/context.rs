@@ -4,7 +4,6 @@ use super::{engine::WorkerRuntime, topology};
 use crate::{services::sync::specs::SyncStatusQuerySpec, utils::http::normalize_base_url};
 
 pub(super) struct WorkerContext {
-  pub(super) local_node_id: Uuid,
   pub(super) central_sync_api_url: String,
   pub(super) local_base_ids: Vec<Uuid>,
   pub(super) local_base_discriminant: String,
@@ -46,7 +45,6 @@ pub(super) async fn load_worker_context(
   Ok(Some(LoadedWorkerContext {
     local_progress_changed: local_highest_audit_log_id != runtime.last_observed_local_audit_log_id,
     context: WorkerContext {
-      local_node_id: topology.local_node_id,
       central_sync_api_url,
       local_base_ids,
       local_base_discriminant,

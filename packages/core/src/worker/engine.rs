@@ -8,10 +8,10 @@ use uuid::Uuid;
 
 use super::{
   context::{load_worker_context, WorkerContext},
-  cycle,
   policy::evaluate_pending_sync_work,
   probe::{probe_remote_sync_status, RemoteSyncProbe},
   state,
+  sync_cycle,
   WorkerState,
   WorkerStatus,
 };
@@ -181,20 +181,22 @@ async fn apply_worker_decision(
     }
     WorkerDecision::StartSyncCycle(context) => {
       state::transition(&mut runtime.state, WorkerState::Syncing);
-      match cycle::execute_sync_cycle(
+      match sync_cycle::run_sync_cycle(
         &runtime.client,
         &runtime.sync_service,
         &context.central_sync_api_url,
-        context.local_node_id,
         &context.local_base_ids,
         &runtime.config,
       )
       .await
       {
-        Ok(changed) => {
+        Ok(result) => {
           runtime.has_pending_sync_work = false;
           state::transition(&mut runtime.state, WorkerState::OnlineIdle);
-          debug!(changed, "sync worker cycle completed");
+          debug!(
+            changed = result.changed_log_count(),
+            "sync worker cycle completed"
+          );
           TickOutcome::cycle_completed(runtime.state)
         }
         Err(error) => {

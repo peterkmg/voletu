@@ -7,11 +7,11 @@ use tracing::info;
 use crate::config::{ApiConfig, SyncConfig};
 
 mod context;
-mod cycle;
 mod engine;
 mod policy;
 mod probe;
 mod state;
+mod sync_cycle;
 mod topology;
 
 pub use state::{WorkerState, WorkerStatus};
