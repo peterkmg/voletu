@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
-import { LoginForm } from '~/features/auth/components/login-form'
 import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
+import { SignInForm } from '~/views/auth/forms/sign-in-form'
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -30,7 +30,7 @@ function SignInPage() {
 
   return (
     <div className="flex flex-1 items-center justify-center p-4">
-      <LoginForm redirect={redirectTo} />
+      <SignInForm redirect={redirectTo} />
     </div>
   )
 }

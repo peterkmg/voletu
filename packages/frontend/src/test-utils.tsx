@@ -9,19 +9,9 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { render } from '@testing-library/react'
-import { DensityProvider } from '~/components/data-table/density'
 
-function TestProviders({ children }: { children: React.ReactNode }) {
-  return (
-    <DensityProvider>
-      {children}
-    </DensityProvider>
-  )
-}
-
-/** Render with DensityProvider and other required providers */
 export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
-  return render(ui, { wrapper: TestProviders, ...options })
+  return render(ui, options)
 }
 
 export { render } from '@testing-library/react'

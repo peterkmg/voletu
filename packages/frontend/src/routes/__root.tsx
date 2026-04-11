@@ -5,10 +5,10 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { DebugTrigger } from '~/components/debug-trigger'
 import { Titlebar } from '~/components/layout/titlebar'
 import { Toaster } from '~/components/ui/sonner'
-import { GeneralError, NotFound } from '~/features/errors'
 import { useDevToolsVisible } from '~/lib/devtools'
 import { ensureBootstrapped } from '~/platform/runtime/bootstrap'
 import { useStartupStore } from '~/stores/startup-store'
+import { GeneralError, NotFound } from '~/views/errors'
 
 function RootComponent() {
   const startupState = useStartupStore(s => s.startupState)

@@ -1,10 +1,10 @@
+import type { EntityDialogState } from './entity-dialog-state'
 import { useTranslation } from 'react-i18next'
 import { EntityDeleteDialog } from '~/components/dialogs/entity-delete-dialog'
 
 interface EntityHook<TRow> {
-  open: string | null
-  setOpen: (v: null) => void
-  currentRow: TRow | null
+  dialog: EntityDialogState<TRow> | null
+  closeDialog: () => void
 }
 
 interface SoftDeleteConfig<TRow extends { id: string }> {
@@ -42,15 +42,16 @@ export function createDeleteDialog<TRow extends { id: string }>(
   } = config
 
   function DeleteDialog() {
-    const { open, setOpen, currentRow } = useEntity()
+    const { dialog, closeDialog } = useEntity()
     const { t } = useTranslation(i18nNamespaces as unknown as string[])
+    const currentRow = dialog?.kind === 'delete' ? dialog.row : null
 
     if (softDeleteFn) {
       return (
         <>
           <EntityDeleteDialog
-            open={open === 'delete'}
-            onOpenChange={() => setOpen(null)}
+            open={dialog?.kind === 'delete' && dialog.mode !== 'hard'}
+            onOpenChange={closeDialog}
             currentRow={currentRow}
             variant="soft"
             hardDeleteFn={hardDeleteFn}
@@ -59,8 +60,8 @@ export function createDeleteDialog<TRow extends { id: string }>(
             entityLabel={t(entityLabel)}
           />
           <EntityDeleteDialog
-            open={open === 'hard-delete'}
-            onOpenChange={() => setOpen(null)}
+            open={dialog?.kind === 'delete' && dialog.mode === 'hard'}
+            onOpenChange={closeDialog}
             currentRow={currentRow}
             variant="hard"
             hardDeleteFn={hardDeleteFn}
@@ -74,8 +75,8 @@ export function createDeleteDialog<TRow extends { id: string }>(
 
     return (
       <EntityDeleteDialog
-        open={open === 'delete'}
-        onOpenChange={() => setOpen(null)}
+        open={dialog?.kind === 'delete'}
+        onOpenChange={closeDialog}
         currentRow={currentRow}
         hardDeleteFn={hardDeleteFn}
         queryKey={queryKey()}

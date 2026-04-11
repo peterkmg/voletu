@@ -54,7 +54,7 @@ export function DataTableColumnHeader<TData, TValue>({
   const canHide = column.getCanHide()
   const hasInteraction = canSort || canFilter || canPin || canHide
 
-  // No interactive features — plain title
+  // No interactive controls — plain title
   if (!hasInteraction) {
     return (
       <div className={cn('flex items-center gap-1', justifyCls, className)}>

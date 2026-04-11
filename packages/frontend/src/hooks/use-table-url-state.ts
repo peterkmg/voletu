@@ -3,11 +3,16 @@ import type {
   OnChangeFn,
   PaginationState,
 } from '@tanstack/react-table'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 
 type SearchRecord = Record<string, unknown>
 
-export type NavigateFn = (opts: any) => void
+interface NavigateOptions {
+  replace?: boolean
+  search: (prev: SearchRecord) => SearchRecord
+}
+
+export type NavigateFn = (opts: NavigateOptions) => void
 
 interface UseTableUrlStateParams {
   search: SearchRecord
@@ -94,9 +99,7 @@ export function useTableUrlState(
     }
     return collected
   }, [columnFiltersCfg, search])
-
-  const [columnFilters, setColumnFilters]
-    = useState<ColumnFiltersState>(initialColumnFilters)
+  const columnFilters = initialColumnFilters
 
   const pagination: PaginationState = useMemo(() => {
     const rawPage = (search as SearchRecord)[pageKey]
@@ -121,12 +124,12 @@ export function useTableUrlState(
     })
   }, [pagination, navigate, pageKey, pageSizeKey, defaultPage, defaultPageSize])
 
-  const [globalFilter, setGlobalFilter] = useState<string | undefined>(() => {
+  const globalFilter = useMemo<string | undefined>(() => {
     if (!globalFilterEnabled)
       return undefined
     const raw = (search as SearchRecord)[globalFilterKey]
     return typeof raw === 'string' ? raw : ''
-  })
+  }, [globalFilterEnabled, search, globalFilterKey])
 
   const onGlobalFilterChangeImpl: OnChangeFn<string> = useCallback((updater) => {
     const next
@@ -134,7 +137,6 @@ export function useTableUrlState(
         ? updater(globalFilter ?? '')
         : updater
     const value = trimGlobal ? next.trim() : next
-    setGlobalFilter(value)
     navigate({
       search: (prev: SearchRecord) => ({
         ...(prev as SearchRecord),
@@ -150,7 +152,6 @@ export function useTableUrlState(
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = useCallback((updater) => {
     const next
       = typeof updater === 'function' ? updater(columnFilters) : updater
-    setColumnFilters(next)
 
     const patch: Record<string, unknown> = {}
 

@@ -1,6 +1,5 @@
 import { Outlet, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { DensityProvider } from '~/components/data-table'
 import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar'
 import { useHealthCheck } from '~/hooks/use-node-status'
 import { cn } from '~/lib/utils'
@@ -23,25 +22,23 @@ export function AuthenticatedLayout() {
     () => localStorage.getItem('voletu.sidebar') !== 'false',
   )
   return (
-    <DensityProvider>
-      <SidebarProvider
-        open={sidebarOpen}
-        onOpenChange={(open) => {
-          setSidebarOpen(open)
-          localStorage.setItem('voletu.sidebar', String(open))
-        }}
+    <SidebarProvider
+      open={sidebarOpen}
+      onOpenChange={(open) => {
+        setSidebarOpen(open)
+        localStorage.setItem('voletu.sidebar', String(open))
+      }}
+    >
+      <AppSidebar />
+      <SidebarInset
+        className={cn(
+          '@container/content',
+          'has-data-[layout=fixed]:h-full',
+          'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100%-1rem)]',
+        )}
       >
-        <AppSidebar />
-        <SidebarInset
-          className={cn(
-            '@container/content',
-            'has-data-[layout=fixed]:h-full',
-            'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100%-1rem)]',
-          )}
-        >
-          <Outlet />
-        </SidebarInset>
-      </SidebarProvider>
-    </DensityProvider>
+        <Outlet />
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

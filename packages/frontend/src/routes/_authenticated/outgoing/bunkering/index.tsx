@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { BunkeringPage } from '~/features/outgoing/bunkering'
+import { BunkeringPage } from '~/views/outgoing/bunkering'
 
 const searchSchema = z.object({
   page: z.number().optional(),

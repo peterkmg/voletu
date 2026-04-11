@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { DirectDispatchPage } from '~/features/outgoing/direct-dispatch'
+import { DirectDispatchPage } from '~/views/outgoing/direct-dispatch'
 
 const searchSchema = z.object({
   page: z.number().optional(),

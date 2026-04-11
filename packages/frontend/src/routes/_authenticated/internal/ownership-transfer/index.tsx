@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { OwnershipTransferPage } from '~/features/internal/ownership-transfer'
+import { OwnershipTransferPage } from '~/views/internal/ownership-transfer'
 
 const searchSchema = z.object({
   page: z.number().optional(),

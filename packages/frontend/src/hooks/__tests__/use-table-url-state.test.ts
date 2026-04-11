@@ -83,6 +83,78 @@ describe('useTableUrlState', () => {
       expect(result.current.globalFilter).toBeUndefined()
       expect(result.current.onGlobalFilterChange).toBeUndefined()
     })
+
+    it('resyncs global filter when external search changes', () => {
+      const navigate = vi.fn()
+      const { result, rerender } = renderHook(
+        ({ search }) => useTableUrlState({ search, navigate }),
+        { initialProps: { search: { filter: 'hello' } as Record<string, unknown> } },
+      )
+
+      expect(result.current.globalFilter).toBe('hello')
+
+      rerender({ search: { filter: 'updated' } })
+
+      expect(result.current.globalFilter).toBe('updated')
+    })
+  })
+
+  describe('column filters', () => {
+    const columnFilterConfig = [
+      {
+        columnId: 'status',
+        searchKey: 'status',
+        type: 'string' as const,
+      },
+      {
+        columnId: 'baseIds',
+        searchKey: 'bases',
+        type: 'array' as const,
+        deserialize: (value: unknown) =>
+          typeof value === 'string' ? value.split(',').filter(Boolean) : value,
+      },
+    ]
+
+    it('reads column filters from search params', () => {
+      const { result } = setup(
+        { status: 'posted', bases: 'a,b' },
+        { columnFilters: columnFilterConfig },
+      )
+
+      expect(result.current.columnFilters).toEqual([
+        { id: 'status', value: 'posted' },
+        { id: 'baseIds', value: ['a', 'b'] },
+      ])
+    })
+
+    it('resyncs column filters when external search changes', () => {
+      const navigate = vi.fn()
+      const { result, rerender } = renderHook(
+        ({ search }) =>
+          useTableUrlState({
+            search,
+            navigate,
+            columnFilters: columnFilterConfig,
+          }),
+        {
+          initialProps: {
+            search: { status: 'draft', bases: 'x' } as Record<string, unknown>,
+          },
+        },
+      )
+
+      expect(result.current.columnFilters).toEqual([
+        { id: 'status', value: 'draft' },
+        { id: 'baseIds', value: ['x'] },
+      ])
+
+      rerender({ search: { status: 'posted', bases: 'y,z' } })
+
+      expect(result.current.columnFilters).toEqual([
+        { id: 'status', value: 'posted' },
+        { id: 'baseIds', value: ['y', 'z'] },
+      ])
+    })
   })
 
   describe('ensurePageInRange', () => {

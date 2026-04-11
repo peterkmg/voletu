@@ -1,5 +1,5 @@
+import type { TableDensity } from './density-state'
 import { Rows2, Rows3, Rows4 } from 'lucide-react'
-import { createContext, use, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import {
@@ -8,43 +8,12 @@ import {
   TooltipTrigger,
 } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
+import { useTableDensity } from './density-state'
 
-// ── Density Context ──────────────────────────────
-
-export type TableDensity = 'compact' | 'normal' | 'comfortable'
-
-interface DensityContextValue {
-  density: TableDensity
-  setDensity: (d: TableDensity) => void
-}
-
-const DensityContext = createContext<DensityContextValue>({
-  density: 'normal',
-  setDensity: () => {},
-})
-
-const STORAGE_KEY = 'voletu.table-density'
-
-export function DensityProvider({ children }: { children: React.ReactNode }) {
-  const [density, setDensityState] = useState<TableDensity>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return (stored as TableDensity) || 'normal'
-  })
-
-  const setDensity = useCallback((d: TableDensity) => {
-    setDensityState(d)
-    localStorage.setItem(STORAGE_KEY, d)
-  }, [])
-
-  return (
-    <DensityContext value={{ density, setDensity }}>
-      {children}
-    </DensityContext>
-  )
-}
+export type { TableDensity } from './density-state'
 
 export function useDensity() {
-  return use(DensityContext)
+  return useTableDensity()
 }
 
 export const densityClasses: Record<TableDensity, string> = {
@@ -55,10 +24,12 @@ export const densityClasses: Record<TableDensity, string> = {
 
 // ── Density Toggle ───────────────────────────────
 
-const densityOptions: { value: TableDensity, icon: typeof Rows3, label: string }[] = [
-  { value: 'compact', icon: Rows4, label: 'table.densityCompact' },
-  { value: 'normal', icon: Rows3, label: 'table.densityNormal' },
-  { value: 'comfortable', icon: Rows2, label: 'table.densityComfortable' },
+type DensityLabelKey = 'densityCompact' | 'densityNormal' | 'densityComfortable'
+
+export const tableDensityOptions: { value: TableDensity, icon: typeof Rows3, labelKey: DensityLabelKey }[] = [
+  { value: 'compact', icon: Rows4, labelKey: 'densityCompact' },
+  { value: 'normal', icon: Rows3, labelKey: 'densityNormal' },
+  { value: 'comfortable', icon: Rows2, labelKey: 'densityComfortable' },
 ]
 
 export function DensityToggle() {
@@ -67,7 +38,7 @@ export function DensityToggle() {
 
   return (
     <div className="flex items-center rounded-md border">
-      {densityOptions.map(({ value, icon: Icon, label }) => (
+      {tableDensityOptions.map(({ value, icon: Icon, labelKey }) => (
         <Tooltip key={value}>
           <TooltipTrigger asChild>
             <Button
@@ -80,10 +51,10 @@ export function DensityToggle() {
               onClick={() => setDensity(value)}
             >
               <Icon className="h-4 w-4" />
-              <span className="sr-only">{t(label)}</span>
+              <span className="sr-only">{t(`table.${labelKey}`)}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{t(label)}</TooltipContent>
+          <TooltipContent>{t(`table.${labelKey}`)}</TooltipContent>
         </Tooltip>
       ))}
     </div>

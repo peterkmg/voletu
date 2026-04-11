@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { TruckDispatchPage } from '~/features/outgoing/truck-dispatch'
+import { TruckDispatchPage } from '~/views/outgoing/truck-dispatch'
 
 const searchSchema = z.object({
   page: z.number().optional(),

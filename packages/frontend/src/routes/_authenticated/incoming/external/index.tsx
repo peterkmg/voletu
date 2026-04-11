@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { ExternalAcceptancePage } from '~/features/incoming/external-acceptance'
+import { ExternalAcceptancePage } from '~/views/incoming/external-acceptance'
 
 const searchSchema = z.object({
   page: z.number().optional(),

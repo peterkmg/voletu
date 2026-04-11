@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { Ledger } from '~/features/system/ledger'
+import { Ledger } from '~/views/system/ledger'
 
 const searchSchema = z.object({
   page: z.number().optional(),

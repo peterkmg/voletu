@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { BlendingPage } from '~/features/internal/blending'
+import { BlendingPage } from '~/views/internal/blending'
 
 const searchSchema = z.object({
   page: z.number().optional(),

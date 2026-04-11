@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { ReconciliationPage } from '~/features/internal/reconciliation'
+import { ReconciliationPage } from '~/views/internal/reconciliation'
 
 const searchSchema = z.object({
   page: z.number().optional(),

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { RailReceiptPage } from '~/features/incoming/rail-receipt'
+import { RailReceiptPage } from '~/views/incoming/rail-receipt'
 
 const searchSchema = z.object({
   page: z.number().optional(),

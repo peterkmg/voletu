@@ -5,6 +5,7 @@ import { Check } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { tableDensityOptions, useDensity } from '~/components/data-table/density'
 import { ConfirmDialog } from '~/components/dialogs/confirm-dialog'
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -37,29 +39,10 @@ import { getSidebarData } from './data/sidebar-data'
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-const DENSITY_STORAGE_KEY = 'voletu.table-density'
-
 const languages = [
   { code: 'en', label: 'English' },
   { code: 'ru', label: 'Русский' },
 ] as const
-
-function useDensityDirect() {
-  const [density, setDensityState] = useState<TableDensity>(
-    () => (localStorage.getItem(DENSITY_STORAGE_KEY) as TableDensity) || 'normal',
-  )
-
-  const setDensity = useCallback((d: TableDensity) => {
-    setDensityState(d)
-    localStorage.setItem(DENSITY_STORAGE_KEY, d)
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: DENSITY_STORAGE_KEY,
-      newValue: d,
-    }))
-  }, [])
-
-  return { density, setDensity }
-}
 
 /** Cached Tauri window handle for fullscreen / quit. */
 let tauriWin: Awaited<
@@ -205,7 +188,7 @@ function FileMenu() {
 function ViewMenu() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
-  const { density, setDensity } = useDensityDirect()
+  const { density, setDensity } = useDensity()
   const isTauri = useStartupStore(s => s.startupState !== null)
 
   const handleToggleSidebar = useCallback(() => {
@@ -227,6 +210,10 @@ function ViewMenu() {
     await tauriWin.setFullscreen(!isFull)
   }, [])
 
+  const handleDensityChange = useCallback((value: string) => {
+    setDensity(value as TableDensity)
+  }, [setDensity])
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -247,27 +234,16 @@ function ViewMenu() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            {t('titlebar.density')}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
-              value={density}
-              onValueChange={v => setDensity(v as TableDensity)}
-            >
-              <DropdownMenuRadioItem value="compact">
-                {t('titlebar.densityCompact')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="normal">
-                {t('titlebar.densityNormal')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="comfortable">
-                {t('titlebar.densityComfortable')}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        <DropdownMenuLabel>{t('titlebar.density')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={density} onValueChange={handleDensityChange}>
+          {tableDensityOptions.map(({ value, labelKey }) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              {t(`titlebar.${labelKey}`)}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+
+        <DropdownMenuSeparator />
 
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>

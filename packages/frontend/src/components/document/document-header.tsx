@@ -18,9 +18,9 @@ interface DocumentHeaderProps {
   status: string
   statusColorMap?: Record<string, string>
   backTo: string
-  executeFn: (id: string) => Promise<unknown>
-  revertFn: (id: string) => Promise<unknown>
-  queryKey: readonly unknown[]
+  executeFn?: (id: string) => Promise<unknown>
+  revertFn?: (id: string) => Promise<unknown>
+  queryKey?: readonly unknown[]
   entityLabel: string
   documentId: string
   onDelete?: () => void
@@ -60,14 +60,16 @@ export function DocumentHeader({
           )}
         </div>
         <StatusBadge value={status} colorMap={statusColorMap} />
-        <LifecycleActions
-          documentId={documentId}
-          status={status}
-          executeFn={executeFn}
-          revertFn={revertFn}
-          queryKey={queryKey}
-          entityLabel={entityLabel}
-        />
+        {executeFn && revertFn && queryKey && (
+          <LifecycleActions
+            documentId={documentId}
+            status={status}
+            executeFn={executeFn}
+            revertFn={revertFn}
+            queryKey={queryKey}
+            entityLabel={entityLabel}
+          />
+        )}
         {onDelete && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

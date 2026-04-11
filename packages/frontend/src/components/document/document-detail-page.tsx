@@ -8,9 +8,9 @@ interface DocumentDetailConfig {
   title: string
   entityLabel: string
   backTo: string
-  executeFn: (id: string) => Promise<unknown>
-  revertFn: (id: string) => Promise<unknown>
-  queryKey: readonly unknown[]
+  executeFn?: (id: string) => Promise<unknown>
+  revertFn?: (id: string) => Promise<unknown>
+  queryKey?: readonly unknown[]
   statusColorMap?: Record<string, string>
 }
 

@@ -34,7 +34,7 @@ const tauriCommands = await import('~/tauri/commands') as unknown as {
   saveLocalConfig: ReturnType<typeof vi.fn>
   startLocalApi: ReturnType<typeof vi.fn>
 }
-const { useSetupFlow } = await import('~/features/setup/hooks/use-setup-flow')
+const { useSetupFlow } = await import('~/views/setup/hooks/use-setup-flow')
 const { useHealthCheck, useNodeStatus } = await import('~/hooks/use-node-status')
 const { getApiBaseUrl, setApiBaseUrl } = await import('~/platform/runtime/api-base-url')
 const { useAuthStore } = await import('~/stores/auth-store')

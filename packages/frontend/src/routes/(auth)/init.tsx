@@ -1,8 +1,8 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { InitializePage } from '~/features/system/init'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
+import { InitializePage } from '~/views/system/init'
 
 export const Route = createFileRoute('/(auth)/init')({
   beforeLoad: () => {

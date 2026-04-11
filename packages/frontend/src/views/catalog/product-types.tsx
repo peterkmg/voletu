@@ -1,0 +1,149 @@
+import type { ColumnDef, Row } from '@tanstack/react-table'
+import type { TFunction } from 'i18next'
+import type { ProductTypeResponse } from '~/generated/types'
+import { getRouteApi } from '@tanstack/react-router'
+
+import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
+import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, textColumn } from '~/components/data-table'
+import { FormDialog } from '~/components/forms/form-dialog'
+import { TextField } from '~/components/forms/form-fields'
+import { Form } from '~/components/ui/form'
+import { catalogProductTypeCreate, catalogProductTypeHardDelete, catalogProductTypeSoftDelete, catalogProductTypeUpdate } from '~/generated/client'
+import { catalogProductTypeListQueryKey, useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
+import { useMutateDialog } from '~/hooks/use-mutate-dialog'
+import { defineCrudViews } from '~/lib/define-crud-views'
+
+// --- Columns ---
+
+function getProductTypeColumns(
+  t: TFunction,
+  RowActions: React.ComponentType<{ row: Row<ProductTypeResponse> }>,
+): ColumnDef<ProductTypeResponse>[] {
+  return [
+    textColumn<ProductTypeResponse>('commonName', t('catalog:productType.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
+    textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false }),
+    { ...dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
+    actionsColumn<ProductTypeResponse>(RowActions, 2),
+  ]
+}
+
+// --- Table ---
+
+const productTypesRoute = getRouteApi('/_authenticated/catalog/product-types/')
+const productTypesGlobalFilterFn = createGlobalFilter<ProductTypeResponse>('commonName', 'longName')
+
+interface ProductTypesTableProps {
+  data: ProductTypeResponse[]
+  actions?: React.ReactNode
+  RowActions: React.ComponentType<{ row: Row<ProductTypeResponse> }>
+}
+
+function ProductTypesTable({ data, actions, RowActions }: ProductTypesTableProps) {
+  return (
+    <EntityTable
+      tableId="product-types"
+      data={data}
+      getColumns={t => getProductTypeColumns(t, RowActions)}
+      routeApi={productTypesRoute}
+      globalFilterFn={productTypesGlobalFilterFn}
+      i18nNamespaces={['catalog', 'common']}
+      actions={actions}
+    />
+  )
+}
+
+function useProductTypesTitle() {
+  return useTranslation(['catalog']).t('catalog:productType.title')
+}
+
+// --- Mutate Dialog ---
+
+const productTypeFormSchema = z.object({
+  commonName: z.string().min(1, 'Common name is required'),
+  longName: z.string().nullable().optional(),
+})
+
+type ProductTypeFormValues = z.infer<typeof productTypeFormSchema>
+
+interface ProductTypeMutateDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currentRow?: ProductTypeResponse | null
+  onCreated?: (id: string) => void
+}
+
+export function ProductTypeMutateDialog({
+  open,
+  onOpenChange,
+  currentRow,
+  onCreated,
+}: ProductTypeMutateDialogProps) {
+  const { t } = useTranslation(['catalog', 'common'])
+
+  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
+    open,
+    onOpenChange,
+    currentRow,
+    schema: productTypeFormSchema,
+    defaultValues: {
+      commonName: '',
+      longName: '',
+    },
+    mapRowToForm: row => ({
+      commonName: row.commonName,
+      longName: row.longName ?? '',
+    }),
+    transformPayload: values => ({
+      ...values,
+      longName: values.longName || null,
+    }),
+    createFn: catalogProductTypeCreate,
+    updateFn: catalogProductTypeUpdate,
+    queryKey: catalogProductTypeListQueryKey(),
+    entityLabel: t('catalog:productType.singular'),
+    formId: 'product-type-form',
+    onCreated,
+  })
+
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title={isUpdate ? t('catalog:productType.edit') : t('catalog:productType.create')}
+      description={isUpdate ? t('catalog:productType.edit') : t('catalog:productType.create')}
+      formId="product-type-form"
+      isSubmitting={form.formState.isSubmitting}
+    >
+      <Form {...form}>
+        <form
+          id="product-type-form"
+          onSubmit={handleSubmit}
+          className="space-y-5"
+        >
+          <TextField<ProductTypeFormValues> name="commonName" label={t('catalog:productType.form.commonName')} />
+          <TextField<ProductTypeFormValues> name="longName" label={t('catalog:productType.form.longName')} nullable />
+        </form>
+      </Form>
+    </FormDialog>
+  )
+}
+
+const productTypesViewDefinition = defineCrudViews<ProductTypeResponse>({
+  displayName: 'ProductTypes',
+  useTitle: useProductTypesTitle,
+  useQuery: useCatalogProductTypeList,
+  Table: ProductTypesTable,
+  MutateDialog: ProductTypeMutateDialog,
+  deleteDialog: {
+    hardDeleteFn: catalogProductTypeHardDelete,
+    softDeleteFn: catalogProductTypeSoftDelete,
+    queryKey: catalogProductTypeListQueryKey,
+    entityLabel: 'catalog:productType.singular',
+    i18nNamespaces: ['common', 'catalog'],
+  },
+})
+
+export function ProductTypes() {
+  return <productTypesViewDefinition.View />
+}

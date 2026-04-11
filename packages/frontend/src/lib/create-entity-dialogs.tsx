@@ -1,48 +1,37 @@
 import type * as React from 'react'
+import type {
+  EntityDialogState,
+  EntityLifecycleAction,
+} from './entity-dialog-state'
 
 interface EntityHook<TRow> {
-  open: string | null
-  setOpen: (v: null) => void
-  currentRow: TRow | null
+  dialog: EntityDialogState<TRow> | null
+  closeDialog: () => void
 }
 
-interface MutateDialogWithRowProps<TRow> {
+export interface MutateDialogProps<TRow> {
   open: boolean
   onOpenChange: () => void
   currentRow: TRow | null
 }
 
-interface ConfigWithUpdate<TRow> {
-  useEntity: () => EntityHook<TRow>
-  MutateDialog: React.ComponentType<MutateDialogWithRowProps<TRow>>
-  DeleteDialog?: React.ComponentType
-  supportsUpdate?: true
+interface LifecycleDialogBaseProps<TRow> {
+  open: boolean
+  onOpenChange: () => void
+  currentRow: TRow | null
 }
 
-interface ConfigWithoutUpdate<TRow> {
-  useEntity: () => EntityHook<TRow>
-  MutateDialog: React.ComponentType<{ open: boolean, onOpenChange: () => void }>
-  DeleteDialog?: React.ComponentType
-  supportsUpdate: false
-}
-
-interface WithVariantLifecycle<TRow> {
-  LifecycleDialog: React.ComponentType<{
-    open: boolean
-    onOpenChange: () => void
-    currentRow: TRow | null
-    variant: 'execute' | 'revert'
-  }>
+interface LifecycleDialogWithVariant<TRow> {
+  LifecycleDialog: React.ComponentType<
+    LifecycleDialogBaseProps<TRow> & { variant: EntityLifecycleAction }
+  >
   lifecyclePropName?: 'variant'
 }
 
-interface WithActionLifecycle<TRow> {
-  LifecycleDialog: React.ComponentType<{
-    open: boolean
-    onOpenChange: () => void
-    currentRow: TRow | null
-    action: 'execute' | 'revert'
-  }>
+interface LifecycleDialogWithAction<TRow> {
+  LifecycleDialog: React.ComponentType<
+    LifecycleDialogBaseProps<TRow> & { action: EntityLifecycleAction }
+  >
   lifecyclePropName: 'action'
 }
 
@@ -51,9 +40,20 @@ interface WithoutLifecycle {
   lifecyclePropName?: undefined
 }
 
-type EntityDialogsConfig<TRow>
-  = (ConfigWithUpdate<TRow> | ConfigWithoutUpdate<TRow>)
-    & (WithVariantLifecycle<TRow> | WithActionLifecycle<TRow> | WithoutLifecycle)
+interface EntityDialogsConfigBase<TRow> {
+  useEntity: () => EntityHook<TRow>
+  MutateDialog: React.ComponentType<MutateDialogProps<TRow>>
+  DeleteDialog?: React.ComponentType
+  supportsUpdate?: boolean
+}
+
+export type EntityDialogsLifecycleConfig<TRow>
+  = | LifecycleDialogWithVariant<TRow>
+    | LifecycleDialogWithAction<TRow>
+    | WithoutLifecycle
+
+export type EntityDialogsConfig<TRow>
+  = EntityDialogsConfigBase<TRow> & EntityDialogsLifecycleConfig<TRow>
 
 export function createEntityDialogs<TRow>(config: EntityDialogsConfig<TRow>) {
   const {
@@ -63,50 +63,64 @@ export function createEntityDialogs<TRow>(config: EntityDialogsConfig<TRow>) {
   } = config
 
   function EntityDialogs() {
-    const { open, setOpen, currentRow } = useEntity()
-    const onClose = () => setOpen(null)
-    const Mutate = config.MutateDialog as React.ComponentType<MutateDialogWithRowProps<TRow>>
-
-    const hasLifecycle = 'LifecycleDialog' in config && config.LifecycleDialog
-    const LifecycleDialog = hasLifecycle
-      ? config.LifecycleDialog as React.ComponentType<{
-        open: boolean
-        onOpenChange: () => void
-        currentRow: TRow | null
-        variant?: 'execute' | 'revert'
-        action?: 'execute' | 'revert'
-      }>
+    const { dialog, closeDialog } = useEntity()
+    const Mutate = config.MutateDialog
+    const currentRow = dialog?.kind === 'update' || dialog?.kind === 'delete' || dialog?.kind === 'lifecycle'
+      ? dialog.row
       : null
-    const propName = ('lifecyclePropName' in config ? config.lifecyclePropName : undefined) ?? 'variant'
+
+    let lifecycleDialogs: React.ReactNode = null
+
+    if ('LifecycleDialog' in config && config.LifecycleDialog) {
+      if (config.lifecyclePropName === 'action') {
+        const LifecycleDialog = config.LifecycleDialog
+        lifecycleDialogs = (
+          <>
+            <LifecycleDialog
+              open={dialog?.kind === 'lifecycle' && dialog.action === 'execute'}
+              onOpenChange={closeDialog}
+              currentRow={currentRow}
+              action="execute"
+            />
+            <LifecycleDialog
+              open={dialog?.kind === 'lifecycle' && dialog.action === 'revert'}
+              onOpenChange={closeDialog}
+              currentRow={currentRow}
+              action="revert"
+            />
+          </>
+        )
+      }
+      else {
+        const LifecycleDialog = config.LifecycleDialog
+        lifecycleDialogs = (
+          <>
+            <LifecycleDialog
+              open={dialog?.kind === 'lifecycle' && dialog.action === 'execute'}
+              onOpenChange={closeDialog}
+              currentRow={currentRow}
+              variant="execute"
+            />
+            <LifecycleDialog
+              open={dialog?.kind === 'lifecycle' && dialog.action === 'revert'}
+              onOpenChange={closeDialog}
+              currentRow={currentRow}
+              variant="revert"
+            />
+          </>
+        )
+      }
+    }
 
     return (
       <>
         <Mutate
-          open={supportsUpdate === false ? open === 'create' : (open === 'create' || open === 'update')}
-          onOpenChange={onClose}
-          currentRow={supportsUpdate === false ? null : (open === 'update' ? currentRow : null)}
+          open={supportsUpdate === false ? dialog?.kind === 'create' : (dialog?.kind === 'create' || dialog?.kind === 'update')}
+          onOpenChange={closeDialog}
+          currentRow={supportsUpdate === false ? null : (dialog?.kind === 'update' ? currentRow : null)}
         />
         {DeleteDialog && <DeleteDialog />}
-        {LifecycleDialog && (
-          <>
-            <LifecycleDialog
-              open={open === 'execute'}
-              onOpenChange={onClose}
-              currentRow={currentRow}
-              {...(propName === 'action'
-                ? { action: 'execute' as const }
-                : { variant: 'execute' as const })}
-            />
-            <LifecycleDialog
-              open={open === 'revert'}
-              onOpenChange={onClose}
-              currentRow={currentRow}
-              {...(propName === 'action'
-                ? { action: 'revert' as const }
-                : { variant: 'revert' as const })}
-            />
-          </>
-        )}
+        {lifecycleDialogs}
       </>
     )
   }

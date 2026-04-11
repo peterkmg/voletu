@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import { textColumn } from '~/components/data-table'
+import { setTableDensityPreference } from '~/components/data-table/density-state'
 import { TooltipProvider } from '~/components/ui/tooltip'
 import { renderWithProviders } from '~/test-utils'
 import { EntityTable } from '../entity-table'
@@ -107,5 +108,18 @@ describe('entityTable', () => {
     // DataTablePagination renders navigation buttons with specific aria-labels.
     expect(screen.queryByRole('button', { name: /last page/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /next page/i })).not.toBeInTheDocument()
+  })
+
+  it('updates mounted table density from the shared density source', () => {
+    localStorage.setItem('table-mode-test', 'paginated')
+    renderEntityTable([{ id: '1', name: 'Alpha' }], 'test')
+
+    expect(screen.getByText('Alpha').parentElement).toHaveClass('py-2')
+
+    act(() => {
+      setTableDensityPreference('compact')
+    })
+
+    expect(screen.getByText('Alpha').parentElement).toHaveClass('py-1')
   })
 })

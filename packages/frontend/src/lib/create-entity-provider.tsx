@@ -1,29 +1,40 @@
+import type {
+  EntityDeleteMode,
+  EntityDialogState,
+  EntityLifecycleAction,
+} from './entity-dialog-state'
 import * as React from 'react'
 import { useState } from 'react'
-import useDialogState from '~/hooks/use-dialog-state'
 
 interface EntityContextType<
   TRow,
-  TDialogType extends string,
 > {
-  open: TDialogType | null
-  setOpen: (str: TDialogType | null) => void
-  currentRow: TRow | null
-  setCurrentRow: React.Dispatch<React.SetStateAction<TRow | null>>
+  dialog: EntityDialogState<TRow> | null
+  closeDialog: () => void
+  openCreate: () => void
+  openUpdate: (row: TRow) => void
+  openDelete: (row: TRow, mode?: EntityDeleteMode) => void
+  openLifecycle: (row: TRow, action: EntityLifecycleAction) => void
 }
 
 export function createEntityProvider<
   TRow extends { id: string },
-  TDialogType extends string = string,
 >(displayName: string) {
-  const Context = React.createContext<EntityContextType<TRow, TDialogType> | null>(null)
+  const Context = React.createContext<EntityContextType<TRow> | null>(null)
 
   function Provider({ children }: { children: React.ReactNode }) {
-    const [open, setOpen] = useDialogState<TDialogType>(null)
-    const [currentRow, setCurrentRow] = useState<TRow | null>(null)
+    const [dialog, setDialog] = useState<EntityDialogState<TRow> | null>(null)
+
+    const closeDialog = () => setDialog(null)
+    const openCreate = () => setDialog({ kind: 'create' })
+    const openUpdate = (row: TRow) => setDialog({ kind: 'update', row })
+    const openDelete = (row: TRow, mode: EntityDeleteMode = 'soft') =>
+      setDialog({ kind: 'delete', row, mode })
+    const openLifecycle = (row: TRow, action: EntityLifecycleAction) =>
+      setDialog({ kind: 'lifecycle', row, action })
 
     return (
-      <Context value={{ open, setOpen, currentRow, setCurrentRow }}>
+      <Context value={{ dialog, closeDialog, openCreate, openUpdate, openDelete, openLifecycle }}>
         {children}
       </Context>
     )

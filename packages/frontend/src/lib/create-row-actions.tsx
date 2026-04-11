@@ -8,8 +8,9 @@ import { useAuthStore } from '~/stores/auth-store'
 
 interface CreateRowActionsConfig<TRow extends { id: string }> {
   useEntity: () => {
-    setOpen: (s: never) => void
-    setCurrentRow: (row: TRow | null) => void
+    openUpdate: (row: TRow) => void
+    openDelete: (row: TRow, mode?: 'soft' | 'hard') => void
+    openLifecycle: (row: TRow, action: 'execute' | 'revert') => void
   }
   lifecycle?: boolean
   deleteOnly?: boolean
@@ -25,13 +26,13 @@ export function createRowActions<TRow extends { id: string }>(
   return function DataTableRowActions({ row }: { row: Row<TRow> }) {
     const { t } = useTranslation(['common'])
     const navigate = useNavigate()
-    const { setOpen, setCurrentRow } = config.useEntity()
+    const { openUpdate, openDelete, openLifecycle } = config.useEntity()
     const userRole = useAuthStore(s => s.user?.role)
 
-    const select = (dialogType: string) => () => {
-      setCurrentRow(row.original)
-      ;(setOpen as (s: string | null) => void)(dialogType)
-    }
+    const selectUpdate = () => openUpdate(row.original)
+    const selectDelete = (mode?: 'soft' | 'hard') => () => openDelete(row.original, mode)
+    const selectLifecycle = (action: 'execute' | 'revert') => () =>
+      openLifecycle(row.original, action)
 
     const actions: RowAction[] = []
 
@@ -51,7 +52,7 @@ export function createRowActions<TRow extends { id: string }>(
         label: t('common:actions.edit'),
         icon: Pencil,
         inline: true,
-        onClick: select('update'),
+        onClick: selectUpdate,
       })
     }
 
@@ -62,7 +63,7 @@ export function createRowActions<TRow extends { id: string }>(
         actions.push({
           label: t('common:actions.execute'),
           icon: Play,
-          onClick: select('execute'),
+          onClick: selectLifecycle('execute'),
         })
       }
       if (
@@ -72,7 +73,7 @@ export function createRowActions<TRow extends { id: string }>(
         actions.push({
           label: t('common:actions.revert'),
           icon: Undo2,
-          onClick: select('revert'),
+          onClick: selectLifecycle('revert'),
         })
       }
     }
@@ -81,7 +82,7 @@ export function createRowActions<TRow extends { id: string }>(
       actions.push({
         label: t('common:actions.softDelete'),
         icon: Archive,
-        onClick: select('delete'),
+        onClick: selectDelete(),
       })
     }
 
@@ -90,7 +91,7 @@ export function createRowActions<TRow extends { id: string }>(
         label: t('common:actions.delete'),
         icon: Trash2,
         variant: 'destructive' as const,
-        onClick: select('delete'),
+        onClick: selectDelete(),
       })
     }
 
@@ -99,7 +100,7 @@ export function createRowActions<TRow extends { id: string }>(
         label: t('common:actions.hardDelete'),
         icon: Trash2,
         variant: 'destructive' as const,
-        onClick: select('hard-delete'),
+        onClick: selectDelete('hard'),
       })
     }
 

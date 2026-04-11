@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Setup } from '~/features/setup'
 import { useStartupStore } from '~/stores/startup-store'
+import { Setup } from '~/views/setup'
 
 export const Route = createFileRoute('/(auth)/setup')({
   beforeLoad: () => {
