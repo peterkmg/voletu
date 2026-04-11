@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 
 export {} // module boundary for top-level await
 
@@ -102,9 +102,11 @@ describe('setup flow runtime integration', () => {
     runtimeHealth.fetchHealth.mockRejectedValue(new Error('offline'))
     const { result } = renderHook(() => useSetupFlow())
 
-    await expect(
-      result.current.submitRemoteConfig('http://broken-api:4000'),
-    ).rejects.toThrow()
+    await act(async () => {
+      await expect(
+        result.current.submitRemoteConfig('http://broken-api:4000'),
+      ).rejects.toThrow()
+    })
 
     expect(getApiBaseUrl()).toBe('http://existing-api:3000')
     expect(tauriCommands.saveRemoteConfig).not.toHaveBeenCalled()
@@ -129,7 +131,11 @@ describe('setup flow runtime integration', () => {
     tauriCommands.saveRemoteConfig.mockReturnValue(gate.promise)
 
     const { result } = renderHook(() => useSetupFlow())
-    const submitPromise = result.current.submitRemoteConfig('http://new-api:4000')
+
+    let submitPromise!: Promise<void>
+    await act(async () => {
+      submitPromise = result.current.submitRemoteConfig('http://new-api:4000')
+    })
 
     await waitFor(() => {
       expect(tauriCommands.saveRemoteConfig).toHaveBeenCalledWith({
@@ -138,13 +144,15 @@ describe('setup flow runtime integration', () => {
     })
     expect(getApiBaseUrl()).toBe('http://existing-api:3000')
 
-    gate.resolve({
-      needsSetup: false,
-      mode: 'remote',
-      apiBaseUrl: 'http://new-api:4000',
-      isDebugBuild: false,
+    await act(async () => {
+      gate.resolve({
+        needsSetup: false,
+        mode: 'remote',
+        apiBaseUrl: 'http://new-api:4000',
+        isDebugBuild: false,
+      })
+      await submitPromise
     })
-    await submitPromise
 
     expect(getApiBaseUrl()).toBe('http://new-api:4000')
   })

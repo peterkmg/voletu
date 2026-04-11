@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { tableDensityOptions, useDensity } from '~/components/data-table/density'
 import { ConfirmDialog } from '~/components/dialogs/confirm-dialog'
+import { changeLanguagePreference, languageOptions } from '~/components/layout/actions/language-actions'
+import { signOutAction } from '~/components/layout/actions/session-actions'
 import {
   Dialog,
   DialogContent,
@@ -31,18 +33,13 @@ import {
 import { useTheme } from '~/context/theme-provider'
 import { toggleDevTools } from '~/lib/devtools'
 import { cn } from '~/lib/utils'
-import { useAuthStore } from '~/stores/auth-store'
+import { settingsViewTarget } from '~/router/view-targets'
 import { useStartupStore } from '~/stores/startup-store'
 import { getSidebarData } from './data/sidebar-data'
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
-
-const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'ru', label: 'Русский' },
-] as const
 
 /** Cached Tauri window handle for fullscreen / quit. */
 let tauriWin: Awaited<
@@ -101,8 +98,7 @@ function FileMenu() {
   const [signOutOpen, setSignOutOpen] = useState(false)
 
   const handleSignOut = useCallback(() => {
-    useAuthStore.getState().logout()
-    navigate({ to: '/sign-in' })
+    signOutAction(navigate)
   }, [navigate])
 
   const handleQuit = useCallback(() => {
@@ -110,8 +106,7 @@ function FileMenu() {
   }, [])
 
   const switchLanguage = useCallback((lang: string) => {
-    i18n.changeLanguage(lang)
-    localStorage.setItem('voletu.language', lang)
+    changeLanguagePreference(i18n, lang)
   }, [i18n])
 
   return (
@@ -121,7 +116,7 @@ function FileMenu() {
           <MenuTriggerButton>{t('titlebar.file')}</MenuTriggerButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-48">
-          <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
+          <DropdownMenuItem onSelect={() => navigate(settingsViewTarget)}>
             {t('titlebar.settings')}
             <DropdownMenuShortcut>Ctrl+,</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -131,7 +126,7 @@ function FileMenu() {
               {t('titlebar.language')}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              {languages.map(lang => (
+              {languageOptions.map(lang => (
                 <DropdownMenuItem
                   key={lang.code}
                   onSelect={() => switchLanguage(lang.code)}
@@ -436,7 +431,7 @@ function useGlobalShortcuts() {
       // Ctrl+, → Settings
       if (e.key === ',' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
-        navigate({ to: '/settings' })
+        navigate(settingsViewTarget)
         return
       }
 

@@ -3,6 +3,7 @@ import { ChevronsUpDown, LogOut, User } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ConfirmDialog } from '~/components/dialogs/confirm-dialog'
+import { signOutAction } from '~/components/layout/actions/session-actions'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '~/components/ui/sidebar'
+import { settingsViewTarget } from '~/router/view-targets'
 import { useAuthStore } from '~/stores/auth-store'
 
 function getInitials(name: string): string {
@@ -40,8 +42,7 @@ export function NavUser() {
   const displayEmail = user?.username ?? ''
 
   const handleSignOut = () => {
-    useAuthStore.getState().logout()
-    navigate({ to: '/sign-in' })
+    signOutAction(navigate)
   }
 
   return (
@@ -86,7 +87,7 @@ export function NavUser() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
+              <DropdownMenuItem onSelect={() => navigate(settingsViewTarget)}>
                 <User />
                 {t('auth:session.profile')}
               </DropdownMenuItem>

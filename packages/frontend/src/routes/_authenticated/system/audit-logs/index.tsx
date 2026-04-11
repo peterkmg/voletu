@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { defineListRoute } from '~/router/define-list-route'
+import { paginatedListSearchSchema } from '~/router/search-schemas'
 import { AuditLogsPage } from '~/views/system/audit-logs'
 
-const searchSchema = z.object({
-  page: z.number().optional(),
-  pageSize: z.number().optional(),
-  filter: z.string().optional(),
-})
-
-export const Route = createFileRoute('/_authenticated/system/audit-logs/')({
-  validateSearch: searchSchema,
+export const Route = defineListRoute(createFileRoute, '/_authenticated/system/audit-logs/')({
+  validateSearch: paginatedListSearchSchema,
   component: AuditLogsPage,
 })

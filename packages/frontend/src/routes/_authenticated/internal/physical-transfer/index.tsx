@@ -1,15 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { defineListRoute } from '~/router/define-list-route'
+import { createEnabledListSearchSchema } from '~/router/search-schemas'
 import { PhysicalTransferPage } from '~/views/internal/physical-transfer'
 
-const searchSchema = z.object({
-  page: z.number().optional(),
-  pageSize: z.number().optional(),
-  filter: z.string().optional(),
-  create: z.boolean().optional(),
-})
-
-export const Route = createFileRoute('/_authenticated/internal/physical-transfer/')({
-  validateSearch: searchSchema,
+export const Route = defineListRoute(createFileRoute, '/_authenticated/internal/physical-transfer/')({
+  validateSearch: createEnabledListSearchSchema,
   component: PhysicalTransferPage,
 })

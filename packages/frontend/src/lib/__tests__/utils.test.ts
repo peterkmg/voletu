@@ -1,5 +1,9 @@
 import { cn, getPageNumbers } from '~/lib/utils'
 
+function lastPageToken(values: Array<number | '...'>) {
+  return values[values.length - 1]
+}
+
 describe('cn()', () => {
   it('merges class names', () => {
     expect(cn('foo', 'bar')).toBe('foo bar')
@@ -47,14 +51,14 @@ describe('getPageNumbers()', () => {
     const result = getPageNumbers(1, 20)
     expect(result[0]).toBe(1)
     expect(result).toContain(2)
-    expect(result.at(-1)).toBe(20)
+    expect(lastPageToken(result)).toBe(20)
     expect(result).toContain('...')
   })
 
   it('returns [1, ..., pages around current, ..., last] when in the middle', () => {
     const result = getPageNumbers(10, 20)
     expect(result[0]).toBe(1)
-    expect(result.at(-1)).toBe(20)
+    expect(lastPageToken(result)).toBe(20)
     expect(result).toContain(9)
     expect(result).toContain(10)
     expect(result).toContain(11)
@@ -66,7 +70,7 @@ describe('getPageNumbers()', () => {
   it('returns [1, ..., last-3, last-2, last-1, last] when on last page', () => {
     const result = getPageNumbers(20, 20)
     expect(result[0]).toBe(1)
-    expect(result.at(-1)).toBe(20)
+    expect(lastPageToken(result)).toBe(20)
     expect(result).toContain(19)
   })
 
@@ -82,7 +86,7 @@ describe('getPageNumbers()', () => {
     // The trailing ellipsis should not appear because current (19) >= totalPages - 2 (18)
     // If there is an ellipsis, it should be the leading one, not trailing
     expect(lastEllipsisIdx).toBeLessThanOrEqual(1)
-    expect(result.at(-1)).toBe(20)
+    expect(lastPageToken(result)).toBe(20)
   })
 
   it('returns single page for totalPages = 1', () => {
@@ -98,6 +102,6 @@ describe('getPageNumbers()', () => {
   it('always includes first and last page for large sets', () => {
     const result = getPageNumbers(50, 100)
     expect(result[0]).toBe(1)
-    expect(result.at(-1)).toBe(100)
+    expect(lastPageToken(result)).toBe(100)
   })
 })

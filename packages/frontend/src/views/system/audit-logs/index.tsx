@@ -98,7 +98,7 @@ export function AuditLogsPage() {
   const { t } = useTranslation(['system', 'common'])
   usePageTitle(t('system:sync.auditLogs'))
 
-  const { data: auditLogsData, isLoading } = useSyncAuditLogList({
+  const { data: auditLogsData, isLoading } = useSyncAuditLogList(undefined, {
     query: { refetchInterval: 30_000 },
   })
   const data = auditLogsData?.data ?? []

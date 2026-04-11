@@ -40,6 +40,7 @@ import { useFlowCargoFlowFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowC
 import { usePageTitle } from '~/hooks/use-page-title'
 import { flowTypeColors, statusColors } from '~/lib/badge-colors'
 import { cn } from '~/lib/utils'
+import { createDocumentViewTargets } from '~/router/view-targets'
 
 function CargoFlowRowActions({ row }: { row: { original: CargoFlowFlatRow } }) {
   const navigate = useNavigate()
@@ -266,20 +267,17 @@ function CreateDropdown() {
         <DropdownMenuLabel>{t('nav.incoming')}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/incoming/truck', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.truckReceipt)}
           >
             {t('nav.truckReceipt')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/incoming/rail', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.railReceipt)}
           >
             {t('nav.railReceipt')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/incoming/external', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.externalAcceptance)}
           >
             {t('nav.externalAcceptance')}
           </DropdownMenuItem>
@@ -288,20 +286,17 @@ function CreateDropdown() {
         <DropdownMenuLabel>{t('nav.outgoing')}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/outgoing/truck', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.truckDispatch)}
           >
             {t('nav.truckDispatch')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/outgoing/direct', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.directDispatch)}
           >
             {t('nav.directDispatch')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/outgoing/bunkering', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.bunkering)}
           >
             {t('nav.bunkering')}
           </DropdownMenuItem>
@@ -310,35 +305,22 @@ function CreateDropdown() {
         <DropdownMenuLabel>{t('nav.internal')}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({
-                to: '/internal/physical-transfer',
-                search: { create: true },
-              })}
+            onClick={() => navigate(createDocumentViewTargets.physicalTransfer)}
           >
             {t('nav.physicalTransfer')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({
-                to: '/internal/ownership-transfer',
-                search: { create: true },
-              })}
+            onClick={() => navigate(createDocumentViewTargets.ownershipTransfer)}
           >
             {t('nav.ownershipTransfer')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({ to: '/internal/blending', search: { create: true } })}
+            onClick={() => navigate(createDocumentViewTargets.blending)}
           >
             {t('nav.blending')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate({
-                to: '/internal/reconciliation',
-                search: { create: true },
-              })}
+            onClick={() => navigate(createDocumentViewTargets.reconciliation)}
           >
             {t('nav.reconciliation')}
           </DropdownMenuItem>

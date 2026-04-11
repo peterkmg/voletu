@@ -1,15 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { defineListRoute } from '~/router/define-list-route'
+import { createEnabledListSearchSchema } from '~/router/search-schemas'
 import { ReconciliationPage } from '~/views/internal/reconciliation'
 
-const searchSchema = z.object({
-  page: z.number().optional(),
-  pageSize: z.number().optional(),
-  filter: z.string().optional(),
-  create: z.boolean().optional(),
-})
-
-export const Route = createFileRoute('/_authenticated/internal/reconciliation/')({
-  validateSearch: searchSchema,
+export const Route = defineListRoute(createFileRoute, '/_authenticated/internal/reconciliation/')({
+  validateSearch: createEnabledListSearchSchema,
   component: ReconciliationPage,
 })

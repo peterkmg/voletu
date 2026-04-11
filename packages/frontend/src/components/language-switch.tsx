@@ -1,5 +1,6 @@
 import { Check, Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { changeLanguagePreference, languageOptions } from '~/components/layout/actions/language-actions'
 import { Button } from '~/components/ui/button'
 import {
   DropdownMenu,
@@ -9,17 +10,11 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { cn } from '~/lib/utils'
 
-const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'ru', label: 'Русский' },
-] as const
-
 export function LanguageSwitch() {
   const { i18n } = useTranslation()
 
   const switchLanguage = (lang: string) => {
-    i18n.changeLanguage(lang)
-    localStorage.setItem('voletu.language', lang)
+    changeLanguagePreference(i18n, lang)
   }
 
   return (
@@ -31,7 +26,7 @@ export function LanguageSwitch() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {languages.map(lang => (
+        {languageOptions.map(lang => (
           <DropdownMenuItem
             key={lang.code}
             onClick={() => switchLanguage(lang.code)}

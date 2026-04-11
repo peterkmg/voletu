@@ -1,15 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { defineListRoute } from '~/router/define-list-route'
+import { createEnabledListSearchSchema } from '~/router/search-schemas'
 import { TruckDispatchPage } from '~/views/outgoing/truck-dispatch'
 
-const searchSchema = z.object({
-  page: z.number().optional(),
-  pageSize: z.number().optional(),
-  filter: z.string().optional(),
-  create: z.boolean().optional(),
-})
-
-export const Route = createFileRoute('/_authenticated/outgoing/truck/')({
-  validateSearch: searchSchema,
+export const Route = defineListRoute(createFileRoute, '/_authenticated/outgoing/truck/')({
+  validateSearch: createEnabledListSearchSchema,
   component: TruckDispatchPage,
 })

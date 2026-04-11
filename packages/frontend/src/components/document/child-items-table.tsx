@@ -43,7 +43,7 @@ export function ChildItemsTable<TItem>({
         )}
       </CardHeader>
       <CardContent>
-        <DataTable table={table} columns={columns} />
+        <DataTable table={table} columns={columns} mode="paginated" />
       </CardContent>
     </Card>
   )

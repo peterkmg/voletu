@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { defineListRoute } from '~/router/define-list-route'
+import { paginatedListSearchSchema } from '~/router/search-schemas'
 import { Ports } from '~/views/catalog/ports.tsx'
 
-const searchSchema = z.object({
-  page: z.number().optional(),
-  pageSize: z.number().optional(),
-  filter: z.string().optional(),
-})
-
-export const Route = createFileRoute('/_authenticated/catalog/ports/')({
-  validateSearch: searchSchema,
+export const Route = defineListRoute(createFileRoute, '/_authenticated/catalog/ports/')({
+  validateSearch: paginatedListSearchSchema,
   component: Ports,
 })

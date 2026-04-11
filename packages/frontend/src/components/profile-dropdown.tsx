@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { settingsViewTarget } from '~/router/view-targets'
 import { useAuthStore } from '~/stores/auth-store'
 
 function getInitials(name: string): string {
@@ -56,7 +57,7 @@ export function ProfileDropdown() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
+          <DropdownMenuItem onSelect={() => navigate(settingsViewTarget)}>
             <User />
             {t('auth:session.profile')}
           </DropdownMenuItem>

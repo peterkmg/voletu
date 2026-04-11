@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.dependencies]
-tokio = { version = "1.51", default-features = false, features = [
+tokio = { version = "1.51.1", default-features = false, features = [
   "rt-multi-thread",
   "macros",
   "net",
@@ -39,7 +39,7 @@ utoipa = { version = "5", default-features = false, features = [
 utoipa-axum = "0.2"
 utoipa-swagger-ui = { version = "9", features = ["axum", "vendored"] }
 
-sea-orm = { version = "2.0.0-rc.37", features = [
+sea-orm = { version = "2.0.0-rc.38", features = [
   "sqlx-all",
   "with-uuid",
   "runtime-tokio-rustls",
@@ -79,7 +79,7 @@ confy = "2"
 dotenvy = "0.15"
 
 keyring = { version = "3", features = ["windows-native"] }
-rand = "0.10"
+rand = "0.10.1"
 fake = "5.1"
 base64 = "0.22"
 rust_decimal = { version = "1.41", features = ["serde-with-str"] }

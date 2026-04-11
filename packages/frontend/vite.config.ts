@@ -9,7 +9,11 @@ const host = process.env.TAURI_DEV_HOST
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [
-    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      routeFileIgnorePattern: 'shared|\\.(test|spec)\\.(ts|tsx)$',
+    }),
     react(),
     tailwindcss(),
   ],

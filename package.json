@@ -15,22 +15,23 @@
     "check": "pnpm run check:rust && pnpm run check:frontend",
     "test:rust": "cargo test --workspace",
     "test:frontend": "pnpm --filter @voletu/frontend test",
+    "test:coverage": "pnpm --filter @voletu/frontend test:coverage",
     "test": "pnpm run test:rust && pnpm run test:frontend",
     "lint": "pnpm --filter @voletu/frontend lint",
     "format": "cargo +nightly fmt --all",
     "api:generate": "start-server-and-test \"cargo run --package voletu-server\" http://127.0.0.1:3000/api-docs/openapi.json \"pnpm --filter @voletu/frontend api:generate\""
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^8.0.0",
-    "@eslint-react/eslint-plugin": "^3",
+    "@antfu/eslint-config": "^8.1.1",
+    "@eslint-react/eslint-plugin": "^3.0.0",
     "@mermaid-js/mermaid-cli": "^11.12.0",
     "@tauri-apps/cli": "^2.10.0",
     "eslint": "^10",
     "eslint-plugin-format": "^2.0.1",
     "eslint-plugin-react-hooks": "7.1.0-canary-80b1cab3-20260331",
-    "eslint-plugin-react-refresh": "^0.5.0",
-    "prettier": "^3.8.1",
-    "start-server-and-test": "^3.0.0",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "prettier": "^3.8.2",
+    "start-server-and-test": "^3.0.2",
     "typescript": "^6.0.2"
   }
 }

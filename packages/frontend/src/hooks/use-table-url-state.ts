@@ -7,16 +7,18 @@ import { useCallback, useMemo } from 'react'
 
 type SearchRecord = Record<string, unknown>
 
-interface NavigateOptions {
+interface NavigateOptions<TSearch extends SearchRecord> {
   replace?: boolean
-  search: (prev: SearchRecord) => SearchRecord
+  search: (prev: TSearch) => TSearch
 }
 
-export type NavigateFn = (opts: NavigateOptions) => void
+export type NavigateFn<TSearch extends SearchRecord> = (
+  opts: NavigateOptions<TSearch>,
+) => void
 
-interface UseTableUrlStateParams {
-  search: SearchRecord
-  navigate: NavigateFn
+interface UseTableUrlStateParams<TSearch extends SearchRecord> {
+  search: TSearch
+  navigate: NavigateFn<TSearch>
   pagination?: {
     pageKey?: string
     pageSizeKey?: string
@@ -59,8 +61,8 @@ interface UseTableUrlStateReturn {
   ) => void
 }
 
-export function useTableUrlState(
-  params: UseTableUrlStateParams,
+export function useTableUrlState<TSearch extends SearchRecord>(
+  params: UseTableUrlStateParams<TSearch>,
 ): UseTableUrlStateReturn {
   const {
     search,
@@ -115,12 +117,12 @@ export function useTableUrlState(
     const nextPage = next.pageIndex + 1
     const nextPageSize = next.pageSize
     navigate({
-      search: (prev: SearchRecord) => ({
+      search: (prev: TSearch) => ({
         ...(prev as SearchRecord),
         [pageKey]: nextPage <= defaultPage ? undefined : nextPage,
         [pageSizeKey]:
           nextPageSize === defaultPageSize ? undefined : nextPageSize,
-      }),
+      }) as TSearch,
     })
   }, [pagination, navigate, pageKey, pageSizeKey, defaultPage, defaultPageSize])
 
@@ -138,11 +140,11 @@ export function useTableUrlState(
         : updater
     const value = trimGlobal ? next.trim() : next
     navigate({
-      search: (prev: SearchRecord) => ({
+      search: (prev: TSearch) => ({
         ...(prev as SearchRecord),
         [pageKey]: undefined,
         [globalFilterKey]: value || undefined,
-      }),
+      }) as TSearch,
     })
   }, [globalFilter, trimGlobal, navigate, pageKey, globalFilterKey])
 
@@ -173,11 +175,11 @@ export function useTableUrlState(
     }
 
     navigate({
-      search: (prev: SearchRecord) => ({
+      search: (prev: TSearch) => ({
         ...(prev as SearchRecord),
         [pageKey]: undefined,
         ...patch,
-      }),
+      }) as TSearch,
     })
   }, [columnFilters, columnFiltersCfg, navigate, pageKey])
 
@@ -190,10 +192,10 @@ export function useTableUrlState(
     if (pageCount > 0 && pageNum > pageCount) {
       navigate({
         replace: true,
-        search: (prev: SearchRecord) => ({
+        search: (prev: TSearch) => ({
           ...(prev as SearchRecord),
           [pageKey]: opts.resetTo === 'last' ? pageCount : undefined,
-        }),
+        }) as TSearch,
       })
     }
   }, [search, pageKey, defaultPage, navigate])
