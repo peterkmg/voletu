@@ -6,7 +6,8 @@ frontend-example/
 
 # Generated files
 packages/frontend/src/generated/
-
+packages/frontend/coverage/
+packages/frontend/.tanstack/
 # Logs
 logs
 *.log
