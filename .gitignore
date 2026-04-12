@@ -1,13 +1,22 @@
 target
-/*.md
-.info
 frontend-example/
-.dual-graph/
+biome.json
+
+/*.md
+!README.md
+
+/.*/
+!.vscode/
+!.cargo/
+
+docs/
 
 # Generated files
 packages/frontend/src/generated/
 packages/frontend/coverage/
+coverage/
 packages/frontend/.tanstack/
+
 # Logs
 logs
 *.log

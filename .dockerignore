@@ -1,0 +1,15 @@
+.git
+target/
+node_modules/
+paper/
+docs/
+frontend-example/
+*.db
+*.db-shm
+*.db-wal
+logs/
+.env
+/.*/
+!.npmrc
+!.cargo/
+/*.md

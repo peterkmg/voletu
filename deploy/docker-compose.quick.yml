@@ -1,0 +1,144 @@
+# Quick-start compose using pre-built artifacts from the host.
+#
+# Prerequisites — build locally first:
+#   cargo build -p voletu-server --release
+#   pnpm --filter @voletu/frontend build
+#
+# Usage:
+#   cd deploy
+#   docker compose -f docker-compose.quick.yml --profile central --profile periph1 up
+
+name: voletu-quick
+
+services:
+  # =========================================================================
+  # Central node
+  # =========================================================================
+  backend-central:
+    profiles: [central]
+    image: debian:bookworm-slim
+    ports:
+      - "3001:3000"
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+      DB_TYPE: sqlite
+      DB_FILE: /data/voletu.db
+      DB_PASSWORD: docker-test-central
+      JWT_EXPIRATION_SECONDS: "28800"
+      JWT_REFRESH_EXPIRATION_SECONDS: "604800"
+      LOG_FILTER: "info,voletu_core=debug,voletu_server=debug"
+      LOG_FILE: /logs/voletu-server.log
+    volumes:
+      - ../target/release/voletu-server:/usr/local/bin/voletu-server:ro
+      - vol-central-data:/data
+    command: ["/usr/local/bin/voletu-server"]
+    networks:
+      - voletu-net
+
+  frontend-central:
+    profiles: [central]
+    image: nginx:alpine
+    ports:
+      - "8001:80"
+    environment:
+      VOLETU_API_BASE_URL: "http://localhost:3001"
+    volumes:
+      - ../packages/frontend/dist/:/usr/share/nginx/html/:ro
+      - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./entrypoint-frontend.sh:/docker-entrypoint.d/40-voletu-envsubst.sh:ro
+    depends_on:
+      - backend-central
+    networks:
+      - voletu-net
+
+  # =========================================================================
+  # Peripheral node 1
+  # =========================================================================
+  backend-periph1:
+    profiles: [periph1]
+    image: debian:bookworm-slim
+    ports:
+      - "3002:3000"
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+      DB_TYPE: sqlite
+      DB_FILE: /data/voletu.db
+      DB_PASSWORD: docker-test-periph1
+      JWT_EXPIRATION_SECONDS: "28800"
+      JWT_REFRESH_EXPIRATION_SECONDS: "604800"
+      LOG_FILTER: "info,voletu_core=debug,voletu_server=debug"
+      LOG_FILE: /logs/voletu-server.log
+    volumes:
+      - ../target/release/voletu-server:/usr/local/bin/voletu-server:ro
+      - vol-periph1-data:/data
+    command: ["/usr/local/bin/voletu-server"]
+    networks:
+      - voletu-net
+
+  frontend-periph1:
+    profiles: [periph1]
+    image: nginx:alpine
+    ports:
+      - "8002:80"
+    environment:
+      VOLETU_API_BASE_URL: "http://localhost:3002"
+    volumes:
+      - ../packages/frontend/dist/:/usr/share/nginx/html/:ro
+      - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./entrypoint-frontend.sh:/docker-entrypoint.d/40-voletu-envsubst.sh:ro
+    depends_on:
+      - backend-periph1
+    networks:
+      - voletu-net
+
+  # =========================================================================
+  # Peripheral node 2
+  # =========================================================================
+  backend-periph2:
+    profiles: [periph2]
+    image: debian:bookworm-slim
+    ports:
+      - "3003:3000"
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+      DB_TYPE: sqlite
+      DB_FILE: /data/voletu.db
+      DB_PASSWORD: docker-test-periph2
+      JWT_EXPIRATION_SECONDS: "28800"
+      JWT_REFRESH_EXPIRATION_SECONDS: "604800"
+      LOG_FILTER: "info,voletu_core=debug,voletu_server=debug"
+      LOG_FILE: /logs/voletu-server.log
+    volumes:
+      - ../target/release/voletu-server:/usr/local/bin/voletu-server:ro
+      - vol-periph2-data:/data
+    command: ["/usr/local/bin/voletu-server"]
+    networks:
+      - voletu-net
+
+  frontend-periph2:
+    profiles: [periph2]
+    image: nginx:alpine
+    ports:
+      - "8003:80"
+    environment:
+      VOLETU_API_BASE_URL: "http://localhost:3003"
+    volumes:
+      - ../packages/frontend/dist/:/usr/share/nginx/html/:ro
+      - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./entrypoint-frontend.sh:/docker-entrypoint.d/40-voletu-envsubst.sh:ro
+    depends_on:
+      - backend-periph2
+    networks:
+      - voletu-net
+
+volumes:
+  vol-central-data:
+  vol-periph1-data:
+  vol-periph2-data:
+
+networks:
+  voletu-net:
+    driver: bridge

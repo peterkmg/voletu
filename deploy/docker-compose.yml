@@ -1,0 +1,128 @@
+name: voletu-multinode
+
+services:
+  # =========================================================================
+  # Central node
+  # =========================================================================
+  backend-central:
+    profiles: [central]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+    ports:
+      - "3001:3000"
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+      DB_TYPE: sqlite
+      DB_FILE: /data/voletu.db
+      DB_PASSWORD: dockerTestCentral
+      JWT_EXPIRATION_SECONDS: "28800"
+      JWT_REFRESH_EXPIRATION_SECONDS: "604800"
+      LOG_FILTER: "info,voletu_core=debug,voletu_server=debug"
+      LOG_FILE: /logs/voletu-server.log
+    volumes:
+      - vol-central-data:/data
+    networks:
+      - voletu-net
+
+  frontend-central:
+    profiles: [central]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    ports:
+      - "8001:80"
+    environment:
+      VOLETU_API_BASE_URL: "http://localhost:3001"
+    depends_on:
+      - backend-central
+    networks:
+      - voletu-net
+
+  # =========================================================================
+  # Peripheral node 1
+  # =========================================================================
+  backend-periph1:
+    profiles: [periph1]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+    ports:
+      - "3002:3000"
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+      DB_TYPE: sqlite
+      DB_FILE: /data/voletu.db
+      DB_PASSWORD: dockerTestPeriph1
+      JWT_EXPIRATION_SECONDS: "28800"
+      JWT_REFRESH_EXPIRATION_SECONDS: "604800"
+      LOG_FILTER: "info,voletu_core=debug,voletu_server=debug"
+      LOG_FILE: /logs/voletu-server.log
+    volumes:
+      - vol-periph1-data:/data
+    networks:
+      - voletu-net
+
+  frontend-periph1:
+    profiles: [periph1]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    ports:
+      - "8002:80"
+    environment:
+      VOLETU_API_BASE_URL: "http://localhost:3002"
+    depends_on:
+      - backend-periph1
+    networks:
+      - voletu-net
+
+  # =========================================================================
+  # Peripheral node 2
+  # =========================================================================
+  backend-periph2:
+    profiles: [periph2]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+    ports:
+      - "3003:3000"
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+      DB_TYPE: sqlite
+      DB_FILE: /data/voletu.db
+      DB_PASSWORD: dockerTestPeriph2
+      JWT_EXPIRATION_SECONDS: "28800"
+      JWT_REFRESH_EXPIRATION_SECONDS: "604800"
+      LOG_FILTER: "info,voletu_core=debug,voletu_server=debug"
+      LOG_FILE: /logs/voletu-server.log
+    volumes:
+      - vol-periph2-data:/data
+    networks:
+      - voletu-net
+
+  frontend-periph2:
+    profiles: [periph2]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    ports:
+      - "8003:80"
+    environment:
+      VOLETU_API_BASE_URL: "http://localhost:3003"
+    depends_on:
+      - backend-periph2
+    networks:
+      - voletu-net
+
+volumes:
+  vol-central-data:
+  vol-periph1-data:
+  vol-periph2-data:
+
+networks:
+  voletu-net:
+    driver: bridge

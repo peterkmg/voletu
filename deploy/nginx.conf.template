@@ -1,0 +1,26 @@
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Runtime API URL override — injected into every HTML response.
+    # Takes precedence over the build-time VITE_API_BASE_URL baked into the JS bundle.
+    # If VOLETU_API_BASE_URL is empty, the script sets an empty string and the
+    # JS fallback chain (import.meta.env → hardcoded default) takes over.
+    sub_filter '</head>' '<script>window.__VOLETU_API_BASE_URL__="${VOLETU_API_BASE_URL}";</script></head>';
+    sub_filter_once on;
+    # sub_filter applies to text/html by default
+
+    # SPA fallback — serve index.html for all client-side routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache Vite-hashed assets aggressively
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}

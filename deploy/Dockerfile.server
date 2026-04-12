@@ -1,0 +1,60 @@
+# ---- Build stage ----
+FROM rust:bookworm AS builder
+
+WORKDIR /build
+
+# Copy workspace manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Remove desktop member (requires Tauri/GTK/WebKit — not needed for server)
+RUN sed -i '/"packages\/desktop",/d' Cargo.toml
+
+# Copy package manifests for dependency caching
+COPY packages/core/Cargo.toml packages/core/Cargo.toml
+COPY packages/core-macros/Cargo.toml packages/core-macros/Cargo.toml
+COPY packages/server/Cargo.toml packages/server/Cargo.toml
+
+# Create dummy sources to build dependencies first (layer caching)
+RUN mkdir -p packages/core/src packages/core-macros/src packages/server/src \
+    && echo "pub fn _dummy() {}" > packages/core/src/lib.rs \
+    && echo "" > packages/core-macros/src/lib.rs \
+    && echo "fn main() {}" > packages/server/src/main.rs
+
+# Build dependencies only (will partially fail on our dummy code, but deps get compiled and cached)
+RUN cargo build --package voletu-server --release 2>/dev/null || true
+
+# Copy real source code
+COPY packages/core/ packages/core/
+COPY packages/core-macros/ packages/core-macros/
+COPY packages/server/ packages/server/
+
+# Invalidate cargo cache for our crates (not dependencies)
+RUN touch packages/core/src/lib.rs packages/core-macros/src/lib.rs packages/server/src/main.rs
+
+# Build the real binary
+RUN cargo build --package voletu-server --release
+
+# ---- Runtime stage ----
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /data /logs
+
+COPY --from=builder /build/target/release/voletu-server /usr/local/bin/voletu-server
+
+ENV API_HOST=0.0.0.0
+ENV API_PORT=3000
+ENV DB_TYPE=sqlite
+ENV DB_FILE=/data/voletu.db
+ENV DB_PASSWORD=dockerTestPassword
+ENV JWT_EXPIRATION_SECONDS=28800
+ENV JWT_REFRESH_EXPIRATION_SECONDS=604800
+ENV LOG_FILTER="info,voletu_core=debug,voletu_server=debug"
+ENV LOG_FILE=/logs/voletu-server.log
+
+EXPOSE 3000
+
+CMD ["/usr/local/bin/voletu-server"]
