@@ -21,7 +21,8 @@
     "test": "pnpm run test:rust && pnpm run test:frontend",
     "lint": "pnpm --filter @voletu/frontend lint",
     "format": "cargo +nightly fmt --all",
-    "api:generate": "start-server-and-test \"cargo run --package voletu-server\" http://127.0.0.1:3000/api-docs/openapi.json \"pnpm --filter @voletu/frontend api:generate\""
+    "api:generate": "start-server-and-test \"cargo run --package voletu-server\" http://127.0.0.1:3000/api-docs/openapi.json \"pnpm --filter @voletu/frontend api:generate\"",
+    "er-diagram": "node scripts/er-diagram.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^8.1.1",
