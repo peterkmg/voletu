@@ -1,0 +1,138 @@
+//! **Central URL change test**: Validates the PATCH /node/central-api-url
+//! handler contract.
+//!
+//! **Topology:** Central A + Central B + 1 Peripheral (initially targeting A).
+//! **Verifies:**
+//!   - PATCH with a malformed URL → 400
+//!   - PATCH with a URL whose /health is unreachable → 400 (no DB mutation)
+//!   - PATCH with a reachable URL → 200, response includes the new URL,
+//!     and a subsequent /node/status read returns the new URL fresh from
+//!     the DB (no restart required).
+//!
+//! Not covered here: full cross-central sync after the URL change —
+//! swapping a peripheral between two unrelated centrals requires
+//! re-registering the peripheral on the new central, which is an
+//! operational migration flow beyond the scope of this feature.
+
+use std::time::Duration;
+
+use reqwest::StatusCode;
+use serde_json::{json, Value};
+
+use crate::common::integration::{
+  api_get,
+  seed_catalog_via_api,
+  setup_central_via_api,
+  setup_peripheral_via_api,
+  temp_db_path,
+  wait_for_worker_online,
+};
+
+const SYNC_TIMEOUT: Duration = Duration::from_secs(20);
+
+#[tokio::test]
+async fn central_url_change_end_to_end() {
+  let client = reqwest::Client::new();
+
+  // --- Setup: Central A + Peripheral(on A) with a base assigned --------------
+  let central_a = setup_central_via_api(&client, &temp_db_path("url-change-central-a")).await;
+  let catalog_a = seed_catalog_via_api(&client, &central_a.url, &central_a.token).await;
+  let peripheral = setup_peripheral_via_api(
+    &client,
+    &temp_db_path("url-change-peripheral"),
+    &central_a,
+    &[catalog_a.base_alpha],
+  )
+  .await;
+  wait_for_worker_online(&client, &peripheral.url, &peripheral.token, SYNC_TIMEOUT).await;
+
+  // --- Central B: second central, reachable but unrelated --------------------
+  let central_b = setup_central_via_api(&client, &temp_db_path("url-change-central-b")).await;
+
+  let patch_url = format!("{}/node/central-api-url", peripheral.url);
+
+  // --- Case 1: malformed URL → 400 ------------------------------------------
+  {
+    let resp = client
+      .patch(&patch_url)
+      .bearer_auth(&peripheral.token)
+      .header("idempotency-key", uuid::Uuid::now_v7().to_string())
+      .json(&json!({ "url": "not-a-url" }))
+      .send()
+      .await
+      .unwrap();
+    assert_eq!(
+      resp.status(),
+      StatusCode::BAD_REQUEST,
+      "malformed URL must yield 400; got {}",
+      resp.status()
+    );
+  }
+
+  // --- Case 2: reachable-URL-shape but /health unreachable → 400 ------------
+  {
+    let resp = client
+      .patch(&patch_url)
+      .bearer_auth(&peripheral.token)
+      .header("idempotency-key", uuid::Uuid::now_v7().to_string())
+      .json(&json!({ "url": "http://127.0.0.1:1" }))
+      .send()
+      .await
+      .unwrap();
+    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    // Confirm the DB was NOT mutated: /node/status still points at central A.
+    let status = api_get(
+      &client,
+      &format!("{}/node/status", peripheral.url),
+      &peripheral.token,
+    )
+    .await;
+    assert_eq!(
+      status["centralApiUrl"].as_str().unwrap_or_default(),
+      central_a.url,
+      "failed probe must not persist the URL change"
+    );
+  }
+
+  // --- Case 3: happy path — switch to Central B ------------------------------
+  {
+    let resp = client
+      .patch(&patch_url)
+      .bearer_auth(&peripheral.token)
+      .header("idempotency-key", uuid::Uuid::now_v7().to_string())
+      .json(&json!({ "url": central_b.url.clone() }))
+      .send()
+      .await
+      .unwrap();
+    assert_eq!(
+      resp.status(),
+      StatusCode::OK,
+      "happy path must yield 200; body: {:?}",
+      resp.text().await.ok()
+    );
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["success"], Value::Bool(true));
+    assert_eq!(
+      body["data"]["centralApiUrl"].as_str().unwrap_or_default(),
+      central_b.url,
+      "response must reflect the newly-persisted URL"
+    );
+  }
+
+  // --- Verify /node/status also reads the new URL fresh from DB -------------
+  let status = api_get(
+    &client,
+    &format!("{}/node/status", peripheral.url),
+    &peripheral.token,
+  )
+  .await;
+  assert_eq!(
+    status["centralApiUrl"].as_str().unwrap_or_default(),
+    central_b.url,
+    "status endpoint must reflect the new URL without a restart"
+  );
+
+  central_a.shutdown().await;
+  central_b.shutdown().await;
+  peripheral.shutdown().await;
+}

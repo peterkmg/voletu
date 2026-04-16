@@ -1,4 +1,12 @@
-use sea_orm::{ColumnTrait, Condition, ConnectionTrait, EntityLoaderTrait, QueryFilter};
+use sea_orm::{
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  Condition,
+  ConnectionTrait,
+  EntityLoaderTrait,
+  QueryFilter,
+};
 
 use super::SystemService;
 use crate::{api::ApiError, dtos::LocalResponse, entities::local};
@@ -21,6 +29,17 @@ impl SystemService {
       .ok_or_else(|| ApiError::NotFound(format!("Local row '{}' not found", id)))?;
 
     Ok((&row).into())
+  }
+
+  /// Persist a new central API URL in the local bootstrap row. The worker
+  /// re-reads this value from the DB on every tick via `load_worker_topology`,
+  /// so no explicit restart/signal is required — the next cycle uses the new URL.
+  pub async fn update_central_api_url(&self, url: &str) -> Result<LocalResponse, ApiError> {
+    let current = load_local_bootstrap(self.db.as_ref()).await?;
+    let mut model: local::ActiveModel = current.into();
+    model.central_api_url = Set(Some(url.to_string()));
+    let updated = model.update(self.db.as_ref()).await?;
+    Ok(LocalResponse::from(&updated))
   }
 
   pub async fn local_query(

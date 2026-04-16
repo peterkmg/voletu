@@ -1,7 +1,10 @@
+mod bidirectional_convergence;
 mod bidirectional_sync;
 mod blending_routing_cross_base;
 mod catalog_broadcast;
 mod catalog_only_sync_no_base;
+mod central_seed_distributes;
+mod central_url_change;
 mod cross_base_physical_transfer;
 mod data_parity_after_full_sync;
 mod dispatch_routing_destination_base;
@@ -12,6 +15,7 @@ mod hard_delete_propagation;
 mod incremental_pull_watermark;
 mod multi_base_node_pull;
 mod ownership_transfer_routing;
+mod peripheral_seed_full_push;
 mod reconciliation_routing;
 mod routing_envelope_populated;
 mod routing_isolation;

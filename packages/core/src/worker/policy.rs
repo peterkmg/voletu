@@ -29,5 +29,14 @@ pub(super) async fn evaluate_pending_sync_work(
     return Ok(true);
   }
 
+  // Push side: if the PUSH watermark lags behind the highest local audit log id,
+  // there are still local changes to send to central. Without this check, the
+  // worker would idle after a single-batch push even though thousands of logs
+  // remain in the peripheral's outbound queue.
+  let (push_cursor, _) = topology::find_sync_watermark(&watermarks, remote_status.node_id, "PUSH");
+  if context.local_highest_audit_log_id > push_cursor {
+    return Ok(true);
+  }
+
   Ok(has_pending_sync_work)
 }

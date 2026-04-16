@@ -45,14 +45,47 @@
       "assignBases": "Назначить базы",
       "manageBases": "Управление базами",
       "triggerSync": "Синхронизировать",
-      "allConfigured": "Синхронизация полностью настроена"
+      "allConfigured": "Синхронизация полностью настроена",
+      "configured": {
+        "title": "Узел настроен",
+        "centralApiUrl": "Адрес центрального API",
+        "centralApiUrlUnknown": "Не задан",
+        "assignedBases_one": "Назначена {{count}} база",
+        "assignedBases_few": "Назначено {{count}} базы",
+        "assignedBases_many": "Назначено {{count}} баз",
+        "assignedBases_other": "Назначено {{count}} баз",
+        "assignedBases_zero": "Нет назначенных баз",
+        "manage": "Управление…",
+        "change": "Изменить…",
+        "comingSoon": "Скоро"
+      }
     },
     "bases": {
       "title": "Назначение баз",
       "description": "Выберите базы, данные которых этот узел будет обрабатывать",
       "noBases": "Базы не найдены. Сначала синхронизируйте каталог с центрального сервера.",
       "assigned": "Назначена",
-      "notAssigned": "Не назначена"
+      "notAssigned": "Не назначена",
+      "apply": "Применить",
+      "applying": "Применение…",
+      "cancel": "Отмена",
+      "applySuccess_one": "Применено {{count}} изменение",
+      "applySuccess_few": "Применено {{count}} изменения",
+      "applySuccess_many": "Применено {{count}} изменений",
+      "applySuccess_other": "Применено {{count}} изменений",
+      "applyAllFailed": "Не удалось применить изменения",
+      "applyPartial": "Применено: {{succeeded}}, ошибок: {{failed}}"
+    },
+    "centralUrl": {
+      "title": "Изменить адрес центрального API",
+      "description": "Подключить этот узел к другому центральному серверу. Перед применением адрес будет проверен.",
+      "urlLabel": "Адрес центрального API",
+      "urlHint": "Включите схему http:// или https://. Сервер должен быть доступен.",
+      "apply": "Применить",
+      "applying": "Применение…",
+      "cancel": "Отмена",
+      "updated": "Адрес центрального API обновлён",
+      "updateFailed": "Не удалось обновить адрес центрального API"
     },
     "states": {
       "sleeping": "Спящий",
@@ -63,6 +96,7 @@
     }
   },
   "node": {
+    "label": "Узел",
     "notInitialized": {
       "title": "Узел не инициализирован",
       "adminMessage": "Этот узел не настроен. Нажмите «Инициализировать» для настройки.",
@@ -75,10 +109,12 @@
     },
     "syncState": {
       "central": "Центральный",
-      "syncing": "Синхронизация",
+      "online": "Онлайн",
+      "syncing": "Синхронизация...",
       "setupNeeded": "Настройка",
       "offline": "Оффлайн",
-      "notSyncing": "Не синхронизируется"
+      "notSyncing": "Не синхронизируется",
+      "loading": "Загрузка..."
     },
     "init": {
       "pageTitle": "Инициализация узла",

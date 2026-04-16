@@ -6,6 +6,7 @@
     "dev:frontend": "pnpm --filter @voletu/frontend dev",
     "dev:server": "cargo run --package voletu-server",
     "dev:tauri": "pnpm tauri dev",
+    "dev:paper": "cd paper && latexmk -pdf -pvc voletu_thesis.tex",
     "build:frontend": "pnpm --filter @voletu/frontend build",
     "build:server": "cargo build --package voletu-server --release",
     "build:tauri": "pnpm tauri build",
@@ -25,7 +26,7 @@
     "er-diagram": "node scripts/er-diagram.mjs"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^8.1.1",
+    "@antfu/eslint-config": "^8.2.0",
     "@eslint-react/eslint-plugin": "^3.0.0",
     "@mermaid-js/mermaid-cli": "^11.12.0",
     "@tauri-apps/cli": "^2.10.0",

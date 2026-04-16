@@ -1,3 +1,4 @@
+import type { SyncUiState } from '~/views/system/sync/sync-ui-state'
 import { Link } from '@tanstack/react-router'
 import { Layers } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,42 +10,29 @@ import {
 } from '~/components/ui/sidebar'
 import { cn } from '~/lib/utils'
 import { useNodeStore } from '~/stores/node-store'
+import { deriveSyncUiState } from '~/views/system/sync/sync-ui-state'
 
-type SyncState = 'central' | 'syncing' | 'setup' | 'offline' | 'sleeping'
-
-function deriveSyncState(status: import('~/stores/node-store').NodeStatus): SyncState {
-  if (status.nodeType === 'CENTRAL')
-    return 'central'
-  if (!status.isInitialized)
-    return 'sleeping'
-  if (status.assignedBaseIds.length === 0)
-    return 'setup'
-  if (status.workerState === 'OnlineIdle' || status.workerState === 'Syncing')
-    return 'syncing'
-  if (status.workerState === 'Offline' || status.workerState === 'Backoff')
-    return 'offline'
-  return 'sleeping'
-}
-
-const syncStateConfig: Record<SyncState, { dot: string, label: string }> = {
+const syncStateConfig: Record<SyncUiState, { dot: string, label: string }> = {
   central: { dot: 'bg-muted-foreground/50', label: 'node.syncState.central' },
+  online: { dot: 'bg-green-500', label: 'node.syncState.online' },
   syncing: { dot: 'bg-green-500', label: 'node.syncState.syncing' },
-  setup: { dot: 'bg-yellow-500', label: 'node.syncState.setupNeeded' },
+  setupIncomplete: { dot: 'bg-yellow-500', label: 'node.syncState.setupNeeded' },
+  setupLoading: { dot: 'bg-muted-foreground/50', label: 'node.syncState.loading' },
   offline: { dot: 'bg-red-500', label: 'node.syncState.offline' },
-  sleeping: { dot: 'bg-muted-foreground/50', label: 'node.syncState.notSyncing' },
 }
 
 export function AppTitle() {
   const { t } = useTranslation('system')
   const { setOpenMobile, state } = useSidebar()
   const status = useNodeStore(s => s.status)
+  const basesLoaded = useNodeStore(s => s.basesLoaded)
   const isCollapsed = state === 'collapsed'
 
-  const syncState = deriveSyncState(status)
+  const syncState = deriveSyncUiState(status, basesLoaded)
   const { dot: dotColor, label: labelKey } = syncStateConfig[syncState]
 
   const subtitle = status.isInitialized && status.nodeName
-    ? `${status.nodeType} · ${status.nodeName}`
+    ? `${t('node.label')}: ${status.nodeName}`
     : 'Inventory Management'
 
   return (
@@ -75,9 +63,9 @@ export function AppTitle() {
               <span className="truncate font-bold">Voletu</span>
               <span className="truncate text-xs text-muted-foreground">{subtitle}</span>
               {status.isInitialized && !isCollapsed && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <span className={cn('size-2 rounded-full', dotColor)} />
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {t(labelKey)}
                   </span>
                 </span>

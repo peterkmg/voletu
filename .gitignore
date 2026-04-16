@@ -1,7 +1,6 @@
 target
 frontend-example/
 biome.json
-
 /*.md
 !README.md
 
@@ -76,3 +75,4 @@ dist-ssr
 
 paper/**/*.pdf
 !paper/registration.pdf
+!paper/images/**/*.pdf

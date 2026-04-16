@@ -1,0 +1,75 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Inventory by contractor and storage",
+  "toolbar": {
+    "contractor": "Contractor",
+    "search": "Search products or storages...",
+    "orientation": {
+      "productsAsRows": "Products as rows",
+      "storagesAsRows": "Storages as rows"
+    },
+    "axis": {
+      "products": "Products",
+      "storages": "Storages"
+    },
+    "structure": {
+      "label": "Structure",
+      "productType": "Show product type",
+      "base": "Show base"
+    },
+    "totals": {
+      "label": "Totals",
+      "productGroup": "Product group totals",
+      "productType": "Product type totals",
+      "warehouse": "Warehouse totals",
+      "base": "Base totals",
+      "requiresType": "Enable \"Show product type\" to see product type totals.",
+      "requiresBase": "Enable \"Show base\" to see base totals."
+    }
+  },
+  "matrix": {
+    "rowTotal": "Total",
+    "colTotal": "Total",
+    "grandTotal": "Grand total",
+    "subtotalPrefix": "Σ"
+  },
+  "empty": {
+    "noContractors": {
+      "title": "No contractors yet",
+      "body": "Create a contractor to start tracking inventory.",
+      "cta": "Create contractor"
+    },
+    "noLedger": {
+      "title": "No inventory movements recorded",
+      "body": "Record a cargo-flow document to populate the dashboard.",
+      "cta": "Open cargo flow"
+    },
+    "noStock": {
+      "title": "No stock on record",
+      "body": "This contractor has no stock in any storage."
+    },
+    "noSearch": {
+      "title": "No matches",
+      "body": "Clear the search to see all products and storages.",
+      "cta": "Clear search"
+    }
+  },
+  "cell": {
+    "ariaLabel": "{{product}} at {{warehouse}}/{{storage}}, {{amount}}. Open movements."
+  },
+  "sheet": {
+    "title": "Movements",
+    "context": "{{product}} at {{warehouse}}/{{storage}}",
+    "balance": "Current balance",
+    "empty": "No movements recorded for this cell.",
+    "createCta": "New document",
+    "errorFallback": "Error"
+  },
+  "orphans": {
+    "badge_one": "{{count}} orphaned entry",
+    "badge_other": "{{count}} orphaned entries",
+    "tooltip": "Some ledger rows reference products, storages, or contractors that no longer exist in the catalog. They are excluded from totals."
+  },
+  "ungrouped": "Ungrouped",
+  "unassigned": "Unassigned"
+}

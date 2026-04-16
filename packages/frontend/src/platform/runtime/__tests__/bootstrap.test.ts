@@ -154,6 +154,46 @@ describe('ensureBootstrapped()', () => {
     expect(health.fetchHealth).toHaveBeenCalledTimes(1)
   })
 
+  it('fetches health when startupState is null (browser / Docker mode)', async () => {
+    const boot = vi.fn(async () => {
+      useAuthStore.setState({ status: 'valid' })
+    })
+
+    // startupState stays null — simulates Tauri IPC unavailable
+    useStartupStore.setState({ refresh: vi.fn(async () => {}) })
+    useAuthStore.setState({ status: 'unknown', boot })
+
+    await ensureBootstrapped()
+
+    expect(health.fetchHealth).toHaveBeenCalledTimes(1)
+    expect(health.applyHealthSnapshot).toHaveBeenCalled()
+    expect(useRuntimeStore.getState()).toMatchObject({
+      bootstrapStatus: 'ready',
+      healthStatus: 'hydrated',
+    })
+  })
+
+  it('skips health fetch when needsSetup is true', async () => {
+    const setupState: StartupState = { ...startupState, needsSetup: true }
+    const boot = vi.fn(async () => {
+      useAuthStore.setState({ status: 'valid' })
+    })
+
+    useStartupStore.setState({
+      startupState: setupState,
+      refresh: vi.fn(async () => {}),
+    })
+    useAuthStore.setState({ status: 'unknown', boot })
+
+    await ensureBootstrapped()
+
+    expect(health.fetchHealth).not.toHaveBeenCalled()
+    expect(useRuntimeStore.getState()).toMatchObject({
+      bootstrapStatus: 'ready',
+      healthStatus: 'idle',
+    })
+  })
+
   it('treats health probe failures as unavailable runtime state instead of fatal bootstrap errors', async () => {
     const boot = vi.fn(async () => {
       useAuthStore.setState({ status: 'valid' })

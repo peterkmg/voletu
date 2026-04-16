@@ -17,6 +17,7 @@ import {
   DataTableColumnHeader,
   dateColumn,
   EntityTable,
+  getStoredTableMode,
   numericColumn,
   statusColumn,
   textColumn,
@@ -63,8 +64,6 @@ function CargoFlowRowActions({ row }: { row: { original: CargoFlowFlatRow } }) {
   )
 }
 
-const cargoFlowStatusColors = statusColors
-
 function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
   return [
     // Document-level columns (groupRole: 'doc' — shown only on first row of group)
@@ -76,7 +75,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
           title={t('common:columns.type')}
         />
       ),
-      enableSorting: false,
       minSize: 130,
       maxSize: 130,
       meta: {
@@ -109,7 +107,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         t('common:columns.operation'),
         { primary: false, sizing: 'capped', maxSize: 180 },
       ),
-      enableSorting: false,
       meta: {
         label: t('common:columns.operation'),
         sizingCategory: 'capped',
@@ -122,7 +119,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         t('common:table.documentNumber'),
         { sizing: 'capped', maxSize: 200 },
       ),
-      enableSorting: false,
       meta: {
         label: t('common:table.documentNumber'),
         sizingCategory: 'capped',
@@ -131,7 +127,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
     },
     {
       ...dateColumn<CargoFlowFlatRow>('date', t('common:table.date')),
-      enableSorting: false,
       meta: {
         label: t('common:table.date'),
         sizingCategory: 'capped',
@@ -145,7 +140,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         t('common:table.contractor'),
         { primary: false },
       ),
-      enableSorting: false,
       meta: {
         label: t('common:table.contractor'),
         sizingCategory: 'flex',
@@ -159,7 +153,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         t('common:table.product'),
         { primary: false },
       ),
-      enableSorting: false,
       meta: {
         label: t('common:table.product'),
         sizingCategory: 'flex',
@@ -172,7 +165,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         t('common:columns.storage'),
         { primary: false },
       ),
-      enableSorting: false,
       meta: {
         label: t('common:columns.storage'),
         sizingCategory: 'flex',
@@ -184,7 +176,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         'quantity',
         t('common:table.quantity'),
       ),
-      enableSorting: false,
       meta: {
         label: t('common:table.quantity'),
         sizingCategory: 'capped',
@@ -197,9 +188,8 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
       ...statusColumn<CargoFlowFlatRow>(
         'status',
         t('common:table.status'),
-        cargoFlowStatusColors,
+        statusColors,
       ),
-      enableSorting: false,
       meta: {
         label: t('common:table.status'),
         sizingCategory: 'capped',
@@ -209,7 +199,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
     // Actions (doc-level)
     {
       ...actionsColumn<CargoFlowFlatRow>(CargoFlowRowActions, 1),
-      enableSorting: false,
       meta: { sizingCategory: 'fixed', groupRole: 'doc' as const },
     },
   ]
@@ -227,10 +216,12 @@ const globalFilterFn = createGlobalFilter<CargoFlowFlatRow>(
 function CargoFlowTable({
   data,
   pageCount,
+  isPaginated,
   actions,
 }: {
   data: CargoFlowFlatRow[]
   pageCount: number
+  isPaginated: boolean
   actions?: React.ReactNode
 }) {
   return (
@@ -243,9 +234,8 @@ function CargoFlowTable({
       i18nNamespaces={['common']}
       groupKey="documentId"
       actions={actions}
-      forcedTableMode="paginated"
-      serverPagination={{ pageCount }}
-      manualFiltering
+      serverPagination={isPaginated ? { pageCount } : undefined}
+      manualFiltering={isPaginated}
     />
   )
 }
@@ -333,8 +323,9 @@ function CreateDropdown() {
 export function CargoFlowPage() {
   const { t } = useTranslation('common')
   const search = route.useSearch()
-  const page = search.page ?? 1
-  const pageSize = search.pageSize ?? 10
+  const isPaginated = getStoredTableMode('cargo-flow') === 'paginated'
+  const page = isPaginated ? (search.page ?? 1) : 1
+  const pageSize = isPaginated ? (search.pageSize ?? 10) : 9999
   const filter = search.filter?.trim() || undefined
   const { data, isLoading } = useFlowCargoFlowFlatQuery({
     page,
@@ -367,6 +358,7 @@ export function CargoFlowPage() {
                 <CargoFlowTable
                   data={payload?.items ?? []}
                   pageCount={pageCount}
+                  isPaginated={isPaginated}
                   actions={<CreateDropdown />}
                 />
               </div>

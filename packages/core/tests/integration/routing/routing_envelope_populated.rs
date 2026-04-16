@@ -1,7 +1,13 @@
 //! **Routing envelope populated**: Verifies that audit log routing envelopes contain
 //! the correct `target_base_ids` when a composite acceptance document is created.
 //!
-//! **Topology:** Central only (no peripherals)
+//! **Scope:** Central-only. This test does NOT exercise sync — it only verifies the
+//! envelope-population logic that other routing tests depend on. Think of it as a
+//! unit-level precondition check for the whole routing stack: if the envelope
+//! isn't stamped correctly here, no downstream sync test can pass either. Kept
+//! in `routing/` because it tests the routing-envelope machinery, but it will
+//! never catch a sync bug on its own.
+//!
 //! **Verifies:** Audit logs for both the document and its items include the base derived from the storage
 
 use serde_json::Value;

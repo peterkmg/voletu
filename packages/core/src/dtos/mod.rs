@@ -145,6 +145,7 @@ pub use request::{
     CreateUserRequest,
     LoginRequest,
     RefreshTokenRequest,
+    UpdateCentralApiUrlRequest,
     UpdateUserRequest,
   },
 };

@@ -79,3 +79,9 @@ pub struct UpdateUserRequest {
 pub struct AddBaseAssignmentRequest {
   pub base_id: Uuid,
 }
+
+#[request_dto]
+pub struct UpdateCentralApiUrlRequest {
+  #[validate(url)]
+  pub url: String,
+}

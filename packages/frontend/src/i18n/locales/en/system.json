@@ -45,14 +45,43 @@
       "assignBases": "Assign bases",
       "manageBases": "Manage bases",
       "triggerSync": "Sync now",
-      "allConfigured": "Sync fully configured"
+      "allConfigured": "Sync fully configured",
+      "configured": {
+        "title": "Node configured",
+        "centralApiUrl": "Central API URL",
+        "centralApiUrlUnknown": "Not set",
+        "assignedBases_one": "{{count}} base assigned",
+        "assignedBases_other": "{{count}} bases assigned",
+        "assignedBases_zero": "No bases assigned",
+        "manage": "Manage…",
+        "change": "Change…",
+        "comingSoon": "Coming soon"
+      }
     },
     "bases": {
       "title": "Base Assignments",
       "description": "Select which bases this node handles for data synchronization",
       "noBases": "No bases available. Sync catalog from Central first.",
       "assigned": "Assigned",
-      "notAssigned": "Not assigned"
+      "notAssigned": "Not assigned",
+      "apply": "Apply",
+      "applying": "Applying…",
+      "cancel": "Cancel",
+      "applySuccess_one": "{{count}} change applied",
+      "applySuccess_other": "{{count}} changes applied",
+      "applyAllFailed": "Failed to apply base assignment changes",
+      "applyPartial": "{{succeeded}} applied, {{failed}} failed"
+    },
+    "centralUrl": {
+      "title": "Change Central API URL",
+      "description": "Point this node at a different Central server. The URL will be probed before applying.",
+      "urlLabel": "Central API URL",
+      "urlHint": "Include the http:// or https:// scheme. The server must be reachable.",
+      "apply": "Apply",
+      "applying": "Applying…",
+      "cancel": "Cancel",
+      "updated": "Central API URL updated",
+      "updateFailed": "Failed to update Central API URL"
     },
     "states": {
       "sleeping": "Sleeping",
@@ -63,6 +92,7 @@
     }
   },
   "node": {
+    "label": "Node",
     "notInitialized": {
       "title": "Node Not Initialized",
       "adminMessage": "This node has not been configured. Click Initialize to set up.",
@@ -75,10 +105,12 @@
     },
     "syncState": {
       "central": "Central",
-      "syncing": "Syncing",
+      "online": "Online",
+      "syncing": "Syncing...",
       "setupNeeded": "Setup needed",
       "offline": "Offline",
-      "notSyncing": "Not syncing"
+      "notSyncing": "Not syncing",
+      "loading": "Loading..."
     },
     "init": {
       "pageTitle": "Initialize Node",

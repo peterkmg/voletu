@@ -55,16 +55,16 @@ export function NavUser() {
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="h-8 w-8 shrink-0 rounded-lg">
                   <AvatarFallback className="rounded-lg">
                     {getInitials(displayName)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-start text-sm leading-tight">
+                <div className="grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-semibold">{displayName}</span>
                   <span className="truncate text-xs">{displayEmail}</span>
                 </div>
-                <ChevronsUpDown className="ms-auto size-4" />
+                <ChevronsUpDown className="ms-auto size-4 group-data-[collapsible=icon]:hidden" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent

@@ -15,6 +15,7 @@ pub mod node {
   pub const STATUS: &str = "/node/status";
   pub const BASES: &str = "/node/bases";
   pub const BASES_BY_ID: &str = "/node/bases/{baseId}";
+  pub const CENTRAL_API_URL: &str = "/node/central-api-url";
 }
 
 pub mod users {

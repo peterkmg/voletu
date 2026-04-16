@@ -19,8 +19,18 @@ export function Breadcrumbs() {
     .split('/')
     .filter(s => s && !s.startsWith('_') && !s.startsWith('('))
 
-  if (segments.length === 0)
-    return null
+  if (segments.length === 0) {
+    // Authenticated root — the dashboard view. Show a single "Dashboard" crumb.
+    return (
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{t('common:nav.dashboard')}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    )
+  }
 
   return (
     <Breadcrumb>

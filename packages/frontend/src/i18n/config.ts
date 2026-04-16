@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next'
 import authEn from './locales/en/auth.json'
 import catalogEn from './locales/en/catalog.json'
 import commonEn from './locales/en/common.json'
+import dashboardEn from './locales/en/dashboard.json'
 import documentsEn from './locales/en/documents.json'
 import systemEn from './locales/en/system.json'
 import transportEn from './locales/en/transport.json'
@@ -11,6 +12,7 @@ import transportEn from './locales/en/transport.json'
 import authRu from './locales/ru/auth.json'
 import catalogRu from './locales/ru/catalog.json'
 import commonRu from './locales/ru/common.json'
+import dashboardRu from './locales/ru/dashboard.json'
 import documentsRu from './locales/ru/documents.json'
 import systemRu from './locales/ru/system.json'
 import transportRu from './locales/ru/transport.json'
@@ -18,7 +20,7 @@ import transportRu from './locales/ru/transport.json'
 i18n.use(initReactI18next).init({
   lng: localStorage.getItem('voletu.language') ?? 'en',
   fallbackLng: 'en',
-  ns: ['common', 'catalog', 'documents', 'transport', 'system', 'auth'],
+  ns: ['common', 'catalog', 'documents', 'transport', 'system', 'auth', 'dashboard'],
   defaultNS: 'common',
   interpolation: {
     escapeValue: false,
@@ -28,6 +30,7 @@ i18n.use(initReactI18next).init({
       common: commonEn,
       auth: authEn,
       catalog: catalogEn,
+      dashboard: dashboardEn,
       documents: documentsEn,
       transport: transportEn,
       system: systemEn,
@@ -36,6 +39,7 @@ i18n.use(initReactI18next).init({
       common: commonRu,
       auth: authRu,
       catalog: catalogRu,
+      dashboard: dashboardRu,
       documents: documentsRu,
       transport: transportRu,
       system: systemRu,

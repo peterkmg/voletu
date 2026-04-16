@@ -91,5 +91,74 @@ describe('node-store', () => {
 
       expect(useNodeStore.getState().status.nodeType).toBe('PERIPHERAL')
     })
+
+    it('resets basesLoaded and centralVerifiedOnce', () => {
+      useNodeStore.getState().markBasesLoaded()
+      useNodeStore.getState().setStatus({ workerState: 'OnlineIdle' })
+      expect(useNodeStore.getState().basesLoaded).toBe(true)
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(true)
+
+      useNodeStore.getState().reset()
+
+      expect(useNodeStore.getState().basesLoaded).toBe(false)
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(false)
+    })
+  })
+
+  describe('basesLoaded flag', () => {
+    it('defaults to false', () => {
+      expect(useNodeStore.getState().basesLoaded).toBe(false)
+    })
+
+    it('flips true after markBasesLoaded()', () => {
+      useNodeStore.getState().markBasesLoaded()
+      expect(useNodeStore.getState().basesLoaded).toBe(true)
+    })
+
+    it('stays true once marked; setStatus does not unset it', () => {
+      useNodeStore.getState().markBasesLoaded()
+      useNodeStore.getState().setStatus({ assignedBaseIds: [] })
+      expect(useNodeStore.getState().basesLoaded).toBe(true)
+    })
+  })
+
+  describe('centralVerifiedOnce flag', () => {
+    it('defaults to false', () => {
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(false)
+    })
+
+    it('flips true when workerState transitions through OnlineIdle', () => {
+      useNodeStore.getState().setStatus({ workerState: 'OnlineIdle' })
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(true)
+    })
+
+    it('flips true when workerState transitions through Syncing', () => {
+      useNodeStore.getState().setStatus({ workerState: 'Syncing' })
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(true)
+    })
+
+    it('does NOT unset once true when worker later goes Offline', () => {
+      useNodeStore.getState().setStatus({ workerState: 'OnlineIdle' })
+      useNodeStore.getState().setStatus({ workerState: 'Offline' })
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(true)
+    })
+
+    it('does NOT unset once true when worker later goes Backoff', () => {
+      useNodeStore.getState().setStatus({ workerState: 'Syncing' })
+      useNodeStore.getState().setStatus({ workerState: 'Backoff' })
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(true)
+    })
+
+    it('stays false when worker never reached a reachable state', () => {
+      useNodeStore.getState().setStatus({ workerState: 'Offline' })
+      useNodeStore.getState().setStatus({ workerState: 'Sleeping' })
+      useNodeStore.getState().setStatus({ workerState: 'Backoff' })
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(false)
+    })
+
+    it('stays false when workerState is null', () => {
+      useNodeStore.getState().setStatus({ workerState: null })
+      expect(useNodeStore.getState().centralVerifiedOnce).toBe(false)
+    })
   })
 })

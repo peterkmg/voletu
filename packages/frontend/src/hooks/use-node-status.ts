@@ -68,6 +68,7 @@ export function useNodeStatus() {
       useNodeStore.getState().setStatus({
         assignedBaseIds: basesQuery.data.data.map(b => b.baseId),
       })
+      useNodeStore.getState().markBasesLoaded()
     }
   }, [basesQuery.data])
 

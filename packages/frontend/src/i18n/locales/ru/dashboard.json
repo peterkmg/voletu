@@ -1,0 +1,47 @@
+{
+  "title": "— WIP —",
+  "subtitle": "— WIP —",
+  "toolbar": {
+    "contractor": "— WIP —",
+    "search": "— WIP —",
+    "orientation": {
+      "productsAsRows": "— WIP —",
+      "storagesAsRows": "— WIP —"
+    },
+    "axis": {
+      "products": "— WIP —",
+      "storages": "— WIP —"
+    },
+    "structure": {
+      "label": "— WIP —",
+      "productType": "— WIP —",
+      "base": "— WIP —"
+    },
+    "totals": {
+      "label": "— WIP —",
+      "productGroup": "— WIP —",
+      "productType": "— WIP —",
+      "warehouse": "— WIP —",
+      "base": "— WIP —",
+      "requiresType": "— WIP —",
+      "requiresBase": "— WIP —"
+    }
+  },
+  "matrix": {
+    "rowTotal": "— WIP —",
+    "colTotal": "— WIP —",
+    "grandTotal": "— WIP —",
+    "subtotalPrefix": "— WIP —"
+  },
+  "empty": {
+    "noContractors": { "title": "— WIP —", "body": "— WIP —", "cta": "— WIP —" },
+    "noLedger": { "title": "— WIP —", "body": "— WIP —", "cta": "— WIP —" },
+    "noStock": { "title": "— WIP —", "body": "— WIP —" },
+    "noSearch": { "title": "— WIP —", "body": "— WIP —", "cta": "— WIP —" }
+  },
+  "cell": { "ariaLabel": "— WIP —" },
+  "sheet": { "title": "— WIP —", "context": "— WIP —", "balance": "— WIP —", "empty": "— WIP —", "createCta": "— WIP —", "errorFallback": "— WIP —" },
+  "orphans": { "badge_one": "— WIP —", "badge_few": "— WIP —", "badge_many": "— WIP —", "badge_other": "— WIP —", "tooltip": "— WIP —" },
+  "ungrouped": "— WIP —",
+  "unassigned": "— WIP —"
+}

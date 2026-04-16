@@ -100,6 +100,7 @@ fn shared_transport_dtos_are_exported_from_the_dto_surface() {
     node_name: "Node".into(),
     worker_state: "OnlineIdle".into(),
     last_sync_at: None,
+    central_api_url: None,
   };
   let _ = SeedResult {
     product_types: 1,

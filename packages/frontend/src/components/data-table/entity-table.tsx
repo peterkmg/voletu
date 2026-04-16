@@ -24,7 +24,7 @@ import { DataTable } from './data-table'
 import { DataTablePagination } from './pagination'
 import { DataTableToolbar } from './toolbar'
 
-function getStoredTableMode(tableId: string | undefined): TableMode {
+export function getStoredTableMode(tableId: string | undefined): TableMode {
   if (!tableId)
     return 'virtual'
   try {

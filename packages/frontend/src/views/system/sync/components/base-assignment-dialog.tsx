@@ -1,16 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { client } from '~/api/client'
-import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
+import { Checkbox } from '~/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { ScrollArea } from '~/components/ui/scroll-area'
 import { useNodeStore } from '~/stores/node-store'
 
 interface BaseAssignmentDialogProps {
@@ -24,10 +27,41 @@ interface BaseResponse {
   longName?: string | null
 }
 
+/** Symmetric diff between two id sets. */
+function diff(
+  prev: ReadonlySet<string>,
+  next: ReadonlySet<string>,
+): { added: string[], removed: string[] } {
+  const added: string[] = []
+  const removed: string[] = []
+  for (const id of next) {
+    if (!prev.has(id))
+      added.push(id)
+  }
+  for (const id of prev) {
+    if (!next.has(id))
+      removed.push(id)
+  }
+  return { added, removed }
+}
+
 export function BaseAssignmentDialog({ open, onOpenChange }: BaseAssignmentDialogProps) {
   const { t } = useTranslation('system')
   const queryClient = useQueryClient()
   const assignedBaseIds = useNodeStore(s => s.status.assignedBaseIds)
+
+  // Local pending selection, kept separate from the store so the user can
+  // freely check/uncheck without hitting the API until they click Apply.
+  const [pending, setPending] = useState<Set<string>>(() => new Set(assignedBaseIds))
+  const [isApplying, setIsApplying] = useState(false)
+
+  // Re-seed the pending set every time the dialog opens so we reflect the
+  // current server-confirmed assignment, not a stale selection from a
+  // previous session of the dialog.
+  useEffect(() => {
+    if (open)
+      setPending(new Set(assignedBaseIds))
+  }, [open, assignedBaseIds])
 
   const basesQuery = useQuery({
     queryKey: ['catalog', 'bases'],
@@ -45,82 +79,124 @@ export function BaseAssignmentDialog({ open, onOpenChange }: BaseAssignmentDialo
     mutationFn: async (baseId: string) => {
       await client({ method: 'POST', url: '/node/bases', data: { baseId } })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['node', 'bases'] })
-    },
   })
 
   const removeMutation = useMutation({
     mutationFn: async (baseId: string) => {
       await client({ method: 'DELETE', url: `/node/bases/${baseId}` })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['node', 'bases'] })
-    },
   })
 
-  function handleToggle(baseId: string) {
-    const isAssigned = assignedBaseIds.includes(baseId)
-    if (isAssigned) {
-      removeMutation.mutate(baseId, {
-        onSuccess: () => {
-          useNodeStore.getState().setStatus({
-            assignedBaseIds: assignedBaseIds.filter(id => id !== baseId),
-          })
-        },
-        onError: () => toast.error('Failed to remove base assignment'),
-      })
+  const bases = basesQuery.data ?? []
+  const assignedSet = new Set(assignedBaseIds)
+  const { added, removed } = diff(assignedSet, pending)
+  const hasChanges = added.length > 0 || removed.length > 0
+
+  function togglePending(baseId: string, checked: boolean) {
+    setPending((prev) => {
+      const next = new Set(prev)
+      if (checked)
+        next.add(baseId)
+      else next.delete(baseId)
+      return next
+    })
+  }
+
+  async function handleApply() {
+    if (!hasChanges || isApplying)
+      return
+    setIsApplying(true)
+
+    const results = await Promise.allSettled([
+      ...added.map(id => addMutation.mutateAsync(id)),
+      ...removed.map(id => removeMutation.mutateAsync(id)),
+    ])
+
+    const failed = results.filter(r => r.status === 'rejected').length
+    const succeeded = results.length - failed
+
+    // Reflect the actual server state in the store by invalidating the bases
+    // query; use-node-status will apply the new list on refetch.
+    queryClient.invalidateQueries({ queryKey: ['node', 'bases'] })
+
+    setIsApplying(false)
+
+    if (failed === 0) {
+      toast.success(t('sync.bases.applySuccess', { count: succeeded }))
+      onOpenChange(false)
+    }
+    else if (succeeded === 0) {
+      toast.error(t('sync.bases.applyAllFailed'))
     }
     else {
-      addMutation.mutate(baseId, {
-        onSuccess: () => {
-          useNodeStore.getState().setStatus({
-            assignedBaseIds: [...assignedBaseIds, baseId],
-          })
-        },
-        onError: () => toast.error('Failed to add base assignment'),
-      })
+      toast.error(t('sync.bases.applyPartial', { failed, succeeded }))
     }
   }
 
-  const bases = basesQuery.data ?? []
+  function handleCancel() {
+    if (isApplying)
+      return
+    setPending(new Set(assignedBaseIds))
+    onOpenChange(false)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v)
+          handleCancel(); else onOpenChange(true)
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('sync.bases.title')}</DialogTitle>
           <DialogDescription>{t('sync.bases.description')}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-1.5">
-          {bases.length === 0 && (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              {t('sync.bases.noBases')}
-            </p>
-          )}
-          {bases.map((base) => {
-            const isAssigned = assignedBaseIds.includes(base.id)
-            return (
-              <Button
-                key={base.id}
-                variant="ghost"
-                className="w-full justify-between h-auto py-2.5"
-                onClick={() => handleToggle(base.id)}
-                disabled={addMutation.isPending || removeMutation.isPending}
-              >
-                <span className="text-left">
-                  <span className="block font-medium">{base.commonName}</span>
-                  {base.longName && (
-                    <span className="block text-xs text-muted-foreground">{base.longName}</span>
-                  )}
-                </span>
-                <Badge variant={isAssigned ? 'default' : 'outline'}>
-                  {isAssigned ? t('sync.bases.assigned') : t('sync.bases.notAssigned')}
-                </Badge>
-              </Button>
-            )
-          })}
-        </div>
+
+        <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+          <div className="flex flex-col gap-1">
+            {bases.length === 0 && !basesQuery.isLoading && (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                {t('sync.bases.noBases')}
+              </p>
+            )}
+            {bases.map((base) => {
+              const checked = pending.has(base.id)
+              const id = `base-assign-${base.id}`
+              return (
+                <label
+                  key={base.id}
+                  htmlFor={id}
+                  className="flex items-start gap-3 rounded-md py-2 px-2 hover:bg-accent/40 cursor-pointer"
+                >
+                  <Checkbox
+                    id={id}
+                    checked={checked}
+                    onCheckedChange={v => togglePending(base.id, v === true)}
+                    disabled={isApplying}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium break-words">{base.commonName}</div>
+                    {base.longName && (
+                      <div className="text-xs text-muted-foreground break-words">{base.longName}</div>
+                    )}
+                  </div>
+                </label>
+              )
+            })}
+          </div>
+        </ScrollArea>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleCancel} disabled={isApplying}>
+            {t('sync.bases.cancel')}
+          </Button>
+          <Button onClick={handleApply} disabled={!hasChanges || isApplying}>
+            {isApplying ? t('sync.bases.applying') : t('sync.bases.apply')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
