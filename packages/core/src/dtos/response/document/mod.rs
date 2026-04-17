@@ -61,7 +61,11 @@ pub use flat::{
   PhysicalTransferFlatRow,
   ReconciliationFlatRow,
 };
-pub use reconciliation::{InventoryAdjustmentResponse, InventoryReconciliationResponse};
+pub use reconciliation::{
+  InventoryAdjustmentResponse,
+  InventoryReconciliationCompositeResponse,
+  InventoryReconciliationResponse,
+};
 pub use transfers::{
   OwnershipTransferItemResponse,
   OwnershipTransferResponse,

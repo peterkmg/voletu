@@ -1,0 +1,26 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новое перемещение",
+      "edit": "Редактировать перемещение"
+    }
+  },
+  "section": {
+    "items": "Позиции"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "date": "Дата",
+    "contractorId": "Контрагент",
+    "startCargoOps": "Начало грузовых операций",
+    "endCargoOps": "Окончание грузовых операций",
+    "product": "Продукт",
+    "fromStorage": "Из ёмкости",
+    "toStorage": "В ёмкость",
+    "amount": "Количество"
+  },
+  "toast": {
+    "created": "Перемещение {{number}} создано",
+    "updated": "Перемещение {{number}} обновлено"
+  }
+}

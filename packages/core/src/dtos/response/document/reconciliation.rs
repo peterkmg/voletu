@@ -91,3 +91,40 @@ impl From<inventory_adjustment::Model> for InventoryAdjustmentResponse {
     }
   }
 }
+
+impl From<inventory_adjustment::ModelEx> for InventoryAdjustmentResponse {
+  fn from(model: inventory_adjustment::ModelEx) -> Self {
+    let storage_id_name = model.storage.as_ref().map(|s| s.common_name.clone());
+    let product_id_name = model.product.as_ref().map(|p| p.common_name.clone());
+    let mut response = Self::from(inventory_adjustment::Model::from(model));
+    response.storage_id_name = storage_id_name;
+    response.product_id_name = product_id_name;
+    response
+  }
+}
+
+#[response_dto]
+pub struct InventoryReconciliationCompositeResponse {
+  #[serde(flatten)]
+  pub document: InventoryReconciliationResponse,
+  pub adjustments: Vec<InventoryAdjustmentResponse>,
+}
+
+impl TryFrom<inventory_reconciliation::ModelEx> for InventoryReconciliationCompositeResponse {
+  type Error = ApiError;
+
+  fn try_from(model: inventory_reconciliation::ModelEx) -> Result<Self, Self::Error> {
+    let adjustments = model
+      .adjustments
+      .iter()
+      .map(|adj| InventoryAdjustmentResponse::from(adj.clone()))
+      .collect();
+
+    let document = InventoryReconciliationResponse::from(model);
+
+    Ok(Self {
+      document,
+      adjustments,
+    })
+  }
+}

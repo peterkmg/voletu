@@ -3,20 +3,16 @@ import type { TFunction } from 'i18next'
 import type { OwnershipTransferFlatRow, OwnershipTransferItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { ownershipDocumentCreate, ownershipDocumentExecute, ownershipDocumentHardDelete, ownershipDocumentRevert, ownershipDocumentSoftDelete, ownershipDocumentUpdate } from '~/generated/client'
+import { ownershipDocumentExecute, ownershipDocumentHardDelete, ownershipDocumentRevert, ownershipDocumentSoftDelete } from '~/generated/client'
 import { useOwnershipTransferCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferCompositeGet'
 import { flowOwnershipTransferFlatQueryQueryKey, useFlowOwnershipTransferFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowOwnershipTransferFlatQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { OwnershipTransferMutateDialog } from './ownership-transfer/ownership-transfer-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -78,12 +74,6 @@ function useOwnershipTransferText() {
   }
 }
 
-const formSchema = z.object({
-  date: z.string().min(1),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
 interface OwnershipTransferDetailData {
   id: string
   status: string
@@ -92,41 +82,12 @@ interface OwnershipTransferDetailData {
   executedAt?: string | null
 }
 
-function MutateDialog({ open, onOpenChange, currentRow, onCreated }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: OwnershipTransferFlatRow | null, onCreated?: (id: string) => void }) {
-  const { t } = useTranslation(['common'])
-
-  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    currentRow,
-    schema: formSchema,
-    defaultValues: { date: '' },
-    mapRowToForm: row => ({ date: row.date?.split('T')[0] ?? '' }),
-    createFn: ownershipDocumentCreate,
-    updateFn: ownershipDocumentUpdate,
-    queryKey: flowOwnershipTransferFlatQueryQueryKey(),
-    entityLabel: t('common:nav.ownershipTransfer'),
-    formId: 'ownership-transfer-form',
-    onCreated,
-  })
-
-  return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={isUpdate ? t('common:actions.edit') : t('common:actions.create')} description={t('common:nav.ownershipTransfer')} formId="ownership-transfer-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="ownership-transfer-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
-        </form>
-      </Form>
-    </FormDialog>
-  )
-}
-
 const ownershipTransferViewDefinition = defineDocumentViews<OwnershipTransferFlatRow, OwnershipTransferDetailData>({
   displayName: 'OwnershipTransfer',
   useText: useOwnershipTransferText,
   useQuery: useFlowOwnershipTransferFlatQuery,
   Table: OwnershipTransferTable,
-  MutateDialog,
+  MutateDialog: OwnershipTransferMutateDialog,
   deleteDialog: {
     hardDeleteFn: ownershipDocumentHardDelete,
     softDeleteFn: ownershipDocumentSoftDelete,

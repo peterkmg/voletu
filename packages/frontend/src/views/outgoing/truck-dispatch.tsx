@@ -1,24 +1,18 @@
 import type { ColumnDef, Row } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { DispatchItemResponse, TruckDispatchPipelineResponse } from '~/generated/types'
+import type { DispatchFlatRow, DispatchItemResponse, TruckDispatchPipelineResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentRevert } from '~/generated/client'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { dispatchDocumentExecute, dispatchDocumentRevert } from '~/generated/client'
 import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { truckDispatchPipelineQueryQueryKey, useTruckDispatchPipelineQuery } from '~/generated/hooks/FlowsHooks/useTruckDispatchPipelineQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { TruckDispatchMutateDialog } from './truck-dispatch/truck-dispatch-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -79,14 +73,6 @@ function useTruckDispatchText() {
   }
 }
 
-const dispatchSchema = z.object({
-  documentNumber: z.string().min(1),
-  date: z.string().min(1),
-  contractorId: z.string().uuid(),
-})
-
-type DispatchFormValues = z.infer<typeof dispatchSchema>
-
 interface TruckDispatchDetailData {
   id: string
   documentNumber: string
@@ -98,32 +84,31 @@ interface TruckDispatchDetailData {
   executedAt?: string | null
 }
 
-function DispatchMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: TruckDispatchPipelineResponse | null }) {
-  const { t } = useTranslation(['common'])
-  const companiesQuery = useCatalogCompanyList()
-
-  const { form, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    schema: dispatchSchema,
-    defaultValues: { documentNumber: '', date: '', contractorId: '' },
-    transformPayload: v => ({ ...v, dispatchMethod: 'TRUCK' as const, dispatchPurpose: 'EXTERNAL' as const }),
-    createFn: dispatchDocumentCreate,
-    queryKey: truckDispatchPipelineQueryQueryKey(),
-    entityLabel: t('common:nav.truckDispatch'),
-    formId: 'truck-dispatch-form',
-  })
-
+/**
+ * Adapter that lets the shared `defineDocumentViews` invoke the composite
+ * truck-dispatch dialog. The pipeline view ships rows of
+ * `TruckDispatchPipelineResponse`, but the dialog is keyed on the document
+ * id (`row.id` here) and does not need the full pipeline payload, so we
+ * project to the minimal `DispatchFlatRow` shape the dialog expects.
+ */
+function TruckDispatchMutateDialogAdapter({
+  open,
+  onOpenChange,
+  currentRow,
+}: {
+  open: boolean
+  onOpenChange: (o: boolean) => void
+  currentRow?: TruckDispatchPipelineResponse | null
+}) {
+  const adaptedRow: DispatchFlatRow | null = currentRow
+    ? ({ documentId: currentRow.id } as unknown as DispatchFlatRow)
+    : null
   return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description={t('common:document.truckDispatch')} formId="truck-dispatch-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="truck-dispatch-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<DispatchFormValues> name="documentNumber" label={t('common:table.documentNumber')} />
-          <TextField<DispatchFormValues> name="date" label={t('common:table.date')} type="datetime-local" />
-          <EntityPickerField<DispatchFormValues> name="contractorId" label={t('common:table.contractor')} queryResult={companiesQuery} />
-        </form>
-      </Form>
-    </FormDialog>
+    <TruckDispatchMutateDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      currentRow={adaptedRow}
+    />
   )
 }
 
@@ -132,7 +117,7 @@ const truckDispatchViewDefinition = defineDocumentViews<TruckDispatchPipelineRes
   useText: useTruckDispatchText,
   useQuery: useTruckDispatchPipelineQuery,
   Table: TruckDispatchTable,
-  MutateDialog: DispatchMutateDialog,
+  MutateDialog: TruckDispatchMutateDialogAdapter,
   supportsUpdate: false,
   documentActions: {
     executeFn: dispatchDocumentExecute,

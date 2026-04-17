@@ -23,7 +23,10 @@ pub fn acceptance_routes(state: Arc<ApiState>) -> OpenApiRouter {
     .routes(routes!(document::acceptance_document_hard_delete))
     .routes(routes!(document::acceptance_document_execute))
     .routes(routes!(document::acceptance_document_revert))
-    .routes(routes!(composite::acceptance_composite_get))
+    .routes(routes!(
+      composite::acceptance_composite_get,
+      composite::acceptance_composite_update
+    ))
     .routes(routes!(composite::acceptance_composite_create))
     .routes(routes!(composite::acceptance_composite_create_and_execute))
     // Standalone item CRUD disabled — items are managed through composite endpoints only.

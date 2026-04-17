@@ -1,6 +1,11 @@
 use super::*;
 use crate::{
-  dtos::{EmbedParams, PaginationParams, PhysicalTransferDocumentQueryParams},
+  dtos::{
+    EmbedParams,
+    PaginationParams,
+    PhysicalTransferDocumentQueryParams,
+    UpdatePhysicalTransferCompositeRequest,
+  },
   endpoints::paths,
   services::document::specs::PhysicalTransferQuerySpec,
 };
@@ -219,10 +224,42 @@ async fn physical_transfer_revert(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  put,
+  tag = "Document - Operations",
+  operation_id = "physical_transfer_composite_update",
+  summary = "Update physical transfer composite",
+  path = paths::operations::PHYSICAL_TRANSFERS_COMPOSITE_BY_ID,
+  params(("id" = Uuid, Path)),
+  request_body = UpdatePhysicalTransferCompositeRequest,
+  responses(
+    (status = 200, body = ApiResponse<PhysicalTransferResponse>),
+    (status = 400),
+    (status = 404)
+  )
+)]
+#[axum::debug_handler]
+async fn physical_transfer_composite_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<UpdatePhysicalTransferCompositeRequest>>,
+) -> ApiResult<PhysicalTransferResponse> {
+  Ok(ApiResponse::success(
+    state
+      .svc
+      .document
+      .physical_transfer_composite_update(id, &req)
+      .await?,
+  ))
+}
+
 pub(super) fn transfer_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(physical_transfer_list, physical_transfer_create))
-    .routes(routes!(physical_transfer_composite_get))
+    .routes(routes!(
+      physical_transfer_composite_get,
+      physical_transfer_composite_update
+    ))
     .routes(routes!(physical_transfer_query))
     .routes(routes!(physical_transfer_create_and_execute))
     .routes(routes!(physical_transfer_execute))

@@ -1,0 +1,66 @@
+{
+  "save": "Save",
+  "saveAndNew": "Save & New",
+  "saveAndAdd": "Save & Add another",
+  "saveAndAddHint": "Ctrl/Cmd + Enter",
+  "saveRow": "Save row",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "editRow": "Edit row",
+  "deleteRow": "Delete row",
+  "confirmDiscard": "You have unsaved changes. Discard them?",
+  "confirmDiscardTitle": "Discard unsaved changes?",
+  "discard": "Discard",
+  "keepEditing": "Keep editing",
+  "itemsTable": {
+    "add": "Add item",
+    "actions": "Actions",
+    "empty": "No items yet — click Add item to start"
+  },
+  "validation": {
+    "invalid": "Invalid value",
+    "invalidType": {
+      "string": "Must be text",
+      "number": "Must be a number",
+      "date": "Must be a date"
+    },
+    "tooSmall": {
+      "string": "Required",
+      "number": "Too small",
+      "array": "At least one is required"
+    },
+    "tooBig": {
+      "string": "Too long",
+      "number": "Too large",
+      "array": "Too many"
+    },
+    "invalidString": {
+      "uuid": "Invalid identifier",
+      "email": "Invalid email",
+      "datetime": "Invalid date/time"
+    },
+    "invalidEnum": "Invalid choice",
+    "positive": "Must be greater than 0",
+    "min_length": "Must be at least 1 character",
+    "max_length": "Too long",
+    "length": "Invalid length",
+    "too_small": "Too small",
+    "too_big": "Too large",
+    "uuid": "Invalid identifier",
+    "url": "Invalid URL",
+    "email": "Invalid email",
+    "required": "Required",
+    "must_match": "Must match",
+    "regex": "Invalid format",
+    "itemsRequired": "Add at least one item",
+    "unknown": "Validation failed"
+  },
+  "error": {
+    "serverUnreachable": "Could not reach the server. Please try again."
+  },
+  "picker": {
+    "placeholder": "Select…",
+    "noResults": "No matches",
+    "loading": "Loading…"
+  }
+}

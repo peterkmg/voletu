@@ -1,0 +1,30 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Reconciliation",
+      "edit": "Edit Reconciliation"
+    }
+  },
+  "section": {
+    "adjustments": "Adjustments"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "date": "Date",
+    "contractorId": "Contractor",
+    "warehouseId": "Warehouse",
+    "storage": "Storage",
+    "product": "Product",
+    "adjustmentType": "Adjustment type",
+    "amount": "Amount",
+    "reason": "Reason"
+  },
+  "adjustmentType": {
+    "SURPLUS": "Surplus",
+    "LOSS": "Loss"
+  },
+  "toast": {
+    "created": "Reconciliation {{number}} created",
+    "updated": "Reconciliation {{number}} updated"
+  }
+}

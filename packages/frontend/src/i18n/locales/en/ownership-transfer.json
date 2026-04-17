@@ -1,0 +1,24 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Ownership Transfer",
+      "edit": "Edit Ownership Transfer"
+    }
+  },
+  "section": {
+    "items": "Items"
+  },
+  "field": {
+    "date": "Date",
+    "contractorId": "Contractor",
+    "storage": "Storage",
+    "product": "Product",
+    "fromContractor": "From contractor",
+    "toContractor": "To contractor",
+    "amount": "Amount"
+  },
+  "toast": {
+    "created": "Ownership transfer created",
+    "updated": "Ownership transfer updated"
+  }
+}

@@ -3,22 +3,16 @@ import type { TFunction } from 'i18next'
 import type { AcceptanceFlatRow, AcceptanceItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { acceptanceDocumentCreate, acceptanceDocumentExecute, acceptanceDocumentHardDelete, acceptanceDocumentRevert, acceptanceDocumentSoftDelete, acceptanceDocumentUpdate } from '~/generated/client'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { acceptanceDocumentExecute, acceptanceDocumentHardDelete, acceptanceDocumentRevert, acceptanceDocumentSoftDelete } from '~/generated/client'
 import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
 import { flowAcceptanceFlatQueryQueryKey, useFlowAcceptanceFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowAcceptanceFlatQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { AcceptanceMutateDialog } from './acceptance/acceptance-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -81,15 +75,6 @@ function useExternalAcceptanceText() {
   }
 }
 
-const formSchema = z.object({
-  documentNumber: z.string().min(1),
-  dateAccepted: z.string().min(1),
-  contractorId: z.string().uuid('Contractor is required'),
-  sourceEntity: z.string().nullable().optional(),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
 interface ExternalAcceptanceDetailData {
   id: string
   documentNumber: string
@@ -101,50 +86,12 @@ interface ExternalAcceptanceDetailData {
   executedAt?: string | null
 }
 
-function MutateDialog({ open, onOpenChange, currentRow }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: AcceptanceFlatRow | null }) {
-  const { t } = useTranslation(['common'])
-  const companiesQuery = useCatalogCompanyList()
-
-  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    currentRow,
-    schema: formSchema,
-    defaultValues: { documentNumber: '', dateAccepted: '', contractorId: '', sourceEntity: '' },
-    mapRowToForm: row => ({
-      documentNumber: row.documentNumber,
-      dateAccepted: row.dateAccepted?.split('T')[0] ?? '',
-      contractorId: row.documentId ?? '',
-      sourceEntity: row.sourceEntity ?? '',
-    }),
-    transformPayload: v => ({ ...v, arrivalType: 'EXTERNAL' as const, sourceEntity: v.sourceEntity || null }),
-    createFn: acceptanceDocumentCreate,
-    updateFn: acceptanceDocumentUpdate,
-    queryKey: flowAcceptanceFlatQueryQueryKey(),
-    entityLabel: t('common:nav.externalAcceptance'),
-    formId: 'external-acceptance-form',
-  })
-
-  return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={isUpdate ? t('common:actions.edit') : t('common:actions.create')} description={t('common:nav.externalAcceptance')} formId="external-acceptance-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="external-acceptance-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
-          <TextField<FormValues> name="dateAccepted" label={t('common:table.date')} type="datetime-local" />
-          <EntityPickerField<FormValues> name="contractorId" label={t('common:table.contractor')} queryResult={companiesQuery} />
-          <TextField<FormValues> name="sourceEntity" label={t('common:table.source')} nullable />
-        </form>
-      </Form>
-    </FormDialog>
-  )
-}
-
 const externalAcceptanceViewDefinition = defineDocumentViews<AcceptanceFlatRow, ExternalAcceptanceDetailData>({
   displayName: 'ExternalAcceptance',
   useText: useExternalAcceptanceText,
   useQuery: useFlowAcceptanceFlatQuery,
   Table: ExternalAcceptanceTable,
-  MutateDialog,
+  MutateDialog: AcceptanceMutateDialog,
   deleteDialog: {
     hardDeleteFn: acceptanceDocumentHardDelete,
     softDeleteFn: acceptanceDocumentSoftDelete,

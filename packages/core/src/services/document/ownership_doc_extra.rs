@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sea_orm::{
   ColumnTrait,
   Condition,
@@ -12,6 +14,7 @@ use super::types::OwnershipTransferFlatRowRef;
 use crate::{
   api::ApiError,
   dtos::{
+    self,
     response::document::OwnershipTransferFlatRow,
     CreateOwnershipTransferRequest,
     OwnershipTransferResponse,
@@ -93,6 +96,101 @@ impl DocumentService {
         .await?
         .ok_or_else(|| {
           ApiError::NotFound(format!("Ownership transfer '{}' not found", transfer_id))
+        })?,
+    )
+  }
+
+  /// Composite update: applies a header partial update plus a full diff on the items list.
+  /// Items with `id: Some(uuid)` matching an existing row are updated.
+  /// Items with `id: None` are inserted.
+  /// Existing items not present in the request are hard-deleted.
+  pub async fn ownership_transfer_composite_update(
+    &self,
+    ownership_transfer_id: Uuid,
+    req: &dtos::UpdateOwnershipTransferCompositeRequest,
+  ) -> Result<OwnershipTransferResponse, ApiError> {
+    let txn = self.db.begin().await?;
+    let res = self
+      .ownership_transfer_composite_update_no_tx(&txn, ownership_transfer_id, req)
+      .await?;
+    txn.commit().await?;
+    Ok(res)
+  }
+
+  pub(crate) async fn ownership_transfer_composite_update_no_tx(
+    &self,
+    conn: &sea_orm::DatabaseTransaction,
+    ownership_transfer_id: Uuid,
+    req: &dtos::UpdateOwnershipTransferCompositeRequest,
+  ) -> Result<OwnershipTransferResponse, ApiError> {
+    // 1. Header update via the macro-generated per-row updater.
+    //    This enforces draft-only mutation, applies set_if_some semantics,
+    //    and registers an audit log row.
+    self
+      .ownership_transfer_update_no_tx(conn, ownership_transfer_id, &req.ownership_transfer)
+      .await?;
+
+    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
+    //    database. The HashSet doubles as the dedup guard.
+    let mut kept_ids: HashSet<Uuid> = HashSet::new();
+    for item in &req.items {
+      if let Some(item_id) = item.id {
+        if !kept_ids.insert(item_id) {
+          return Err(ApiError::BadRequest(format!(
+            "duplicate item id in request: {}",
+            item_id
+          )));
+        }
+      }
+    }
+
+    // 3. Persist the items as a graph save. `HasManyModel::Replace(_)` deletes
+    //    every existing related row that is not present in the new set.
+    let items: Vec<ownership_transfer_item::ActiveModelEx> = req
+      .items
+      .iter()
+      .map(|item| ownership_transfer_item::ActiveModelEx {
+        id: match item.id {
+          Some(id) => sea_orm::ActiveValue::Unchanged(id),
+          None => sea_orm::ActiveValue::NotSet,
+        },
+        storage_id: sea_orm::ActiveValue::Set(item.storage_id),
+        product_id: sea_orm::ActiveValue::Set(item.product_id),
+        from_contractor_id: sea_orm::ActiveValue::Set(item.from_contractor_id),
+        to_contractor_id: sea_orm::ActiveValue::Set(item.to_contractor_id),
+        amount: sea_orm::ActiveValue::Set(item.amount),
+        ..Default::default()
+      })
+      .collect();
+
+    ownership_transfer::ActiveModelEx {
+      id: sea_orm::ActiveValue::Unchanged(ownership_transfer_id),
+      items: sea_orm::HasManyModel::Replace(items),
+      ..Default::default()
+    }
+    .save(conn)
+    .await?;
+
+    // 4. Re-derive document routing tags via the existing utility.
+    self
+      .audit
+      .backfill_document_routing::<ownership_transfer::Entity>(conn, ownership_transfer_id)
+      .await?;
+
+    // 5. Reload the full composite using the same eager-loading shape as on create.
+    OwnershipTransferResponse::try_from(
+      ownership_transfer::Entity::load()
+        .filter_by_id(ownership_transfer_id)
+        .filter(ownership_transfer::Column::DeletedAt.is_null())
+        .with((ownership_transfer_item::Entity, product::Entity))
+        .with((ownership_transfer_item::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!(
+            "Ownership transfer '{}' not found",
+            ownership_transfer_id
+          ))
         })?,
     )
   }

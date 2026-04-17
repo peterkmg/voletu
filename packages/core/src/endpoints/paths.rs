@@ -177,6 +177,8 @@ pub mod operations {
   pub const RECONCILIATION_ADJUSTMENTS_HARD_DELETE_BY_ID: &str =
     "/reconciliations/adjustments/{id}/hard";
   pub const RECONCILIATION_ADJUSTMENTS_SAVE: &str = "/reconciliations/adjustments/save";
+  pub const RECONCILIATIONS_COMPOSITE_BY_ID: &str = "/reconciliations/composite/{id}";
+  pub const RECONCILIATIONS_COMPOSITE_SAVE: &str = "/reconciliations/composite/save";
 }
 
 pub mod transport {

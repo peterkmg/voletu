@@ -143,10 +143,7 @@ export function BaseAssignmentDialog({ open, onOpenChange }: BaseAssignmentDialo
   return (
     <Dialog
       open={open}
-      onOpenChange={(v) => {
-        if (!v)
-          handleCancel(); else onOpenChange(true)
-      }}
+      onOpenChange={v => !v ? handleCancel() : onOpenChange(true)}
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

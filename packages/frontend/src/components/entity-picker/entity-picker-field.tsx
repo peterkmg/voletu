@@ -35,6 +35,20 @@ interface EntityPickerFieldProps<TForm extends FieldValues> {
     onOpenChange: (open: boolean) => void
     onCreated?: (id: string) => void
   }>
+  /**
+   * Optional client-side filter predicate applied to the raw data rows
+   * returned by `queryResult` before they are mapped into picker items.
+   * Use this to narrow the picker contents per-document (e.g. only active
+   * companies, only contractors of a given role) without wiring a separate
+   * data hook. The predicate runs against the raw row shape returned by
+   * the underlying API client.
+   *
+   * NOTE: server-side filtering still belongs at the call site by passing
+   * query parameters into the data hook itself (`useCatalog*List(params)`).
+   * This prop is the lightweight escape hatch for the common case of
+   * narrowing an already-fetched list.
+   */
+  filter?: (item: Record<string, unknown>) => boolean
 }
 
 export function EntityPickerField<TForm extends FieldValues>({
@@ -48,6 +62,7 @@ export function EntityPickerField<TForm extends FieldValues>({
   dialogTitle,
   allowCreate = false,
   createDialog: CreateDialog,
+  filter,
 }: EntityPickerFieldProps<TForm>) {
   const form = useFormContext<TForm>()
   const [browseOpen, setBrowseOpen] = useState(false)
@@ -55,12 +70,13 @@ export function EntityPickerField<TForm extends FieldValues>({
 
   const items: EntityItem[] = useMemo(() => {
     const data = queryResult.data?.data ?? []
-    return data.map(item => ({
+    const filtered = filter ? data.filter(filter) : data
+    return filtered.map(item => ({
       id: item.id as string,
       label: (item[displayField] as string) ?? (item.id as string),
       secondary: secondaryField ? (item[secondaryField] as string) : undefined,
     }))
-  }, [queryResult.data, displayField, secondaryField])
+  }, [queryResult.data, displayField, secondaryField, filter])
 
   const handleCreated = useCallback(
     (id: string) => {

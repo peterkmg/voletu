@@ -81,10 +81,41 @@ async fn dispatch_composite_create_and_execute(
   ))
 }
 
+#[utoipa::path(
+  put,
+  tag = "Document - Dispatch",
+  operation_id = "dispatch_composite_update",
+  summary = "Update dispatch composite",
+  description = "Updates a dispatch document aggregate. Header fields apply set_if_some semantics; the items list is treated as the full new state and is diff-applied (insert / update / delete). The optional storage_measurements list, when provided, is also diff-applied; when omitted, existing measurements are left untouched.",
+  path = paths::dispatch::COMPOSITE_BY_ID,
+  params(("id" = Uuid, Path)),
+  request_body = crate::dtos::UpdateDispatchCompositeRequest,
+  responses(
+    (status = 200, body = ApiResponse<DispatchCompositeResponse>),
+    (status = 400),
+    (status = 404)
+  )
+)]
+#[axum::debug_handler]
+async fn dispatch_composite_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<crate::dtos::UpdateDispatchCompositeRequest>>,
+) -> ApiResult<DispatchCompositeResponse> {
+  Ok(ApiResponse::success(
+    state
+      .svc
+      .document
+      .dispatch_composite_update(id, &req)
+      .await?,
+  ))
+}
+
 pub(super) fn composite_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(dispatch_composite_get))
     .routes(routes!(dispatch_composite_create))
     .routes(routes!(dispatch_composite_create_and_execute))
+    .routes(routes!(dispatch_composite_update))
     .with_state(state)
 }

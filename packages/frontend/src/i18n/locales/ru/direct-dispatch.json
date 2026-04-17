@@ -1,0 +1,34 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новый прямой отпуск",
+      "edit": "Редактировать прямой отпуск"
+    }
+  },
+  "section": {
+    "items": "Позиции",
+    "storageMeasurements": "Замеры резервуаров"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "date": "Дата",
+    "contractorId": "Контрагент",
+    "destinationBaseId": "База назначения",
+    "product": "Продукт",
+    "storage": "Резервуар",
+    "dispatchedAmount": "Количество",
+    "measurementStorage": "Резервуар",
+    "beforeHeight": "До: высота",
+    "beforeVolume": "До: объём",
+    "beforeDensity": "До: плотность",
+    "beforeMass": "До: масса",
+    "afterHeight": "После: высота",
+    "afterVolume": "После: объём",
+    "afterDensity": "После: плотность",
+    "afterMass": "После: масса"
+  },
+  "toast": {
+    "created": "Прямой отпуск создан",
+    "updated": "Прямой отпуск обновлён"
+  }
+}

@@ -98,3 +98,34 @@
     height: 0;
   }
 }
+
+/*
+ * Print stylesheet for document detail pages.
+ * Hides app chrome (sidebar, dialogs, toasts) so the document content
+ * prints cleanly. The detail page itself adds `print:hidden` / `print:p-0`
+ * Tailwind utilities to its sticky header and content padding.
+ */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    min-height: 0 !important;
+  }
+
+  [data-slot='sidebar-container'],
+  [data-slot='sidebar-wrapper'] > [data-sidebar='sidebar'],
+  aside[data-sidebar='sidebar'],
+  [data-slot='composite-form-dialog'],
+  [data-slot='dialog-overlay'],
+  [data-slot='dialog-content'],
+  [data-slot='toaster'],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Detail page resets when nested in a fixed-shell layout */
+  [data-slot='document-detail-page'] {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}

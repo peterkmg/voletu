@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sea_orm::{
   entity::prelude::*,
   ColumnTrait,
@@ -119,6 +121,120 @@ impl DocumentService {
       .one(conn)
       .await?
       .ok_or_else(|| ApiError::NotFound(format!("Truck waybill '{}' not found", waybill_id)))?;
+
+    let items: Vec<dtos::TruckWaybillItemResponse> = doc
+      .items
+      .iter()
+      .map(|item| {
+        dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone()))
+      })
+      .collect();
+    let weight_docs: Vec<dtos::TruckWeightDocResponse> = doc
+      .weight_docs
+      .iter()
+      .cloned()
+      .map(dtos::TruckWeightDocResponse::from)
+      .collect();
+
+    let waybill = dtos::TruckWaybillResponse::from(truck_waybill::Model::from(doc));
+
+    Ok(dtos::TruckWaybillCompositeResponse {
+      waybill,
+      items: if items.is_empty() { None } else { Some(items) },
+      weight_docs: if weight_docs.is_empty() {
+        None
+      } else {
+        Some(weight_docs)
+      },
+    })
+  }
+
+  /// Composite update: applies a header partial update plus a full diff on the items list.
+  /// Items with `id: Some(uuid)` matching an existing row are updated.
+  /// Items with `id: None` are inserted.
+  /// Existing items not present in the request are hard-deleted.
+  pub async fn truck_waybill_composite_update(
+    &self,
+    truck_waybill_id: Uuid,
+    req: &dtos::UpdateTruckWaybillCompositeRequest,
+  ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
+    let txn = self.db.begin().await?;
+    let res = self
+      .truck_waybill_composite_update_no_tx(&txn, truck_waybill_id, req)
+      .await?;
+    txn.commit().await?;
+    Ok(res)
+  }
+
+  pub(crate) async fn truck_waybill_composite_update_no_tx(
+    &self,
+    conn: &sea_orm::DatabaseTransaction,
+    truck_waybill_id: Uuid,
+    req: &dtos::UpdateTruckWaybillCompositeRequest,
+  ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
+    // 1. Header update via the macro-generated per-row updater.
+    //    Applies set_if_some semantics and registers an audit log row.
+    self
+      .truck_waybill_update_no_tx(conn, truck_waybill_id, &req.waybill)
+      .await?;
+
+    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
+    //    database. The HashSet doubles as the dedup guard: if the same id
+    //    appears twice we bail out before any items are persisted, so the
+    //    transaction stays clean.
+    let mut kept_ids: HashSet<Uuid> = HashSet::new();
+    for item in &req.items {
+      if let Some(item_id) = item.id {
+        if !kept_ids.insert(item_id) {
+          return Err(ApiError::BadRequest(format!(
+            "duplicate item id in request: {}",
+            item_id
+          )));
+        }
+      }
+    }
+
+    // 3. Persist the items as a graph save on the parent `ActiveModelEx`.
+    //    Items with `id: Some(uuid)` map to `Unchanged(uuid)` -> UPDATE,
+    //    items with `id: None` keep `NotSet` -> INSERT.
+    //    `truck_waybill_id` is propagated automatically by SeaORM via
+    //    `set_parent_key`. Wrapping in `HasManyModel::Replace(_)` (instead of
+    //    the `Vec::into()` shorthand which produces `Append`) tells SeaORM to
+    //    delete every existing related row missing from the new set.
+    let items: Vec<truck_waybill_item::ActiveModelEx> = req
+      .items
+      .iter()
+      .map(|item| truck_waybill_item::ActiveModelEx {
+        id: match item.id {
+          Some(id) => sea_orm::ActiveValue::Unchanged(id),
+          None => sea_orm::ActiveValue::NotSet,
+        },
+        product_id: sea_orm::ActiveValue::Set(item.product_id),
+        declared_amount: sea_orm::ActiveValue::Set(item.declared_amount),
+        ..Default::default()
+      })
+      .collect();
+
+    truck_waybill::ActiveModelEx {
+      id: sea_orm::ActiveValue::Unchanged(truck_waybill_id),
+      items: sea_orm::HasManyModel::Replace(items),
+      ..Default::default()
+    }
+    .save(conn)
+    .await?;
+
+    // 4. Reload the full composite using the same eager-loading shape as on create.
+    let doc = truck_waybill::Entity::load()
+      .filter_by_id(truck_waybill_id)
+      .filter(truck_waybill::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with((truck_waybill_item::Entity, product::Entity))
+      .with(truck_weight_doc::Entity)
+      .one(conn)
+      .await?
+      .ok_or_else(|| {
+        ApiError::NotFound(format!("Truck waybill '{}' not found", truck_waybill_id))
+      })?;
 
     let items: Vec<dtos::TruckWaybillItemResponse> = doc
       .items

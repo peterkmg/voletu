@@ -1,0 +1,34 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новая ЖД накладная",
+      "edit": "Редактировать ЖД накладную"
+    }
+  },
+  "section": {
+    "manifests": "Вагонные манифесты",
+    "measurements": "Замеры",
+    "weights": "Взвешивания"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "date": "Дата",
+    "senderId": "Отправитель",
+    "baseId": "База",
+    "product": "Продукт",
+    "wagonNumber": "Номер вагона",
+    "declaredVolume": "Заявленный объём",
+    "declaredDensity": "Заявленная плотность",
+    "declaredMass": "Заявленная масса",
+    "measuredHeight": "Замеренная высота",
+    "labDensity": "Плотность (лаборатория)",
+    "calculatedMass": "Расчётная масса",
+    "grossWeight": "Брутто",
+    "tareWeight": "Тара",
+    "netProductWeight": "Нетто продукта"
+  },
+  "toast": {
+    "created": "ЖД накладная создана",
+    "updated": "ЖД накладная обновлена"
+  }
+}

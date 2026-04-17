@@ -1,0 +1,147 @@
+/**
+ * Per-document mutate dialog for Ownership Transfer (create + edit).
+ *
+ * Composes the shared `<CompositeFormDialog>` with the ownership-transfer
+ * header spec / items table coming from `ownership-transfer-form-config.tsx`,
+ * and wires the Kubb-generated composite create and update mutations.
+ *
+ * Edit-mode `defaultValues` are pre-fetched via `useOwnershipTransferCompositeGet`
+ * (gated on `open && isUpdate`). While the fetch is in flight the form
+ * renders with `emptyOwnershipTransferCreate`; once data arrives, the dialog
+ * is re-mounted with the real values by keying `<CompositeFormDialog>` on
+ * the loaded document id.
+ */
+
+import type { OwnershipTransferCreate, OwnershipTransferItem } from './ownership-transfer-form-config'
+import type { OwnershipTransferFlatRow, OwnershipTransferItemResponse } from '~/generated/types'
+import type { OwnershipTransferCompositeUpdateMutationRequest } from '~/generated/types/DocumentOperationsTypes/OwnershipTransferCompositeUpdate'
+import { useQueryClient } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import {
+  CompositeFormDialog,
+  DocHeaderSection,
+  DocItemsTable,
+} from '~/components/composite-form'
+import { useOwnershipTransferCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferCompositeGet'
+import { useOwnershipTransferCompositeUpdate } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferCompositeUpdate'
+import { useOwnershipTransferCreate } from '~/generated/hooks/DocumentOperationsHooks/useOwnershipTransferCreate'
+import { flowOwnershipTransferFlatQueryQueryKey } from '~/generated/hooks/FlowsHooks/useFlowOwnershipTransferFlatQuery'
+import {
+  emptyOwnershipTransferCreate,
+  emptyOwnershipTransferItem,
+
+  ownershipTransferCreateSchema,
+  ownershipTransferHeaderSpec,
+
+  ownershipTransferItemColumns,
+  ownershipTransferItemFields,
+  ownershipTransferItemSchema,
+  ownershipTransferUpdateSchema,
+} from './ownership-transfer-form-config'
+
+interface OwnershipTransferMutateDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /**
+   * Row currently selected in the flat list. `documentId` identifies the
+   * ownership transfer; `id` is item-scoped and must not be used for the
+   * update. When `null`, the dialog opens in create mode.
+   */
+  currentRow?: OwnershipTransferFlatRow | null
+}
+
+/** Drop server-only fields and keep only the shape the composite request expects. */
+function toItemRequest(item: OwnershipTransferItemResponse): OwnershipTransferItem {
+  return {
+    storageId: item.storageId,
+    productId: item.productId,
+    fromContractorId: item.fromContractorId,
+    toContractorId: item.toContractorId,
+    amount: item.amount,
+  }
+}
+
+export function OwnershipTransferMutateDialog({
+  open,
+  onOpenChange,
+  currentRow,
+}: OwnershipTransferMutateDialogProps) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const createMutation = useOwnershipTransferCreate()
+  const updateMutation = useOwnershipTransferCompositeUpdate()
+
+  const isUpdate = currentRow != null
+  const documentId = currentRow?.documentId ?? null
+
+  // Pre-fetch the full composite only when editing.
+  const composite = useOwnershipTransferCompositeGet(documentId ?? '', undefined, {
+    query: { enabled: Boolean(open && documentId) },
+  })
+  const loaded = composite.data?.data
+
+  const defaultValues = useMemo<OwnershipTransferCreate>(() => {
+    if (!isUpdate || !loaded)
+      return emptyOwnershipTransferCreate
+    return {
+      date: loaded.date,
+      items: (loaded.items ?? []).map(toItemRequest),
+    }
+  }, [isUpdate, loaded])
+
+  const mutationFn = useCallback(
+    async (
+      data: OwnershipTransferCreate,
+    ): Promise<unknown> => {
+      if (isUpdate && documentId) {
+        return updateMutation.mutateAsync({
+          id: documentId,
+          data: data as unknown as OwnershipTransferCompositeUpdateMutationRequest,
+        })
+      }
+      return createMutation.mutateAsync({ data })
+    },
+    [isUpdate, documentId, createMutation, updateMutation],
+  )
+
+  const handleSuccess = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: flowOwnershipTransferFlatQueryQueryKey() })
+    toast.success(
+      t(isUpdate ? 'ownership-transfer:toast.updated' : 'ownership-transfer:toast.created'),
+    )
+  }, [isUpdate, queryClient, t])
+
+  // `key` forces a fresh mount once the edit-mode fetch resolves so that
+  // defaultValues are applied via react-hook-form's initialization path.
+  const dialogKey = isUpdate ? (loaded?.id ?? 'edit-loading') : 'create'
+
+  return (
+    <CompositeFormDialog<OwnershipTransferCreate, unknown>
+      key={dialogKey}
+      open={open}
+      onOpenChange={onOpenChange}
+      mode={isUpdate ? 'edit' : 'create'}
+      schema={isUpdate ? ownershipTransferUpdateSchema : ownershipTransferCreateSchema}
+      defaultValues={defaultValues}
+      mutationFn={mutationFn}
+      onSuccess={handleSuccess}
+      titleKey={
+        isUpdate
+          ? 'ownership-transfer:dialog.title.edit'
+          : 'ownership-transfer:dialog.title.create'
+      }
+    >
+      <DocHeaderSection fields={ownershipTransferHeaderSpec} />
+      <DocItemsTable<OwnershipTransferCreate, OwnershipTransferItem>
+        name="items"
+        columns={ownershipTransferItemColumns}
+        rowSchema={ownershipTransferItemSchema}
+        rowFields={ownershipTransferItemFields}
+        emptyRow={emptyOwnershipTransferItem}
+        sectionTitleKey="ownership-transfer:section.items"
+      />
+    </CompositeFormDialog>
+  )
+}

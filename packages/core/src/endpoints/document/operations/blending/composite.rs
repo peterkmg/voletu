@@ -79,10 +79,41 @@ async fn blending_composite_create_and_execute(
   ))
 }
 
+#[utoipa::path(
+  put,
+  tag = "Document - Operations",
+  operation_id = "blending_composite_update",
+  summary = "Update blending composite",
+  description = "Updates a blending document aggregate. Header fields apply set_if_some semantics; both the components and results lists are treated as the full new state and are diff-applied (insert / update / delete) keyed on the row id.",
+  path = paths::blending::COMPOSITE_BY_ID,
+  params(("id" = Uuid, Path)),
+  request_body = crate::dtos::UpdateBlendingCompositeRequest,
+  responses(
+    (status = 200, body = ApiResponse<BlendingCompositeResponse>),
+    (status = 400),
+    (status = 404)
+  )
+)]
+#[axum::debug_handler]
+async fn blending_composite_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<crate::dtos::UpdateBlendingCompositeRequest>>,
+) -> ApiResult<BlendingCompositeResponse> {
+  Ok(ApiResponse::success(
+    state
+      .svc
+      .document
+      .blending_composite_update(id, &req)
+      .await?,
+  ))
+}
+
 pub(super) fn composite_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(blending_composite_get))
     .routes(routes!(blending_composite_create))
     .routes(routes!(blending_composite_create_and_execute))
+    .routes(routes!(blending_composite_update))
     .with_state(state)
 }

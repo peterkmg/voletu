@@ -1,0 +1,25 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новая приёмка",
+      "edit": "Редактировать приёмку"
+    }
+  },
+  "section": {
+    "items": "Позиции"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "dateAccepted": "Дата приёмки",
+    "arrivalType": "Тип поступления",
+    "sourceEntity": "Источник",
+    "contractorId": "Контрагент",
+    "product": "Продукт",
+    "storage": "Хранилище",
+    "acceptedAmount": "Принятое количество"
+  },
+  "toast": {
+    "created": "Приёмка {{number}} создана",
+    "updated": "Приёмка {{number}} обновлена"
+  }
+}

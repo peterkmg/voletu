@@ -4,25 +4,19 @@ import type { RelatedDocument } from '~/components/document/related-documents'
 import type { AcceptanceItemResponse, TruckReceiptPipelineResponse, TruckWaybillItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField, DocumentDetailPage } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
 import { RelatedDocuments } from '~/components/document/related-documents'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { acceptanceDocumentExecute, acceptanceDocumentRevert, transportTruckWaybillCreate } from '~/generated/client'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { acceptanceDocumentExecute, acceptanceDocumentRevert } from '~/generated/client'
 import { useAcceptanceCompositeGet } from '~/generated/hooks/DocumentAcceptanceHooks/useAcceptanceCompositeGet'
 import { useTransportTruckWaybillCompositeGet } from '~/generated/hooks/DocumentTransportHooks/useTransportTruckWaybillCompositeGet'
 import { flowTruckReceiptQueryQueryKey, useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineCrudViews } from '~/lib/define-crud-views'
 import { defineResolvedDetailView } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { TruckReceiptMutateDialog } from './truck-receipt/truck-receipt-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -71,49 +65,12 @@ function useTruckReceiptTitle() {
   return useTranslation(['common']).t('common:nav.truckReceipt')
 }
 
-// Waybill creation dialog
-const waybillSchema = z.object({
-  documentNumber: z.string().min(1),
-  date: z.string().min(1),
-  senderId: z.string().uuid(),
-})
-
-type WaybillFormValues = z.infer<typeof waybillSchema>
-
-function WaybillMutateDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: TruckReceiptPipelineResponse | null }) {
-  const { t } = useTranslation(['common'])
-  const companiesQuery = useCatalogCompanyList()
-
-  const { form, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    schema: waybillSchema,
-    defaultValues: { documentNumber: '', date: '', senderId: '' },
-    createFn: transportTruckWaybillCreate,
-    queryKey: flowTruckReceiptQueryQueryKey(),
-    entityLabel: t('common:nav.truckReceipt'),
-    formId: 'truck-waybill-form',
-  })
-
-  return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={t('common:actions.create')} description={t('common:document.truckWaybill')} formId="truck-waybill-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="truck-waybill-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<WaybillFormValues> name="documentNumber" label={t('common:table.documentNumber')} />
-          <TextField<WaybillFormValues> name="date" label={t('common:table.date')} type="date" />
-          <EntityPickerField<WaybillFormValues> name="senderId" label={t('common:table.contractor')} queryResult={companiesQuery} />
-        </form>
-      </Form>
-    </FormDialog>
-  )
-}
-
 const truckReceiptViewDefinition = defineCrudViews<TruckReceiptPipelineResponse>({
   displayName: 'TruckReceipt',
   useTitle: useTruckReceiptTitle,
   useQuery: useFlowTruckReceiptQuery,
   Table: TruckReceiptTableWithActions,
-  MutateDialog: WaybillMutateDialog,
+  MutateDialog: TruckReceiptMutateDialog,
   supportsUpdate: false,
   rowActions: {
     disableEdit: true,

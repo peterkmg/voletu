@@ -11,6 +11,7 @@ fn apply_rail_waybill_update(
   set_if_some(&mut model.document_number, req.document_number.clone());
   set_if_some(&mut model.date, req.date);
   set_if_some(&mut model.sender_id, req.sender_id);
+  set_if_some(&mut model.base_id, req.base_id);
 }
 
 #[voletu_core_macros::entity_service(

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sea_orm::{
   ColumnTrait,
   Condition,
@@ -149,6 +151,135 @@ impl DocumentService {
         .await?
         .ok_or_else(|| {
           ApiError::NotFound(format!("Blending document '{}' not found", document_id))
+        })?,
+    )
+  }
+
+  /// Composite update: applies a header partial update plus full diffs over
+  /// the components and results lists.
+  ///
+  /// Diff semantics for both child collections:
+  /// - rows with `id: Some(uuid)` matching an existing row are updated;
+  /// - rows with `id: None` are inserted;
+  /// - existing rows omitted from the request are hard-deleted.
+  ///
+  /// Both lists are required (`min = 1`); a blending document with zero
+  /// components or zero results cannot be executed and the diff helpers would
+  /// happily strip every existing row. The validation layer rejects the
+  /// request before this method is called.
+  pub async fn blending_composite_update(
+    &self,
+    blending_doc_id: Uuid,
+    req: &dtos::UpdateBlendingCompositeRequest,
+  ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
+    let txn = self.db.begin().await?;
+    let res = self
+      .blending_composite_update_no_tx(&txn, blending_doc_id, req)
+      .await?;
+    txn.commit().await?;
+    Ok(res)
+  }
+
+  pub(crate) async fn blending_composite_update_no_tx(
+    &self,
+    conn: &sea_orm::DatabaseTransaction,
+    blending_doc_id: Uuid,
+    req: &dtos::UpdateBlendingCompositeRequest,
+  ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
+    // 1. Header update via the macro-generated per-row updater. Enforces
+    //    draft-only mutation, applies set_if_some semantics, and registers an
+    //    audit log row.
+    self
+      .blending_document_update_no_tx(conn, blending_doc_id, &req.blending)
+      .await?;
+
+    // 2. Reject duplicate `Some(id)` entries within each child collection
+    //    before touching the database. Each HashSet doubles as the dedup
+    //    guard for its collection.
+    let mut kept_component_ids: HashSet<Uuid> = HashSet::new();
+    for component in &req.components {
+      if let Some(component_id) = component.id {
+        if !kept_component_ids.insert(component_id) {
+          return Err(ApiError::BadRequest(format!(
+            "duplicate blending component id in request: {}",
+            component_id
+          )));
+        }
+      }
+    }
+    let mut kept_result_ids: HashSet<Uuid> = HashSet::new();
+    for result in &req.results {
+      if let Some(result_id) = result.id {
+        if !kept_result_ids.insert(result_id) {
+          return Err(ApiError::BadRequest(format!(
+            "duplicate blending result id in request: {}",
+            result_id
+          )));
+        }
+      }
+    }
+
+    // 3. Persist both collections as a graph save on the parent
+    //    `ActiveModelEx`. Each `HasManyModel::Replace(_)` deletes every
+    //    existing related row that is not present in the new set.
+    let components: Vec<blending_component::ActiveModelEx> = req
+      .components
+      .iter()
+      .map(|component| blending_component::ActiveModelEx {
+        id: match component.id {
+          Some(id) => sea_orm::ActiveValue::Unchanged(id),
+          None => sea_orm::ActiveValue::NotSet,
+        },
+        storage_id: sea_orm::ActiveValue::Set(component.storage_id),
+        source_product_id: sea_orm::ActiveValue::Set(component.source_product_id),
+        amount_used: sea_orm::ActiveValue::Set(component.amount_used),
+        ..Default::default()
+      })
+      .collect();
+    let results: Vec<blending_result::ActiveModelEx> = req
+      .results
+      .iter()
+      .map(|result| blending_result::ActiveModelEx {
+        id: match result.id {
+          Some(id) => sea_orm::ActiveValue::Unchanged(id),
+          None => sea_orm::ActiveValue::NotSet,
+        },
+        storage_id: sea_orm::ActiveValue::Set(result.storage_id),
+        produced_amount: sea_orm::ActiveValue::Set(result.produced_amount),
+        ..Default::default()
+      })
+      .collect();
+
+    blending_document::ActiveModelEx {
+      id: sea_orm::ActiveValue::Unchanged(blending_doc_id),
+      components: sea_orm::HasManyModel::Replace(components),
+      results: sea_orm::HasManyModel::Replace(results),
+      ..Default::default()
+    }
+    .save(conn)
+    .await?;
+
+    // 4. Re-derive document routing tags. Storage / contractor changes can
+    //    shift the bases this document is routed to.
+    self
+      .audit
+      .backfill_document_routing::<blending_document::Entity>(conn, blending_doc_id)
+      .await?;
+
+    // 5. Reload the full composite using the same eager-loading shape as create.
+    dtos::BlendingCompositeResponse::try_from(
+      blending_document::Entity::load()
+        .filter_by_id(blending_doc_id)
+        .filter(blending_document::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with(product::Entity)
+        .with((blending_component::Entity, product::Entity))
+        .with((blending_component::Entity, storage::Entity))
+        .with((blending_result::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Blending document '{}' not found", blending_doc_id))
         })?,
     )
   }

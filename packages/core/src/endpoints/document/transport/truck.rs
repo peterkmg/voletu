@@ -20,6 +20,7 @@ use crate::{
     TruckWaybillItemResponse,
     TruckWaybillResponse,
     TruckWeightDocResponse,
+    UpdateTruckWaybillCompositeRequest,
     UpdateTruckWaybillItemRequest,
     UpdateTruckWaybillRequest,
     UpdateTruckWeightDocRequest,

@@ -55,11 +55,42 @@ async fn rail_waybill_composite_create(
   ))
 }
 
+#[utoipa::path(
+  put,
+  tag = "Document - Transport",
+  operation_id = "transport_rail_waybill_composite_update",
+  summary = "Update rail waybill composite",
+  description = "Updates a rail waybill aggregate. Header fields apply set_if_some semantics; the manifests list is treated as the full new state and is diff-applied (insert / update / delete), with nested measurements and weights diffed recursively for each surviving manifest.",
+  path = paths::transport::rail::COMPOSITE_BY_ID,
+  params(("id" = Uuid, Path)),
+  request_body = UpdateRailWaybillCompositeRequest,
+  responses(
+    (status = 200, body = ApiResponse<RailWaybillCompositeResponse>),
+    (status = 400),
+    (status = 404)
+  )
+)]
+#[axum::debug_handler]
+async fn rail_waybill_composite_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<UpdateRailWaybillCompositeRequest>>,
+) -> ApiResult<RailWaybillCompositeResponse> {
+  Ok(ApiResponse::success(
+    state
+      .svc
+      .document
+      .rail_waybill_composite_update(id, &req)
+      .await?,
+  ))
+}
+
 pub(super) fn composite_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(
       rail_waybill_composite_get,
-      rail_waybill_composite_create
+      rail_waybill_composite_create,
+      rail_waybill_composite_update
     ))
     .with_state(state)
 }

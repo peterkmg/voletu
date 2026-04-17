@@ -1,0 +1,26 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новое смешение",
+      "edit": "Редактировать смешение"
+    }
+  },
+  "section": {
+    "components": "Компоненты",
+    "results": "Результаты"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "date": "Дата",
+    "contractorId": "Контрагент",
+    "targetProductId": "Целевой продукт",
+    "sourceProduct": "Исходный продукт",
+    "storage": "Ёмкость",
+    "amountUsed": "Использовано",
+    "producedAmount": "Произведено"
+  },
+  "toast": {
+    "created": "Смешение {{number}} создано",
+    "updated": "Смешение {{number}} обновлено"
+  }
+}

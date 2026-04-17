@@ -1,6 +1,11 @@
 use super::*;
 use crate::{
-  dtos::{EmbedParams, OwnershipTransferDocumentQueryParams, PaginationParams},
+  dtos::{
+    EmbedParams,
+    OwnershipTransferDocumentQueryParams,
+    PaginationParams,
+    UpdateOwnershipTransferCompositeRequest,
+  },
   endpoints::paths,
   services::document::specs::OwnershipTransferQuerySpec,
 };
@@ -218,10 +223,42 @@ async fn ownership_transfer_revert(
   Ok(ApiResponse::success(()))
 }
 
+#[utoipa::path(
+  put,
+  tag = "Document - Operations",
+  operation_id = "ownership_transfer_composite_update",
+  summary = "Update ownership transfer composite",
+  path = paths::operations::OWNERSHIP_TRANSFERS_COMPOSITE_BY_ID,
+  params(("id" = Uuid, Path)),
+  request_body = UpdateOwnershipTransferCompositeRequest,
+  responses(
+    (status = 200, body = ApiResponse<OwnershipTransferResponse>),
+    (status = 400),
+    (status = 404)
+  )
+)]
+#[axum::debug_handler]
+async fn ownership_transfer_composite_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<UpdateOwnershipTransferCompositeRequest>>,
+) -> ApiResult<OwnershipTransferResponse> {
+  Ok(ApiResponse::success(
+    state
+      .svc
+      .document
+      .ownership_transfer_composite_update(id, &req)
+      .await?,
+  ))
+}
+
 pub(super) fn transfer_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(ownership_transfer_list, ownership_transfer_create))
-    .routes(routes!(ownership_transfer_composite_get))
+    .routes(routes!(
+      ownership_transfer_composite_get,
+      ownership_transfer_composite_update
+    ))
     .routes(routes!(ownership_transfer_query))
     .routes(routes!(ownership_transfer_create_and_execute))
     .routes(routes!(ownership_transfer_execute))

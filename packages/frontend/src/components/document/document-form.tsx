@@ -1,4 +1,5 @@
 import { createContext, use } from 'react'
+import { isDocEditable } from '~/hooks/use-doc-editable'
 
 interface DocumentFormContextValue {
   isLocked: boolean
@@ -19,7 +20,7 @@ interface DocumentFormProps {
 }
 
 export function DocumentForm({ status, children, className }: DocumentFormProps) {
-  const isLocked = status === 'EXECUTED'
+  const isLocked = !isDocEditable({ status })
 
   return (
     <DocumentFormContext value={{ isLocked }}>

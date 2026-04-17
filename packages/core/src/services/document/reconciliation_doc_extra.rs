@@ -1,9 +1,18 @@
-use sea_orm::{ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, QueryOrder};
+use std::collections::HashSet;
+
+use sea_orm::{
+  ColumnTrait,
+  Condition,
+  EntityLoaderTrait,
+  QueryFilter,
+  QueryOrder,
+  TransactionTrait,
+};
 use uuid::Uuid;
 
 use crate::{
   api::ApiError,
-  dtos::{response::document::ReconciliationFlatRow, InventoryReconciliationResponse},
+  dtos::{self, response::document::ReconciliationFlatRow, InventoryReconciliationResponse},
   entities::{
     company,
     inventory_adjustment,
@@ -65,6 +74,174 @@ impl DocumentService {
       .fetch_page(page - 1)
       .await
       .map_err(Into::into)
+  }
+
+  pub(super) async fn reconciliation_composite_model(
+    &self,
+    id: Uuid,
+  ) -> Result<inventory_reconciliation::ModelEx, ApiError> {
+    inventory_reconciliation::Entity::load()
+      .filter_by_id(id)
+      .filter(inventory_reconciliation::Column::DeletedAt.is_null())
+      .with(company::Entity)
+      .with(warehouse::Entity)
+      .with((inventory_adjustment::Entity, product::Entity))
+      .with((inventory_adjustment::Entity, storage::Entity))
+      .one(self.db.as_ref())
+      .await?
+      .ok_or_else(|| ApiError::NotFound(format!("Reconciliation '{}' not found", id)))
+  }
+
+  pub async fn inventory_reconciliation_composite_create(
+    &self,
+    req: &dtos::CreateInventoryReconciliationCompositeRequest,
+  ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
+    let txn = self.db.begin().await?;
+    let res = self
+      .inventory_reconciliation_composite_create_no_tx(&txn, req)
+      .await?;
+    txn.commit().await?;
+    Ok(res)
+  }
+
+  pub(crate) async fn inventory_reconciliation_composite_create_no_tx(
+    &self,
+    conn: &sea_orm::DatabaseTransaction,
+    req: &dtos::CreateInventoryReconciliationCompositeRequest,
+  ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
+    let saved = inventory_reconciliation::ActiveModelEx::from(req)
+      .save(conn)
+      .await?;
+    let document_id = match saved.id {
+      sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
+      sea_orm::ActiveValue::NotSet => {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+          "reconciliation graph save returned no id"
+        )));
+      }
+    };
+
+    self
+      .audit
+      .backfill_document_routing::<inventory_reconciliation::Entity>(conn, document_id)
+      .await?;
+
+    dtos::InventoryReconciliationCompositeResponse::try_from(
+      inventory_reconciliation::Entity::load()
+        .filter_by_id(document_id)
+        .filter(inventory_reconciliation::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with(warehouse::Entity)
+        .with((inventory_adjustment::Entity, product::Entity))
+        .with((inventory_adjustment::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| ApiError::NotFound(format!("Reconciliation '{}' not found", document_id)))?,
+    )
+  }
+
+  /// Composite update: applies a header partial update plus a full diff on
+  /// the adjustments list.
+  /// Adjustments with `id: Some(uuid)` matching an existing row are updated.
+  /// Adjustments with `id: None` are inserted.
+  /// Existing adjustments not present in the request are hard-deleted.
+  pub async fn inventory_reconciliation_composite_update(
+    &self,
+    reconciliation_id: Uuid,
+    req: &dtos::UpdateInventoryReconciliationCompositeRequest,
+  ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
+    let txn = self.db.begin().await?;
+    let res = self
+      .inventory_reconciliation_composite_update_no_tx(&txn, reconciliation_id, req)
+      .await?;
+    txn.commit().await?;
+    Ok(res)
+  }
+
+  pub(crate) async fn inventory_reconciliation_composite_update_no_tx(
+    &self,
+    conn: &sea_orm::DatabaseTransaction,
+    reconciliation_id: Uuid,
+    req: &dtos::UpdateInventoryReconciliationCompositeRequest,
+  ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
+    // 1. Header update via the macro-generated per-row updater.
+    //    This enforces draft-only mutation, applies set_if_some semantics,
+    //    and registers an audit log row.
+    self
+      .reconciliation_update_no_tx(conn, reconciliation_id, &req.reconciliation)
+      .await?;
+
+    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
+    //    database. The HashSet doubles as the dedup guard.
+    let mut kept_ids: HashSet<Uuid> = HashSet::new();
+    for adjustment in &req.adjustments {
+      if let Some(adjustment_id) = adjustment.id {
+        if !kept_ids.insert(adjustment_id) {
+          return Err(ApiError::BadRequest(format!(
+            "duplicate adjustment id in request: {}",
+            adjustment_id
+          )));
+        }
+      }
+    }
+
+    // 3. Persist the adjustments as a graph save on the parent
+    //    `ActiveModelEx`. `HasManyModel::Replace(_)` deletes every existing
+    //    adjustment row that is not present in the new set.
+    let adjustments: Vec<inventory_adjustment::ActiveModelEx> = req
+      .adjustments
+      .iter()
+      .map(|adjustment| inventory_adjustment::ActiveModelEx {
+        id: match adjustment.id {
+          Some(id) => sea_orm::ActiveValue::Unchanged(id),
+          None => sea_orm::ActiveValue::NotSet,
+        },
+        storage_id: sea_orm::ActiveValue::Set(adjustment.storage_id),
+        product_id: sea_orm::ActiveValue::Set(adjustment.product_id),
+        adjustment_type: sea_orm::ActiveValue::Set(adjustment.adjustment_type),
+        amount: sea_orm::ActiveValue::Set(adjustment.amount),
+        reason: sea_orm::ActiveValue::Set(adjustment.reason.clone()),
+        ..Default::default()
+      })
+      .collect();
+
+    inventory_reconciliation::ActiveModelEx {
+      id: sea_orm::ActiveValue::Unchanged(reconciliation_id),
+      adjustments: sea_orm::HasManyModel::Replace(adjustments),
+      ..Default::default()
+    }
+    .save(conn)
+    .await?;
+
+    // 4. Re-derive document routing tags via the existing utility.
+    self
+      .audit
+      .backfill_document_routing::<inventory_reconciliation::Entity>(conn, reconciliation_id)
+      .await?;
+
+    // 5. Reload the full composite using the same eager-loading shape as on create.
+    dtos::InventoryReconciliationCompositeResponse::try_from(
+      inventory_reconciliation::Entity::load()
+        .filter_by_id(reconciliation_id)
+        .filter(inventory_reconciliation::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with(warehouse::Entity)
+        .with((inventory_adjustment::Entity, product::Entity))
+        .with((inventory_adjustment::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!("Reconciliation '{}' not found", reconciliation_id))
+        })?,
+    )
+  }
+
+  pub async fn inventory_reconciliation_composite_get(
+    &self,
+    id: Uuid,
+  ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
+    let doc = self.reconciliation_composite_model(id).await?;
+    dtos::InventoryReconciliationCompositeResponse::try_from(doc)
   }
 
   pub async fn reconciliation_query(

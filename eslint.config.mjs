@@ -32,6 +32,9 @@ export default antfu(
   {
     // shadcn/ui components export variant utilities alongside components
     // Providers export both a component and a hook from the same file
+    // Composite-form per-doc *-form-config.tsx files co-locate schemas, types,
+    // columns, and small field components by design (single source of truth
+    // per document)
     files: [
       'packages/frontend/src/components/ui/*.tsx',
       'packages/frontend/src/components/**/*-context.tsx',
@@ -39,6 +42,7 @@ export default antfu(
       'packages/frontend/src/features/**/*-provider.tsx',
       'packages/frontend/src/components/data-table/density.tsx',
       'packages/frontend/src/components/document/document-form.tsx',
+      'packages/frontend/src/views/**/*-form-config.tsx',
     ],
     rules: { 'react-refresh/only-export-components': 'off' },
   },

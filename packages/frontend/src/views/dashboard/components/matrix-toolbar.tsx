@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react'
 // packages/frontend/src/views/dashboard/components/matrix-toolbar.tsx
 import { useTranslation } from 'react-i18next'
 import { DensityToggle } from '~/components/data-table/density'
+import { EntityPickerCombobox } from '~/components/entity-picker'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { DebouncedInput } from '~/components/ui/debounced-input'
@@ -12,7 +13,6 @@ import { Switch } from '~/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
 import { useDashboardStore } from '../state/dashboard-store'
-import { ContractorPicker } from './contractor-picker'
 
 export interface MatrixToolbarProps {
   contractors: Array<{ id: string, label: string }>
@@ -59,7 +59,12 @@ export function MatrixToolbar({ contractors, searchQuery, onSearchChange }: Matr
         </div>
 
         <div className="w-48 md:w-64 lg:w-80">
-          <ContractorPicker value={contractorId} onChange={setContractorId} items={contractors} />
+          <EntityPickerCombobox
+            value={contractorId}
+            onChange={setContractorId}
+            items={contractors}
+            placeholder={t('toolbar.contractor')}
+          />
         </div>
 
         <div className="ml-auto flex items-center gap-3">

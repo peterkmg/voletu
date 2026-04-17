@@ -1,0 +1,26 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Blending",
+      "edit": "Edit Blending"
+    }
+  },
+  "section": {
+    "components": "Components",
+    "results": "Results"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "date": "Date",
+    "contractorId": "Contractor",
+    "targetProductId": "Target product",
+    "sourceProduct": "Source product",
+    "storage": "Storage",
+    "amountUsed": "Amount used",
+    "producedAmount": "Produced amount"
+  },
+  "toast": {
+    "created": "Blending {{number}} created",
+    "updated": "Blending {{number}} updated"
+  }
+}

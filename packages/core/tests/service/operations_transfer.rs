@@ -4,12 +4,19 @@ use chrono::{DateTime, Utc};
 use sea_orm::{prelude::Decimal, EntityLoaderTrait};
 use uuid::Uuid;
 use voletu_core::{
+  api::ApiError,
   context::audit::with_audit_context,
   dtos::{
     CreateOwnershipTransferRequest,
     CreatePhysicalTransferRequest,
     OwnershipTransferItemCompositeRequest,
     PhysicalTransferItemCompositeRequest,
+    UpdateOwnershipTransferCompositeRequest,
+    UpdateOwnershipTransferItemCompositeRequest,
+    UpdateOwnershipTransferRequest,
+    UpdatePhysicalTransferCompositeRequest,
+    UpdatePhysicalTransferItemCompositeRequest,
+    UpdatePhysicalTransferRequest,
   },
   entities::{ownership_transfer, physical_storage_transfer},
   enums::DocumentStatus,
@@ -286,6 +293,446 @@ async fn operations_create_and_execute_shortcuts_post_documents_and_apply_ledger
       .unwrap();
     assert_eq!(source.current_amount, dec("20.0"));
     assert_eq!(target.current_amount, dec("10.0"));
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn physical_transfer_composite_update_inserts_updates_and_deletes_items() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    // 1. Seed: create a physical transfer with three items.
+    let initial = service
+      .physical_transfer_composite_create(&CreatePhysicalTransferRequest {
+        document_number: "PT-COMP-UPDATE-1".to_string(),
+        date: ts("2026-01-01T00:00:00Z"),
+        contractor_id: catalog.contractor_a_id,
+        start_cargo_ops: ts("2026-01-01T01:00:00Z"),
+        end_cargo_ops: ts("2026-01-01T02:00:00Z"),
+        items: vec![
+          PhysicalTransferItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            from_storage_id: catalog.storage_a_id,
+            to_storage_id: catalog.storage_b_id,
+            amount: dec("1.0"),
+          },
+          PhysicalTransferItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            from_storage_id: catalog.storage_a_id,
+            to_storage_id: catalog.storage_b_id,
+            amount: dec("2.0"),
+          },
+          PhysicalTransferItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            from_storage_id: catalog.storage_a_id,
+            to_storage_id: catalog.storage_b_id,
+            amount: dec("3.0"),
+          },
+        ],
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(initial.items.len(), 3);
+    let physical_id = initial.id;
+
+    // Capture each item id by its initial amount so the test does not depend on row order.
+    let pick = |amount: Decimal| -> (Uuid, Uuid, Uuid, Uuid, Decimal) {
+      let item = initial
+        .items
+        .iter()
+        .find(|item| item.amount == amount)
+        .unwrap();
+      (
+        item.id,
+        item.product_id,
+        item.from_storage_id,
+        item.to_storage_id,
+        item.amount,
+      )
+    };
+    let (unchanged_id, unchanged_product, unchanged_from, unchanged_to, unchanged_amount) =
+      pick(dec("1.0"));
+    let (update_id, update_product, update_from, update_to, _) = pick(dec("2.0"));
+    let (delete_id, _, _, _, _) = pick(dec("3.0"));
+
+    // 2. Apply a composite update:
+    //    - keep item_unchanged as-is,
+    //    - update item_to_update.amount,
+    //    - drop item_to_delete by omitting it,
+    //    - insert one fresh item with id: None.
+    let updated = service
+      .physical_transfer_composite_update(physical_id, &UpdatePhysicalTransferCompositeRequest {
+        physical_transfer: UpdatePhysicalTransferRequest {
+          document_number: None,
+          date: None,
+          contractor_id: None,
+          start_cargo_ops: None,
+          end_cargo_ops: None,
+        },
+        items: vec![
+          UpdatePhysicalTransferItemCompositeRequest {
+            id: Some(unchanged_id),
+            product_id: unchanged_product,
+            from_storage_id: unchanged_from,
+            to_storage_id: unchanged_to,
+            amount: unchanged_amount,
+          },
+          UpdatePhysicalTransferItemCompositeRequest {
+            id: Some(update_id),
+            product_id: update_product,
+            from_storage_id: update_from,
+            to_storage_id: update_to,
+            amount: dec("9.5"),
+          },
+          UpdatePhysicalTransferItemCompositeRequest {
+            id: None,
+            product_id: catalog.product_a_id,
+            from_storage_id: catalog.storage_a_id,
+            to_storage_id: catalog.storage_b_id,
+            amount: dec("4.25"),
+          },
+        ],
+      })
+      .await
+      .unwrap();
+
+    // 3. Assertions on the response.
+    assert_eq!(updated.items.len(), 3);
+
+    let unchanged = updated
+      .items
+      .iter()
+      .find(|item| item.id == unchanged_id)
+      .expect("the unchanged item should still be present");
+    assert_eq!(unchanged.amount, dec("1.0"));
+    assert_eq!(unchanged.from_storage_id, unchanged_from);
+    assert_eq!(unchanged.to_storage_id, unchanged_to);
+
+    let modified = updated
+      .items
+      .iter()
+      .find(|item| item.id == update_id)
+      .expect("the updated item should still be present with its original id");
+    assert_eq!(modified.amount, dec("9.5"));
+
+    assert!(
+      updated.items.iter().all(|item| item.id != delete_id),
+      "the omitted item should be hard-deleted from the composite"
+    );
+
+    let fresh = updated
+      .items
+      .iter()
+      .find(|item| item.id != unchanged_id && item.id != update_id && item.amount == dec("4.25"))
+      .expect("the inserted item should appear with a freshly generated id");
+    assert_eq!(fresh.product_id, catalog.product_a_id);
+    assert_eq!(fresh.from_storage_id, catalog.storage_a_id);
+    assert_eq!(fresh.to_storage_id, catalog.storage_b_id);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn physical_transfer_composite_update_rejects_duplicate_item_ids() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    let initial = service
+      .physical_transfer_composite_create(&CreatePhysicalTransferRequest {
+        document_number: "PT-COMP-UPDATE-DUP".to_string(),
+        date: ts("2026-01-01T00:00:00Z"),
+        contractor_id: catalog.contractor_a_id,
+        start_cargo_ops: ts("2026-01-01T01:00:00Z"),
+        end_cargo_ops: ts("2026-01-01T02:00:00Z"),
+        items: vec![PhysicalTransferItemCompositeRequest {
+          product_id: catalog.product_a_id,
+          from_storage_id: catalog.storage_a_id,
+          to_storage_id: catalog.storage_b_id,
+          amount: dec("1.0"),
+        }],
+      })
+      .await
+      .unwrap();
+
+    let physical_id = initial.id;
+    let existing = &initial.items[0];
+    let dup_id = existing.id;
+
+    let err = service
+      .physical_transfer_composite_update(physical_id, &UpdatePhysicalTransferCompositeRequest {
+        physical_transfer: UpdatePhysicalTransferRequest {
+          document_number: None,
+          date: None,
+          contractor_id: None,
+          start_cargo_ops: None,
+          end_cargo_ops: None,
+        },
+        items: vec![
+          UpdatePhysicalTransferItemCompositeRequest {
+            id: Some(dup_id),
+            product_id: existing.product_id,
+            from_storage_id: existing.from_storage_id,
+            to_storage_id: existing.to_storage_id,
+            amount: dec("1.0"),
+          },
+          UpdatePhysicalTransferItemCompositeRequest {
+            id: Some(dup_id),
+            product_id: existing.product_id,
+            from_storage_id: existing.from_storage_id,
+            to_storage_id: existing.to_storage_id,
+            amount: dec("2.0"),
+          },
+        ],
+      })
+      .await
+      .expect_err("duplicate item ids must be rejected");
+
+    match err {
+      ApiError::BadRequest(msg) => {
+        assert!(
+          msg.contains("duplicate item id in request"),
+          "expected duplicate-id error, got: {msg}"
+        );
+        assert!(
+          msg.contains(&dup_id.to_string()),
+          "error should name the offending id, got: {msg}"
+        );
+      }
+      other => panic!("expected ApiError::BadRequest, got: {other:?}"),
+    }
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn ownership_transfer_composite_update_inserts_updates_and_deletes_items() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    // 1. Seed: create an ownership transfer with three items.
+    let initial = service
+      .ownership_transfer_composite_create(&CreateOwnershipTransferRequest {
+        date: ts("2026-01-01T00:00:00Z"),
+        items: vec![
+          OwnershipTransferItemCompositeRequest {
+            storage_id: catalog.storage_a_id,
+            product_id: catalog.product_a_id,
+            from_contractor_id: catalog.contractor_a_id,
+            to_contractor_id: catalog.contractor_b_id,
+            amount: dec("1.0"),
+          },
+          OwnershipTransferItemCompositeRequest {
+            storage_id: catalog.storage_a_id,
+            product_id: catalog.product_a_id,
+            from_contractor_id: catalog.contractor_a_id,
+            to_contractor_id: catalog.contractor_b_id,
+            amount: dec("2.0"),
+          },
+          OwnershipTransferItemCompositeRequest {
+            storage_id: catalog.storage_a_id,
+            product_id: catalog.product_a_id,
+            from_contractor_id: catalog.contractor_a_id,
+            to_contractor_id: catalog.contractor_b_id,
+            amount: dec("3.0"),
+          },
+        ],
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(initial.items.len(), 3);
+    let ownership_id = initial.id;
+
+    // Capture each item id by its initial amount so the test does not depend on row order.
+    let pick = |amount: Decimal| -> (Uuid, Uuid, Uuid, Uuid, Uuid, Decimal) {
+      let item = initial
+        .items
+        .iter()
+        .find(|item| item.amount == amount)
+        .unwrap();
+      (
+        item.id,
+        item.storage_id,
+        item.product_id,
+        item.from_contractor_id,
+        item.to_contractor_id,
+        item.amount,
+      )
+    };
+    let (
+      unchanged_id,
+      unchanged_storage,
+      unchanged_product,
+      unchanged_from,
+      unchanged_to,
+      unchanged_amount,
+    ) = pick(dec("1.0"));
+    let (update_id, update_storage, update_product, update_from, update_to, _) = pick(dec("2.0"));
+    let (delete_id, _, _, _, _, _) = pick(dec("3.0"));
+
+    // 2. Apply a composite update:
+    //    - keep item_unchanged as-is,
+    //    - update item_to_update.amount,
+    //    - drop item_to_delete by omitting it,
+    //    - insert one fresh item with id: None.
+    let updated = service
+      .ownership_transfer_composite_update(ownership_id, &UpdateOwnershipTransferCompositeRequest {
+        ownership_transfer: UpdateOwnershipTransferRequest { date: None },
+        items: vec![
+          UpdateOwnershipTransferItemCompositeRequest {
+            id: Some(unchanged_id),
+            storage_id: unchanged_storage,
+            product_id: unchanged_product,
+            from_contractor_id: unchanged_from,
+            to_contractor_id: unchanged_to,
+            amount: unchanged_amount,
+          },
+          UpdateOwnershipTransferItemCompositeRequest {
+            id: Some(update_id),
+            storage_id: update_storage,
+            product_id: update_product,
+            from_contractor_id: update_from,
+            to_contractor_id: update_to,
+            amount: dec("9.5"),
+          },
+          UpdateOwnershipTransferItemCompositeRequest {
+            id: None,
+            storage_id: catalog.storage_a_id,
+            product_id: catalog.product_a_id,
+            from_contractor_id: catalog.contractor_a_id,
+            to_contractor_id: catalog.contractor_b_id,
+            amount: dec("4.25"),
+          },
+        ],
+      })
+      .await
+      .unwrap();
+
+    // 3. Assertions on the response.
+    assert_eq!(updated.items.len(), 3);
+
+    let unchanged = updated
+      .items
+      .iter()
+      .find(|item| item.id == unchanged_id)
+      .expect("the unchanged item should still be present");
+    assert_eq!(unchanged.amount, dec("1.0"));
+    assert_eq!(unchanged.storage_id, unchanged_storage);
+    assert_eq!(unchanged.from_contractor_id, unchanged_from);
+    assert_eq!(unchanged.to_contractor_id, unchanged_to);
+
+    let modified = updated
+      .items
+      .iter()
+      .find(|item| item.id == update_id)
+      .expect("the updated item should still be present with its original id");
+    assert_eq!(modified.amount, dec("9.5"));
+
+    assert!(
+      updated.items.iter().all(|item| item.id != delete_id),
+      "the omitted item should be hard-deleted from the composite"
+    );
+
+    let fresh = updated
+      .items
+      .iter()
+      .find(|item| item.id != unchanged_id && item.id != update_id && item.amount == dec("4.25"))
+      .expect("the inserted item should appear with a freshly generated id");
+    assert_eq!(fresh.storage_id, catalog.storage_a_id);
+    assert_eq!(fresh.product_id, catalog.product_a_id);
+    assert_eq!(fresh.from_contractor_id, catalog.contractor_a_id);
+    assert_eq!(fresh.to_contractor_id, catalog.contractor_b_id);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn ownership_transfer_composite_update_rejects_duplicate_item_ids() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    let initial = service
+      .ownership_transfer_composite_create(&CreateOwnershipTransferRequest {
+        date: ts("2026-01-01T00:00:00Z"),
+        items: vec![OwnershipTransferItemCompositeRequest {
+          storage_id: catalog.storage_a_id,
+          product_id: catalog.product_a_id,
+          from_contractor_id: catalog.contractor_a_id,
+          to_contractor_id: catalog.contractor_b_id,
+          amount: dec("1.0"),
+        }],
+      })
+      .await
+      .unwrap();
+
+    let ownership_id = initial.id;
+    let existing = &initial.items[0];
+    let dup_id = existing.id;
+
+    let err = service
+      .ownership_transfer_composite_update(ownership_id, &UpdateOwnershipTransferCompositeRequest {
+        ownership_transfer: UpdateOwnershipTransferRequest { date: None },
+        items: vec![
+          UpdateOwnershipTransferItemCompositeRequest {
+            id: Some(dup_id),
+            storage_id: existing.storage_id,
+            product_id: existing.product_id,
+            from_contractor_id: existing.from_contractor_id,
+            to_contractor_id: existing.to_contractor_id,
+            amount: dec("1.0"),
+          },
+          UpdateOwnershipTransferItemCompositeRequest {
+            id: Some(dup_id),
+            storage_id: existing.storage_id,
+            product_id: existing.product_id,
+            from_contractor_id: existing.from_contractor_id,
+            to_contractor_id: existing.to_contractor_id,
+            amount: dec("2.0"),
+          },
+        ],
+      })
+      .await
+      .expect_err("duplicate item ids must be rejected");
+
+    match err {
+      ApiError::BadRequest(msg) => {
+        assert!(
+          msg.contains("duplicate item id in request"),
+          "expected duplicate-id error, got: {msg}"
+        );
+        assert!(
+          msg.contains(&dup_id.to_string()),
+          "error should name the offending id, got: {msg}"
+        );
+      }
+      other => panic!("expected ApiError::BadRequest, got: {other:?}"),
+    }
   })
   .await;
 }

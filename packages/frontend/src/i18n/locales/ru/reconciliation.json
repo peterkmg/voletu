@@ -1,0 +1,30 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новая инвентаризация",
+      "edit": "Редактировать инвентаризацию"
+    }
+  },
+  "section": {
+    "adjustments": "Корректировки"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "date": "Дата",
+    "contractorId": "Контрагент",
+    "warehouseId": "Склад",
+    "storage": "Ёмкость",
+    "product": "Продукт",
+    "adjustmentType": "Тип корректировки",
+    "amount": "Количество",
+    "reason": "Причина"
+  },
+  "adjustmentType": {
+    "SURPLUS": "Излишек",
+    "LOSS": "Недостача"
+  },
+  "toast": {
+    "created": "Инвентаризация {{number}} создана",
+    "updated": "Инвентаризация {{number}} обновлена"
+  }
+}

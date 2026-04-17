@@ -1,0 +1,23 @@
+{
+  "dialog": {
+    "title": {
+      "create": "Новая ТТН (грузовой автотранспорт)",
+      "edit": "Редактировать ТТН"
+    }
+  },
+  "section": {
+    "items": "Позиции"
+  },
+  "field": {
+    "documentNumber": "Номер документа",
+    "date": "Дата",
+    "senderId": "Отправитель",
+    "baseId": "База",
+    "product": "Продукт",
+    "declaredAmount": "Заявленное количество"
+  },
+  "toast": {
+    "created": "ТТН {{number}} создана",
+    "updated": "ТТН {{number}} обновлена"
+  }
+}

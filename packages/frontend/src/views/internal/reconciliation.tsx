@@ -3,23 +3,17 @@ import type { TFunction } from 'i18next'
 import type { InventoryAdjustmentResponse, ReconciliationFlatRow } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { reconciliationCreate, reconciliationExecute, reconciliationHardDelete, reconciliationRevert, reconciliationSoftDelete, reconciliationUpdate } from '~/generated/client'
-import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
+import { reconciliationExecute, reconciliationHardDelete, reconciliationRevert, reconciliationSoftDelete } from '~/generated/client'
 import { useAdjustmentList } from '~/generated/hooks/DocumentOperationsHooks/useAdjustmentList'
 import { useReconciliationGet } from '~/generated/hooks/DocumentOperationsHooks/useReconciliationGet'
 import { flowReconciliationFlatQueryQueryKey, useFlowReconciliationFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowReconciliationFlatQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { ReconciliationMutateDialog } from './reconciliation/reconciliation-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -84,14 +78,6 @@ function useReconciliationText() {
   }
 }
 
-const formSchema = z.object({
-  documentNumber: z.string().min(1),
-  date: z.string().min(1),
-  warehouseId: z.string().uuid(),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
 interface ReconciliationDocumentDetailData {
   doc: {
     id: string
@@ -106,44 +92,12 @@ interface ReconciliationDocumentDetailData {
   items: InventoryAdjustmentResponse[]
 }
 
-function MutateDialog({ open, onOpenChange, currentRow, onCreated }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: ReconciliationFlatRow | null, onCreated?: (id: string) => void }) {
-  const { t } = useTranslation(['common'])
-  const warehousesQuery = useCatalogWarehouseList()
-
-  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    currentRow,
-    schema: formSchema,
-    defaultValues: { documentNumber: '', date: '', warehouseId: '' },
-    mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '', warehouseId: '' }),
-    createFn: reconciliationCreate,
-    updateFn: reconciliationUpdate,
-    queryKey: flowReconciliationFlatQueryQueryKey(),
-    entityLabel: t('common:nav.reconciliation'),
-    formId: 'reconciliation-form',
-    onCreated,
-  })
-
-  return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={isUpdate ? t('common:actions.edit') : t('common:actions.create')} description={t('common:nav.reconciliation')} formId="reconciliation-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="reconciliation-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
-          <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
-          <EntityPickerField<FormValues> name="warehouseId" label={t('common:columns.warehouse')} queryResult={warehousesQuery} />
-        </form>
-      </Form>
-    </FormDialog>
-  )
-}
-
 const reconciliationViewDefinition = defineDocumentViews<ReconciliationFlatRow, ReconciliationDocumentDetailData>({
   displayName: 'Reconciliation',
   useText: useReconciliationText,
   useQuery: useFlowReconciliationFlatQuery,
   Table: ReconciliationTable,
-  MutateDialog,
+  MutateDialog: ReconciliationMutateDialog,
   deleteDialog: {
     hardDeleteFn: reconciliationHardDelete,
     softDeleteFn: reconciliationSoftDelete,

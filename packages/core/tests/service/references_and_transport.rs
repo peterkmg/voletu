@@ -5,6 +5,7 @@ use chrono::NaiveDate;
 use sea_orm::{prelude::Decimal, EntityTrait};
 use uuid::Uuid;
 use voletu_core::{
+  api::ApiError,
   context::audit::with_audit_context,
   dtos::{
     CreateBaseRequest,
@@ -23,8 +24,20 @@ use voletu_core::{
     CreateTruckWeightDocRequest,
     CreateWarehouseRequest,
     RailWagonManifestCompositeRequest,
+    RailWagonMeasurementCompositeRequest,
+    RailWagonWeightCompositeRequest,
+    RailWaybillCompositeRequest,
+    TruckWaybillCompositeRequest,
     TruckWaybillItemCompositeRequest,
     TruckWeightDocCompositeRequest,
+    UpdateRailWagonManifestCompositeRequest,
+    UpdateRailWagonMeasurementCompositeRequest,
+    UpdateRailWagonWeightCompositeRequest,
+    UpdateRailWaybillCompositeRequest,
+    UpdateRailWaybillRequest,
+    UpdateTruckWaybillCompositeRequest,
+    UpdateTruckWaybillItemCompositeRequest,
+    UpdateTruckWaybillRequest,
   },
   entities::audit_log,
   enums::{self, AuditTable},
@@ -277,6 +290,548 @@ async fn transport_services_create_truck_and_rail_documents_and_list_them() {
 
     let logs: Vec<audit_log::ModelEx> = audit_log::Entity::load().all(&*db).await.unwrap();
     assert!(logs.len() >= 7);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn truck_waybill_composite_update_inserts_updates_and_deletes_items() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    // 1. Seed: create a truck waybill composite with three items.
+    let initial = service
+      .truck_waybill_composite_create(&TruckWaybillCompositeRequest {
+        document_number: "TW-COMP-UPDATE-1".to_string(),
+        date: date("2026-01-01"),
+        sender_id: catalog.sender_id,
+        base_id: catalog.base_id,
+        items: Some(vec![
+          TruckWaybillItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            declared_amount: dec("1.0"),
+          },
+          TruckWaybillItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            declared_amount: dec("2.0"),
+          },
+          TruckWaybillItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            declared_amount: dec("3.0"),
+          },
+        ]),
+        weight_docs: None,
+      })
+      .await
+      .unwrap();
+
+    let initial_items = initial.items.as_ref().expect("items present");
+    assert_eq!(initial_items.len(), 3);
+
+    let waybill_id = initial.waybill.id;
+    // Capture each id by initial declared_amount so the test does not depend
+    // on a specific row ordering of the response.
+    let pick = |amount: Decimal| -> (Uuid, Uuid, Decimal) {
+      let item = initial_items
+        .iter()
+        .find(|item| item.declared_amount == amount)
+        .unwrap();
+      (item.id, item.product_id, item.declared_amount)
+    };
+    let (unchanged_id, unchanged_product, unchanged_amount) = pick(dec("1.0"));
+    let (update_id, update_product, _) = pick(dec("2.0"));
+    let (delete_id, _, _) = pick(dec("3.0"));
+
+    // 2. Apply a composite update:
+    //    - keep item_unchanged as-is,
+    //    - update item_to_update.declared_amount,
+    //    - drop item_to_delete by omitting it,
+    //    - insert one fresh item with id: None.
+    let updated = service
+      .truck_waybill_composite_update(waybill_id, &UpdateTruckWaybillCompositeRequest {
+        waybill: UpdateTruckWaybillRequest {
+          document_number: None,
+          date: None,
+          sender_id: None,
+          base_id: None,
+        },
+        items: vec![
+          UpdateTruckWaybillItemCompositeRequest {
+            id: Some(unchanged_id),
+            product_id: unchanged_product,
+            declared_amount: unchanged_amount,
+          },
+          UpdateTruckWaybillItemCompositeRequest {
+            id: Some(update_id),
+            product_id: update_product,
+            declared_amount: dec("9.5"),
+          },
+          UpdateTruckWaybillItemCompositeRequest {
+            id: None,
+            product_id: catalog.product_a_id,
+            declared_amount: dec("4.25"),
+          },
+        ],
+      })
+      .await
+      .unwrap();
+
+    // 3. Assertions on the response.
+    let updated_items = updated.items.as_ref().expect("items present after update");
+    assert_eq!(updated_items.len(), 3);
+
+    let unchanged = updated_items
+      .iter()
+      .find(|item| item.id == unchanged_id)
+      .expect("the unchanged item should still be present");
+    assert_eq!(unchanged.declared_amount, dec("1.0"));
+
+    let modified = updated_items
+      .iter()
+      .find(|item| item.id == update_id)
+      .expect("the updated item should still be present with its original id");
+    assert_eq!(modified.declared_amount, dec("9.5"));
+
+    assert!(
+      updated_items.iter().all(|item| item.id != delete_id),
+      "the omitted item should be hard-deleted from the composite"
+    );
+
+    let fresh = updated_items
+      .iter()
+      .find(|item| {
+        item.id != unchanged_id && item.id != update_id && item.declared_amount == dec("4.25")
+      })
+      .expect("the inserted item should appear with a freshly generated id");
+    assert_eq!(fresh.product_id, catalog.product_a_id);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn truck_waybill_composite_update_rejects_duplicate_item_ids() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    // Seed: create a truck waybill composite with a single item.
+    let initial = service
+      .truck_waybill_composite_create(&TruckWaybillCompositeRequest {
+        document_number: "TW-COMP-UPDATE-DUP".to_string(),
+        date: date("2026-01-01"),
+        sender_id: catalog.sender_id,
+        base_id: catalog.base_id,
+        items: Some(vec![TruckWaybillItemCompositeRequest {
+          product_id: catalog.product_a_id,
+          declared_amount: dec("1.0"),
+        }]),
+        weight_docs: None,
+      })
+      .await
+      .unwrap();
+
+    let waybill_id = initial.waybill.id;
+    let initial_items = initial.items.as_ref().expect("items present");
+    let existing = &initial_items[0];
+    let dup_id = existing.id;
+
+    // Build a request that references the same existing id twice.
+    let err = service
+      .truck_waybill_composite_update(waybill_id, &UpdateTruckWaybillCompositeRequest {
+        waybill: UpdateTruckWaybillRequest {
+          document_number: None,
+          date: None,
+          sender_id: None,
+          base_id: None,
+        },
+        items: vec![
+          UpdateTruckWaybillItemCompositeRequest {
+            id: Some(dup_id),
+            product_id: existing.product_id,
+            declared_amount: dec("1.0"),
+          },
+          UpdateTruckWaybillItemCompositeRequest {
+            id: Some(dup_id),
+            product_id: existing.product_id,
+            declared_amount: dec("2.0"),
+          },
+        ],
+      })
+      .await
+      .expect_err("duplicate item ids must be rejected");
+
+    match err {
+      ApiError::BadRequest(msg) => {
+        assert!(
+          msg.contains("duplicate item id in request"),
+          "expected duplicate-id error, got: {msg}"
+        );
+        assert!(
+          msg.contains(&dup_id.to_string()),
+          "error should name the offending id, got: {msg}"
+        );
+      }
+      other => panic!("expected ApiError::BadRequest, got: {other:?}"),
+    }
+  })
+  .await;
+}
+
+/// Cover the recursive composite update for rail waybills.
+///
+/// The seed creates three manifests:
+///   - manifest A: with 1 measurement + 1 weight (will be left UNCHANGED at the manifest level)
+///   - manifest B: with 1 weight, 0 measurements (will UPDATE its declared_mass; ADD a measurement)
+///   - manifest C: with 1 measurement + 1 weight (will be DELETED entirely; children must go too)
+///
+/// The update payload also INSERTS a brand-new manifest D with one measurement
+/// and one weight, exercising the create-with-children branch.
+///
+/// Note: rail measurement / weight rows enforce a `UNIQUE(wagon_manifest_id)`
+/// constraint at the entity level, so each manifest holds at most one of each.
+/// This keeps the nested-diff scenario realistic for the actual schema while
+/// still exercising insert / update / delete / unchanged at both levels.
+#[tokio::test]
+async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_children() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    // 1. Seed: create the rail waybill composite with three manifests.
+    let initial = service
+      .rail_waybill_composite_create(&RailWaybillCompositeRequest {
+        document_number: "RW-COMP-UPDATE-1".to_string(),
+        date: date("2026-01-01"),
+        sender_id: catalog.sender_id,
+        base_id: catalog.base_id,
+        manifests: Some(vec![
+          // Manifest A - kept unchanged at every level.
+          RailWagonManifestCompositeRequest {
+            wagon_number: "WAG-A".to_string(),
+            product_id: catalog.product_a_id,
+            declared_volume: dec("10.0"),
+            declared_density: dec("0.85"),
+            declared_mass: dec("8.5"),
+            measurements: Some(vec![RailWagonMeasurementCompositeRequest {
+              wagon_number: "WAG-A".to_string(),
+              measured_height: dec("1.20"),
+              lab_density: Some(dec("0.85")),
+              calculated_mass: dec("8.4"),
+            }]),
+            weights: Some(vec![RailWagonWeightCompositeRequest {
+              wagon_number: "WAG-A".to_string(),
+              gross_weight: dec("12.0"),
+              tare_weight: dec("3.5"),
+              net_product_weight: dec("8.5"),
+            }]),
+          },
+          // Manifest B - will have its declared_mass updated and gain a measurement.
+          RailWagonManifestCompositeRequest {
+            wagon_number: "WAG-B".to_string(),
+            product_id: catalog.product_a_id,
+            declared_volume: dec("12.0"),
+            declared_density: dec("0.84"),
+            declared_mass: dec("10.0"),
+            measurements: None,
+            weights: Some(vec![RailWagonWeightCompositeRequest {
+              wagon_number: "WAG-B".to_string(),
+              gross_weight: dec("13.0"),
+              tare_weight: dec("3.0"),
+              net_product_weight: dec("10.0"),
+            }]),
+          },
+          // Manifest C - will be deleted entirely with both children.
+          RailWagonManifestCompositeRequest {
+            wagon_number: "WAG-C".to_string(),
+            product_id: catalog.product_a_id,
+            declared_volume: dec("11.0"),
+            declared_density: dec("0.86"),
+            declared_mass: dec("9.46"),
+            measurements: Some(vec![RailWagonMeasurementCompositeRequest {
+              wagon_number: "WAG-C".to_string(),
+              measured_height: dec("1.10"),
+              lab_density: Some(dec("0.86")),
+              calculated_mass: dec("9.4"),
+            }]),
+            weights: Some(vec![RailWagonWeightCompositeRequest {
+              wagon_number: "WAG-C".to_string(),
+              gross_weight: dec("14.0"),
+              tare_weight: dec("4.5"),
+              net_product_weight: dec("9.5"),
+            }]),
+          },
+        ]),
+      })
+      .await
+      .unwrap();
+
+    let waybill_id = initial.waybill.id;
+    let initial_manifests = initial.wagon_manifests.as_ref().expect("manifests present");
+    assert_eq!(initial_manifests.len(), 3);
+
+    let pick_manifest = |wagon: &str| -> _ {
+      initial_manifests
+        .iter()
+        .find(|m| m.wagon_number == wagon)
+        .unwrap_or_else(|| panic!("manifest {wagon} missing in seed response"))
+    };
+    let manifest_a = pick_manifest("WAG-A");
+    let manifest_b = pick_manifest("WAG-B");
+    let manifest_c = pick_manifest("WAG-C");
+
+    // Capture child ids for the update payload (round-tripped so the
+    // backend treats them as updates, not deletes-and-inserts).
+    let manifest_a_measurement_id = manifest_a.measurements.as_ref().unwrap()[0].id;
+    let manifest_a_weight_id = manifest_a.weights.as_ref().unwrap()[0].id;
+    let manifest_b_weight_id = manifest_b.weights.as_ref().unwrap()[0].id;
+
+    // 2. Apply the composite update:
+    //    - Manifest A: unchanged at every level (round-trip ids and values).
+    //    - Manifest B: scalar update (declared_mass) + INSERT one measurement
+    //      (id: None) + keep its weight unchanged (id round-tripped).
+    //    - Manifest C: omitted entirely => delete manifest + cascade children.
+    //    - Manifest D: brand-new manifest with one measurement and one weight.
+    let updated = service
+      .rail_waybill_composite_update(waybill_id, &UpdateRailWaybillCompositeRequest {
+        waybill: UpdateRailWaybillRequest {
+          document_number: None,
+          date: None,
+          sender_id: None,
+          base_id: None,
+        },
+        manifests: vec![
+          UpdateRailWagonManifestCompositeRequest {
+            id: Some(manifest_a.id),
+            wagon_number: manifest_a.wagon_number.clone(),
+            product_id: manifest_a.product_id,
+            declared_volume: manifest_a.declared_volume,
+            declared_density: manifest_a.declared_density,
+            declared_mass: manifest_a.declared_mass,
+            measurements: vec![UpdateRailWagonMeasurementCompositeRequest {
+              id: Some(manifest_a_measurement_id),
+              measured_height: dec("1.20"),
+              lab_density: Some(dec("0.85")),
+              calculated_mass: dec("8.4"),
+            }],
+            weights: vec![UpdateRailWagonWeightCompositeRequest {
+              id: Some(manifest_a_weight_id),
+              gross_weight: dec("12.0"),
+              tare_weight: dec("3.5"),
+              net_product_weight: dec("8.5"),
+            }],
+          },
+          UpdateRailWagonManifestCompositeRequest {
+            id: Some(manifest_b.id),
+            wagon_number: manifest_b.wagon_number.clone(),
+            product_id: manifest_b.product_id,
+            declared_volume: manifest_b.declared_volume,
+            declared_density: manifest_b.declared_density,
+            declared_mass: dec("11.5"),
+            measurements: vec![UpdateRailWagonMeasurementCompositeRequest {
+              id: None,
+              measured_height: dec("1.30"),
+              lab_density: Some(dec("0.84")),
+              calculated_mass: dec("11.3"),
+            }],
+            weights: vec![UpdateRailWagonWeightCompositeRequest {
+              id: Some(manifest_b_weight_id),
+              gross_weight: dec("13.0"),
+              tare_weight: dec("3.0"),
+              net_product_weight: dec("10.0"),
+            }],
+          },
+          UpdateRailWagonManifestCompositeRequest {
+            id: None,
+            wagon_number: "WAG-D".to_string(),
+            product_id: catalog.product_a_id,
+            declared_volume: dec("9.0"),
+            declared_density: dec("0.83"),
+            declared_mass: dec("7.47"),
+            measurements: vec![UpdateRailWagonMeasurementCompositeRequest {
+              id: None,
+              measured_height: dec("0.95"),
+              lab_density: None,
+              calculated_mass: dec("7.4"),
+            }],
+            weights: vec![UpdateRailWagonWeightCompositeRequest {
+              id: None,
+              gross_weight: dec("11.0"),
+              tare_weight: dec("3.6"),
+              net_product_weight: dec("7.4"),
+            }],
+          },
+        ],
+      })
+      .await
+      .unwrap();
+
+    // 3. Assertions.
+    let updated_manifests = updated
+      .wagon_manifests
+      .as_ref()
+      .expect("manifests present after update");
+    assert_eq!(updated_manifests.len(), 3, "manifest C should be deleted");
+
+    // Manifest C must be gone.
+    assert!(
+      updated_manifests.iter().all(|m| m.id != manifest_c.id),
+      "manifest C should be hard-deleted from the composite"
+    );
+
+    // Manifest A: id preserved, scalar values unchanged, child ids preserved.
+    let returned_a = updated_manifests
+      .iter()
+      .find(|m| m.id == manifest_a.id)
+      .expect("manifest A should still be present");
+    assert_eq!(returned_a.declared_mass, dec("8.5"));
+    assert_eq!(
+      returned_a.measurements.as_ref().unwrap()[0].id,
+      manifest_a_measurement_id
+    );
+    assert_eq!(
+      returned_a.weights.as_ref().unwrap()[0].id,
+      manifest_a_weight_id
+    );
+
+    // Manifest B: id preserved, scalar update applied, weight id preserved,
+    // measurement INSERTED with a fresh id.
+    let returned_b = updated_manifests
+      .iter()
+      .find(|m| m.id == manifest_b.id)
+      .expect("manifest B should still be present");
+    assert_eq!(returned_b.declared_mass, dec("11.5"));
+    assert_eq!(
+      returned_b.weights.as_ref().unwrap()[0].id,
+      manifest_b_weight_id
+    );
+    let b_measurements = returned_b
+      .measurements
+      .as_ref()
+      .expect("manifest B should now have a measurement");
+    assert_eq!(b_measurements.len(), 1);
+    assert_eq!(b_measurements[0].calculated_mass, dec("11.3"));
+
+    // Manifest D: brand-new id, both children present with fresh ids.
+    let returned_d = updated_manifests
+      .iter()
+      .find(|m| m.wagon_number == "WAG-D")
+      .expect("manifest D should be inserted");
+    assert!(returned_d.id != manifest_a.id && returned_d.id != manifest_b.id);
+    let d_measurements = returned_d
+      .measurements
+      .as_ref()
+      .expect("manifest D should have its measurement persisted");
+    assert_eq!(d_measurements.len(), 1);
+    assert_eq!(d_measurements[0].measured_height, dec("0.95"));
+    let d_weights = returned_d
+      .weights
+      .as_ref()
+      .expect("manifest D should have its weight persisted");
+    assert_eq!(d_weights.len(), 1);
+    assert_eq!(d_weights[0].net_product_weight, dec("7.4"));
+  })
+  .await;
+}
+
+/// Composite update must reject duplicate manifest ids before any write,
+/// matching the truck-waybill guard.
+#[tokio::test]
+async fn rail_waybill_composite_update_rejects_duplicate_manifest_ids() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let service = DocumentService::new(db.clone(), ledger, audit);
+
+    let initial = service
+      .rail_waybill_composite_create(&RailWaybillCompositeRequest {
+        document_number: "RW-COMP-UPDATE-DUP".to_string(),
+        date: date("2026-01-01"),
+        sender_id: catalog.sender_id,
+        base_id: catalog.base_id,
+        manifests: Some(vec![RailWagonManifestCompositeRequest {
+          wagon_number: "WAG-DUP".to_string(),
+          product_id: catalog.product_a_id,
+          declared_volume: dec("10.0"),
+          declared_density: dec("0.85"),
+          declared_mass: dec("8.5"),
+          measurements: None,
+          weights: None,
+        }]),
+      })
+      .await
+      .unwrap();
+
+    let waybill_id = initial.waybill.id;
+    let manifest = &initial.wagon_manifests.as_ref().unwrap()[0];
+    let dup_id = manifest.id;
+
+    let err = service
+      .rail_waybill_composite_update(waybill_id, &UpdateRailWaybillCompositeRequest {
+        waybill: UpdateRailWaybillRequest {
+          document_number: None,
+          date: None,
+          sender_id: None,
+          base_id: None,
+        },
+        manifests: vec![
+          UpdateRailWagonManifestCompositeRequest {
+            id: Some(dup_id),
+            wagon_number: manifest.wagon_number.clone(),
+            product_id: manifest.product_id,
+            declared_volume: manifest.declared_volume,
+            declared_density: manifest.declared_density,
+            declared_mass: manifest.declared_mass,
+            measurements: vec![],
+            weights: vec![],
+          },
+          UpdateRailWagonManifestCompositeRequest {
+            id: Some(dup_id),
+            wagon_number: manifest.wagon_number.clone(),
+            product_id: manifest.product_id,
+            declared_volume: manifest.declared_volume,
+            declared_density: manifest.declared_density,
+            declared_mass: dec("9.9"),
+            measurements: vec![],
+            weights: vec![],
+          },
+        ],
+      })
+      .await
+      .expect_err("duplicate manifest ids must be rejected");
+
+    match err {
+      ApiError::BadRequest(msg) => {
+        assert!(
+          msg.contains("duplicate manifest id in request"),
+          "expected duplicate-manifest-id error, got: {msg}"
+        );
+        assert!(
+          msg.contains(&dup_id.to_string()),
+          "error should name the offending id, got: {msg}"
+        );
+      }
+      other => panic!("expected ApiError::BadRequest, got: {other:?}"),
+    }
   })
   .await;
 }

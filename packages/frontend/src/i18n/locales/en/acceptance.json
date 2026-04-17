@@ -1,0 +1,25 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Acceptance",
+      "edit": "Edit Acceptance"
+    }
+  },
+  "section": {
+    "items": "Items"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "dateAccepted": "Date accepted",
+    "arrivalType": "Arrival type",
+    "sourceEntity": "Source entity",
+    "contractorId": "Contractor",
+    "product": "Product",
+    "storage": "Storage",
+    "acceptedAmount": "Accepted amount"
+  },
+  "toast": {
+    "created": "Acceptance {{number}} created",
+    "updated": "Acceptance {{number}} updated"
+  }
+}

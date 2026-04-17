@@ -28,14 +28,14 @@ describe('documentForm', () => {
     expect(fieldset).toBeDisabled()
   })
 
-  it('does not lock for unknown status', () => {
+  it('locks for unknown status (safe default)', () => {
     const { container } = render(
       <DocumentForm status="SOME_OTHER">
         <input data-testid="field" />
       </DocumentForm>,
     )
     const fieldset = container.querySelector('fieldset')
-    expect(fieldset).not.toBeDisabled()
+    expect(fieldset).toBeDisabled()
   })
 
   it('provides isLocked=false via context when DRAFT', () => {

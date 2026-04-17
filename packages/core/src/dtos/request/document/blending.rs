@@ -135,6 +135,51 @@ impl From<&BlendingResultCompositeRequest> for blending_result::ActiveModelEx {
   }
 }
 
+/// Update payload for a single blending component inside a composite update.
+///
+/// Diff conventions match the dispatch / rail / truck composite update DTOs:
+/// rows with `id: Some(_)` are updates against the existing row, rows with
+/// `id: None` are inserts, and rows present in the database but missing from
+/// the request are hard-deleted.
+#[request_dto]
+pub struct UpdateBlendingComponentCompositeRequest {
+  /// Present for existing rows (UPDATE), absent for newly inserted rows (INSERT).
+  pub id: Option<Uuid>,
+  pub storage_id: Uuid,
+  pub source_product_id: Uuid,
+  pub amount_used: Decimal,
+}
+
+/// Update payload for a single blending result inside a composite update.
+#[request_dto]
+pub struct UpdateBlendingResultCompositeRequest {
+  /// Present for existing rows (UPDATE), absent for newly inserted rows (INSERT).
+  pub id: Option<Uuid>,
+  pub storage_id: Uuid,
+  pub produced_amount: Decimal,
+}
+
+/// Composite update payload for a blending document.
+///
+/// Header fields are applied as a partial update (mirrors `UpdateBlendingRequest`).
+/// Both `components` and `results` are required and are the full new state of
+/// each child collection. They are diff-applied against existing rows using
+/// insert / update / delete semantics keyed on the row id, matching the
+/// dispatch composite update flow.
+#[request_dto]
+pub struct UpdateBlendingCompositeRequest {
+  /// Header fields applied as a partial update (mirrors per-row UpdateBlendingRequest).
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub blending: UpdateBlendingRequest,
+  /// Full new components list, diff-applied against existing rows.
+  #[validate(length(min = 1), nested)]
+  pub components: Vec<UpdateBlendingComponentCompositeRequest>,
+  /// Full new results list, diff-applied against existing rows.
+  #[validate(length(min = 1), nested)]
+  pub results: Vec<UpdateBlendingResultCompositeRequest>,
+}
+
 impl From<&CreateBlendingCompositeRequest> for blending_document::ActiveModelEx {
   fn from(req: &CreateBlendingCompositeRequest) -> Self {
     Self {

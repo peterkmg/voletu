@@ -85,6 +85,37 @@ pub struct UpdatePhysicalTransferItemRequest {
   pub amount: Option<Decimal>,
 }
 
+/// Update payload for one item in a physical-transfer composite update.
+///
+/// Each item is a full replacement of its current state, not a partial patch:
+/// `product_id`, `from_storage_id`, `to_storage_id`, and `amount` are all
+/// required and overwrite whatever the existing row held. Items present here
+/// that don't exist on the document are inserted; existing items not present
+/// here are deleted.
+#[request_dto]
+pub struct UpdatePhysicalTransferItemCompositeRequest {
+  /// Present for existing items (an UPDATE), absent for newly inserted items (an INSERT).
+  pub id: Option<Uuid>,
+  pub product_id: Uuid,
+  pub from_storage_id: Uuid,
+  pub to_storage_id: Uuid,
+  pub amount: Decimal,
+}
+
+#[request_dto]
+pub struct UpdatePhysicalTransferCompositeRequest {
+  /// Header fields applied as a partial update (mirrors per-row UpdatePhysicalTransferRequest).
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub physical_transfer: UpdatePhysicalTransferRequest,
+  /// Full new items list, diff-applied against existing rows.
+  /// Items with `id: Some(uuid)` matching an existing row are updated.
+  /// Items with `id: None` are inserted.
+  /// Existing items not present in this list are hard-deleted.
+  #[validate(length(min = 1), nested)]
+  pub items: Vec<UpdatePhysicalTransferItemCompositeRequest>,
+}
+
 #[request_dto]
 pub struct OwnershipTransferItemCompositeRequest {
   pub storage_id: Uuid,
@@ -121,6 +152,38 @@ pub struct UpdateOwnershipTransferItemRequest {
   pub from_contractor_id: Option<Uuid>,
   pub to_contractor_id: Option<Uuid>,
   pub amount: Option<Decimal>,
+}
+
+/// Update payload for one item in an ownership-transfer composite update.
+///
+/// Each item is a full replacement of its current state, not a partial patch:
+/// `storage_id`, `product_id`, `from_contractor_id`, `to_contractor_id`, and
+/// `amount` are all required and overwrite whatever the existing row held.
+/// Items present here that don't exist on the document are inserted; existing
+/// items not present here are deleted.
+#[request_dto]
+pub struct UpdateOwnershipTransferItemCompositeRequest {
+  /// Present for existing items (an UPDATE), absent for newly inserted items (an INSERT).
+  pub id: Option<Uuid>,
+  pub storage_id: Uuid,
+  pub product_id: Uuid,
+  pub from_contractor_id: Uuid,
+  pub to_contractor_id: Uuid,
+  pub amount: Decimal,
+}
+
+#[request_dto]
+pub struct UpdateOwnershipTransferCompositeRequest {
+  /// Header fields applied as a partial update (mirrors per-row UpdateOwnershipTransferRequest).
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub ownership_transfer: UpdateOwnershipTransferRequest,
+  /// Full new items list, diff-applied against existing rows.
+  /// Items with `id: Some(uuid)` matching an existing row are updated.
+  /// Items with `id: None` are inserted.
+  /// Existing items not present in this list are hard-deleted.
+  #[validate(length(min = 1), nested)]
+  pub items: Vec<UpdateOwnershipTransferItemCompositeRequest>,
 }
 
 impl From<&PhysicalTransferItemCompositeRequest> for physical_transfer_item::ActiveModelEx {

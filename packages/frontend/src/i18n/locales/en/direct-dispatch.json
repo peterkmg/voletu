@@ -1,0 +1,34 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Direct Dispatch",
+      "edit": "Edit Direct Dispatch"
+    }
+  },
+  "section": {
+    "items": "Items",
+    "storageMeasurements": "Storage measurements"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "date": "Date",
+    "contractorId": "Contractor",
+    "destinationBaseId": "Destination warehouse",
+    "product": "Product",
+    "storage": "Storage",
+    "dispatchedAmount": "Amount",
+    "measurementStorage": "Storage",
+    "beforeHeight": "Before: height",
+    "beforeVolume": "Before: volume",
+    "beforeDensity": "Before: density",
+    "beforeMass": "Before: mass",
+    "afterHeight": "After: height",
+    "afterVolume": "After: volume",
+    "afterDensity": "After: density",
+    "afterMass": "After: mass"
+  },
+  "toast": {
+    "created": "Direct dispatch created",
+    "updated": "Direct dispatch updated"
+  }
+}

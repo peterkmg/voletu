@@ -3,20 +3,16 @@ import type { TFunction } from 'i18next'
 import type { PhysicalTransferFlatRow, PhysicalTransferItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { physicalDocumentCreate, physicalDocumentExecute, physicalDocumentHardDelete, physicalDocumentRevert, physicalDocumentSoftDelete, physicalDocumentUpdate } from '~/generated/client'
+import { physicalDocumentExecute, physicalDocumentHardDelete, physicalDocumentRevert, physicalDocumentSoftDelete } from '~/generated/client'
 import { usePhysicalTransferCompositeGet } from '~/generated/hooks/DocumentOperationsHooks/usePhysicalTransferCompositeGet'
 import { flowPhysicalTransferFlatQueryQueryKey, useFlowPhysicalTransferFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowPhysicalTransferFlatQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { PhysicalTransferMutateDialog } from './physical-transfer/physical-transfer-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -79,13 +75,6 @@ function usePhysicalTransferText() {
   }
 }
 
-const formSchema = z.object({
-  documentNumber: z.string().min(1),
-  date: z.string().min(1),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
 interface PhysicalTransferDetailData {
   id: string
   documentNumber: string
@@ -96,42 +85,12 @@ interface PhysicalTransferDetailData {
   executedAt?: string | null
 }
 
-function MutateDialog({ open, onOpenChange, currentRow, onCreated }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: PhysicalTransferFlatRow | null, onCreated?: (id: string) => void }) {
-  const { t } = useTranslation(['common'])
-
-  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    currentRow,
-    schema: formSchema,
-    defaultValues: { documentNumber: '', date: '' },
-    mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '' }),
-    createFn: physicalDocumentCreate,
-    updateFn: physicalDocumentUpdate,
-    queryKey: flowPhysicalTransferFlatQueryQueryKey(),
-    entityLabel: t('common:nav.physicalTransfer'),
-    formId: 'physical-transfer-form',
-    onCreated,
-  })
-
-  return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={isUpdate ? t('common:actions.edit') : t('common:actions.create')} description={t('common:nav.physicalTransfer')} formId="physical-transfer-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="physical-transfer-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
-          <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
-        </form>
-      </Form>
-    </FormDialog>
-  )
-}
-
 const physicalTransferViewDefinition = defineDocumentViews<PhysicalTransferFlatRow, PhysicalTransferDetailData>({
   displayName: 'PhysicalTransfer',
   useText: usePhysicalTransferText,
   useQuery: useFlowPhysicalTransferFlatQuery,
   Table: PhysicalTransferTable,
-  MutateDialog,
+  MutateDialog: PhysicalTransferMutateDialog,
   deleteDialog: {
     hardDeleteFn: physicalDocumentHardDelete,
     softDeleteFn: physicalDocumentSoftDelete,

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sea_orm::{
   ColumnTrait,
   Condition,
@@ -12,6 +14,7 @@ use super::types::PhysicalTransferFlatRowRef;
 use crate::{
   api::ApiError,
   dtos::{
+    self,
     response::document::PhysicalTransferFlatRow,
     CreatePhysicalTransferRequest,
     PhysicalTransferResponse,
@@ -94,6 +97,102 @@ impl DocumentService {
         .await?
         .ok_or_else(|| {
           ApiError::NotFound(format!("Physical transfer '{}' not found", transfer_id))
+        })?,
+    )
+  }
+
+  /// Composite update: applies a header partial update plus a full diff on the items list.
+  /// Items with `id: Some(uuid)` matching an existing row are updated.
+  /// Items with `id: None` are inserted.
+  /// Existing items not present in the request are hard-deleted.
+  pub async fn physical_transfer_composite_update(
+    &self,
+    physical_transfer_id: Uuid,
+    req: &dtos::UpdatePhysicalTransferCompositeRequest,
+  ) -> Result<PhysicalTransferResponse, ApiError> {
+    let txn = self.db.begin().await?;
+    let res = self
+      .physical_transfer_composite_update_no_tx(&txn, physical_transfer_id, req)
+      .await?;
+    txn.commit().await?;
+    Ok(res)
+  }
+
+  pub(crate) async fn physical_transfer_composite_update_no_tx(
+    &self,
+    conn: &sea_orm::DatabaseTransaction,
+    physical_transfer_id: Uuid,
+    req: &dtos::UpdatePhysicalTransferCompositeRequest,
+  ) -> Result<PhysicalTransferResponse, ApiError> {
+    // 1. Header update via the macro-generated per-row updater.
+    //    This enforces draft-only mutation, applies set_if_some semantics,
+    //    and registers an audit log row.
+    self
+      .physical_transfer_update_no_tx(conn, physical_transfer_id, &req.physical_transfer)
+      .await?;
+
+    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
+    //    database. The HashSet doubles as the dedup guard.
+    let mut kept_ids: HashSet<Uuid> = HashSet::new();
+    for item in &req.items {
+      if let Some(item_id) = item.id {
+        if !kept_ids.insert(item_id) {
+          return Err(ApiError::BadRequest(format!(
+            "duplicate item id in request: {}",
+            item_id
+          )));
+        }
+      }
+    }
+
+    // 3. Persist the items as a graph save. `HasManyModel::Replace(_)` deletes
+    //    every existing related row that is not present in the new set.
+    let items: Vec<physical_transfer_item::ActiveModelEx> = req
+      .items
+      .iter()
+      .map(|item| physical_transfer_item::ActiveModelEx {
+        id: match item.id {
+          Some(id) => sea_orm::ActiveValue::Unchanged(id),
+          None => sea_orm::ActiveValue::NotSet,
+        },
+        product_id: sea_orm::ActiveValue::Set(item.product_id),
+        from_storage_id: sea_orm::ActiveValue::Set(item.from_storage_id),
+        to_storage_id: sea_orm::ActiveValue::Set(item.to_storage_id),
+        amount: sea_orm::ActiveValue::Set(item.amount),
+        ..Default::default()
+      })
+      .collect();
+
+    physical_storage_transfer::ActiveModelEx {
+      id: sea_orm::ActiveValue::Unchanged(physical_transfer_id),
+      items: sea_orm::HasManyModel::Replace(items),
+      ..Default::default()
+    }
+    .save(conn)
+    .await?;
+
+    // 4. Re-derive document routing tags via the existing utility.
+    //    Storage changes on items can shift which bases the document is routed to.
+    self
+      .audit
+      .backfill_document_routing::<physical_storage_transfer::Entity>(conn, physical_transfer_id)
+      .await?;
+
+    // 5. Reload the full composite using the same eager-loading shape as on create.
+    PhysicalTransferResponse::try_from(
+      physical_storage_transfer::Entity::load()
+        .filter_by_id(physical_transfer_id)
+        .filter(physical_storage_transfer::Column::DeletedAt.is_null())
+        .with(company::Entity)
+        .with((physical_transfer_item::Entity, product::Entity))
+        .with((physical_transfer_item::Entity, storage::Entity))
+        .one(conn)
+        .await?
+        .ok_or_else(|| {
+          ApiError::NotFound(format!(
+            "Physical transfer '{}' not found",
+            physical_transfer_id
+          ))
         })?,
     )
   }

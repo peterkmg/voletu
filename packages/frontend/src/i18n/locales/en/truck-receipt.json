@@ -1,0 +1,23 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Truck Waybill",
+      "edit": "Edit Truck Waybill"
+    }
+  },
+  "section": {
+    "items": "Items"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "date": "Date",
+    "senderId": "Sender",
+    "baseId": "Base",
+    "product": "Product",
+    "declaredAmount": "Declared amount"
+  },
+  "toast": {
+    "created": "Truck waybill {{number}} created",
+    "updated": "Truck waybill {{number}} updated"
+  }
+}

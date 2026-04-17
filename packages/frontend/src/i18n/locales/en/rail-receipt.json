@@ -1,0 +1,34 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Rail Waybill",
+      "edit": "Edit Rail Waybill"
+    }
+  },
+  "section": {
+    "manifests": "Wagon manifests",
+    "measurements": "Measurements",
+    "weights": "Weights"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "date": "Date",
+    "senderId": "Sender",
+    "baseId": "Base",
+    "product": "Product",
+    "wagonNumber": "Wagon number",
+    "declaredVolume": "Declared volume",
+    "declaredDensity": "Declared density",
+    "declaredMass": "Declared mass",
+    "measuredHeight": "Measured height",
+    "labDensity": "Lab density",
+    "calculatedMass": "Calculated mass",
+    "grossWeight": "Gross weight",
+    "tareWeight": "Tare weight",
+    "netProductWeight": "Net product weight"
+  },
+  "toast": {
+    "created": "Rail waybill created",
+    "updated": "Rail waybill updated"
+  }
+}

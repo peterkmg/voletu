@@ -25,6 +25,7 @@ use crate::{
     UpdateRailWagonManifestRequest,
     UpdateRailWagonMeasurementRequest,
     UpdateRailWagonWeightRequest,
+    UpdateRailWaybillCompositeRequest,
     UpdateRailWaybillRequest,
   },
   endpoints::paths,

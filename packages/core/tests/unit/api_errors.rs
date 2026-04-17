@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use anyhow::anyhow;
 use axum::{
   body::to_bytes,
@@ -5,8 +7,8 @@ use axum::{
   response::{IntoResponse, Response},
 };
 use serde_json::Value;
-use validator::{ValidationError, ValidationErrors};
-use voletu_core::api::ApiError;
+use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
+use voletu_core::api::{validation_errors_to_issues, ApiError, ValidationIssue};
 
 async fn response_json(response: Response) -> Value {
   let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
@@ -71,12 +73,166 @@ async fn api_error_into_response_uses_expected_status_and_error_code_mapping() {
 
 #[tokio::test]
 async fn api_error_from_serde_json_and_validator_errors_maps_to_validation_error_variant() {
+  // serde_json failures still funnel into the legacy single-message variant —
+  // they carry no per-field context to surface.
   let serde_err = serde_json::from_str::<Value>("{not json").unwrap_err();
   let api_from_serde: ApiError = serde_err.into();
   assert!(matches!(api_from_serde, ApiError::Validation(_)));
 
+  // `validator::ValidationErrors` now produces the structured `ValidationFields`
+  // variant so the frontend can pin issues to specific form fields.
   let mut validation_errors = ValidationErrors::new();
   validation_errors.add("username", ValidationError::new("length"));
   let api_from_validator: ApiError = validation_errors.into();
-  assert!(matches!(api_from_validator, ApiError::Validation(_)));
+  match &api_from_validator {
+    ApiError::ValidationFields(issues) => {
+      assert_eq!(issues.len(), 1, "expected one issue, got {issues:?}");
+      assert_eq!(issues[0].field, "username");
+      // No min/max params on the constructed error → falls through to "length".
+      assert_eq!(issues[0].code, "length");
+    }
+    other => panic!("expected ApiError::ValidationFields, got {other:?}"),
+  }
+
+  // Both variants must continue to share the VALIDATION_ERROR code on the wire.
+  assert_eq!(api_from_validator.error_code(), "VALIDATION_ERROR");
+}
+
+fn field_kind(errors: Vec<ValidationError>) -> ValidationErrorsKind {
+  ValidationErrorsKind::Field(errors)
+}
+
+#[test]
+fn validation_errors_convert_to_dot_index_paths() {
+  // Build the structure equivalent to:
+  //   items[2].accepted_amount → "positive"
+  let mut inner = ValidationErrors::new();
+  let mut e = ValidationError::new("positive");
+  e.message = Some(Cow::from("must be greater than 0"));
+  inner
+    .errors_mut()
+    .insert(Cow::Borrowed("accepted_amount"), field_kind(vec![e]));
+
+  let mut list_map = std::collections::BTreeMap::new();
+  list_map.insert(2usize, Box::new(inner));
+
+  let mut top = ValidationErrors::new();
+  top
+    .errors_mut()
+    .insert(Cow::Borrowed("items"), ValidationErrorsKind::List(list_map));
+
+  let issues = validation_errors_to_issues(&top);
+  assert_eq!(issues.len(), 1);
+  assert_eq!(issues[0].field, "items.2.accepted_amount");
+  assert_eq!(issues[0].code, "positive");
+  assert_eq!(issues[0].message, "must be greater than 0");
+}
+
+#[test]
+fn validation_errors_map_length_and_range_codes() {
+  let mut top = ValidationErrors::new();
+
+  let mut min_len_err = ValidationError::new("length");
+  min_len_err.add_param(Cow::from("min"), &1u64);
+  top.errors_mut().insert(
+    Cow::Borrowed("document_number"),
+    field_kind(vec![min_len_err]),
+  );
+
+  let mut too_big_err = ValidationError::new("range");
+  too_big_err.add_param(Cow::from("max"), &100u64);
+  top
+    .errors_mut()
+    .insert(Cow::Borrowed("count"), field_kind(vec![too_big_err]));
+
+  let issues = validation_errors_to_issues(&top);
+  let by_field: std::collections::HashMap<_, _> =
+    issues.iter().map(|i| (i.field.as_str(), i)).collect();
+
+  assert_eq!(by_field["document_number"].code, "min_length");
+  assert_eq!(by_field["count"].code, "too_big");
+}
+
+#[tokio::test]
+async fn validation_fields_response_includes_issues_array() {
+  let issues = vec![
+    ValidationIssue {
+      field: "items.2.accepted_amount".to_string(),
+      code: "too_small".to_string(),
+      message: "must be greater than 0".to_string(),
+    },
+    ValidationIssue {
+      field: "document_number".to_string(),
+      code: "min_length".to_string(),
+      message: "must be at least 1 character".to_string(),
+    },
+  ];
+  let err = ApiError::ValidationFields(issues);
+
+  let response = err.into_response();
+  assert_eq!(
+    response.status(),
+    StatusCode::BAD_REQUEST,
+    "ValidationFields must return HTTP 400"
+  );
+
+  let body = response_json(response).await;
+  assert_json_diff::assert_json_eq!(
+    body,
+    serde_json::json!({
+      "success": false,
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Validation failed",
+        "issues": [
+          {
+            "field": "items.2.accepted_amount",
+            "code": "too_small",
+            "message": "must be greater than 0"
+          },
+          {
+            "field": "document_number",
+            "code": "min_length",
+            "message": "must be at least 1 character"
+          }
+        ]
+      }
+    })
+  );
+}
+
+#[tokio::test]
+async fn non_validation_error_response_keeps_legacy_envelope() {
+  let err = ApiError::NotFound("widget 42".to_string());
+  let response = err.into_response();
+  assert_eq!(
+    response.status(),
+    StatusCode::NOT_FOUND,
+    "NotFound must return HTTP 404"
+  );
+
+  let body = response_json(response).await;
+
+  // Legacy envelope: { success, error: { code, message } } — no `issues` key.
+  assert_eq!(
+    body.get("success").and_then(|v| v.as_bool()),
+    Some(false),
+    "expected success=false, body was {body}"
+  );
+  let error_obj = body
+    .get("error")
+    .and_then(|v| v.as_object())
+    .expect("expected error object on legacy envelope");
+  assert_eq!(
+    error_obj.get("code").and_then(|v| v.as_str()),
+    Some("NOT_FOUND")
+  );
+  assert_eq!(
+    error_obj.get("message").and_then(|v| v.as_str()),
+    Some("Not found: widget 42")
+  );
+  assert!(
+    !error_obj.contains_key("issues"),
+    "non-validation error must not include `issues`, got {error_obj:?}"
+  );
 }

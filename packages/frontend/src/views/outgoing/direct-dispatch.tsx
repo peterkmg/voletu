@@ -3,22 +3,16 @@ import type { TFunction } from 'i18next'
 import type { DispatchFlatRow, DispatchItemResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
 import { DetailField } from '~/components/document'
 import { ChildItemsTable } from '~/components/document/child-items-table'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormDialog } from '~/components/forms/form-dialog'
-import { TextField } from '~/components/forms/form-fields'
-import { Form } from '~/components/ui/form'
-import { dispatchDocumentCreate, dispatchDocumentExecute, dispatchDocumentHardDelete, dispatchDocumentRevert, dispatchDocumentSoftDelete, dispatchDocumentUpdate } from '~/generated/client'
-import { useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
+import { dispatchDocumentExecute, dispatchDocumentHardDelete, dispatchDocumentRevert, dispatchDocumentSoftDelete } from '~/generated/client'
 import { useDispatchCompositeGet } from '~/generated/hooks/DocumentDispatchHooks/useDispatchCompositeGet'
 import { flowDispatchFlatQueryQueryKey, useFlowDispatchFlatQuery } from '~/generated/hooks/FlowsHooks/useFlowDispatchFlatQuery'
-import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { statusColors } from '~/lib/badge-colors'
 import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
+import { DirectDispatchMutateDialog } from './direct-dispatch/direct-dispatch-mutate-dialog'
 
 function getColumns(
   t: TFunction,
@@ -80,14 +74,6 @@ function useDirectDispatchText() {
   }
 }
 
-const formSchema = z.object({
-  documentNumber: z.string().min(1),
-  date: z.string().min(1),
-  contractorId: z.string().uuid(),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
 interface DirectDispatchDetailData {
   id: string
   documentNumber: string
@@ -99,45 +85,12 @@ interface DirectDispatchDetailData {
   executedAt?: string | null
 }
 
-function MutateDialog({ open, onOpenChange, currentRow, onCreated }: { open: boolean, onOpenChange: (o: boolean) => void, currentRow?: DispatchFlatRow | null, onCreated?: (id: string) => void }) {
-  const { t } = useTranslation(['common'])
-  const companiesQuery = useCatalogCompanyList()
-
-  const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
-    open,
-    onOpenChange,
-    currentRow,
-    schema: formSchema,
-    defaultValues: { documentNumber: '', date: '', contractorId: '' },
-    mapRowToForm: row => ({ documentNumber: row.documentNumber, date: row.date?.split('T')[0] ?? '', contractorId: '' }),
-    transformPayload: v => ({ ...v, dispatchMethod: 'VESSEL_TERMINAL' as const, dispatchPurpose: 'EXTERNAL' as const }),
-    createFn: dispatchDocumentCreate,
-    updateFn: dispatchDocumentUpdate,
-    queryKey: flowDispatchFlatQueryQueryKey({ dispatchMethod: 'VESSEL_TERMINAL', dispatchPurpose: 'EXTERNAL' }),
-    entityLabel: t('common:nav.directDispatch'),
-    formId: 'direct-dispatch-form',
-    onCreated,
-  })
-
-  return (
-    <FormDialog open={open} onOpenChange={handleOpenChange} title={isUpdate ? t('common:actions.edit') : t('common:actions.create')} description={t('common:nav.directDispatch')} formId="direct-dispatch-form" isSubmitting={form.formState.isSubmitting}>
-      <Form {...form}>
-        <form id="direct-dispatch-form" onSubmit={handleSubmit} className="space-y-5">
-          <TextField<FormValues> name="documentNumber" label={t('common:table.documentNumber')} />
-          <TextField<FormValues> name="date" label={t('common:table.date')} type="datetime-local" />
-          <EntityPickerField<FormValues> name="contractorId" label={t('common:table.contractor')} queryResult={companiesQuery} />
-        </form>
-      </Form>
-    </FormDialog>
-  )
-}
-
 const directDispatchViewDefinition = defineDocumentViews<DispatchFlatRow, DirectDispatchDetailData>({
   displayName: 'DirectDispatch',
   useText: useDirectDispatchText,
   useQuery: () => useFlowDispatchFlatQuery({ dispatchMethod: 'VESSEL_TERMINAL', dispatchPurpose: 'EXTERNAL' }),
   Table: DirectDispatchTable,
-  MutateDialog,
+  MutateDialog: DirectDispatchMutateDialog,
   deleteDialog: {
     hardDeleteFn: dispatchDocumentHardDelete,
     softDeleteFn: dispatchDocumentSoftDelete,

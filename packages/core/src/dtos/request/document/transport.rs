@@ -207,6 +207,49 @@ pub struct TruckWaybillCompositeRequest {
   pub weight_docs: Option<Vec<TruckWeightDocCompositeRequest>>,
 }
 
+/// Update payload for one item in a truck waybill composite update.
+///
+/// Each item is a full replacement of its current state, not a partial patch:
+/// `product_id` and `declared_amount` are both required and overwrite whatever
+/// the existing row held. Updating an existing row (`id: Some(_)`) with a
+/// different `product_id` is allowed and intentionally swaps the row's product,
+/// which lets users correct mistakes in the original entry. Items present here
+/// that don't exist on the document are inserted; existing items not present
+/// here are deleted.
+#[request_dto]
+pub struct UpdateTruckWaybillItemCompositeRequest {
+  /// Present for existing items (an UPDATE), absent for newly inserted items (an INSERT).
+  pub id: Option<Uuid>,
+  pub product_id: Uuid,
+  pub declared_amount: Decimal,
+}
+
+/// Composite update payload for a truck waybill.
+///
+/// Header fields are applied as a partial update (mirrors `UpdateTruckWaybillRequest`).
+/// The `items` collection is required and is treated as the full new state of the
+/// document's items - the request must list every item that should remain on the
+/// document. Items with `id: Some(uuid)` matching an existing row are updated;
+/// items with `id: None` are inserted; existing items not present in this list
+/// are hard-deleted.
+///
+/// Note: unlike the create DTO where `items` is `Option<Vec<...>>`, here it is a
+/// required `Vec<...>` because edits at this stage assume the user knows the
+/// full state of the document. The UI also enforces a min(1) guardrail.
+#[request_dto]
+pub struct UpdateTruckWaybillCompositeRequest {
+  /// Header fields applied as a partial update (mirrors per-row UpdateTruckWaybillRequest).
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub waybill: UpdateTruckWaybillRequest,
+  /// Full new items list, diff-applied against existing rows.
+  /// Items with `id: Some(uuid)` matching an existing row are updated.
+  /// Items with `id: None` are inserted.
+  /// Existing items not present in this list are hard-deleted.
+  #[validate(length(min = 1), nested)]
+  pub items: Vec<UpdateTruckWaybillItemCompositeRequest>,
+}
+
 impl CreateTruckWaybillRequest {
   pub fn from_composite(req: &TruckWaybillCompositeRequest) -> Self {
     Self {
@@ -270,6 +313,75 @@ impl CreateRailWaybillRequest {
       base_id: req.base_id,
     }
   }
+}
+
+/// Update payload for a single wagon measurement in a rail waybill composite update.
+///
+/// Same diff conventions as `UpdateTruckWaybillItemCompositeRequest`: rows with
+/// `id: Some(_)` are updates, rows with `id: None` are inserts, and existing
+/// rows omitted from the request are hard-deleted.
+#[request_dto]
+pub struct UpdateRailWagonMeasurementCompositeRequest {
+  /// Present for existing rows (UPDATE), absent for newly inserted rows (INSERT).
+  pub id: Option<Uuid>,
+  pub measured_height: Decimal,
+  pub lab_density: Option<Decimal>,
+  pub calculated_mass: Decimal,
+}
+
+/// Update payload for a single wagon weight in a rail waybill composite update.
+#[request_dto]
+pub struct UpdateRailWagonWeightCompositeRequest {
+  pub id: Option<Uuid>,
+  pub gross_weight: Decimal,
+  pub tare_weight: Decimal,
+  pub net_product_weight: Decimal,
+}
+
+/// Update payload for a single wagon manifest inside a rail waybill composite
+/// update.
+///
+/// Recursively diffs its `measurements` and `weights` collections by id using
+/// the same insert / update / delete semantics applied to manifests at the top
+/// level.
+#[request_dto]
+pub struct UpdateRailWagonManifestCompositeRequest {
+  /// Present for existing rows (UPDATE), absent for newly inserted rows (INSERT).
+  pub id: Option<Uuid>,
+  #[validate(length(min = 1))]
+  pub wagon_number: String,
+  pub product_id: Uuid,
+  pub declared_volume: Decimal,
+  pub declared_density: Decimal,
+  pub declared_mass: Decimal,
+  /// Full new measurements list, diff-applied against existing rows (insert / update / delete).
+  #[validate(nested)]
+  pub measurements: Vec<UpdateRailWagonMeasurementCompositeRequest>,
+  /// Full new weights list, diff-applied against existing rows (insert / update / delete).
+  #[validate(nested)]
+  pub weights: Vec<UpdateRailWagonWeightCompositeRequest>,
+}
+
+/// Composite update payload for a rail waybill.
+///
+/// Header fields are applied as a partial update (mirrors `UpdateRailWaybillRequest`).
+/// The `manifests` collection is required and is treated as the full new state
+/// of the document's wagon manifests; nested `measurements` and `weights` lists
+/// are diff-applied recursively for each surviving manifest.
+#[request_dto]
+pub struct UpdateRailWaybillCompositeRequest {
+  /// Header fields applied as a partial update (mirrors per-row UpdateRailWaybillRequest).
+  #[validate(nested)]
+  #[serde(flatten)]
+  pub waybill: UpdateRailWaybillRequest,
+  /// Full new manifests list, diff-applied against existing rows.
+  /// Manifests with `id: Some(uuid)` matching an existing row are updated and
+  /// their nested measurements / weights are diffed recursively.
+  /// Manifests with `id: None` are inserted (along with all of their children).
+  /// Existing manifests not present in this list are hard-deleted (cascade
+  /// delete relies on FK ON DELETE CASCADE; this also frees their children).
+  #[validate(length(min = 1), nested)]
+  pub manifests: Vec<UpdateRailWagonManifestCompositeRequest>,
 }
 
 impl From<&TruckWaybillItemCompositeRequest> for truck_waybill_item::ActiveModelEx {

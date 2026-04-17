@@ -1,0 +1,26 @@
+{
+  "dialog": {
+    "title": {
+      "create": "New Physical Transfer",
+      "edit": "Edit Physical Transfer"
+    }
+  },
+  "section": {
+    "items": "Items"
+  },
+  "field": {
+    "documentNumber": "Document number",
+    "date": "Date",
+    "contractorId": "Contractor",
+    "startCargoOps": "Cargo ops start",
+    "endCargoOps": "Cargo ops end",
+    "product": "Product",
+    "fromStorage": "From storage",
+    "toStorage": "To storage",
+    "amount": "Amount"
+  },
+  "toast": {
+    "created": "Physical transfer {{number}} created",
+    "updated": "Physical transfer {{number}} updated"
+  }
+}

@@ -10,7 +10,12 @@ use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::{AcceptanceCompositeResponse, CreateAcceptanceCompositeRequest, EmbedParams},
+  dtos::{
+    AcceptanceCompositeResponse,
+    CreateAcceptanceCompositeRequest,
+    EmbedParams,
+    UpdateAcceptanceCompositeRequest,
+  },
   endpoints::paths,
   services::common::ensure_supervisor_or_higher,
   utils::jwt::Claims,
@@ -62,6 +67,35 @@ pub(super) async fn acceptance_composite_create(
 ) -> ApiResult<AcceptanceCompositeResponse> {
   Ok(ApiResponse::success(
     state.svc.document.acceptance_composite_create(&req).await?,
+  ))
+}
+
+#[utoipa::path(
+  put,
+  tag = "Document - Acceptance",
+  operation_id = "acceptance_composite_update",
+  summary = "Update acceptance composite",
+  path = paths::acceptance::COMPOSITE_BY_ID,
+  params(("id" = Uuid, Path)),
+  request_body = UpdateAcceptanceCompositeRequest,
+  responses(
+    (status = 200, body = ApiResponse<AcceptanceCompositeResponse>),
+    (status = 400),
+    (status = 404)
+  )
+)]
+#[axum::debug_handler]
+pub(super) async fn acceptance_composite_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<UpdateAcceptanceCompositeRequest>>,
+) -> ApiResult<AcceptanceCompositeResponse> {
+  Ok(ApiResponse::success(
+    state
+      .svc
+      .document
+      .acceptance_composite_update(id, &req)
+      .await?,
   ))
 }
 
