@@ -6,7 +6,6 @@
     "dev:frontend": "pnpm --filter @voletu/frontend dev",
     "dev:server": "cargo run --package voletu-server",
     "dev:tauri": "pnpm tauri dev",
-    "dev:paper": "cd paper && latexmk -pdf -pvc voletu_thesis.tex",
     "build:frontend": "pnpm --filter @voletu/frontend build",
     "build:server": "cargo build --package voletu-server --release",
     "build:tauri": "pnpm tauri build",
@@ -29,13 +28,13 @@
     "@antfu/eslint-config": "^8.2.0",
     "@eslint-react/eslint-plugin": "^3.0.0",
     "@mermaid-js/mermaid-cli": "^11.12.0",
-    "@tauri-apps/cli": "^2.10.0",
-    "eslint": "^10",
+    "@tauri-apps/cli": "^2.10.1",
+    "eslint": "^10.2.1",
     "eslint-plugin-format": "^2.0.1",
-    "eslint-plugin-react-hooks": "7.1.0-canary-80b1cab3-20260331",
+    "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "prettier": "^3.8.2",
+    "prettier": "^3.8.3",
     "start-server-and-test": "^3.0.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   }
 }

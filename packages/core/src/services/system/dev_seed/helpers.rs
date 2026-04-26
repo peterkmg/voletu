@@ -42,17 +42,24 @@ pub const LEGAL_SUFFIXES: &[&str] = &["LLC", "Ltd.", "Inc.", "GmbH", "Zrt."];
 #[derive(Debug, Clone)]
 pub struct SeedTag {
   date_code: String,
+  run_code: String,
 }
 
 impl SeedTag {
-  pub fn new(now: DateTime<Utc>) -> Self {
+  pub fn new(now: DateTime<Utc>, run_id: Uuid) -> Self {
     Self {
       date_code: now.format("%y%m%d").to_string(),
+      run_code: run_id.as_simple().to_string(),
     }
   }
 
   pub fn document_number(&self, prefix: &str, serial: usize) -> String {
-    format!("{prefix}-{}-{:05}", self.date_code, serial + 1)
+    format!(
+      "{prefix}-{}-{}-{:05}",
+      self.date_code,
+      self.run_code,
+      serial + 1
+    )
   }
 }
 

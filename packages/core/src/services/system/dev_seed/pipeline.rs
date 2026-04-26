@@ -171,7 +171,7 @@ impl SystemService {
             txn,
             audit.as_ref(),
             now,
-            SeedTag::new(now),
+            SeedTag::new(now, run_id),
             &dev_password_hash,
           );
           let mut rng = rng_from_run(run_id);
