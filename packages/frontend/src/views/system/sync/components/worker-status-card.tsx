@@ -58,7 +58,7 @@ export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
             )
           : data
             ? (
-                <dl className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
                       {t('system:sync.workerState')}
@@ -86,12 +86,6 @@ export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
                         ? formatRelativeTime(data.lastSyncAt)
                         : t('system:sync.neverSynced')}
                     </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">
-                      {t('system:sync.nodeType')}
-                    </dt>
-                    <dd className="mt-1 font-mono text-sm">{data.nodeType ?? t('system:sync.unknown')}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">

@@ -15,7 +15,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '~/components/ui/collapsible'
-import { Skeleton } from '~/components/ui/skeleton'
 import { cn } from '~/lib/utils'
 import { useNodeStore } from '~/stores/node-store'
 import { deriveSyncUiState } from '../sync-ui-state'
@@ -77,9 +76,6 @@ export function SyncReadinessCard() {
 
   if (uiState === 'central')
     return null
-
-  if (uiState === 'setupLoading')
-    return <ReadinessSkeleton title={t('sync.readiness.title')} description={t('sync.readiness.description')} />
 
   if (uiState === 'setupIncomplete') {
     const isInitialized = status.isInitialized
@@ -205,27 +201,5 @@ function ConfiguredRow({
       </div>
       <div className="shrink-0">{action}</div>
     </div>
-  )
-}
-
-function ReadinessSkeleton({ title, description }: { title: string, description: string }) {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ListChecks className="size-5" />
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2.5">
-          <Skeleton className="h-5 w-2/3" />
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-5 w-1/2" />
-          <Skeleton className="h-5 w-2/3" />
-        </div>
-      </CardContent>
-    </Card>
   )
 }

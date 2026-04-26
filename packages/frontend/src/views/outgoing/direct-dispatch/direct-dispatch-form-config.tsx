@@ -71,6 +71,7 @@ import { createDispatchCompositeRequestSchema } from '~/generated/zod/createDisp
 import { dispatchItemCompositeRequestSchema } from '~/generated/zod/dispatchItemCompositeRequestSchema'
 import { dispatchMeasurementCompositeRequestSchema } from '~/generated/zod/dispatchMeasurementCompositeRequestSchema'
 import { updateDispatchCompositeRequestSchema } from '~/generated/zod/updateDispatchCompositeRequestSchema'
+import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -247,7 +248,7 @@ function DateTimeInput<TForm extends FieldValues>({
               type="datetime-local"
               disabled={disabled}
               {...field}
-              value={(field.value as string | undefined) ?? ''}
+              value={toDateTimeLocalValue(field.value as string | null | undefined)}
             />
           </FormControl>
           <FormMessage />

@@ -42,7 +42,7 @@ export function WatermarksTable({ data, isLoading }: WatermarksTableProps) {
               )
             : (
                 <div className="overflow-hidden rounded-md border">
-                  <Table>
+                  <Table gridTemplate="minmax(240px,2fr) 90px minmax(240px,2fr) minmax(160px,1fr)">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Target Node</TableHead>

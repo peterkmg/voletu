@@ -5,7 +5,6 @@ import type { NodeStatus } from '~/stores/node-store'
 export type SyncUiState
   = | 'central' // this node is the central — no setup flow at all
     | 'setupIncomplete' // peripheral, configuration incomplete (first-run)
-    | 'setupLoading' // peripheral, config may be complete but we haven't seen enough data yet
     | 'online' // peripheral, configured, worker reachable idle
     | 'syncing' // peripheral, configured, worker actively syncing
     | 'offline' // peripheral, configured, worker not reachable right now
@@ -17,17 +16,15 @@ export function deriveSyncUiState(status: NodeStatus, basesLoaded: boolean): Syn
 
   // Node type unknown — bootstrap hasn't resolved the peripheral's identity yet.
   if (status.nodeType === null)
-    return 'setupLoading'
+    return 'setupIncomplete'
 
   // Peripheral known, but the user has not yet run the init wizard.
   if (!status.isInitialized)
     return 'setupIncomplete'
 
   // Initialized, but we have not yet confirmed the bases list from the server.
-  // Refusing to call this "setup incomplete" prevents the flash where the default
-  // empty `assignedBaseIds` is misread as "user hasn't assigned bases."
   if (!basesLoaded)
-    return 'setupLoading'
+    return 'setupIncomplete'
 
   // Bases known — if none assigned, setup is genuinely incomplete.
   if (status.assignedBaseIds.length === 0)

@@ -45,6 +45,7 @@ export function MatrixToolbar({ contractors, searchQuery, onSearchChange }: Matr
   const totalsActive
     = Number(productGroupTotals) + Number(productTypeTotals)
       + Number(warehouseTotals) + Number(baseTotals)
+  const visibilityActive = structureActive + totalsActive
 
   return (
     <TooltipProvider>
@@ -58,7 +59,7 @@ export function MatrixToolbar({ contractors, searchQuery, onSearchChange }: Matr
           />
         </div>
 
-        <div className="w-48 md:w-64 lg:w-80">
+        <div className="w-36 md:w-48 lg:w-56">
           <EntityPickerCombobox
             value={contractorId}
             onChange={setContractorId}
@@ -68,75 +69,84 @@ export function MatrixToolbar({ contractors, searchQuery, onSearchChange }: Matr
         </div>
 
         <div className="ml-auto flex items-center gap-3">
-          <Tabs value={orientation} onValueChange={v => setOrientation(v as Orientation)}>
-            <TabsList>
-              <TabsTrigger value="products-as-rows">{t('toolbar.orientation.productsAsRows')}</TabsTrigger>
-              <TabsTrigger value="storages-as-rows">{t('toolbar.orientation.storagesAsRows')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {t('toolbar.rows')}
+              :
+            </span>
+            <Tabs value={orientation} onValueChange={v => setOrientation(v as Orientation)}>
+              <TabsList className="h-8">
+                <TabsTrigger value="products-as-rows" className="px-2.5 text-xs md:text-sm">
+                  {t('toolbar.axis.products')}
+                </TabsTrigger>
+                <TabsTrigger value="storages-as-rows" className="px-2.5 text-xs md:text-sm">
+                  {t('toolbar.axis.storages')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
           <DensityToggle />
 
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
-                {t('toolbar.structure.label')}
-                {structureActive > 0 && <Badge variant="secondary">{structureActive}</Badge>}
-                <ChevronDown className="size-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64" align="start">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="dash-show-type">{t('toolbar.structure.productType')}</Label>
-                  <Switch id="dash-show-type" checked={showType} onCheckedChange={setShowType} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="dash-show-base">{t('toolbar.structure.base')}</Label>
-                  <Switch id="dash-show-base" checked={showBase} onCheckedChange={setShowBase} />
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                {t('toolbar.totals.label')}
-                {totalsActive > 0 && <Badge variant="secondary">{totalsActive}</Badge>}
+                {t('toolbar.visibility')}
+                {visibilityActive > 0 && <Badge variant="secondary">{visibilityActive}</Badge>}
                 <ChevronDown className="size-4 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72" align="start">
-              <div className="flex flex-col gap-3">
-                <ToggleRow
-                  id="dash-totals-group"
-                  label={t('toolbar.totals.productGroup')}
-                  checked={productGroupTotals}
-                  onCheckedChange={setProductGroupTotals}
-                />
-                <ToggleRow
-                  id="dash-totals-type"
-                  label={t('toolbar.totals.productType')}
-                  checked={productTypeTotals}
-                  onCheckedChange={setProductTypeTotals}
-                  disabled={!showType}
-                  disabledTooltip={t('toolbar.totals.requiresType')}
-                />
-                <ToggleRow
-                  id="dash-totals-warehouse"
-                  label={t('toolbar.totals.warehouse')}
-                  checked={warehouseTotals}
-                  onCheckedChange={setWarehouseTotals}
-                />
-                <ToggleRow
-                  id="dash-totals-base"
-                  label={t('toolbar.totals.base')}
-                  checked={baseTotals}
-                  onCheckedChange={setBaseTotals}
-                  disabled={!showBase}
-                  disabledTooltip={t('toolbar.totals.requiresBase')}
-                />
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {t('toolbar.structure.label')}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dash-show-type">{t('toolbar.structure.productType')}</Label>
+                    <Switch id="dash-show-type" checked={showType} onCheckedChange={setShowType} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dash-show-base">{t('toolbar.structure.base')}</Label>
+                    <Switch id="dash-show-base" checked={showBase} onCheckedChange={setShowBase} />
+                  </div>
+                </div>
+
+                <div className="h-px bg-border" />
+
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {t('toolbar.totals.label')}
+                  </p>
+                  <ToggleRow
+                    id="dash-totals-group"
+                    label={t('toolbar.totals.productGroup')}
+                    checked={productGroupTotals}
+                    onCheckedChange={setProductGroupTotals}
+                  />
+                  <ToggleRow
+                    id="dash-totals-type"
+                    label={t('toolbar.totals.productType')}
+                    checked={productTypeTotals}
+                    onCheckedChange={setProductTypeTotals}
+                    disabled={!showType}
+                    disabledTooltip={t('toolbar.totals.requiresType')}
+                  />
+                  <ToggleRow
+                    id="dash-totals-warehouse"
+                    label={t('toolbar.totals.warehouse')}
+                    checked={warehouseTotals}
+                    onCheckedChange={setWarehouseTotals}
+                  />
+                  <ToggleRow
+                    id="dash-totals-base"
+                    label={t('toolbar.totals.base')}
+                    checked={baseTotals}
+                    onCheckedChange={setBaseTotals}
+                    disabled={!showBase}
+                    disabledTooltip={t('toolbar.totals.requiresBase')}
+                  />
+                </div>
               </div>
             </PopoverContent>
           </Popover>

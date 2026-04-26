@@ -66,6 +66,7 @@ import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalog
 import { createOwnershipTransferRequestSchema } from '~/generated/zod/createOwnershipTransferRequestSchema'
 import { ownershipTransferItemCompositeRequestSchema } from '~/generated/zod/ownershipTransferItemCompositeRequestSchema'
 import { updateOwnershipTransferCompositeRequestSchema } from '~/generated/zod/updateOwnershipTransferCompositeRequestSchema'
+import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -189,7 +190,7 @@ function DateTimeInput<TForm extends FieldValues>({
               type="datetime-local"
               disabled={disabled}
               {...field}
-              value={(field.value as string | undefined) ?? ''}
+              value={toDateTimeLocalValue(field.value as string | null | undefined)}
             />
           </FormControl>
           <FormMessage />

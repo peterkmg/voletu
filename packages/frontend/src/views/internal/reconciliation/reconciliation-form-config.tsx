@@ -76,6 +76,7 @@ import { adjustmentTypeEnum } from '~/generated/types/AdjustmentType'
 import { createInventoryReconciliationCompositeRequestSchema } from '~/generated/zod/createInventoryReconciliationCompositeRequestSchema'
 import { inventoryAdjustmentCompositeRequestSchema } from '~/generated/zod/inventoryAdjustmentCompositeRequestSchema'
 import { updateInventoryReconciliationCompositeRequestSchema } from '~/generated/zod/updateInventoryReconciliationCompositeRequestSchema'
+import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -287,7 +288,7 @@ function DateTimeInput<TForm extends FieldValues>({
               type="datetime-local"
               disabled={disabled}
               {...field}
-              value={(field.value as string | undefined) ?? ''}
+              value={toDateTimeLocalValue(field.value as string | null | undefined)}
             />
           </FormControl>
           <FormMessage />

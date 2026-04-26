@@ -42,29 +42,17 @@ pub const LEGAL_SUFFIXES: &[&str] = &["LLC", "Ltd.", "Inc.", "GmbH", "Zrt."];
 #[derive(Debug, Clone)]
 pub struct SeedTag {
   date_code: String,
-  unique_suffix: String,
 }
 
 impl SeedTag {
   pub fn new(now: DateTime<Utc>) -> Self {
-    let simple = uuid::Uuid::now_v7().simple().to_string();
     Self {
       date_code: now.format("%y%m%d").to_string(),
-      unique_suffix: simple[20..].to_ascii_uppercase(),
     }
   }
 
-  pub fn label(&self) -> &str {
-    &self.unique_suffix
-  }
-
   pub fn document_number(&self, prefix: &str, serial: usize) -> String {
-    format!(
-      "{prefix}-{}-{}-{:05}",
-      self.date_code,
-      self.unique_suffix,
-      serial + 1
-    )
+    format!("{prefix}-{}-{:05}", self.date_code, serial + 1)
   }
 }
 
@@ -84,16 +72,11 @@ pub fn maybe<T>(
   }
 }
 
-pub fn random_name(rng: &mut rand::rngs::StdRng, tag: &SeedTag, base: impl Into<String>) -> String {
-  format!(
-    "{} {} {:03}",
-    base.into(),
-    tag.label(),
-    rng.random_range(100..=999)
-  )
+pub fn random_name(rng: &mut rand::rngs::StdRng, base: impl Into<String>) -> String {
+  format!("{} {:03}", base.into(), rng.random_range(100..=999))
 }
 
-pub fn random_username(_rng: &mut rand::rngs::StdRng, tag: &SeedTag, index: usize) -> String {
+pub fn random_username(_rng: &mut rand::rngs::StdRng, index: usize) -> String {
   let raw = Username().fake::<String>();
   let cleaned: String = raw
     .chars()
@@ -104,29 +87,17 @@ pub fn random_username(_rng: &mut rand::rngs::StdRng, tag: &SeedTag, index: usiz
   } else {
     cleaned.to_lowercase()
   };
-  format!(
-    "{base}-{}-{:02}",
-    tag.label().to_ascii_lowercase(),
-    index + 1
-  )
+  format!("{base}-{:02}", index + 1)
 }
 
-pub fn company_name(rng: &mut rand::rngs::StdRng, tag: &SeedTag) -> String {
+pub fn company_name(rng: &mut rand::rngs::StdRng) -> String {
   let tail = pick(rng, COMPANY_ROLE_TAILS);
-  random_name(
-    rng,
-    tag,
-    format!("{} {}", CompanyName().fake::<String>(), tail),
-  )
+  random_name(rng, format!("{} {}", CompanyName().fake::<String>(), tail))
 }
 
-pub fn location_name(rng: &mut rand::rngs::StdRng, tag: &SeedTag) -> String {
+pub fn location_name(rng: &mut rand::rngs::StdRng) -> String {
   let suffix = pick(rng, BASE_SUFFIXES);
-  random_name(
-    rng,
-    tag,
-    format!("{} {}", CityName().fake::<String>(), suffix),
-  )
+  random_name(rng, format!("{} {}", CityName().fake::<String>(), suffix))
 }
 
 pub fn fake_fragment(words: Range<usize>) -> String {

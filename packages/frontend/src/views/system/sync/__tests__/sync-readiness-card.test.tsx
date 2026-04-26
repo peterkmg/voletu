@@ -30,20 +30,20 @@ describe('syncReadinessCard', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  describe('setupLoading branch (peripheral, bases not yet loaded)', () => {
-    it('shows the skeleton and does NOT render the checklist', () => {
+  describe('bootstrap/peripheral pre-setup branch', () => {
+    it('shows setup checklist (not skeleton) when peripheral is initialized but bases are not loaded', () => {
       useNodeStore.getState().setStatus({
         nodeType: 'PERIPHERAL',
         isInitialized: true,
+        assignedBaseIds: [],
       })
       // basesLoaded intentionally left false.
       renderCard()
-      // Skeletons are not addressable by role; check that the checklist step
-      // labels are absent to confirm we are in the loading branch.
-      expect(screen.queryByText(/node initialized/i)).toBeNull()
-      expect(screen.queryByText(/central connection verified/i)).toBeNull()
-      // And the page title ("Sync Configuration") is still shown.
+
       expect(screen.getByText(/sync configuration/i)).toBeInTheDocument()
+      expect(screen.getByText(/node initialized/i)).toBeInTheDocument()
+      expect(screen.getByText(/bases assigned/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /assign bases/i })).toBeInTheDocument()
     })
   })
 

@@ -4,6 +4,8 @@
   "toolbar": {
     "contractor": "Contractor",
     "search": "Search products or storages...",
+    "rows": "Rows",
+    "visibility": "Visibility",
     "orientation": {
       "productsAsRows": "Products as rows",
       "storagesAsRows": "Storages as rows"

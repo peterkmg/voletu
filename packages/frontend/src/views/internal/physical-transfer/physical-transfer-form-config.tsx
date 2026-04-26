@@ -62,6 +62,7 @@ import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalog
 import { createPhysicalTransferRequestSchema } from '~/generated/zod/createPhysicalTransferRequestSchema'
 import { physicalTransferItemCompositeRequestSchema } from '~/generated/zod/physicalTransferItemCompositeRequestSchema'
 import { updatePhysicalTransferCompositeRequestSchema } from '~/generated/zod/updatePhysicalTransferCompositeRequestSchema'
+import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -213,7 +214,7 @@ function DateTimeInput<TForm extends FieldValues>({
               type="datetime-local"
               disabled={disabled}
               {...field}
-              value={(field.value as string | undefined) ?? ''}
+              value={toDateTimeLocalValue(field.value as string | null | undefined)}
             />
           </FormControl>
           <FormMessage />

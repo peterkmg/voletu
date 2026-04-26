@@ -63,8 +63,8 @@
   "lifecycle": {
     "execute": "Execute Document",
     "revert": "Revert Document",
-    "executeConfirm": "Are you sure you want to execute this document? This action processes all items.",
-    "revertConfirm": "Are you sure you want to revert this document? This will undo all processed items."
+    "executeConfirm": "Are you sure you want to execute this document?",
+    "revertConfirm": "Are you sure you want to revert this document?"
   },
   "items": {
     "title": "Items",

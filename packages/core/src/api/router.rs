@@ -22,7 +22,9 @@ pub fn build_router(state: Arc<ApiState>) -> Router {
     .allow_headers(tower_http::cors::Any)
     .allow_origin(tower_http::cors::Any);
 
-  let mut public = OpenApiRouter::new()
+  let mut public = OpenApiRouter::new();
+
+  public = public
     .merge(endpoints::health::health_routes(state.clone()))
     .merge(endpoints::auth::auth_public_routes(state.clone()))
     .merge(endpoints::sync::sync_routes(state.clone()));

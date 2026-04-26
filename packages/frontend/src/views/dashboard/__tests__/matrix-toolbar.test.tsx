@@ -19,7 +19,7 @@ function resetStore() {
 }
 
 describe('matrixToolbar', () => {
-  it('flips the Base switch inside the Structure popover and updates the store', async () => {
+  it('flips the Base switch inside the visibility popover and updates the store', async () => {
     resetStore()
     const user = userEvent.setup()
     render(
@@ -29,13 +29,13 @@ describe('matrixToolbar', () => {
         onSearchChange={() => {}}
       />,
     )
-    await user.click(screen.getByRole('button', { name: /structure/i }))
+    await user.click(screen.getByRole('button', { name: /visibility/i }))
     const baseSwitch = await screen.findByLabelText(/show base/i)
     await user.click(baseSwitch)
     expect(useDashboardStore.getState().showBase).toBe(true)
   })
 
-  it('switches orientation when storages-as-rows tab is selected', async () => {
+  it('shows compact rows toggle and switches orientation when storages tab is selected', async () => {
     resetStore()
     const user = userEvent.setup()
     render(
@@ -45,7 +45,8 @@ describe('matrixToolbar', () => {
         onSearchChange={() => {}}
       />,
     )
-    await user.click(screen.getByRole('tab', { name: /storages as rows/i }))
+    expect(screen.getByText(/^rows:$/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: /^storages$/i }))
     expect(useDashboardStore.getState().orientation).toBe('storages-as-rows')
   })
 
@@ -59,8 +60,22 @@ describe('matrixToolbar', () => {
         onSearchChange={() => {}}
       />,
     )
-    await user.click(screen.getByRole('button', { name: /totals/i }))
+    await user.click(screen.getByRole('button', { name: /visibility/i }))
     const productTypeTotalsSwitch = await screen.findByLabelText(/product type totals/i)
     expect(productTypeTotalsSwitch).toBeDisabled()
+  })
+
+  it('uses one combined visibility popover instead of separate structure and totals popovers', () => {
+    resetStore()
+    render(
+      <MatrixToolbar
+        contractors={[{ id: 'c1', label: 'Acme' }]}
+        searchQuery=""
+        onSearchChange={() => {}}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /visibility/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /structure/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /totals/i })).not.toBeInTheDocument()
   })
 })

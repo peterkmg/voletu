@@ -17,7 +17,6 @@ const syncStateConfig: Record<SyncUiState, { dot: string, label: string }> = {
   online: { dot: 'bg-green-500', label: 'node.syncState.online' },
   syncing: { dot: 'bg-green-500', label: 'node.syncState.syncing' },
   setupIncomplete: { dot: 'bg-yellow-500', label: 'node.syncState.setupNeeded' },
-  setupLoading: { dot: 'bg-muted-foreground/50', label: 'node.syncState.loading' },
   offline: { dot: 'bg-red-500', label: 'node.syncState.offline' },
 }
 

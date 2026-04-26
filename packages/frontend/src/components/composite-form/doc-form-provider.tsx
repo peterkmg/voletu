@@ -98,6 +98,7 @@ export function DocFormProvider<TForm extends FieldValues, TResponse>({
         onSubmit={handleSubmit}
         data-slot="doc-form"
         data-submitting={submitting || undefined}
+        className="flex flex-1 min-h-0 flex-col"
       >
         {children}
       </form>

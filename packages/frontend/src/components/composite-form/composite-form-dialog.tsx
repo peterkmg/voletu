@@ -91,9 +91,9 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
         data-slot="composite-form-dialog"
         data-heavy={heavy || undefined}
         className={cn(
-          'gap-0 p-0',
-          'w-full h-full max-w-full max-h-full', // < md: full viewport
-          'md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-lg', // md – lg
+          'flex flex-col overflow-hidden gap-0 p-0',
+          'w-full h-full max-w-full max-h-[100dvh]', // < md: full viewport
+          'md:h-auto md:max-h-[90dvh] md:max-w-2xl md:rounded-lg', // md – lg
           'lg:max-w-3xl', // lg – xl
           'xl:max-w-4xl', // ≥ xl, capped (no further growth)
         )}
@@ -131,7 +131,7 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
             </div>
           )}
 
-          <div className="overflow-y-auto p-6">{children}</div>
+          <div data-slot="composite-form-body" className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
 
           <CompositeFormFooter
             mode={mode}

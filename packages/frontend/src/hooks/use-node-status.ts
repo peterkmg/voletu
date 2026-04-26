@@ -9,6 +9,7 @@ import {
 } from '~/platform/runtime/health'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
+import { getCurrentSyncPollInterval } from './sync-polling-policy'
 
 export function useHealthCheck() {
   const accessToken = useAuthStore(s => s.accessToken)
@@ -32,11 +33,13 @@ export function useHealthCheck() {
 export function useNodeStatus() {
   const accessToken = useAuthStore(s => s.accessToken)
   const isInitialized = useNodeStore(s => s.status.isInitialized)
+  const syncRefetchInterval = () => getCurrentSyncPollInterval()
 
   const query = useQuery({
     queryKey: ['node', 'status'],
     queryFn: () => fetchNodeStatus(),
-    refetchInterval: 30_000,
+    refetchInterval: syncRefetchInterval,
+    refetchIntervalInBackground: true,
     enabled: isInitialized && !!accessToken,
   })
 
@@ -53,7 +56,8 @@ export function useNodeStatus() {
         throw new Error('Failed to fetch node bases')
       return res.json()
     },
-    refetchInterval: 30_000,
+    refetchInterval: syncRefetchInterval,
+    refetchIntervalInBackground: true,
     enabled: isInitialized && !!accessToken && nodeType === 'PERIPHERAL',
   })
 

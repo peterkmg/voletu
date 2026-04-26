@@ -34,12 +34,12 @@ describe('deriveSyncUiState', () => {
   })
 
   describe('bootstrap not yet resolved (nodeType null)', () => {
-    it('returns "setupLoading" when nodeType is null and uninitialized', () => {
-      expect(deriveSyncUiState(status(), false)).toBe('setupLoading')
+    it('returns "setupIncomplete" when nodeType is null and uninitialized', () => {
+      expect(deriveSyncUiState(status(), false)).toBe('setupIncomplete')
     })
 
-    it('returns "setupLoading" when nodeType is null even if basesLoaded is true', () => {
-      expect(deriveSyncUiState(status(), true)).toBe('setupLoading')
+    it('returns "setupIncomplete" when nodeType is null even if basesLoaded is true', () => {
+      expect(deriveSyncUiState(status(), true)).toBe('setupIncomplete')
     })
   })
 
@@ -58,8 +58,7 @@ describe('deriveSyncUiState', () => {
   })
 
   describe('peripheral initialized, bases not yet loaded', () => {
-    it('returns "setupLoading" even when assignedBaseIds is empty', () => {
-      // This is the critical case: default empty bases must NOT be read as "setup incomplete".
+    it('returns "setupIncomplete" even when assignedBaseIds is empty', () => {
       expect(
         deriveSyncUiState(
           status({
@@ -69,11 +68,10 @@ describe('deriveSyncUiState', () => {
           }),
           false,
         ),
-      ).toBe('setupLoading')
+      ).toBe('setupIncomplete')
     })
 
-    it('returns "setupLoading" even with non-empty assignedBaseIds until flag flips', () => {
-      // Even if someone populated bases via a different path, we wait for the explicit flag.
+    it('returns "setupIncomplete" even with non-empty assignedBaseIds until flag flips', () => {
       expect(
         deriveSyncUiState(
           status({
@@ -83,7 +81,7 @@ describe('deriveSyncUiState', () => {
           }),
           false,
         ),
-      ).toBe('setupLoading')
+      ).toBe('setupIncomplete')
     })
   })
 
@@ -149,15 +147,15 @@ describe('deriveSyncUiState', () => {
       expect(result).not.toBe('setupIncomplete')
     })
 
-    it('bootstrap window with bases stored locally shows setupLoading, not setupIncomplete', () => {
+    it('bootstrap window with bases stored locally still shows setupIncomplete', () => {
       const s = status({
         nodeType: 'PERIPHERAL',
         isInitialized: true,
         assignedBaseIds: [], // default — bases query hasn't resolved yet
       })
       const result: SyncUiState = deriveSyncUiState(s, false)
-      expect(result).toBe('setupLoading')
-      expect(result).not.toBe('setupIncomplete')
+      expect(result).toBe('setupIncomplete')
+      expect(result).not.toBe('offline')
     })
   })
 })

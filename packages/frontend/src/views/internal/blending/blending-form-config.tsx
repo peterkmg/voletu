@@ -67,6 +67,7 @@ import { blendingComponentCompositeRequestSchema } from '~/generated/zod/blendin
 import { blendingResultCompositeRequestSchema } from '~/generated/zod/blendingResultCompositeRequestSchema'
 import { createBlendingCompositeRequestSchema } from '~/generated/zod/createBlendingCompositeRequestSchema'
 import { updateBlendingCompositeRequestSchema } from '~/generated/zod/updateBlendingCompositeRequestSchema'
+import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -243,7 +244,7 @@ function DateTimeInput<TForm extends FieldValues>({
               type="datetime-local"
               disabled={disabled}
               {...field}
-              value={(field.value as string | undefined) ?? ''}
+              value={toDateTimeLocalValue(field.value as string | null | undefined)}
             />
           </FormControl>
           <FormMessage />
