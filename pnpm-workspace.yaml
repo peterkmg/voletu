@@ -10,3 +10,5 @@ onlyBuiltDependencies:
 shellEmulator: true
 
 trustPolicy: no-downgrade
+trustPolicyExclude:
+  - semver@6.3.1
