@@ -1,8 +1,16 @@
 import type { EntityItem } from './entity-picker-combobox'
-import { Check, Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Check, Plus } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '~/components/ui/command'
 import {
   Dialog,
   DialogContent,
@@ -10,8 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
-import { Input } from '~/components/ui/input'
-import { ScrollArea } from '~/components/ui/scroll-area'
 import { cn } from '~/lib/utils'
 
 interface EntityPickerDialogProps {
@@ -25,6 +31,12 @@ interface EntityPickerDialogProps {
   onCreateNew?: () => void
 }
 
+/**
+ * Browse-all dialog reachable via the combobox's "View all…" item. Uses the
+ * exact same cmdk primitives as the inline dropdown so typography, hover
+ * state, keyboard navigation, and search behaviour stay identical between
+ * the two surfaces.
+ */
 export function EntityPickerDialog({
   open,
   onOpenChange,
@@ -35,20 +47,8 @@ export function EntityPickerDialog({
   allowCreate,
   onCreateNew,
 }: EntityPickerDialogProps) {
-  const { t } = useTranslation('common')
-  const [search, setSearch] = useState('')
+  const { t } = useTranslation('forms')
   const [selectedId, setSelectedId] = useState<string | null>(value ?? null)
-
-  const filtered = useMemo(() => {
-    if (!search)
-      return items
-    const lower = search.toLowerCase()
-    return items.filter(
-      item =>
-        item.label.toLowerCase().includes(lower)
-        || item.secondary?.toLowerCase().includes(lower),
-    )
-  }, [items, search])
 
   const handleConfirm = () => {
     if (selectedId) {
@@ -59,71 +59,55 @@ export function EntityPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80vh] flex-col sm:max-w-md">
+      <DialogContent className="flex max-h-[80vh] flex-col gap-4 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={`${t('actions.search')}...`}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <ScrollArea className="flex-1 -mx-1 max-h-[50vh]">
-          <div className="space-y-0.5 px-1">
-            {filtered.length === 0 && (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                {t('table.noResults')}
-              </p>
-            )}
-            {filtered.map(item => (
-              <button
-                key={item.id}
-                type="button"
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
-                  selectedId === item.id && 'bg-accent',
-                )}
-                onClick={() => setSelectedId(item.id)}
-                onDoubleClick={() => {
-                  onSelect(item.id)
-                  onOpenChange(false)
-                }}
-              >
-                <Check
-                  className={cn(
-                    'h-4 w-4 shrink-0',
-                    selectedId === item.id ? 'opacity-100' : 'opacity-0',
-                  )}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="truncate">{item.label}</span>
-                  {item.secondary && (
-                    <span className="truncate text-xs text-muted-foreground">{item.secondary}</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
-        <DialogFooter className="flex-row justify-between sm:justify-between">
+        <Command className="overflow-hidden rounded-md border">
+          <CommandInput placeholder={t('picker.search')} />
+          <CommandList className="max-h-[50vh]">
+            <CommandEmpty>{t('picker.noResults')}</CommandEmpty>
+            <CommandGroup>
+              {items.map(item => (
+                <CommandItem
+                  key={item.id}
+                  value={`${item.label} ${item.secondary ?? ''}`}
+                  onSelect={() => setSelectedId(item.id)}
+                  data-active={selectedId === item.id || undefined}
+                  className="data-[active]:bg-accent data-[active]:text-accent-foreground"
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4 shrink-0',
+                      selectedId === item.id ? 'opacity-100' : 'opacity-0',
+                    )}
+                  />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate">{item.label}</span>
+                    {item.secondary && (
+                      <span className="truncate text-xs text-muted-foreground">{item.secondary}</span>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+        <DialogFooter className="sm:justify-between">
           <div>
             {allowCreate && onCreateNew && (
               <Button variant="outline" size="sm" onClick={onCreateNew}>
                 <Plus className="mr-1 h-4 w-4" />
-                {t('actions.create')}
+                {t('picker.create')}
               </Button>
             )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t('actions.cancel')}
+              {t('picker.cancel')}
             </Button>
             <Button onClick={handleConfirm} disabled={!selectedId}>
-              {t('actions.confirm')}
+              {t('picker.confirm')}
             </Button>
           </div>
         </DialogFooter>

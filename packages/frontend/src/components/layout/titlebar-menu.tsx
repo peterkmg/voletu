@@ -87,6 +87,12 @@ const debugShortcutEntries = [
   { key: 'Ctrl+Shift+D', action: 'debug.toggleDevTools' },
 ] as const
 
+const titlebarDensityLabelKeys: Record<TableDensity, string> = {
+  compact: 'titlebar.densityCompact',
+  normal: 'titlebar.densityNormal',
+  comfortable: 'titlebar.densityComfortable',
+}
+
 // ---------------------------------------------------------------------------
 // File menu
 // ---------------------------------------------------------------------------
@@ -233,7 +239,7 @@ function ViewMenu() {
         <DropdownMenuRadioGroup value={density} onValueChange={handleDensityChange}>
           {tableDensityOptions.map(({ value, labelKey }) => (
             <DropdownMenuRadioItem key={value} value={value}>
-              {t(`titlebar.${labelKey}`)}
+              {t(titlebarDensityLabelKeys[value] ?? labelKey)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

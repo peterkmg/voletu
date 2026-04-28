@@ -20,7 +20,7 @@ interface DataTableViewOptionsProps<TData> {
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('tables')
   const user = useAuthStore(s => s.user)
 
   return (
@@ -32,11 +32,11 @@ export function DataTableViewOptions<TData>({
           className="ms-auto hidden h-8 lg:flex"
         >
           <SlidersHorizontal className="size-4" />
-          {t('table.columns')}
+          {t('tables:columns')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
-        <DropdownMenuLabel>{t('table.toggleColumns')}</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('tables:column.toggle')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()

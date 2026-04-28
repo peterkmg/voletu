@@ -1,7 +1,22 @@
 import type { ComponentType, ReactNode } from 'react'
-import type { FieldValues, Path } from 'react-hook-form'
+import type { ControllerFieldState, ControllerRenderProps, FieldValues, Path } from 'react-hook-form'
 
 export type CompositeMode = 'create' | 'edit'
+
+/**
+ * Props passed to a `HeaderFieldSpec.component`. The outer renderer
+ * (`<DocHeaderSection>` / `<DocItemRowDrawer>`) creates a single `<FormField>`
+ * per spec and forwards the Controller render-prop pieces directly. Field
+ * components MUST NOT create their own `<FormField>` / `<FormItem>` /
+ * `<FormMessage>` — the outer renderer already provides them, and nesting
+ * them here causes duplicate validation messages and labels.
+ */
+export interface HeaderFieldComponentProps<TForm extends FieldValues = FieldValues> {
+  field: ControllerRenderProps<TForm, Path<TForm>>
+  fieldState: ControllerFieldState
+  placeholder?: string
+  disabled?: boolean
+}
 
 /** Specification for one header field rendered by `<DocHeaderSection>`. */
 export interface HeaderFieldSpec<TForm extends FieldValues = FieldValues> {
@@ -11,8 +26,12 @@ export interface HeaderFieldSpec<TForm extends FieldValues = FieldValues> {
   labelKey: string
   /** i18n key for placeholder (optional). */
   placeholderKey?: string
-  /** Component that renders the input. Receives RHF integration via `<FormField>`. */
-  component: ComponentType<{ name: Path<TForm>, placeholder?: string, disabled?: boolean }>
+  /**
+   * Component that renders the bare input. Receives the Controller
+   * render-prop pieces (`field`, `fieldState`) plus optional `placeholder` /
+   * `disabled`. See `HeaderFieldComponentProps` for the contract.
+   */
+  component: ComponentType<HeaderFieldComponentProps<TForm>>
   /** Whether to render the required-field asterisk and apply `required` semantics. */
   required?: boolean
   /** Optional grid span (1 = single column, 2 = full row in a 2-col grid). Default 1. */

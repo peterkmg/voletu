@@ -67,7 +67,7 @@ function BlendingTable({
 }
 
 function useBlendingTitle() {
-  return useTranslation(['common']).t('common:nav.blending')
+  return useTranslation(['common', 'documents']).t('common:nav.blending')
 }
 
 function useBlendingText() {
@@ -76,7 +76,7 @@ function useBlendingText() {
 
   return {
     title,
-    entityLabel: t('common:document.blending'),
+    entityLabel: t('documents:document.blending'),
   }
 }
 
@@ -150,7 +150,7 @@ const blendingViewDefinition = defineDocumentViews<BlendingFlatRow, BlendingDeta
               numericColumn<BlendingComponentResponse>('amountUsed', t('common:table.quantity')),
             ]}
             isLocked={isLocked}
-            sectionTitle={t('common:sections.componentInputs')}
+            sectionTitle={t('blending:section.components')}
           />
           <ChildItemsTable
             items={data.results}
@@ -159,7 +159,7 @@ const blendingViewDefinition = defineDocumentViews<BlendingFlatRow, BlendingDeta
               numericColumn<BlendingResultResponse>('producedAmount', t('common:table.quantity')),
             ]}
             isLocked={isLocked}
-            sectionTitle={t('common:sections.resultOutputs')}
+            sectionTitle={t('blending:section.results')}
           />
         </>
       )
@@ -172,7 +172,7 @@ const blendingViewDefinition = defineDocumentViews<BlendingFlatRow, BlendingDeta
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">
-              {t('common:metadata.executedAt')}
+              {t('documents:metadata.executedAt')}
               :
             </span>
             {' '}

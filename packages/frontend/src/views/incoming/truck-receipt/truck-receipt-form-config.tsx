@@ -31,8 +31,7 @@
  * in practice and the dialog enforces at least one row).
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { FieldValues, Path } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
   HeaderFieldSpec,
@@ -41,15 +40,17 @@ import type {
 import type { TruckWaybillCompositeRequest } from '~/generated/types/TruckWaybillCompositeRequest'
 import type { TruckWaybillItemCompositeRequest } from '~/generated/types/TruckWaybillItemCompositeRequest'
 import type { UpdateTruckWaybillCompositeRequest } from '~/generated/types/UpdateTruckWaybillCompositeRequest'
-import { useFormContext } from 'react-hook-form'
 import { z } from 'zod/v4'
-import { formatAmount, ProductCell } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { useCatalogBaseList } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
+import {
+  BasePicker,
+  ContractorPicker,
+  DateInput,
+  DecimalAmountInput,
+  formatAmount,
+  PlainTextInput,
+  ProductCell,
+  ProductPicker,
+} from '~/components/composite-form'
 import { truckWaybillCompositeRequestSchema } from '~/generated/zod/truckWaybillCompositeRequestSchema'
 import { truckWaybillItemCompositeRequestSchema } from '~/generated/zod/truckWaybillItemCompositeRequestSchema'
 import { updateTruckWaybillCompositeRequestSchema } from '~/generated/zod/updateTruckWaybillCompositeRequestSchema'
@@ -118,147 +119,9 @@ export type TruckReceiptCreate = Omit<TruckWaybillCompositeRequest, 'items' | 'w
 export type TruckReceiptUpdate = UpdateTruckWaybillCompositeRequest
 export type TruckReceiptItem = TruckWaybillItemCompositeRequest
 
-// --- Inline picker / input components (small wrappers) ---
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function BasePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogBaseList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function PlainTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DateInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="date"
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-// `declaredAmount` is a Decimal-as-string on the wire. We keep the value
-// as a string in form state and use a numeric-looking input for UX.
-function DecimalAmountInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
+// Field cells (inputs + entity pickers) come from the shared
+// `composite-form/field-cells` module. Local wrappers used to nest a second
+// `<FormField>`, which produced duplicate validation messages.
 
 // --- Header field spec ---
 

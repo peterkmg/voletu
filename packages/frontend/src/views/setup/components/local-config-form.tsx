@@ -33,7 +33,7 @@ const localSchema = z.object({
   port: z.coerce.number().int().positive().optional(),
   database: z.string().optional(),
   username: z.string().optional(),
-  dbPassword: z.string().min(1, 'Password is required'),
+  dbPassword: z.string().min(1),
   jwtExpirationSeconds: z.coerce.number().int().positive(),
   jwtRefreshExpirationSeconds: z.coerce.number().int().positive(),
 })
@@ -174,7 +174,7 @@ export function LocalConfigForm({ onBack }: LocalConfigFormProps) {
                     <FormItem>
                       <FormLabel>{t('auth:setup.database')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="voletu" {...field} />
+                        <Input placeholder={t('auth:setup.databasePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

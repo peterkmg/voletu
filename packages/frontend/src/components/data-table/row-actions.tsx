@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { MoreHorizontal } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ interface RowActionsProps {
 }
 
 export function RowActions({ actions }: RowActionsProps) {
+  const { t } = useTranslation('tables')
   const inlineActions = actions.filter(a => a.inline)
   const menuActions = actions.filter(a => !a.inline)
 
@@ -59,7 +61,7 @@ export function RowActions({ actions }: RowActionsProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{t('tables:row.menu')}</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

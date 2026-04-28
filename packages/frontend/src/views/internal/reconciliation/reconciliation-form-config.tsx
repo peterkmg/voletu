@@ -34,10 +34,10 @@
  * with no adjustments is not useful and the dialog enforces at least one row.
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
 import type { FieldValues, Path } from 'react-hook-form'
 import type {
   ColumnSpec,
+  HeaderFieldComponentProps,
   HeaderFieldSpec,
   RowFieldSpec,
 } from '~/components/composite-form'
@@ -45,22 +45,20 @@ import type { AdjustmentType } from '~/generated/types/AdjustmentType'
 import type { CreateInventoryReconciliationCompositeRequest } from '~/generated/types/CreateInventoryReconciliationCompositeRequest'
 import type { InventoryAdjustmentCompositeRequest } from '~/generated/types/InventoryAdjustmentCompositeRequest'
 import type { UpdateInventoryReconciliationCompositeRequest } from '~/generated/types/UpdateInventoryReconciliationCompositeRequest'
-import { useFormContext } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod/v4'
 import {
+  ContractorPicker,
+  DateTimeInput,
+  DecimalAmountInput,
   formatAmount,
+  PlainTextInput,
   ProductCell,
+  ProductPicker,
   StorageCell,
+  StoragePicker,
+  WarehousePicker,
 } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -68,15 +66,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
-import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
-import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { adjustmentTypeEnum } from '~/generated/types/AdjustmentType'
 import { createInventoryReconciliationCompositeRequestSchema } from '~/generated/zod/createInventoryReconciliationCompositeRequestSchema'
 import { inventoryAdjustmentCompositeRequestSchema } from '~/generated/zod/inventoryAdjustmentCompositeRequestSchema'
 import { updateInventoryReconciliationCompositeRequestSchema } from '~/generated/zod/updateInventoryReconciliationCompositeRequestSchema'
-import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -128,204 +121,30 @@ export type ReconciliationCreate = CreateInventoryReconciliationCompositeRequest
 export type ReconciliationUpdate = UpdateInventoryReconciliationCompositeRequest
 export type ReconciliationAdjustment = InventoryAdjustmentCompositeRequest
 
-// --- Inline picker / input components (small wrappers) ---
-//
-// Each picker / input is rendered inside a `<FormItem>` cell created by
-// DocHeaderSection / DocItemRowDrawer, so the wrappers pass an empty label
-// (the surrounding FormItem already shows the visible label) and bind
-// their own data hook.
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function WarehousePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogWarehouseList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function StorageBasePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogStorageList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
+// `AdjustmentTypeSelect` is form-specific and stays here; everything else
+// (text / date / decimal / picker inputs) lives in `composite-form/field-cells`.
 function AdjustmentTypeSelect<TForm extends FieldValues>({
-  name,
+  field,
   placeholder,
   disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
+}: HeaderFieldComponentProps<TForm>) {
   return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value as string | undefined}
-            disabled={disabled}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {Object.values(adjustmentTypeEnum).map(value => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function PlainTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DateTimeInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="datetime-local"
-              disabled={disabled}
-              {...field}
-              value={toDateTimeLocalValue(field.value as string | null | undefined)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-// `amount` is a Decimal-as-string on the wire. We keep the value as a
-// string in form state and use a numeric-looking input for UX.
-function DecimalAmountInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <Select
+      onValueChange={field.onChange}
+      value={field.value as string | undefined}
+      disabled={disabled}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.values(adjustmentTypeEnum).map(value => (
+          <SelectItem key={value} value={value}>
+            {value}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 
@@ -410,7 +229,7 @@ export const reconciliationAdjustmentFields: RowFieldSpec<ReconciliationAdjustme
   {
     name: 'storageId',
     labelKey: 'reconciliation:field.storage',
-    component: StorageBasePicker,
+    component: StoragePicker,
     required: true,
     colSpan: 1,
   },

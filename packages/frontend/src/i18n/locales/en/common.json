@@ -66,36 +66,21 @@
     "details": "Details",
     "softDelete": "Delete",
     "hardDelete": "Permanently Delete",
-    "deselectAll": "Deselect all"
+    "deselectAll": "Deselect all",
+    "more": "More"
+  },
+  "loading": "Loading...",
+  "noDataAvailable": "No data available",
+  "yes": "Yes",
+  "no": "No",
+  "breadcrumb": {
+    "label": "Breadcrumb"
   },
   "table": {
     "id": "ID",
-    "name": "Name",
-    "commonName": "Common Name",
-    "longName": "Long Name",
     "status": "Status",
-    "actions": "Actions",
     "createdAt": "Created At",
-    "updatedAt": "Updated At",
     "noResults": "No results.",
-    "rowsPerPage": "Rows per page",
-    "page": "Page",
-    "of": "of",
-    "goToFirstPage": "Go to first page",
-    "goToLastPage": "Go to last page",
-    "goToPreviousPage": "Go to previous page",
-    "goToNextPage": "Go to next page",
-    "selected": "{{count}} selected",
-    "columns": "Columns",
-    "ascending": "Ascending",
-    "descending": "Descending",
-    "hide": "Hide",
-    "toggleColumns": "Toggle columns",
-    "modeVirtual": "Scroll view",
-    "modePaginated": "Paginated view",
-    "densityCompact": "Compact",
-    "densityNormal": "Normal",
-    "densityComfortable": "Comfortable",
     "documentNumber": "Document #",
     "waybillNumber": "Waybill #",
     "acceptanceNumber": "Acceptance #",
@@ -106,16 +91,14 @@
     "expectedQty": "Expected Qty",
     "actualQty": "Actual Qty",
     "source": "Source",
-    "storage": "Storage",
-    "fromStorage": "From Storage",
-    "toStorage": "To Storage",
-    "fromContractor": "From Contractor",
-    "toContractor": "To Contractor",
     "declaredQty": "Declared Qty"
   },
   "error": {
+    "shortTitle": "Error",
     "title": "Something went wrong",
     "message": "An unexpected error occurred. Please try again later.",
+    "unknown": "Unknown error",
+    "notFound": "Page not found",
     "goBack": "Go Back",
     "dashboard": "Dashboard"
   },
@@ -147,6 +130,7 @@
     "sessionExpired": "Session expired!"
   },
   "language": {
+    "switch": "Switch language",
     "en": "English",
     "ru": "Русский"
   },
@@ -166,6 +150,9 @@
     "signOutConfirm": "You will be signed out of your account.",
     "quit": "Quit",
     "toggleSidebar": "Toggle Sidebar",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
     "fullscreen": "Toggle Fullscreen",
     "density": "Density",
     "densityCompact": "Compact",
@@ -177,39 +164,6 @@
     "aboutVersion": "Version {{version}}",
     "keyboardShortcuts": "Keyboard Shortcuts"
   },
-  "document": {
-    "information": "Document Information",
-    "relatedDocuments": "Related Documents",
-    "noRelatedDocuments": "No related documents",
-    "executionMetadata": "Execution Metadata",
-    "lineItems": "Line Items",
-    "executedWarning": "This document is executed and locked. Only Senior Supervisors can revert it to draft.",
-    "truckWaybill": "Truck Waybill",
-    "railWaybill": "Rail Waybill",
-    "acceptance": "Acceptance Document",
-    "dispatch": "Dispatch",
-    "truckDispatch": "Truck Dispatch",
-    "bunkering": "Bunkering",
-    "directDispatch": "Direct Dispatch",
-    "blending": "Blending Document",
-    "physicalTransfer": "Physical Transfer",
-    "ownershipTransfer": "Ownership Transfer",
-    "reconciliation": "Reconciliation",
-    "pendingAcceptance": "Pending Acceptance"
-  },
-  "sections": {
-    "acceptanceItems": "Acceptance Items",
-    "dispatchItems": "Dispatch Items",
-    "componentInputs": "Components (Inputs)",
-    "resultOutputs": "Results (Outputs)",
-    "transferItems": "Transfer Items",
-    "adjustments": "Adjustments",
-    "waybillItems": "Waybill Items",
-    "wagonManifests": "Wagon Manifests"
-  },
-  "metadata": {
-    "executedAt": "Executed at"
-  },
   "columns": {
     "storage": "Storage",
     "fromStorage": "From Storage",
@@ -220,28 +174,22 @@
     "operation": "Operation",
     "bunkerType": "Bunker Type",
     "warehouse": "Warehouse",
-    "wagonNumber": "Wagon #"
-  },
-  "dataTable": {
-    "ascending": "Ascending",
-    "descending": "Descending",
-    "filter": "Filter",
-    "column": "Column",
-    "unpin": "Unpin",
-    "pinLeft": "Pin left",
-    "pinRight": "Pin right",
-    "hide": "Hide",
-    "selectAll": "Select All",
-    "clearFilter": "Clear filter",
-    "search": "Search...",
-    "noValues": "No values found.",
-    "noDates": "No dates found."
+    "wagonNumber": "Wagon #",
+    "reason": "Reason"
   },
   "debug": {
+    "tools": "Debug tools",
     "seedDatabase": "Seed Database",
-    "seeding": "Seeding\u2026",
+    "seeding": "Seeding…",
+    "apiNotConfigured": "API not configured — complete setup first",
+    "seedFailed": "Seed failed",
+    "seeded": "Seeded — {{summary}}",
     "toggleDevTools": "Toggle DevTools",
     "devToolsEnabled": "DevTools enabled",
     "devToolsDisabled": "DevTools disabled"
+  },
+  "sidebar": {
+    "title": "Sidebar",
+    "mobileDescription": "Displays the mobile sidebar."
   }
 }

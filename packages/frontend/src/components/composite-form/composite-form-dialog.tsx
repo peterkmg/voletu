@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { isFormsValidationMessageKey, toFormsValidationTranslationKey } from '~/i18n/form-validation-message'
 import { cn } from '~/lib/utils'
 import { DocFormProvider } from './doc-form-provider'
 
@@ -124,7 +125,9 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
               <ul className="space-y-1">
                 {globalIssues.map(issue => (
                   <li key={`${issue.field}-${issue.code}`}>
-                    {issue.message ?? t(`validation.${issue.code}`)}
+                    {issue.message && isFormsValidationMessageKey(issue.message)
+                      ? t(toFormsValidationTranslationKey(issue.message), { defaultValue: issue.message })
+                      : (issue.message ?? t(`validation.${issue.code}`))}
                   </li>
                 ))}
               </ul>

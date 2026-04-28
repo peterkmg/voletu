@@ -69,6 +69,8 @@
   },
   "orphans": {
     "badge_one": "{{count}} orphaned entry",
+    "badge_few": "{{count}} orphaned entries",
+    "badge_many": "{{count}} orphaned entries",
     "badge_other": "{{count}} orphaned entries",
     "tooltip": "Some ledger rows reference products, storages, or contractors that no longer exist in the catalog. They are excluded from totals."
   },

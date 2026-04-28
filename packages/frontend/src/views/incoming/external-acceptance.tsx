@@ -62,7 +62,7 @@ function ExternalAcceptanceTable({
 }
 
 function useExternalAcceptanceTitle() {
-  return useTranslation(['common']).t('common:nav.externalAcceptance')
+  return useTranslation(['common', 'documents']).t('common:nav.externalAcceptance')
 }
 
 function useExternalAcceptanceText() {
@@ -71,7 +71,7 @@ function useExternalAcceptanceText() {
 
   return {
     title,
-    entityLabel: t('common:document.acceptance'),
+    entityLabel: t('documents:document.acceptance'),
   }
 }
 
@@ -137,7 +137,7 @@ const externalAcceptanceViewDefinition = defineDocumentViews<AcceptanceFlatRow, 
             numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.acceptanceItems')}
+          sectionTitle={t('acceptance:section.items')}
         />
       )
     },
@@ -148,7 +148,7 @@ const externalAcceptanceViewDefinition = defineDocumentViews<AcceptanceFlatRow, 
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

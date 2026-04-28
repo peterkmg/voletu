@@ -36,8 +36,37 @@
     },
     "invalidString": {
       "uuid": "Invalid identifier",
+      "uuidv4": "Invalid identifier",
+      "uuidv6": "Invalid identifier",
+      "uuidv7": "Invalid identifier",
+      "cuid": "Invalid identifier",
+      "cuid2": "Invalid identifier",
+      "nanoid": "Invalid identifier",
+      "ulid": "Invalid identifier",
+      "ksuid": "Invalid identifier",
       "email": "Invalid email",
-      "datetime": "Invalid date/time"
+      "url": "Invalid URL",
+      "hostname": "Invalid hostname",
+      "regex": "Invalid format",
+      "json": "Invalid JSON",
+      "base64": "Invalid base64 value",
+      "base64url": "Invalid base64url value",
+      "jwt": "Invalid token",
+      "e164": "Invalid phone number",
+      "ip": "Invalid IP address",
+      "ipv4": "Invalid IPv4 address",
+      "ipv6": "Invalid IPv6 address",
+      "cidr": "Invalid CIDR range",
+      "cidrv4": "Invalid IPv4 CIDR range",
+      "cidrv6": "Invalid IPv6 CIDR range",
+      "date": "Invalid date",
+      "time": "Invalid time",
+      "datetime": "Invalid date/time",
+      "duration": "Invalid duration",
+      "iso_date": "Invalid date",
+      "iso_time": "Invalid time",
+      "iso_datetime": "Invalid date/time",
+      "iso_duration": "Invalid duration"
     },
     "invalidEnum": "Invalid choice",
     "positive": "Must be greater than 0",
@@ -53,6 +82,8 @@
     "must_match": "Must match",
     "regex": "Invalid format",
     "itemsRequired": "Add at least one item",
+    "centralUrlRequired": "Central Server URL is required for Peripheral nodes",
+    "urlScheme": "URL must start with http:// or https://",
     "unknown": "Validation failed"
   },
   "error": {
@@ -60,7 +91,14 @@
   },
   "picker": {
     "placeholder": "Select…",
+    "selectEntity": "Select {{entity}}",
+    "search": "Search…",
     "noResults": "No matches",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "viewAll": "View all…",
+    "create": "Create",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "noSelection": "No selection"
   }
 }

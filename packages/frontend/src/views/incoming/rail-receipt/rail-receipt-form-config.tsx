@@ -41,8 +41,7 @@
  *   rail-receipt.toast.updated
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { FieldValues, Path } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
   HeaderFieldSpec,
@@ -52,14 +51,17 @@ import type { UpdateRailWagonManifestCompositeRequest } from '~/generated/types/
 import type { UpdateRailWagonMeasurementCompositeRequest } from '~/generated/types/UpdateRailWagonMeasurementCompositeRequest'
 import type { UpdateRailWagonWeightCompositeRequest } from '~/generated/types/UpdateRailWagonWeightCompositeRequest'
 import type { UpdateRailWaybillCompositeRequest } from '~/generated/types/UpdateRailWaybillCompositeRequest'
-import { useFormContext } from 'react-hook-form'
-import { formatAmount, ProductCell } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import { FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { useCatalogBaseList } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
+import {
+  BasePicker,
+  ContractorPicker,
+  DateInput,
+  DecimalInput,
+  formatAmount,
+  OptionalDecimalInput,
+  PlainTextInput,
+  ProductCell,
+  ProductPicker,
+} from '~/components/composite-form'
 import { updateRailWagonManifestCompositeRequestSchema } from '~/generated/zod/updateRailWagonManifestCompositeRequestSchema'
 import { updateRailWagonMeasurementCompositeRequestSchema } from '~/generated/zod/updateRailWagonMeasurementCompositeRequestSchema'
 import { updateRailWagonWeightCompositeRequestSchema } from '~/generated/zod/updateRailWagonWeightCompositeRequestSchema'
@@ -94,178 +96,10 @@ export const railReceiptManifestSchema = updateRailWagonManifestCompositeRequest
 export const railReceiptMeasurementSchema = updateRailWagonMeasurementCompositeRequestSchema
 export const railReceiptWeightSchema = updateRailWagonWeightCompositeRequestSchema
 
-// --- Inline picker / input components (small wrappers, mirror truck-receipt) ---
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function BasePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogBaseList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function PlainTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DateInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="date"
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DecimalInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function OptionalDecimalInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | null | undefined) ?? ''}
-              onChange={(event) => {
-                const value = event.target.value
-                field.onChange(value === '' ? null : value)
-              }}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
+// Field cells (inputs + entity pickers) come from the shared
+// `composite-form/field-cells` module — local wrappers used to nest a second
+// `<FormField>`, which produced duplicate validation messages. See
+// `HeaderFieldComponentProps` for the contract.
 
 // --- Header field spec (waybill scalars) ---
 

@@ -24,7 +24,7 @@ export function createRowActions<TRow extends { id: string }>(
   config: CreateRowActionsConfig<TRow>,
 ) {
   return function DataTableRowActions({ row }: { row: Row<TRow> }) {
-    const { t } = useTranslation(['common'])
+    const { t } = useTranslation(['common', 'documents'])
     const navigate = useNavigate()
     const { openUpdate, openDelete, openLifecycle } = config.useEntity()
     const userRole = useAuthStore(s => s.user?.role)
@@ -61,7 +61,7 @@ export function createRowActions<TRow extends { id: string }>(
       const status = (row.original as { status?: string }).status
       if (status === 'DRAFT') {
         actions.push({
-          label: t('common:actions.execute'),
+          label: t('documents:lifecycle.execute'),
           icon: Play,
           onClick: selectLifecycle('execute'),
         })
@@ -71,7 +71,7 @@ export function createRowActions<TRow extends { id: string }>(
         && (userRole === 'ADMIN' || userRole === 'SENIOR_SUPERVISOR')
       ) {
         actions.push({
-          label: t('common:actions.revert'),
+          label: t('documents:lifecycle.revert'),
           icon: Undo2,
           onClick: selectLifecycle('revert'),
         })

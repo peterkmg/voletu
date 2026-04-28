@@ -52,7 +52,7 @@ function RailReceiptTable({
 }
 
 function useRailReceiptTitle() {
-  return useTranslation(['common']).t('common:nav.railReceipt')
+  return useTranslation(['common', 'documents']).t('common:nav.railReceipt')
 }
 
 const railReceiptViewDefinition = defineCrudViews<RailReceiptPipelineResponse>({
@@ -85,11 +85,11 @@ function useRailReceiptDetailVariants(id: string) {
             const doc = acceptanceQuery.data.data
             const relatedDocs: RelatedDocument[] = []
             if (doc.railWaybillId) {
-              relatedDocs.push({ type: 'basis', label: t('common:document.railWaybill'), documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: t('common:document.pendingAcceptance'), statusColorMap: statusColors, to: `/incoming/rail/${doc.railWaybillId}` })
+              relatedDocs.push({ type: 'basis', label: t('documents:document.railWaybill'), documentNumber: doc.railWaybillIdName ?? doc.railWaybillId, status: t('documents:document.pendingAcceptance'), statusColorMap: statusColors, to: `/incoming/rail/${doc.railWaybillId}` })
             }
             return (
               <DocumentDetailPage
-                config={{ title: t('common:document.acceptance'), entityLabel: t('common:document.acceptance'), backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: statusColors }}
+                config={{ title: t('documents:document.acceptance'), entityLabel: t('documents:document.acceptance'), backTo: '/incoming/rail', executeFn: acceptanceDocumentExecute, revertFn: acceptanceDocumentRevert, queryKey: railReceiptPipelineQueryQueryKey(), statusColorMap: statusColors }}
                 document={{ id: doc.id, documentNumber: doc.documentNumber, status: doc.status }}
                 subtitle={t('common:nav.railReceipt')}
                 relatedContent={<RelatedDocuments documents={relatedDocs} />}
@@ -109,14 +109,14 @@ function useRailReceiptDetailVariants(id: string) {
                       numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
                     ]}
                     isLocked={doc.status === 'EXECUTED'}
-                    sectionTitle={t('common:sections.acceptanceItems')}
+                    sectionTitle={t('acceptance:section.items')}
                   />
                 )}
                 metadataContent={doc.executedAt
                   ? (
                       <div className="text-sm">
                         <span className="text-muted-foreground">
-                          {t('common:metadata.executedAt')}
+                          {t('documents:metadata.executedAt')}
                           :
                         </span>
                         {' '}
@@ -137,7 +137,7 @@ function useRailReceiptDetailVariants(id: string) {
             const wb = composite.waybill
             return (
               <DocumentDetailPage
-                config={{ title: t('common:document.railWaybill'), entityLabel: t('common:document.railWaybill'), backTo: '/incoming/rail', statusColorMap: statusColors }}
+                config={{ title: t('documents:document.railWaybill'), entityLabel: t('documents:document.railWaybill'), backTo: '/incoming/rail', statusColorMap: statusColors }}
                 document={{ id: wb.id, documentNumber: wb.documentNumber, status: 'PENDING' }}
                 subtitle={t('common:nav.railReceipt')}
                 formContent={(
@@ -156,7 +156,7 @@ function useRailReceiptDetailVariants(id: string) {
                           numericColumn<RailWagonManifestResponse>('declaredMass', t('common:table.declaredQty')),
                         ]}
                         isLocked={false}
-                        sectionTitle={t('common:sections.wagonManifests')}
+                        sectionTitle={t('rail-receipt:section.manifests')}
                       />
                     )
                   : undefined}
@@ -171,7 +171,7 @@ function useRailReceiptDetailVariants(id: string) {
 const RailReceiptResolvedDetail = defineResolvedDetailView({
   useDetailId: () => detailRoute.useParams().id,
   useVariants: useRailReceiptDetailVariants,
-  getNotFoundMessage: () => 'Document not found',
+  getNotFoundMessage: t => t('documents:messages.notFound'),
 })
 
 export function RailReceiptDetail() {

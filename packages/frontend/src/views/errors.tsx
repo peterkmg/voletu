@@ -35,14 +35,14 @@ export function GeneralError({
 }
 
 export function NotFound() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('common')
   const navigate = useNavigate()
   const router = useRouter()
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-4">
       <h1 className="text-7xl font-bold text-muted-foreground">404</h1>
-      <p className="text-lg text-muted-foreground">Page not found</p>
+      <p className="text-lg text-muted-foreground">{t('error.notFound')}</p>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => router.history.back()}>
           {t('actions.back')}

@@ -26,10 +26,10 @@ function getProductColumns(
   RowActions: React.ComponentType<{ row: Row<ProductResponse> }>,
 ): ColumnDef<ProductResponse>[] {
   return [
-    textColumn<ProductResponse>('commonName', t('catalog:product.columns.commonName')),
-    resolvedColumn<ProductResponse>('productGroupId', t('catalog:product.columns.productGroup'), 'productGroupIdName'),
-    resolvedColumn<ProductResponse>('manufacturerId', t('catalog:product.columns.manufacturer'), 'manufacturerIdName'),
-    textColumn<ProductResponse>('addIdentification', t('catalog:product.columns.identification'), { primary: false, sizing: 'capped', maxSize: 200 }),
+    textColumn<ProductResponse>('commonName', t('entities:commonName')),
+    resolvedColumn<ProductResponse>('productGroupId', t('entities:productGroup'), 'productGroupIdName'),
+    resolvedColumn<ProductResponse>('manufacturerId', t('entities:manufacturer'), 'manufacturerIdName'),
+    textColumn<ProductResponse>('addIdentification', t('entities:identification'), { primary: false, sizing: 'capped', maxSize: 200 }),
     { ...dateColumn<ProductResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductResponse>(RowActions, 2),
   ]
@@ -54,7 +54,7 @@ function ProductsTable({ data, actions, RowActions }: ProductsTableProps) {
       getColumns={t => getProductColumns(t, RowActions)}
       routeApi={productsRoute}
       globalFilterFn={productsGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -67,8 +67,8 @@ function useProductsTitle() {
 // --- Mutate Dialog ---
 
 const productFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
-  productGroupId: z.string().min(1, 'Product group is required'),
+  commonName: z.string().min(1),
+  productGroupId: z.string().min(1),
   manufacturerId: z.string().nullable().optional(),
   addIdentification: z.string().nullable().optional(),
 })
@@ -88,7 +88,7 @@ function ProductMutateDialog({
   currentRow,
   onCreated,
 }: ProductMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common', 'forms'])
 
   const productGroupsQuery = useCatalogProductGroupList({ embed: 'names' })
   const companiesQuery = useCatalogCompanyList()
@@ -138,11 +138,11 @@ function ProductMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<ProductFormValues> name="commonName" label={t('catalog:product.form.commonName')} />
+          <TextField<ProductFormValues> name="commonName" label={t('entities:commonName')} />
           <EntityPickerField<ProductFormValues>
             name="productGroupId"
-            label={t('catalog:product.form.productGroupId')}
-            placeholder={t('catalog:product.form.selectProductGroup')}
+            label={t('entities:productGroup')}
+            placeholder={t('forms:picker.selectEntity', { entity: t('entities:productGroup').toLowerCase() })}
             queryResult={productGroupsQuery}
             displayField="commonName"
             allowCreate
@@ -150,15 +150,15 @@ function ProductMutateDialog({
           />
           <EntityPickerField<ProductFormValues>
             name="manufacturerId"
-            label={t('catalog:product.form.manufacturerId')}
-            placeholder={t('catalog:product.form.selectManufacturer')}
+            label={t('entities:manufacturer')}
+            placeholder={t('forms:picker.selectEntity', { entity: t('entities:manufacturer').toLowerCase() })}
             queryResult={companiesQuery}
             displayField="commonName"
             nullable
             allowCreate
             createDialog={CompanyMutateDialog}
           />
-          <TextField<ProductFormValues> name="addIdentification" label={t('catalog:product.form.identification')} nullable />
+          <TextField<ProductFormValues> name="addIdentification" label={t('entities:identification')} nullable />
         </form>
       </Form>
     </FormDialog>

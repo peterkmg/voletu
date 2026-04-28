@@ -34,8 +34,7 @@
  * field (server generates the document identity).
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { FieldValues, Path } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
   HeaderFieldSpec,
@@ -44,29 +43,21 @@ import type {
 import type { CreateOwnershipTransferRequest } from '~/generated/types/CreateOwnershipTransferRequest'
 import type { OwnershipTransferItemCompositeRequest } from '~/generated/types/OwnershipTransferItemCompositeRequest'
 import type { UpdateOwnershipTransferCompositeRequest } from '~/generated/types/UpdateOwnershipTransferCompositeRequest'
-import { useFormContext } from 'react-hook-form'
 import { z } from 'zod/v4'
 import {
   ContractorCell,
+  ContractorPicker,
+  DateTimeInput,
+  DecimalAmountInput,
   formatAmount,
   ProductCell,
+  ProductPicker,
   StorageCell,
+  StoragePicker,
 } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
-import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 import { createOwnershipTransferRequestSchema } from '~/generated/zod/createOwnershipTransferRequestSchema'
 import { ownershipTransferItemCompositeRequestSchema } from '~/generated/zod/ownershipTransferItemCompositeRequestSchema'
 import { updateOwnershipTransferCompositeRequestSchema } from '~/generated/zod/updateOwnershipTransferCompositeRequestSchema'
-import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -117,119 +108,7 @@ export type OwnershipTransferCreate = CreateOwnershipTransferRequest
 export type OwnershipTransferUpdate = UpdateOwnershipTransferCompositeRequest
 export type OwnershipTransferItem = OwnershipTransferItemCompositeRequest
 
-// --- Inline picker / input components (small wrappers) ---
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function StoragePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogStorageList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function DateTimeInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="datetime-local"
-              disabled={disabled}
-              {...field}
-              value={toDateTimeLocalValue(field.value as string | null | undefined)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-// `amount` is a Decimal-as-string on the wire. We keep the value as a
-// string in form state and use a numeric-looking input for UX.
-function DecimalAmountInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
+// Inputs and pickers come from the shared `composite-form/field-cells` module.
 
 // --- Header field spec ---
 //

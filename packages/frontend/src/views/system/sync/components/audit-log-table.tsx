@@ -45,7 +45,7 @@ export function AuditLogTable({ data, isLoading }: AuditLogTableProps) {
       <CardContent>
         {isLoading
           ? (
-              <div className="text-muted-foreground">Loading...</div>
+              <div className="text-muted-foreground">{t('common:loading')}</div>
             )
           : data.length === 0
             ? (
@@ -59,11 +59,11 @@ export function AuditLogTable({ data, isLoading }: AuditLogTableProps) {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('common:table.id')}</TableHead>
-                        <TableHead>Table</TableHead>
-                        <TableHead>Record ID</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Timestamp</TableHead>
+                        <TableHead>{t('system:sync.columns.table')}</TableHead>
+                        <TableHead>{t('system:sync.columns.recordId')}</TableHead>
+                        <TableHead>{t('system:sync.columns.action')}</TableHead>
+                        <TableHead>{t('system:sync.columns.user')}</TableHead>
+                        <TableHead>{t('system:sync.columns.timestamp')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

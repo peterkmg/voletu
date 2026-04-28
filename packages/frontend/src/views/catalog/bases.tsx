@@ -21,8 +21,8 @@ function getBaseColumns(
   RowActions: React.ComponentType<{ row: Row<BaseResponse> }>,
 ): ColumnDef<BaseResponse>[] {
   return [
-    textColumn<BaseResponse>('commonName', t('catalog:base.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
-    textColumn<BaseResponse>('longName', t('catalog:base.columns.longName'), { primary: false }),
+    textColumn<BaseResponse>('commonName', t('entities:commonName'), { sizing: 'capped', maxSize: 250 }),
+    textColumn<BaseResponse>('longName', t('entities:longName'), { primary: false }),
     { ...dateColumn<BaseResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<BaseResponse>(RowActions, 2),
   ]
@@ -47,7 +47,7 @@ function BasesTable({ data, actions, RowActions }: BasesTableProps) {
       getColumns={t => getBaseColumns(t, RowActions)}
       routeApi={basesRoute}
       globalFilterFn={basesGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -60,7 +60,7 @@ function useBasesTitle() {
 // --- Mutate Dialog ---
 
 const baseFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
+  commonName: z.string().min(1),
   longName: z.string().nullable().optional(),
 })
 
@@ -79,7 +79,7 @@ export function BaseMutateDialog({
   currentRow,
   onCreated,
 }: BaseMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common'])
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
@@ -121,8 +121,8 @@ export function BaseMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<BaseFormValues> name="commonName" label={t('catalog:base.form.commonName')} />
-          <TextField<BaseFormValues> name="longName" label={t('catalog:base.form.longName')} nullable />
+          <TextField<BaseFormValues> name="commonName" label={t('entities:commonName')} />
+          <TextField<BaseFormValues> name="longName" label={t('entities:longName')} nullable />
         </form>
       </Form>
     </FormDialog>

@@ -61,7 +61,7 @@ function OwnershipTransferTable({
 }
 
 function useOwnershipTransferTitle() {
-  return useTranslation(['common']).t('common:nav.ownershipTransfer')
+  return useTranslation(['common', 'documents']).t('common:nav.ownershipTransfer')
 }
 
 function useOwnershipTransferText() {
@@ -70,7 +70,7 @@ function useOwnershipTransferText() {
 
   return {
     title,
-    entityLabel: t('common:document.ownershipTransfer'),
+    entityLabel: t('documents:document.ownershipTransfer'),
   }
 }
 
@@ -133,7 +133,7 @@ const ownershipTransferViewDefinition = defineDocumentViews<OwnershipTransferFla
             numericColumn<OwnershipTransferItemResponse>('amount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.transferItems')}
+          sectionTitle={t('ownership-transfer:section.items')}
         />
       )
     },
@@ -144,7 +144,7 @@ const ownershipTransferViewDefinition = defineDocumentViews<OwnershipTransferFla
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

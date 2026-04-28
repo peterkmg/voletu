@@ -22,7 +22,7 @@ export function ExportButton<TData>({
   table,
   filename = 'export',
 }: ExportButtonProps<TData>) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('tables')
 
   const handleExport = () => {
     const visibleColumns = table
@@ -65,7 +65,7 @@ export function ExportButton<TData>({
       onClick={handleExport}
     >
       <Download className="size-4" />
-      {t('actions.export', 'Export')}
+      {t('tables:export')}
     </Button>
   )
 }

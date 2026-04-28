@@ -1,0 +1,56 @@
+{
+  "columns": "Columns",
+  "actions": "Actions",
+  "noResults": "No results.",
+  "rowsPerPage": "Rows per page",
+  "page": "Page",
+  "of": "of",
+  "goToFirstPage": "Go to first page",
+  "goToLastPage": "Go to last page",
+  "goToPreviousPage": "Go to previous page",
+  "goToNextPage": "Go to next page",
+  "selected": "{{count}} selected",
+  "selectAll": "Select All",
+  "selectRow": "Select row",
+  "deselectAll": "Deselect all",
+  "sort": {
+    "ascending": "Ascending",
+    "descending": "Descending"
+  },
+  "column": {
+    "label": "Column",
+    "toggle": "Toggle columns",
+    "hide": "Hide",
+    "pinLeft": "Pin left",
+    "pinRight": "Pin right",
+    "unpin": "Unpin"
+  },
+  "filter": {
+    "label": "Filter",
+    "column": "Column",
+    "clear": "Clear filter",
+    "clearAll": "Clear filters",
+    "reset": "Reset",
+    "search": "Search...",
+    "min": "Min",
+    "max": "Max",
+    "minValue": "Minimum value",
+    "maxValue": "Maximum value",
+    "noResults": "No results found.",
+    "noValues": "No values found.",
+    "noDates": "No dates found."
+  },
+  "mode": {
+    "virtual": "Scroll view",
+    "paginated": "Paginated view"
+  },
+  "density": {
+    "compact": "Compact",
+    "normal": "Normal",
+    "comfortable": "Comfortable"
+  },
+  "row": {
+    "menu": "Open menu"
+  },
+  "export": "Export"
+}

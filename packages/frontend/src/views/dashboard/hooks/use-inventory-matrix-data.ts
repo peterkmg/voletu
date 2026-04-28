@@ -21,7 +21,10 @@ export function useInventoryMatrixData(searchQuery: string): DashboardData {
   const bases = useCatalogBaseList()
   const ledger = useLedgerEntryList()
 
-  const all = [companies, products, productGroups, productTypes, storages, warehouses, bases, ledger]
+  const all = useMemo(
+    () => [companies, products, productGroups, productTypes, storages, warehouses, bases, ledger],
+    [companies, products, productGroups, productTypes, storages, warehouses, bases, ledger],
+  )
   const isLoading = all.some(q => q.isLoading)
   const isError = all.some(q => q.isError)
   const hasAnyData = all.every(q => q.data != null)

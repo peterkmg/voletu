@@ -47,7 +47,7 @@ const initFormSchema = z
   .refine(
     data =>
       data.nodeType !== 'PERIPHERAL' || (data.centralApiUrl && data.centralApiUrl.length > 0),
-    { message: 'Central Server URL is required for Peripheral nodes', path: ['centralApiUrl'] },
+    { message: 'forms.validation.centralUrlRequired', path: ['centralApiUrl'] },
   )
 
 type InitFormValues = z.infer<typeof initFormSchema>
@@ -115,7 +115,7 @@ export function InitializePage() {
                 <FormItem>
                   <FormLabel>{t('system:node.init.nodeName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Warehouse Alpha" {...field} />
+                    <Input placeholder={t('system:node.init.nodeNamePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

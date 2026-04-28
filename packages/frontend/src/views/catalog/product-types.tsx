@@ -21,8 +21,8 @@ function getProductTypeColumns(
   RowActions: React.ComponentType<{ row: Row<ProductTypeResponse> }>,
 ): ColumnDef<ProductTypeResponse>[] {
   return [
-    textColumn<ProductTypeResponse>('commonName', t('catalog:productType.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
-    textColumn<ProductTypeResponse>('longName', t('catalog:productType.columns.longName'), { primary: false }),
+    textColumn<ProductTypeResponse>('commonName', t('entities:commonName'), { sizing: 'capped', maxSize: 250 }),
+    textColumn<ProductTypeResponse>('longName', t('entities:longName'), { primary: false }),
     { ...dateColumn<ProductTypeResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductTypeResponse>(RowActions, 2),
   ]
@@ -47,7 +47,7 @@ function ProductTypesTable({ data, actions, RowActions }: ProductTypesTableProps
       getColumns={t => getProductTypeColumns(t, RowActions)}
       routeApi={productTypesRoute}
       globalFilterFn={productTypesGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -60,7 +60,7 @@ function useProductTypesTitle() {
 // --- Mutate Dialog ---
 
 const productTypeFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
+  commonName: z.string().min(1),
   longName: z.string().nullable().optional(),
 })
 
@@ -79,7 +79,7 @@ export function ProductTypeMutateDialog({
   currentRow,
   onCreated,
 }: ProductTypeMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common'])
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
@@ -121,8 +121,8 @@ export function ProductTypeMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<ProductTypeFormValues> name="commonName" label={t('catalog:productType.form.commonName')} />
-          <TextField<ProductTypeFormValues> name="longName" label={t('catalog:productType.form.longName')} nullable />
+          <TextField<ProductTypeFormValues> name="commonName" label={t('entities:commonName')} />
+          <TextField<ProductTypeFormValues> name="longName" label={t('entities:longName')} nullable />
         </form>
       </Form>
     </FormDialog>

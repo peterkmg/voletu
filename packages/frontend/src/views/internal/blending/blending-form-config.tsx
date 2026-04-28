@@ -34,8 +34,7 @@
  * enforces at least one row in each collection.
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { FieldValues, Path } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
   HeaderFieldSpec,
@@ -45,29 +44,22 @@ import type { BlendingComponentCompositeRequest } from '~/generated/types/Blendi
 import type { BlendingResultCompositeRequest } from '~/generated/types/BlendingResultCompositeRequest'
 import type { CreateBlendingCompositeRequest } from '~/generated/types/CreateBlendingCompositeRequest'
 import type { UpdateBlendingCompositeRequest } from '~/generated/types/UpdateBlendingCompositeRequest'
-import { useFormContext } from 'react-hook-form'
 import { z } from 'zod/v4'
 import {
+  ContractorPicker,
+  DateTimeInput,
+  DecimalAmountInput,
   formatAmount,
+  PlainTextInput,
   ProductCell,
+  ProductPicker,
   StorageCell,
+  StoragePicker,
 } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
-import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 import { blendingComponentCompositeRequestSchema } from '~/generated/zod/blendingComponentCompositeRequestSchema'
 import { blendingResultCompositeRequestSchema } from '~/generated/zod/blendingResultCompositeRequestSchema'
 import { createBlendingCompositeRequestSchema } from '~/generated/zod/createBlendingCompositeRequestSchema'
 import { updateBlendingCompositeRequestSchema } from '~/generated/zod/updateBlendingCompositeRequestSchema'
-import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -138,152 +130,7 @@ export type BlendingUpdate = UpdateBlendingCompositeRequest
 export type BlendingComponent = BlendingComponentCompositeRequest
 export type BlendingResult = BlendingResultCompositeRequest
 
-// --- Inline picker / input components (small wrappers) ---
-//
-// Each picker / input is rendered inside a `<FormItem>` cell created by
-// DocHeaderSection / DocItemRowDrawer, so the wrappers pass an empty label
-// (the surrounding FormItem already shows the visible label) and bind
-// their own data hook.
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function StorageBasePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogStorageList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function PlainTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DateTimeInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="datetime-local"
-              disabled={disabled}
-              {...field}
-              value={toDateTimeLocalValue(field.value as string | null | undefined)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-// `amountUsed` / `producedAmount` are Decimal-as-string on the wire. We keep
-// the value as a string in form state and use a numeric-looking input for UX.
-function DecimalAmountInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
+// Inputs and pickers come from the shared `composite-form/field-cells` module.
 
 // --- Header field spec ---
 
@@ -346,7 +193,7 @@ export const blendingComponentFields: RowFieldSpec<BlendingComponent>[] = [
   {
     name: 'storageId',
     labelKey: 'blending:field.storage',
-    component: StorageBasePicker,
+    component: StoragePicker,
     required: true,
   },
   {
@@ -378,7 +225,7 @@ export const blendingResultFields: RowFieldSpec<BlendingResult>[] = [
   {
     name: 'storageId',
     labelKey: 'blending:field.storage',
-    component: StorageBasePicker,
+    component: StoragePicker,
     required: true,
   },
   {

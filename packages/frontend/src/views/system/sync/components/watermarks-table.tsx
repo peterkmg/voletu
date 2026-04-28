@@ -32,7 +32,7 @@ export function WatermarksTable({ data, isLoading }: WatermarksTableProps) {
       <CardContent>
         {isLoading
           ? (
-              <div className="text-muted-foreground">Loading...</div>
+              <div className="text-muted-foreground">{t('common:loading')}</div>
             )
           : data.length === 0
             ? (
@@ -45,9 +45,9 @@ export function WatermarksTable({ data, isLoading }: WatermarksTableProps) {
                   <Table gridTemplate="minmax(240px,2fr) 90px minmax(240px,2fr) minmax(160px,1fr)">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Target Node</TableHead>
-                        <TableHead>Direction</TableHead>
-                        <TableHead>Last Audit Log ID</TableHead>
+                        <TableHead>{t('system:sync.columns.targetNode')}</TableHead>
+                        <TableHead>{t('system:sync.columns.direction')}</TableHead>
+                        <TableHead>{t('system:sync.columns.lastAuditLogId')}</TableHead>
                         <TableHead>{t('system:sync.lastSync')}</TableHead>
                       </TableRow>
                     </TableHeader>

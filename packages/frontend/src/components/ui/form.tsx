@@ -9,9 +9,11 @@ import {
   useFormContext,
   useFormState,
 } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { Label } from '~/components/ui/label'
-import { cn } from '~/utils'
+import { isFormsValidationMessageKey, toFormsValidationTranslationKey } from '~/i18n/form-validation-message'
+import { cn } from '~/lib/utils'
 
 const Form = FormProvider
 
@@ -134,7 +136,11 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField()
+  const { t } = useTranslation()
   const body = error ? String(error?.message ?? '') : props.children
+  const message = typeof body === 'string' && isFormsValidationMessageKey(body)
+    ? t(toFormsValidationTranslationKey(body), { defaultValue: body })
+    : body
 
   if (!body) {
     return null
@@ -147,7 +153,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
       className={cn('text-sm text-destructive', className)}
       {...props}
     >
-      {body}
+      {message}
     </p>
   )
 }

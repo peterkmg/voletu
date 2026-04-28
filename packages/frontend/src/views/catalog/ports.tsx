@@ -21,8 +21,8 @@ function getPortColumns(
   RowActions: React.ComponentType<{ row: Row<PortResponse> }>,
 ): ColumnDef<PortResponse>[] {
   return [
-    textColumn<PortResponse>('commonName', t('catalog:port.columns.commonName')),
-    textColumn<PortResponse>('country', t('catalog:port.columns.longName'), { primary: false, sizing: 'capped', maxSize: 200 }),
+    textColumn<PortResponse>('commonName', t('entities:commonName')),
+    textColumn<PortResponse>('country', t('entities:country'), { primary: false, sizing: 'capped', maxSize: 200 }),
     { ...dateColumn<PortResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<PortResponse>(RowActions, 2),
   ]
@@ -47,7 +47,7 @@ function PortsTable({ data, actions, RowActions }: PortsTableProps) {
       getColumns={t => getPortColumns(t, RowActions)}
       routeApi={portsRoute}
       globalFilterFn={portsGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -60,7 +60,7 @@ function usePortsTitle() {
 // --- Mutate Dialog ---
 
 const portFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
+  commonName: z.string().min(1),
   country: z.string().nullable().optional(),
 })
 
@@ -79,7 +79,7 @@ function PortMutateDialog({
   currentRow,
   onCreated,
 }: PortMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common'])
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
@@ -121,8 +121,8 @@ function PortMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<PortFormValues> name="commonName" label={t('catalog:port.form.commonName')} />
-          <TextField<PortFormValues> name="country" label={t('catalog:port.form.country')} nullable />
+          <TextField<PortFormValues> name="commonName" label={t('entities:commonName')} />
+          <TextField<PortFormValues> name="country" label={t('entities:country')} nullable />
         </form>
       </Form>
     </FormDialog>

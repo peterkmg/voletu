@@ -65,7 +65,7 @@ function ReconciliationTable({
 }
 
 function useReconciliationTitle() {
-  return useTranslation(['common']).t('common:nav.reconciliation')
+  return useTranslation(['common', 'documents']).t('common:nav.reconciliation')
 }
 
 function useReconciliationText() {
@@ -74,7 +74,7 @@ function useReconciliationText() {
 
   return {
     title,
-    entityLabel: t('common:document.reconciliation'),
+    entityLabel: t('documents:document.reconciliation'),
   }
 }
 
@@ -159,7 +159,7 @@ const reconciliationViewDefinition = defineDocumentViews<ReconciliationFlatRow, 
             numericColumn<InventoryAdjustmentResponse>('amount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.adjustments')}
+          sectionTitle={t('reconciliation:section.adjustments')}
         />
       )
     },
@@ -170,7 +170,7 @@ const reconciliationViewDefinition = defineDocumentViews<ReconciliationFlatRow, 
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

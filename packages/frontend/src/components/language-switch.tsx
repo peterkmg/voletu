@@ -11,7 +11,7 @@ import {
 import { cn } from '~/lib/utils'
 
 export function LanguageSwitch() {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation('common')
 
   const switchLanguage = (lang: string) => {
     changeLanguagePreference(i18n, lang)
@@ -22,7 +22,7 @@ export function LanguageSwitch() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="scale-95 rounded-full">
           <Globe className="size-[1.2rem]" />
-          <span className="sr-only">Switch language</span>
+          <span className="sr-only">{t('language.switch')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

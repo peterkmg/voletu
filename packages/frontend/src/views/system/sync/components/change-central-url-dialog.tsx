@@ -34,7 +34,7 @@ const schema = z.object({
     .trim()
     .url()
     .refine(v => /^https?:\/\//i.test(v), {
-      message: 'URL must start with http:// or https://',
+      message: 'forms.validation.urlScheme',
     }),
 })
 

@@ -45,7 +45,7 @@ export function EntityPickerCombobox({
   disabled,
   className,
 }: EntityPickerComboboxProps) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('forms')
   const [open, setOpen] = useState(false)
 
   const selectedItem = useMemo(
@@ -68,7 +68,7 @@ export function EntityPickerCombobox({
           )}
         >
           <span className="truncate">
-            {selectedItem ? selectedItem.label : (placeholder ?? t('actions.search'))}
+            {selectedItem ? selectedItem.label : (placeholder ?? t('picker.placeholder'))}
           </span>
           <div className="flex items-center gap-1">
             {nullable && selectedItem && (
@@ -86,9 +86,9 @@ export function EntityPickerCombobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
-          <CommandInput placeholder={`${t('actions.search')}...`} />
+          <CommandInput placeholder={t('picker.search')} />
           <CommandList>
-            <CommandEmpty>{t('table.noResults')}</CommandEmpty>
+            <CommandEmpty>{t('picker.noResults')}</CommandEmpty>
             <CommandGroup>
               {items.map(item => (
                 <CommandItem
@@ -125,8 +125,7 @@ export function EntityPickerCombobox({
                     }}
                   >
                     <Search className="mr-2 h-4 w-4" />
-                    {t('actions.view')}
-                    ...
+                    {t('picker.viewAll')}
                   </CommandItem>
                 </CommandGroup>
               </>

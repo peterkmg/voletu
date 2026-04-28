@@ -6,7 +6,7 @@
     }
   },
   "section": {
-    "items": "Позиции"
+    "items": "Позиции накладной"
   },
   "field": {
     "documentNumber": "Номер документа",

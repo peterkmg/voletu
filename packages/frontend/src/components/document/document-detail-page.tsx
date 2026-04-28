@@ -41,7 +41,7 @@ export function DocumentDetailPage({
   itemsContent,
   metadataContent,
 }: DocumentDetailPageProps) {
-  const { t } = useTranslation(['common'])
+  const { t } = useTranslation(['documents'])
   const isLocked = !isDocEditable(document)
   usePageTitle(`${config.title} ${document.documentNumber}`)
 
@@ -72,7 +72,7 @@ export function DocumentDetailPage({
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-                {t('common:document.information')}
+                {t('documents:document.information')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -90,7 +90,7 @@ export function DocumentDetailPage({
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-                  {t('common:document.executionMetadata')}
+                  {t('documents:document.executionMetadata')}
                 </CardTitle>
               </CardHeader>
               <CardContent>

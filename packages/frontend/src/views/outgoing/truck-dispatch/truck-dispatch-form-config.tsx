@@ -36,8 +36,7 @@
  *       packages/frontend/src/generated/types/DispatchMeasurementCompositeRequest.ts
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { FieldValues, Path } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
   HeaderFieldSpec,
@@ -47,30 +46,23 @@ import type { CreateDispatchCompositeRequest } from '~/generated/types/CreateDis
 import type { DispatchItemCompositeRequest } from '~/generated/types/DispatchItemCompositeRequest'
 import type { DispatchMeasurementCompositeRequest } from '~/generated/types/DispatchMeasurementCompositeRequest'
 import type { UpdateDispatchCompositeRequest } from '~/generated/types/UpdateDispatchCompositeRequest'
-import { useFormContext } from 'react-hook-form'
 import { z } from 'zod/v4'
 import {
+  BasePicker,
+  ContractorPicker,
+  DateTimeInput,
+  DecimalAmountInput,
   formatAmount,
+  PlainTextInput,
   ProductCell,
+  ProductPicker,
   StorageCell,
+  StoragePicker,
 } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { useCatalogBaseList } from '~/generated/hooks/CatalogHooks/useCatalogBaseList'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
-import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 import { createDispatchCompositeRequestSchema } from '~/generated/zod/createDispatchCompositeRequestSchema'
 import { dispatchItemCompositeRequestSchema } from '~/generated/zod/dispatchItemCompositeRequestSchema'
 import { dispatchMeasurementCompositeRequestSchema } from '~/generated/zod/dispatchMeasurementCompositeRequestSchema'
 import { updateDispatchCompositeRequestSchema } from '~/generated/zod/updateDispatchCompositeRequestSchema'
-import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -138,164 +130,7 @@ export type TruckDispatchUpdate = UpdateDispatchCompositeRequest
 export type TruckDispatchItem = DispatchItemCompositeRequest
 export type TruckDispatchMeasurement = DispatchMeasurementCompositeRequest
 
-// --- Inline picker / input components ---
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function BasePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogBaseList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function StoragePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogStorageList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function PlainTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DateTimeInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="datetime-local"
-              disabled={disabled}
-              {...field}
-              value={toDateTimeLocalValue(field.value as string | null | undefined)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-// `dispatchedAmount` and the various Decimal measurement fields are wire-typed
-// as `string`. We keep the form value as a string and use a numeric input.
-function DecimalAmountInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
+// Inputs and pickers come from the shared `composite-form/field-cells` module.
 
 // --- Header field spec ---
 

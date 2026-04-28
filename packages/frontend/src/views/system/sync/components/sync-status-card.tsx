@@ -13,7 +13,7 @@ interface SyncStatusCardProps {
 }
 
 export function SyncStatusCard({ data, isLoading }: SyncStatusCardProps) {
-  const { t } = useTranslation(['system'])
+  const { t } = useTranslation(['system', 'common'])
 
   return (
     <Card>
@@ -23,26 +23,26 @@ export function SyncStatusCard({ data, isLoading }: SyncStatusCardProps) {
       <CardContent>
         {isLoading
           ? (
-              <div className="text-muted-foreground">Loading...</div>
+              <div className="text-muted-foreground">{t('common:loading')}</div>
             )
           : data
             ? (
                 <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
-                      Node ID
+                      {t('system:sync.nodeId')}
                     </dt>
                     <dd className="mt-1 font-mono text-sm">{data.nodeId}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
-                      Node Type
+                      {t('system:sync.nodeType')}
                     </dt>
                     <dd className="mt-1 font-mono text-sm">{data.nodeType}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
-                      Highest Audit Log ID
+                      {t('system:sync.highestAuditLogId')}
                     </dt>
                     <dd className="mt-1 font-mono text-sm">
                       {data.highestAuditLogId}
@@ -51,7 +51,7 @@ export function SyncStatusCard({ data, isLoading }: SyncStatusCardProps) {
                 </dl>
               )
             : (
-                <div className="text-muted-foreground">No data available</div>
+                <div className="text-muted-foreground">{t('common:noDataAvailable')}</div>
               )}
       </CardContent>
     </Card>

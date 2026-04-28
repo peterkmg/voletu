@@ -23,6 +23,7 @@ interface NodeStatusPayload {
   workerState: string | null
   lastSyncAt: string | null
   centralApiUrl: string | null
+  assignedBaseIds?: string[]
 }
 
 export interface HealthSnapshot {
@@ -39,6 +40,7 @@ export interface NodeStatusSnapshot {
   workerState: WorkerState | null
   lastSyncAt: string | null
   centralApiUrl: string | null
+  assignedBaseIds: string[]
 }
 
 function toNodeType(value: string | null): NodeType | null {
@@ -138,6 +140,7 @@ export async function fetchNodeStatus(
     workerState: toWorkerState(payload.workerState),
     lastSyncAt: payload.lastSyncAt,
     centralApiUrl: payload.centralApiUrl,
+    assignedBaseIds: payload.assignedBaseIds ?? [],
   }
 }
 

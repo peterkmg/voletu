@@ -24,8 +24,8 @@ function getWarehouseColumns(
   RowActions: React.ComponentType<{ row: Row<WarehouseResponse> }>,
 ): ColumnDef<WarehouseResponse>[] {
   return [
-    textColumn<WarehouseResponse>('commonName', t('catalog:warehouse.columns.commonName')),
-    resolvedColumn<WarehouseResponse>('baseId', t('catalog:warehouse.columns.base'), 'baseIdName'),
+    textColumn<WarehouseResponse>('commonName', t('entities:commonName')),
+    resolvedColumn<WarehouseResponse>('baseId', t('entities:base'), 'baseIdName'),
     { ...dateColumn<WarehouseResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<WarehouseResponse>(RowActions, 2),
   ]
@@ -50,7 +50,7 @@ function WarehousesTable({ data, actions, RowActions }: WarehousesTableProps) {
       getColumns={t => getWarehouseColumns(t, RowActions)}
       routeApi={warehousesRoute}
       globalFilterFn={warehousesGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -63,8 +63,8 @@ function useWarehousesTitle() {
 // --- Mutate Dialog ---
 
 const warehouseFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
-  baseId: z.string().min(1, 'Base is required'),
+  commonName: z.string().min(1),
+  baseId: z.string().min(1),
 })
 
 type WarehouseFormValues = z.infer<typeof warehouseFormSchema>
@@ -82,7 +82,7 @@ export function WarehouseMutateDialog({
   currentRow,
   onCreated,
 }: WarehouseMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common', 'forms'])
 
   const basesQuery = useCatalogBaseList()
 
@@ -122,11 +122,11 @@ export function WarehouseMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<WarehouseFormValues> name="commonName" label={t('catalog:warehouse.form.commonName')} />
+          <TextField<WarehouseFormValues> name="commonName" label={t('entities:commonName')} />
           <EntityPickerField<WarehouseFormValues>
             name="baseId"
-            label={t('catalog:warehouse.form.baseId')}
-            placeholder={t('catalog:warehouse.form.selectBase')}
+            label={t('entities:base')}
+            placeholder={t('forms:picker.selectEntity', { entity: t('entities:base').toLowerCase() })}
             queryResult={basesQuery}
             displayField="commonName"
             allowCreate

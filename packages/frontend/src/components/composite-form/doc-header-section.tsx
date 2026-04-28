@@ -41,7 +41,7 @@ export function DocHeaderSection<TForm extends FieldValues>({
               key={spec.name as string}
               control={control}
               name={spec.name}
-              render={() => (
+              render={({ field, fieldState }) => (
                 <FormItem
                   className={cn('grid gap-2', spec.colSpan === 2 && 'md:col-span-2')}
                 >
@@ -51,7 +51,8 @@ export function DocHeaderSection<TForm extends FieldValues>({
                   </FormLabel>
                   <FormControl>
                     <Component
-                      name={spec.name}
+                      field={field}
+                      fieldState={fieldState}
                       placeholder={spec.placeholderKey ? t(spec.placeholderKey) : undefined}
                     />
                   </FormControl>

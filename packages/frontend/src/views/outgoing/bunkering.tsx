@@ -67,7 +67,7 @@ function BunkeringTable({
 }
 
 function useBunkeringTitle() {
-  return useTranslation(['common']).t('common:nav.bunkering')
+  return useTranslation(['common', 'documents']).t('common:nav.bunkering')
 }
 
 function useBunkeringText() {
@@ -76,7 +76,7 @@ function useBunkeringText() {
 
   return {
     title,
-    entityLabel: t('common:document.bunkering'),
+    entityLabel: t('documents:document.bunkering'),
   }
 }
 
@@ -186,7 +186,7 @@ const bunkeringViewDefinition = defineDocumentViews<DispatchFlatRow, BunkeringDe
             numericColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.dispatchItems')}
+          sectionTitle={t('bunkering:section.items')}
         />
       )
     },
@@ -197,7 +197,7 @@ const bunkeringViewDefinition = defineDocumentViews<DispatchFlatRow, BunkeringDe
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

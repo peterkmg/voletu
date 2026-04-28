@@ -86,7 +86,7 @@ interface ResolvedDetailVariant {
 interface ResolvedDetailViewConfig {
   useDetailId: () => string
   useVariants: (id: string) => ResolvedDetailVariant[]
-  getNotFoundMessage?: () => string
+  getNotFoundMessage?: (t: TFunction) => string
   renderLoadingState?: () => React.ReactNode
 }
 
@@ -136,13 +136,13 @@ export function defineResolvedDetailView({
   renderLoadingState,
 }: ResolvedDetailViewConfig) {
   return function ResolvedDocumentDetail() {
-    const { t } = useTranslation(['common'])
+    const { t } = useTranslation(['documents', 'common'])
     const id = useDetailId()
     const variants = useVariants(id)
     const matched = variants.find(variant => variant.content != null)
     const notFoundMessage = getNotFoundMessage
-      ? getNotFoundMessage()
-      : t('common:messages.notFound', 'Document not found')
+      ? getNotFoundMessage(t)
+      : t('documents:messages.notFound')
 
     if (!matched && variants.every(variant => variant.isLoading)) {
       return renderLoadingState ? renderLoadingState() : <DefaultLoadingState />
@@ -190,7 +190,7 @@ export function defineDocumentViews<TRow extends { id: string }, TDetailData>(
       })
 
   function DetailView() {
-    const { t } = useTranslation(['common'])
+    const { t } = useTranslation(['documents', 'common'])
     const { title, entityLabel, subtitle } = config.useText()
     const detailId = config.detail.useDetailId()
     const result = config.detail.useDetailQuery(detailId)
@@ -209,7 +209,7 @@ export function defineDocumentViews<TRow extends { id: string }, TDetailData>(
 
       return (
         <DefaultEmptyState
-          message={t('common:messages.notFound', 'Document not found')}
+          message={t('documents:messages.notFound')}
         />
       )
     }

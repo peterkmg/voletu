@@ -20,7 +20,7 @@ interface RelatedDocumentsProps {
 }
 
 export function RelatedDocuments({ documents }: RelatedDocumentsProps) {
-  const { t } = useTranslation(['common'])
+  const { t } = useTranslation(['documents'])
 
   if (documents.length === 0)
     return null
@@ -32,7 +32,7 @@ export function RelatedDocuments({ documents }: RelatedDocumentsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          {t('common:document.relatedDocuments')}
+          {t('documents:document.relatedDocuments')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -56,6 +56,8 @@ function RelatedDocumentItem({
   borderColor: string
   labelColor: string
 }) {
+  const { t } = useTranslation(['documents'])
+
   return (
     <Link to={doc.to} className="block">
       <div
@@ -66,7 +68,7 @@ function RelatedDocumentItem({
       >
         <div className="flex-1 space-y-1">
           <div className={cn('text-xs font-semibold uppercase tracking-wider', labelColor)}>
-            {doc.type === 'basis' ? 'Basis' : 'Referenced by'}
+            {doc.type === 'basis' ? t('documents:related.basis') : t('documents:related.referencedBy')}
             :
             {doc.label}
           </div>

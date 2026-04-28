@@ -11,8 +11,8 @@ import { cn } from '~/lib/utils'
 export type TableMode = 'virtual' | 'paginated'
 
 const modeOptions: { value: TableMode, icon: typeof ScrollText, label: string }[] = [
-  { value: 'virtual', icon: ScrollText, label: 'table.modeVirtual' },
-  { value: 'paginated', icon: LayoutList, label: 'table.modePaginated' },
+  { value: 'virtual', icon: ScrollText, label: 'tables:mode.virtual' },
+  { value: 'paginated', icon: LayoutList, label: 'tables:mode.paginated' },
 ]
 
 interface TableModeToggleProps {
@@ -21,7 +21,7 @@ interface TableModeToggleProps {
 }
 
 export function TableModeToggle({ mode, onModeChange }: TableModeToggleProps) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('tables')
 
   return (
     <div className="flex items-center rounded-md border">

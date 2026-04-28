@@ -40,31 +40,29 @@
  * `acceptanceUpdateSchema` definition over to the generated one.
  */
 
-import type { UseQueryResult } from '@tanstack/react-query'
 import type { FieldValues, Path } from 'react-hook-form'
 import type {
   ColumnSpec,
+  HeaderFieldComponentProps,
   HeaderFieldSpec,
   RowFieldSpec,
 } from '~/components/composite-form'
 import type { AcceptanceItemCompositeRequest } from '~/generated/types/AcceptanceItemCompositeRequest'
 import type { ArrivalType } from '~/generated/types/ArrivalType'
 import type { CreateAcceptanceCompositeRequest } from '~/generated/types/CreateAcceptanceCompositeRequest'
-import { useFormContext } from 'react-hook-form'
 import { z } from 'zod/v4'
 import {
+  ContractorPicker,
+  DateTimeInput,
+  DecimalAmountInput,
   formatAmount,
+  NullableTextInput,
+  PlainTextInput,
   ProductCell,
+  ProductPicker,
   StorageCell,
+  StoragePicker,
 } from '~/components/composite-form'
-import { EntityPickerField } from '~/components/entity-picker'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -72,13 +70,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-import { useCatalogCompanyList as useCatalogContractorList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
-import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalogProductList'
-import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 import { arrivalTypeEnum } from '~/generated/types/ArrivalType'
 import { acceptanceItemCompositeRequestSchema } from '~/generated/zod/acceptanceItemCompositeRequestSchema'
 import { createAcceptanceCompositeRequestSchema } from '~/generated/zod/createAcceptanceCompositeRequestSchema'
-import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
 // --- Schemas ---
 
@@ -128,218 +122,30 @@ export type AcceptanceCreate = CreateAcceptanceCompositeRequest
 export type AcceptanceUpdate = CreateAcceptanceCompositeRequest
 export type AcceptanceItem = AcceptanceItemCompositeRequest
 
-// --- Inline picker / input components (small wrappers) ---
-
-// `EntityPickerField` requires a `label` and a `queryResult`, while
-// `HeaderFieldSpec.component` only passes `{ name, placeholder, disabled }`.
-// We render the label inside DocHeaderSection / DocItemRowDrawer already,
-// so each wrapper passes an empty label to the field (the surrounding
-// FormItem already shows the visible label) and binds its own data hook.
-
-interface FieldComponentProps<TForm extends FieldValues> {
-  name: Path<TForm>
-  placeholder?: string
-  disabled?: boolean
-}
-
-function ContractorPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogContractorList()
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function ProductPicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogProductList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
-function StorageBasePicker<TForm extends FieldValues>({
-  name,
-  placeholder,
-}: FieldComponentProps<TForm>) {
-  const queryResult = useCatalogStorageList() as unknown as UseQueryResult<{
-    data?: Array<Record<string, unknown>>
-  }>
-  return (
-    <EntityPickerField<TForm>
-      name={name}
-      label=""
-      placeholder={placeholder}
-      queryResult={queryResult}
-    />
-  )
-}
-
+// `ArrivalTypeSelect` is form-specific and stays here; everything else (text /
+// date / decimal / picker inputs) lives in `composite-form/field-cells`.
 function ArrivalTypeSelect<TForm extends FieldValues>({
-  name,
+  field,
   placeholder,
   disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
+}: HeaderFieldComponentProps<TForm>) {
   return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value as string | undefined}
-            disabled={disabled}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {Object.values(arrivalTypeEnum).map(value => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function PlainTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function NullableTextInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | null | undefined) ?? ''}
-              onChange={e =>
-                field.onChange(e.target.value === '' ? null : e.target.value)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function DateTimeInput<TForm extends FieldValues>({
-  name,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="datetime-local"
-              disabled={disabled}
-              {...field}
-              value={toDateTimeLocalValue(field.value as string | null | undefined)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-// `acceptedAmount` is a Decimal-as-string on the wire. We keep the value
-// as a string in form state and use a numeric-looking input for UX.
-function DecimalAmountInput<TForm extends FieldValues>({
-  name,
-  placeholder,
-  disabled,
-}: FieldComponentProps<TForm>) {
-  const { control } = useFormContext<TForm>()
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={placeholder}
-              disabled={disabled}
-              {...field}
-              value={(field.value as string | undefined) ?? ''}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <Select
+      onValueChange={field.onChange}
+      value={field.value as string | undefined}
+      disabled={disabled}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.values(arrivalTypeEnum).map(value => (
+          <SelectItem key={value} value={value}>
+            {value}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 
@@ -412,7 +218,7 @@ export const acceptanceItemFields: RowFieldSpec<AcceptanceItem>[] = [
   {
     name: 'storageId',
     labelKey: 'acceptance:field.storage',
-    component: StorageBasePicker,
+    component: StoragePicker,
     required: true,
   },
   {

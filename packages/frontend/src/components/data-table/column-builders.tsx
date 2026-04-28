@@ -1,8 +1,8 @@
 import type { ColumnDef, Row } from '@tanstack/react-table'
-import { Checkbox } from '~/components/ui/checkbox'
 import { StatusBadge } from '~/components/ui/status-badge'
 import { DateCell, NumericCell, ResolvedCell } from './cell-renderers'
 import { DataTableColumnHeader } from './column-header'
+import { SelectAllCheckbox, SelectRowCheckbox } from './selection-cells'
 
 export function selectColumn<T>(): ColumnDef<T> {
   return {
@@ -14,25 +14,8 @@ export function selectColumn<T>(): ColumnDef<T> {
     enableSorting: false,
     enableHiding: false,
     meta: { sizingCategory: 'fixed' },
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected()
-          || (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-        className="translate-y-[2px]"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={value => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        className="translate-y-[2px]"
-      />
-    ),
+    header: ({ table }) => <SelectAllCheckbox table={table} />,
+    cell: ({ row }) => <SelectRowCheckbox row={row} />,
   }
 }
 

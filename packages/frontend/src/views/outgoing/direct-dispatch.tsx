@@ -61,7 +61,7 @@ function DirectDispatchTable({
 }
 
 function useDirectDispatchTitle() {
-  return useTranslation(['common']).t('common:nav.directDispatch')
+  return useTranslation(['common', 'documents']).t('common:nav.directDispatch')
 }
 
 function useDirectDispatchText() {
@@ -70,7 +70,7 @@ function useDirectDispatchText() {
 
   return {
     title,
-    entityLabel: t('common:document.directDispatch'),
+    entityLabel: t('documents:document.directDispatch'),
   }
 }
 
@@ -135,7 +135,7 @@ const directDispatchViewDefinition = defineDocumentViews<DispatchFlatRow, Direct
             numericColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.dispatchItems')}
+          sectionTitle={t('direct-dispatch:section.items')}
         />
       )
     },
@@ -146,7 +146,7 @@ const directDispatchViewDefinition = defineDocumentViews<DispatchFlatRow, Direct
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

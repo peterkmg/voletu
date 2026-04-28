@@ -22,21 +22,8 @@ import { useTableUrlState } from '~/hooks/use-table-url-state'
 import { BulkActionsBar } from './bulk-actions-bar'
 import { DataTable } from './data-table'
 import { DataTablePagination } from './pagination'
+import { getStoredTableMode } from './table-mode-storage'
 import { DataTableToolbar } from './toolbar'
-
-export function getStoredTableMode(tableId: string | undefined): TableMode {
-  if (!tableId)
-    return 'virtual'
-  try {
-    const stored = localStorage.getItem(`table-mode-${tableId}`)
-    if (stored === 'paginated' || stored === 'virtual')
-      return stored
-  }
-  catch {
-    /* ignore */
-  }
-  return 'virtual'
-}
 
 interface EntityTableProps<T> {
   data: T[]

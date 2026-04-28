@@ -102,10 +102,10 @@ function useUsersTitle() {
 // --- Create drawer ---
 
 const userFormSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
+  username: z.string().min(1),
+  password: z.string().min(1),
   fullname: z.string().nullable().optional(),
-  roleName: z.string().min(1, 'Role is required'),
+  roleName: z.string().min(1),
 })
 
 type UserFormValues = z.infer<typeof userFormSchema>
@@ -120,7 +120,7 @@ function UserCreateDrawer({
   open,
   onOpenChange,
 }: UserCreateDrawerProps) {
-  const { t } = useTranslation(['system', 'common'])
+  const { t } = useTranslation(['system', 'common', 'forms'])
   const idempotencyKey = useIdempotencyKey()
 
   const form = useForm<UserFormValues>({
@@ -244,10 +244,10 @@ function UserCreateDrawer({
         </Form>
         <SheetFooter className="gap-2">
           <SheetClose asChild>
-            <Button variant="outline">{t('common:actions.close')}</Button>
+            <Button variant="outline">{t('forms:cancel')}</Button>
           </SheetClose>
           <Button form="user-form" type="submit">
-            {t('common:actions.save')}
+            {t('forms:save')}
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -5,7 +5,7 @@ import { useLedgerEntryList } from '~/generated/hooks/LedgerHooks/useLedgerEntry
 import { LedgerTable } from './components/ledger-table'
 
 export function Ledger() {
-  const { t } = useTranslation(['system'])
+  const { t } = useTranslation(['system', 'common'])
 
   const { data: listData, isLoading } = useLedgerEntryList()
   const entries = listData?.data ?? []
@@ -25,7 +25,7 @@ export function Ledger() {
         {isLoading
           ? (
               <div className="flex flex-1 items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
+                <div className="text-muted-foreground">{t('common:loading')}</div>
               </div>
             )
           : (

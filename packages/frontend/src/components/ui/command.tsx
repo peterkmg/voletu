@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
-import { cn } from '~/utils'
+import { cn } from '~/lib/utils'
 
 function Command({
   className,
@@ -84,13 +84,24 @@ function CommandInput({
 
 function CommandList({
   className,
+  onWheel,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       data-slot="command-list"
+      // `overscroll-contain` keeps wheel events from bubbling to the page
+      // (or to a parent dialog body) once the inner list reaches its top /
+      // bottom — without it, scrolling the list inside a Radix Popover that
+      // is itself nested in a scroll-locked Dialog feels "dead" because the
+      // wheel event ends up on the locked body. `stopPropagation` on the
+      // wheel handler covers older WebKit builds that ignore overscroll.
+      onWheel={(event) => {
+        event.stopPropagation()
+        onWheel?.(event)
+      }}
       className={cn(
-        'max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto',
+        'max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto overscroll-contain',
         className,
       )}
       {...props}

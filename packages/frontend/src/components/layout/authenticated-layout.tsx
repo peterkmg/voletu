@@ -1,13 +1,14 @@
 import { Outlet, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar'
-import { useHealthCheck } from '~/hooks/use-node-status'
+import { useHealthCheck, useNodeStatus } from '~/hooks/use-node-status'
 import { cn } from '~/lib/utils'
 import { useAuthStore } from '~/stores/auth-store'
 import { AppSidebar } from './app-sidebar'
 
 export function AuthenticatedLayout() {
   useHealthCheck()
+  useNodeStatus()
 
   // Reactive redirect: if auth is lost mid-session (refresh failed),
   // navigate to sign-in immediately instead of waiting for next route change.

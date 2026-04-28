@@ -6,8 +6,8 @@
     }
   },
   "section": {
-    "components": "Компоненты",
-    "results": "Результаты"
+    "components": "Компоненты (вход)",
+    "results": "Результат (выход)"
   },
   "field": {
     "documentNumber": "Номер документа",

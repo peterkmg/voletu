@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -12,6 +13,7 @@ import { useInventoryMatrixData } from './hooks/use-inventory-matrix-data'
 import { useDashboardStore } from './state/dashboard-store'
 
 export function DashboardView() {
+  const { t } = useTranslation('common')
   const [searchQuery, setSearchQuery] = useState('')
   const [sheetCell, setSheetCell] = useState<{ productId: string, storageId: string } | null>(null)
 
@@ -59,9 +61,9 @@ export function DashboardView() {
     return (
       <DashboardShell>
         <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t('error.shortTitle')}</AlertTitle>
           <AlertDescription>
-            {String((data.error as Error | null)?.message ?? 'Unknown error')}
+            {String((data.error as Error | null)?.message ?? t('error.unknown'))}
           </AlertDescription>
         </Alert>
       </DashboardShell>

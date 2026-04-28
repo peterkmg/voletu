@@ -21,32 +21,6 @@ import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalog
 import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 
 /**
- * French-style decimal formatter: NBSP thousand separator, comma decimal.
- *
- *   `2314`     -> `'2 314'`
- *   `12345.67` -> `'12 345,67'`
- *   `0.001`    -> `'0,001'`
- *
- * Three-fraction-digit cap mirrors the backend Decimal precision used
- * across receipt/dispatch/measurement amounts. `null`/`undefined`/`''`
- * round-trip to an empty string so empty cells stay blank rather than
- * displaying `'NaN'`.
- */
-const amountFormatter = new Intl.NumberFormat('fr-FR', {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 3,
-})
-
-export function formatAmount(value: unknown): string {
-  if (value === null || value === undefined || value === '')
-    return ''
-  const n = typeof value === 'number' ? value : Number(value)
-  if (Number.isNaN(n))
-    return String(value)
-  return amountFormatter.format(n)
-}
-
-/**
  * Generic catalog-list lookup. Each Catalog*List response shape is
  * `{ data: Array<{ id: string, commonName: string, ... }> }` (plus the
  * outer envelope wrapping it under `.data` again). Mirrors the picker's

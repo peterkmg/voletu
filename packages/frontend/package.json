@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "api:generate": "kubb --config kubb.config.ts",
     "api:generate:watch": "kubb --config kubb.config.ts --watch",
-    "lint": "eslint src --fix",
+    "lint": "eslint src tests --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

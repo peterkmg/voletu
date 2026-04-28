@@ -24,8 +24,8 @@ function getProductGroupColumns(
   RowActions: React.ComponentType<{ row: Row<ProductGroupResponse> }>,
 ): ColumnDef<ProductGroupResponse>[] {
   return [
-    textColumn<ProductGroupResponse>('commonName', t('catalog:productGroup.columns.commonName'), { sizing: 'capped', maxSize: 250 }),
-    resolvedColumn<ProductGroupResponse>('productTypeId', t('catalog:productGroup.columns.productType'), 'productTypeIdName'),
+    textColumn<ProductGroupResponse>('commonName', t('entities:commonName'), { sizing: 'capped', maxSize: 250 }),
+    resolvedColumn<ProductGroupResponse>('productTypeId', t('entities:productType'), 'productTypeIdName'),
     { ...dateColumn<ProductGroupResponse>('createdAt', t('common:table.createdAt')), enableHiding: true, meta: { label: t('common:table.createdAt'), sizingCategory: 'capped', requiresRole: 'senior_supervisor' } },
     actionsColumn<ProductGroupResponse>(RowActions, 2),
   ]
@@ -50,7 +50,7 @@ function ProductGroupsTable({ data, actions, RowActions }: ProductGroupsTablePro
       getColumns={t => getProductGroupColumns(t, RowActions)}
       routeApi={productGroupsRoute}
       globalFilterFn={productGroupsGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -63,8 +63,8 @@ function useProductGroupsTitle() {
 // --- Mutate Dialog ---
 
 const productGroupFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
-  productTypeId: z.string().min(1, 'Product type is required'),
+  commonName: z.string().min(1),
+  productTypeId: z.string().min(1),
 })
 
 type ProductGroupFormValues = z.infer<typeof productGroupFormSchema>
@@ -82,7 +82,7 @@ export function ProductGroupMutateDialog({
   currentRow,
   onCreated,
 }: ProductGroupMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common', 'forms'])
 
   const productTypesQuery = useCatalogProductTypeList()
 
@@ -122,11 +122,11 @@ export function ProductGroupMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<ProductGroupFormValues> name="commonName" label={t('catalog:productGroup.form.commonName')} />
+          <TextField<ProductGroupFormValues> name="commonName" label={t('entities:commonName')} />
           <EntityPickerField<ProductGroupFormValues>
             name="productTypeId"
-            label={t('catalog:productGroup.form.productType')}
-            placeholder={t('catalog:productGroup.form.selectProductType')}
+            label={t('entities:productType')}
+            placeholder={t('forms:picker.selectEntity', { entity: t('entities:productType').toLowerCase() })}
             queryResult={productTypesQuery}
             displayField="commonName"
             allowCreate

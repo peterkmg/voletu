@@ -14,13 +14,13 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ colSpan, message, icon, action }: EmptyStateProps) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('tables')
   return (
     <TableRow>
       <TableCell colSpan={colSpan} className="h-32">
         <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
           {icon ?? <Inbox className="h-8 w-8" />}
-          <span className="text-sm">{message ?? t('table.noResults')}</span>
+          <span className="text-sm">{message ?? t('tables:noResults')}</span>
           {action}
         </div>
       </TableCell>

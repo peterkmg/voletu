@@ -28,14 +28,14 @@ function formatTableName(name: string) {
   return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-function getAuditLogColumns(_t: TFunction): ColumnDef<AuditLogResponse>[] {
+function getAuditLogColumns(t: TFunction): ColumnDef<AuditLogResponse>[] {
   return [
-    dateColumn<AuditLogResponse>('timestamp', 'Timestamp'),
+    dateColumn<AuditLogResponse>('timestamp', t('system:sync.columns.timestamp')),
     {
       accessorKey: 'tableName',
       minSize: 160,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Table" />,
-      meta: { label: 'Table', sizingCategory: 'flex' as const },
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('system:sync.columns.table')} />,
+      meta: { label: t('system:sync.columns.table'), sizingCategory: 'flex' as const },
       cell: ({ row }) => (
         <span className="font-medium">{formatTableName(row.getValue('tableName'))}</span>
       ),
@@ -44,8 +44,8 @@ function getAuditLogColumns(_t: TFunction): ColumnDef<AuditLogResponse>[] {
       accessorKey: 'action',
       minSize: 90,
       maxSize: 110,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Action" />,
-      meta: { label: 'Action', sizingCategory: 'capped' as const },
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('system:sync.columns.action')} />,
+      meta: { label: t('system:sync.columns.action'), sizingCategory: 'capped' as const },
       cell: ({ row }) => (
         <Badge variant={actionVariant(row.getValue('action'))} className="text-xs">
           {row.getValue<string>('action')}
@@ -55,8 +55,8 @@ function getAuditLogColumns(_t: TFunction): ColumnDef<AuditLogResponse>[] {
     {
       accessorKey: 'recordId',
       minSize: 200,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Record ID" />,
-      meta: { label: 'Record ID', sizingCategory: 'flex' as const },
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('system:sync.columns.recordId')} />,
+      meta: { label: t('system:sync.columns.recordId'), sizingCategory: 'flex' as const },
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">{row.getValue('recordId')}</span>
       ),
@@ -65,8 +65,8 @@ function getAuditLogColumns(_t: TFunction): ColumnDef<AuditLogResponse>[] {
       accessorKey: 'targetBaseIds',
       minSize: 80,
       maxSize: 110,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Routing" />,
-      meta: { label: 'Routing', sizingCategory: 'capped' as const },
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('system:sync.columns.routing')} />,
+      meta: { label: t('system:sync.columns.routing'), sizingCategory: 'capped' as const },
       cell: ({ row }) => {
         const val = row.getValue<string>('targetBaseIds')
         if (!val)
@@ -76,7 +76,7 @@ function getAuditLogColumns(_t: TFunction): ColumnDef<AuditLogResponse>[] {
           <span className="text-xs text-muted-foreground">
             {count}
             {' '}
-            {count === 1 ? 'base' : 'bases'}
+            {t('system:sync.routingBases', { count })}
           </span>
         )
       },
@@ -85,8 +85,8 @@ function getAuditLogColumns(_t: TFunction): ColumnDef<AuditLogResponse>[] {
       accessorKey: 'userRoleWeight',
       minSize: 60,
       maxSize: 70,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Weight" />,
-      meta: { label: 'Weight', sizingCategory: 'fixed' as const, align: 'right' as const },
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('system:sync.columns.weight')} />,
+      meta: { label: t('system:sync.columns.weight'), sizingCategory: 'fixed' as const, align: 'right' as const },
       cell: ({ row }) => (
         <span className="text-xs tabular-nums text-muted-foreground">{row.getValue('userRoleWeight')}</span>
       ),

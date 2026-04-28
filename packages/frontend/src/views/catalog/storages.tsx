@@ -27,15 +27,15 @@ function getStorageColumns(
   RowActions: React.ComponentType<{ row: Row<StorageResponse> }>,
 ): ColumnDef<StorageResponse>[] {
   return [
-    textColumn<StorageResponse>('commonName', t('catalog:storage.columns.commonName'), { sizing: 'capped', maxSize: 180 }),
-    resolvedColumn<StorageResponse>('warehouseId', t('catalog:storage.columns.warehouse'), 'warehouseIdName'),
-    numericColumn<StorageResponse>('capacity', t('catalog:storage.columns.capacity')),
-    resolvedColumn<StorageResponse>('productTypeId', t('catalog:storage.columns.productType'), 'productTypeIdName'),
+    textColumn<StorageResponse>('commonName', t('entities:commonName'), { sizing: 'capped', maxSize: 180 }),
+    resolvedColumn<StorageResponse>('warehouseId', t('entities:warehouse'), 'warehouseIdName'),
+    numericColumn<StorageResponse>('capacity', t('entities:capacity')),
+    resolvedColumn<StorageResponse>('productTypeId', t('entities:productType'), 'productTypeIdName'),
     {
       accessorKey: 'isTypeSpecific',
       minSize: 90,
       maxSize: 130,
-      header: t('catalog:storage.columns.isTypeSpecific'),
+      header: t('entities:isTypeSpecific'),
       meta: { sizingCategory: 'capped' as const, align: 'right' as const },
       cell: ({ row }) => {
         const value = row.getValue<boolean>('isTypeSpecific')
@@ -73,7 +73,7 @@ function StoragesTable({ data, actions, RowActions }: StoragesTableProps) {
       getColumns={t => getStorageColumns(t, RowActions)}
       routeApi={storagesRoute}
       globalFilterFn={storagesGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -86,8 +86,8 @@ function useStoragesTitle() {
 // --- Mutate Dialog ---
 
 const storageFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
-  warehouseId: z.string().min(1, 'Warehouse is required'),
+  commonName: z.string().min(1),
+  warehouseId: z.string().min(1),
   capacity: z.string().nullable().optional(),
   productTypeId: z.string().nullable().optional(),
   isTypeSpecific: z.boolean(),
@@ -108,7 +108,7 @@ function StorageMutateDialog({
   currentRow,
   onCreated,
 }: StorageMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common', 'forms'])
 
   const warehousesQuery = useCatalogWarehouseList({ embed: 'names' })
   const productTypesQuery = useCatalogProductTypeList()
@@ -160,28 +160,28 @@ function StorageMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<StorageFormValues> name="commonName" label={t('catalog:storage.form.commonName')} />
+          <TextField<StorageFormValues> name="commonName" label={t('entities:commonName')} />
           <EntityPickerField<StorageFormValues>
             name="warehouseId"
-            label={t('catalog:storage.form.warehouseId')}
-            placeholder={t('catalog:storage.form.selectWarehouse')}
+            label={t('entities:warehouse')}
+            placeholder={t('forms:picker.selectEntity', { entity: t('entities:warehouse').toLowerCase() })}
             queryResult={warehousesQuery}
             displayField="commonName"
             allowCreate
             createDialog={WarehouseMutateDialog}
           />
-          <TextField<StorageFormValues> name="capacity" label={t('catalog:storage.form.capacity')} nullable />
+          <TextField<StorageFormValues> name="capacity" label={t('entities:capacity')} nullable />
           <EntityPickerField<StorageFormValues>
             name="productTypeId"
-            label={t('catalog:storage.form.productTypeId')}
-            placeholder={t('catalog:storage.form.selectProductType')}
+            label={t('entities:productType')}
+            placeholder={t('forms:picker.selectEntity', { entity: t('entities:productType').toLowerCase() })}
             queryResult={productTypesQuery}
             displayField="commonName"
             nullable
             allowCreate
             createDialog={ProductTypeMutateDialog}
           />
-          <CheckboxField<StorageFormValues> name="isTypeSpecific" label={t('catalog:storage.form.isTypeSpecific')} />
+          <CheckboxField<StorageFormValues> name="isTypeSpecific" label={t('entities:isTypeSpecific')} />
         </form>
       </Form>
     </FormDialog>

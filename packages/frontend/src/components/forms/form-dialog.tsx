@@ -33,7 +33,7 @@ export function FormDialog({
   className,
   children,
 }: FormDialogProps) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('forms')
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn('max-h-[85vh] flex flex-col sm:max-w-lg', className)}>
@@ -46,11 +46,11 @@ export function FormDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">{t('actions.cancel')}</Button>
+            <Button variant="outline">{t('cancel')}</Button>
           </DialogClose>
           <Button form={formId} type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t('actions.save')}
+            {t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>

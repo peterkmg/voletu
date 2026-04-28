@@ -23,7 +23,7 @@ export function LifecycleActions({
   queryKey,
   entityLabel,
 }: LifecycleActionsProps) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('documents')
   const user = useAuthStore(s => s.user)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogAction, setDialogAction] = useState<'execute' | 'revert'>('execute')
@@ -44,7 +44,7 @@ export function LifecycleActions({
             setDialogOpen(true)
           }}
         >
-          {t('actions.execute')}
+          {t('lifecycle.execute')}
         </Button>
       )}
       {canRevert && (
@@ -56,7 +56,7 @@ export function LifecycleActions({
             setDialogOpen(true)
           }}
         >
-          {t('actions.revertToDraft')}
+          {t('lifecycle.revert')}
         </Button>
       )}
       <LifecycleDialog

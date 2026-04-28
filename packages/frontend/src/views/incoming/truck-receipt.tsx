@@ -62,7 +62,7 @@ function TruckReceiptTableWithActions({
 }
 
 function useTruckReceiptTitle() {
-  return useTranslation(['common']).t('common:nav.truckReceipt')
+  return useTranslation(['common', 'documents']).t('common:nav.truckReceipt')
 }
 
 const truckReceiptViewDefinition = defineCrudViews<TruckReceiptPipelineResponse>({
@@ -95,13 +95,13 @@ function useTruckReceiptDetailVariants(id: string) {
             const doc = acceptanceQuery.data.data
             const relatedDocs: RelatedDocument[] = []
             if (doc.truckWaybillId) {
-              relatedDocs.push({ type: 'basis', label: t('common:document.truckWaybill'), documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: t('common:document.pendingAcceptance'), statusColorMap: statusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
+              relatedDocs.push({ type: 'basis', label: t('documents:document.truckWaybill'), documentNumber: doc.truckWaybillIdName ?? doc.truckWaybillId, status: t('documents:document.pendingAcceptance'), statusColorMap: statusColors, to: `/incoming/truck/${doc.truckWaybillId}` })
             }
             return (
               <DocumentDetailPage
                 config={{
-                  title: t('common:document.acceptance'),
-                  entityLabel: t('common:document.acceptance'),
+                  title: t('documents:document.acceptance'),
+                  entityLabel: t('documents:document.acceptance'),
                   backTo: '/incoming/truck',
                   executeFn: acceptanceDocumentExecute,
                   revertFn: acceptanceDocumentRevert,
@@ -127,14 +127,14 @@ function useTruckReceiptDetailVariants(id: string) {
                       numericColumn<AcceptanceItemResponse>('acceptedAmount', t('common:table.quantity')),
                     ]}
                     isLocked={doc.status === 'EXECUTED'}
-                    sectionTitle={t('common:sections.acceptanceItems')}
+                    sectionTitle={t('acceptance:section.items')}
                   />
                 )}
                 metadataContent={doc.executedAt
                   ? (
                       <div className="text-sm">
                         <span className="text-muted-foreground">
-                          {t('common:metadata.executedAt')}
+                          {t('documents:metadata.executedAt')}
                           :
                         </span>
                         {' '}
@@ -156,8 +156,8 @@ function useTruckReceiptDetailVariants(id: string) {
             return (
               <DocumentDetailPage
                 config={{
-                  title: t('common:document.truckWaybill'),
-                  entityLabel: t('common:document.truckWaybill'),
+                  title: t('documents:document.truckWaybill'),
+                  entityLabel: t('documents:document.truckWaybill'),
                   backTo: '/incoming/truck',
                   statusColorMap: statusColors,
                 }}
@@ -178,7 +178,7 @@ function useTruckReceiptDetailVariants(id: string) {
                           numericColumn<TruckWaybillItemResponse>('declaredAmount', t('common:table.declaredQty')),
                         ]}
                         isLocked={false}
-                        sectionTitle={t('common:sections.waybillItems')}
+                        sectionTitle={t('truck-receipt:section.items')}
                       />
                     )
                   : undefined}
@@ -193,7 +193,7 @@ function useTruckReceiptDetailVariants(id: string) {
 const TruckReceiptResolvedDetail = defineResolvedDetailView({
   useDetailId: () => detailRoute.useParams().id,
   useVariants: useTruckReceiptDetailVariants,
-  getNotFoundMessage: () => 'Document not found',
+  getNotFoundMessage: t => t('documents:messages.notFound'),
 })
 
 export function TruckReceiptDetail() {

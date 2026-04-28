@@ -22,7 +22,7 @@ export function BulkActionsBar<TData>({
   table,
   actions,
 }: BulkActionsBarProps<TData>) {
-  const { t } = useTranslation(['common'])
+  const { t } = useTranslation('tables')
 
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const count = selectedRows.length
@@ -42,7 +42,7 @@ export function BulkActionsBar<TData>({
       >
         {/* Selected count */}
         <span className="text-sm font-medium tabular-nums">
-          {t('common:table.selected', { count })}
+          {t('tables:selected', { count })}
         </span>
 
         {/* Action buttons */}
@@ -66,7 +66,7 @@ export function BulkActionsBar<TData>({
           variant="ghost"
           size="icon-sm"
           onClick={() => table.toggleAllRowsSelected(false)}
-          aria-label={t('common:actions.deselectAll')}
+          aria-label={t('tables:deselectAll')}
         >
           <X className="size-4" />
         </Button>

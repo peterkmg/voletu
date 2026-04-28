@@ -1,5 +1,6 @@
 import { Check, Filter } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
 import {
   Command,
@@ -36,15 +37,18 @@ interface FilterPopoverProps {
 
 export function FilterPopover({
   hasFilter,
-  searchPlaceholder = 'Search...',
-  emptyMessage = 'No values found.',
+  searchPlaceholder,
+  emptyMessage,
   width = 'w-[220px]',
   options,
   selectedValues,
   onSelect,
   onClear,
 }: FilterPopoverProps) {
+  const { t } = useTranslation('tables')
   const [open, setOpen] = useState(false)
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('tables:filter.search')
+  const resolvedEmptyMessage = emptyMessage ?? t('tables:filter.noValues')
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -62,9 +66,9 @@ export function FilterPopover({
       </PopoverTrigger>
       <PopoverContent className={cn(width, 'p-0')} align="start">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput placeholder={resolvedSearchPlaceholder} />
           <CommandList>
-            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
             <CommandGroup>
               {options.map(option => (
                 <CommandItem
@@ -96,7 +100,7 @@ export function FilterPopover({
                     onSelect={onClear}
                     className="justify-center text-center"
                   >
-                    Clear filter
+                    {t('tables:filter.clear')}
                   </CommandItem>
                 </CommandGroup>
               </>

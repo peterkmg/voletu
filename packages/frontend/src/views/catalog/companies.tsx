@@ -22,8 +22,8 @@ function getCompanyColumns(
   RowActions: React.ComponentType<{ row: Row<CompanyResponse> }>,
 ): ColumnDef<CompanyResponse>[] {
   return [
-    textColumn<CompanyResponse>('commonName', t('catalog:company.columns.commonName')),
-    textColumn<CompanyResponse>('legalName', t('catalog:company.columns.legalName'), { primary: false }),
+    textColumn<CompanyResponse>('commonName', t('entities:commonName')),
+    textColumn<CompanyResponse>('legalName', t('entities:legalName'), { primary: false }),
     {
       id: 'roles',
       header: t('common:table.status'),
@@ -32,10 +32,10 @@ function getCompanyColumns(
       meta: { sizingCategory: 'capped' as const },
       cell: ({ row }) => {
         const flags = [
-          { key: 'isContractor', label: t('catalog:company.columns.isContractor') },
-          { key: 'isExporter', label: t('catalog:company.columns.isExporter') },
-          { key: 'isManufacturer', label: t('catalog:company.columns.isManufacturer') },
-          { key: 'isSender', label: t('catalog:company.columns.isSender') },
+          { key: 'isContractor', label: t('entities:contractor') },
+          { key: 'isExporter', label: t('entities:exporter') },
+          { key: 'isManufacturer', label: t('entities:manufacturer') },
+          { key: 'isSender', label: t('entities:sender') },
         ] as const
 
         const active = flags.filter(
@@ -75,7 +75,7 @@ function CompaniesTable({ data, actions, RowActions }: CompaniesTableProps) {
       getColumns={t => getCompanyColumns(t, RowActions)}
       routeApi={companiesRoute}
       globalFilterFn={companiesGlobalFilterFn}
-      i18nNamespaces={['catalog', 'common']}
+      i18nNamespaces={['catalog', 'entities', 'common']}
       actions={actions}
     />
   )
@@ -88,7 +88,7 @@ function useCompaniesTitle() {
 // --- Mutate Dialog ---
 
 const companyFormSchema = z.object({
-  commonName: z.string().min(1, 'Common name is required'),
+  commonName: z.string().min(1),
   legalName: z.string().nullable().optional(),
   isContractor: z.boolean(),
   isExporter: z.boolean(),
@@ -111,7 +111,7 @@ export function CompanyMutateDialog({
   currentRow,
   onCreated,
 }: CompanyMutateDialogProps) {
-  const { t } = useTranslation(['catalog', 'common'])
+  const { t } = useTranslation(['catalog', 'entities', 'common'])
 
   const { form, isUpdate, handleSubmit, handleOpenChange } = useMutateDialog({
     open,
@@ -161,13 +161,13 @@ export function CompanyMutateDialog({
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          <TextField<CompanyFormValues> name="commonName" label={t('catalog:company.form.commonName')} />
-          <TextField<CompanyFormValues> name="legalName" label={t('catalog:company.form.legalName')} nullable />
+          <TextField<CompanyFormValues> name="commonName" label={t('entities:commonName')} />
+          <TextField<CompanyFormValues> name="legalName" label={t('entities:legalName')} nullable />
           <div className="space-y-3">
-            <CheckboxField<CompanyFormValues> name="isContractor" label={t('catalog:company.form.isContractor')} />
-            <CheckboxField<CompanyFormValues> name="isExporter" label={t('catalog:company.form.isExporter')} />
-            <CheckboxField<CompanyFormValues> name="isManufacturer" label={t('catalog:company.form.isManufacturer')} />
-            <CheckboxField<CompanyFormValues> name="isSender" label={t('catalog:company.form.isSender')} />
+            <CheckboxField<CompanyFormValues> name="isContractor" label={t('entities:isContractor')} />
+            <CheckboxField<CompanyFormValues> name="isExporter" label={t('entities:isExporter')} />
+            <CheckboxField<CompanyFormValues> name="isManufacturer" label={t('entities:isManufacturer')} />
+            <CheckboxField<CompanyFormValues> name="isSender" label={t('entities:isSender')} />
           </div>
         </form>
       </Form>

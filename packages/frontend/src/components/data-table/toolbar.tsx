@@ -38,11 +38,11 @@ export function DataTableToolbar<TData>({
   onTableModeChange,
   actions,
 }: DataTableToolbarProps<TData>) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('tables')
   const isFiltered
     = table.getState().columnFilters.length > 0 || table.getState().globalFilter
 
-  const placeholder = searchPlaceholder ?? `${t('actions.search')}...`
+  const placeholder = searchPlaceholder ?? t('tables:filter.search')
 
   return (
     <div className="flex items-center justify-between">
@@ -91,7 +91,7 @@ export function DataTableToolbar<TData>({
             }}
             className="h-8 px-2 lg:px-3"
           >
-            {t('actions.reset')}
+            {t('tables:filter.reset')}
             <X className="ms-2 h-4 w-4" />
           </Button>
         )}

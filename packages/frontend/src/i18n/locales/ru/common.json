@@ -38,7 +38,8 @@
     "syncStatus": "Статус синхронизации",
     "auditLogs": "Журнал аудита",
     "overview": "Обзор",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "operations": "Операции"
   },
   "actions": {
     "create": "Создать",
@@ -65,36 +66,21 @@
     "details": "Подробности",
     "softDelete": "Удалить",
     "hardDelete": "Удалить навсегда",
-    "deselectAll": "Снять выделение"
+    "deselectAll": "Снять выделение",
+    "more": "Ещё"
+  },
+  "loading": "Загрузка...",
+  "noDataAvailable": "Нет данных",
+  "yes": "Да",
+  "no": "Нет",
+  "breadcrumb": {
+    "label": "Навигационная цепочка"
   },
   "table": {
     "id": "ID",
-    "name": "Наименование",
-    "commonName": "Краткое наименование",
-    "longName": "Полное наименование",
     "status": "Статус",
-    "actions": "Действия",
     "createdAt": "Дата создания",
-    "updatedAt": "Дата изменения",
     "noResults": "Нет результатов.",
-    "rowsPerPage": "Строк на странице",
-    "page": "Страница",
-    "of": "из",
-    "goToFirstPage": "К первой странице",
-    "goToLastPage": "К последней странице",
-    "goToPreviousPage": "К предыдущей странице",
-    "goToNextPage": "К следующей странице",
-    "selected": "{{count}} выбрано",
-    "columns": "Столбцы",
-    "ascending": "По возрастанию",
-    "descending": "По убыванию",
-    "hide": "Скрыть",
-    "toggleColumns": "Показать/скрыть столбцы",
-    "modeVirtual": "Прокрутка",
-    "modePaginated": "Постраничный",
-    "densityCompact": "Компактный",
-    "densityNormal": "Обычный",
-    "densityComfortable": "Свободный",
     "documentNumber": "Номер документа",
     "waybillNumber": "Номер накладной",
     "acceptanceNumber": "Номер приёмки",
@@ -105,16 +91,14 @@
     "expectedQty": "Ожидаемое кол-во",
     "actualQty": "Фактическое кол-во",
     "source": "Источник",
-    "storage": "Ёмкость",
-    "fromStorage": "Из ёмкости",
-    "toStorage": "В ёмкость",
-    "fromContractor": "От контрагента",
-    "toContractor": "К контрагенту",
     "declaredQty": "Заявленное кол-во"
   },
   "error": {
+    "shortTitle": "Ошибка",
     "title": "Что-то пошло не так",
     "message": "Произошла непредвиденная ошибка. Попробуйте позже.",
+    "unknown": "Неизвестная ошибка",
+    "notFound": "Страница не найдена",
     "goBack": "Назад",
     "dashboard": "Панель"
   },
@@ -146,6 +130,7 @@
     "sessionExpired": "Сессия истекла!"
   },
   "language": {
+    "switch": "Переключить язык",
     "en": "English",
     "ru": "Русский"
   },
@@ -165,6 +150,9 @@
     "signOutConfirm": "Вы будете разлогинены из учётной записи.",
     "quit": "Закрыть",
     "toggleSidebar": "Боковая панель",
+    "minimize": "Свернуть",
+    "maximize": "Развернуть",
+    "restore": "Восстановить",
     "fullscreen": "Полноэкранный режим",
     "density": "Плотность",
     "densityCompact": "Компактная",
@@ -176,19 +164,6 @@
     "aboutVersion": "Версия {{version}}",
     "keyboardShortcuts": "Горячие клавиши"
   },
-  "sections": {
-    "acceptanceItems": "Позиции приёмки",
-    "dispatchItems": "Позиции отгрузки",
-    "componentInputs": "Компоненты (вход)",
-    "resultOutputs": "Результат (выход)",
-    "transferItems": "Позиции перемещения",
-    "adjustments": "Корректировки",
-    "waybillItems": "Позиции накладной",
-    "wagonManifests": "Вагонные манифесты"
-  },
-  "metadata": {
-    "executedAt": "Проведён"
-  },
   "columns": {
     "storage": "Ёмкость",
     "fromStorage": "Из ёмкости",
@@ -199,48 +174,22 @@
     "operation": "Операция",
     "bunkerType": "Тип бункера",
     "warehouse": "Склад",
-    "wagonNumber": "Вагон №"
-  },
-  "document": {
-    "information": "Информация о документе",
-    "relatedDocuments": "Связанные документы",
-    "noRelatedDocuments": "Нет связанных документов",
-    "executionMetadata": "Данные проведения",
-    "lineItems": "Позиции",
-    "executedWarning": "Документ проведён и заблокирован. Только старшие диспетчеры могут вернуть его в черновик.",
-    "truckWaybill": "Автонакладная",
-    "railWaybill": "Ж/Д накладная",
-    "acceptance": "Документ приёмки",
-    "dispatch": "Отгрузка",
-    "truckDispatch": "Автоотгрузка",
-    "bunkering": "Бункеровка",
-    "directDispatch": "Прямая отгрузка",
-    "blending": "Смешивание",
-    "physicalTransfer": "Физическое перемещение",
-    "ownershipTransfer": "Передача собственности",
-    "reconciliation": "Инвентаризация",
-    "pendingAcceptance": "Ожидает приёмки"
-  },
-  "dataTable": {
-    "ascending": "По возрастанию",
-    "descending": "По убыванию",
-    "filter": "Фильтр",
-    "column": "Столбец",
-    "unpin": "Открепить",
-    "pinLeft": "Закрепить слева",
-    "pinRight": "Закрепить справа",
-    "hide": "Скрыть",
-    "selectAll": "Выбрать всё",
-    "clearFilter": "Сбросить фильтр",
-    "search": "Поиск...",
-    "noValues": "Значений не найдено.",
-    "noDates": "Дат не найдено."
+    "wagonNumber": "Вагон №",
+    "reason": "Причина"
   },
   "debug": {
+    "tools": "Инструменты отладки",
     "seedDatabase": "Заполнить базу данных",
-    "seeding": "Заполнение\u2026",
+    "seeding": "Заполнение…",
+    "apiNotConfigured": "API не настроен — сначала завершите настройку",
+    "seedFailed": "Не удалось заполнить базу",
+    "seeded": "База заполнена — {{summary}}",
     "toggleDevTools": "Инструменты разработчика",
     "devToolsEnabled": "Инструменты разработчика включены",
     "devToolsDisabled": "Инструменты разработчика отключены"
+  },
+  "sidebar": {
+    "title": "Боковая панель",
+    "mobileDescription": "Отображает мобильную боковую панель."
   }
 }

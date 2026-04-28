@@ -9,7 +9,7 @@ export type SyncUiState
     | 'syncing' // peripheral, configured, worker actively syncing
     | 'offline' // peripheral, configured, worker not reachable right now
 
-export function deriveSyncUiState(status: NodeStatus, basesLoaded: boolean): SyncUiState {
+export function deriveSyncUiState(status: NodeStatus, _basesLoaded: boolean): SyncUiState {
   // Central nodes never enter the setup flow.
   if (status.nodeType === 'CENTRAL')
     return 'central'
@@ -20,10 +20,6 @@ export function deriveSyncUiState(status: NodeStatus, basesLoaded: boolean): Syn
 
   // Peripheral known, but the user has not yet run the init wizard.
   if (!status.isInitialized)
-    return 'setupIncomplete'
-
-  // Initialized, but we have not yet confirmed the bases list from the server.
-  if (!basesLoaded)
     return 'setupIncomplete'
 
   // Bases known — if none assigned, setup is genuinely incomplete.
@@ -43,7 +39,7 @@ export function isSetupComplete(status: NodeStatus, basesLoaded: boolean): boole
     return false
   if (!status.isInitialized)
     return false
-  if (!basesLoaded)
+  if (!basesLoaded && status.assignedBaseIds.length === 0)
     return false
   return status.assignedBaseIds.length > 0
 }

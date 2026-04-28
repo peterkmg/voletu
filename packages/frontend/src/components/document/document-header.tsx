@@ -41,7 +41,7 @@ export function DocumentHeader({
   onDelete,
 }: DocumentHeaderProps) {
   const navigate = useNavigate()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation(['common', 'documents'])
 
   return (
     <div className="space-y-3">
@@ -90,7 +90,7 @@ export function DocumentHeader({
       </div>
       {status === 'EXECUTED' && (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          {t('document.executedWarning', 'This document is executed and locked. Only Senior Supervisors can revert it to draft.')}
+          {t('documents:document.executedWarning')}
         </div>
       )}
     </div>

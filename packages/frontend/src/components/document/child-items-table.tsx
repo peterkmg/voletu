@@ -20,7 +20,7 @@ export function ChildItemsTable<TItem>({
   onAddItem,
   sectionTitle,
 }: ChildItemsTableProps<TItem>) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('documents')
 
   const table = useReactTable({
     data: items,
@@ -37,7 +37,7 @@ export function ChildItemsTable<TItem>({
         {!isLocked && onAddItem && (
           <CardAction>
             <Button variant="outline" size="sm" onClick={onAddItem}>
-              {t('actions.addItem', 'Add Item')}
+              {t('items.addItem')}
             </Button>
           </CardAction>
         )}

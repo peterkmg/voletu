@@ -60,7 +60,7 @@ function TruckDispatchTable({
 }
 
 function useTruckDispatchTitle() {
-  return useTranslation(['common']).t('common:nav.truckDispatch')
+  return useTranslation(['common', 'documents']).t('common:nav.truckDispatch')
 }
 
 function useTruckDispatchText() {
@@ -69,7 +69,7 @@ function useTruckDispatchText() {
 
   return {
     title,
-    entityLabel: t('common:document.truckDispatch'),
+    entityLabel: t('documents:document.truckDispatch'),
   }
 }
 
@@ -156,7 +156,7 @@ const truckDispatchViewDefinition = defineDocumentViews<TruckDispatchPipelineRes
             numericColumn<DispatchItemResponse>('dispatchedAmount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.dispatchItems')}
+          sectionTitle={t('truck-dispatch:section.items')}
         />
       )
     },
@@ -167,7 +167,7 @@ const truckDispatchViewDefinition = defineDocumentViews<TruckDispatchPipelineRes
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

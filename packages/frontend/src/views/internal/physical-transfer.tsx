@@ -62,7 +62,7 @@ function PhysicalTransferTable({
 }
 
 function usePhysicalTransferTitle() {
-  return useTranslation(['common']).t('common:nav.physicalTransfer')
+  return useTranslation(['common', 'documents']).t('common:nav.physicalTransfer')
 }
 
 function usePhysicalTransferText() {
@@ -71,7 +71,7 @@ function usePhysicalTransferText() {
 
   return {
     title,
-    entityLabel: t('common:document.physicalTransfer'),
+    entityLabel: t('documents:document.physicalTransfer'),
   }
 }
 
@@ -136,7 +136,7 @@ const physicalTransferViewDefinition = defineDocumentViews<PhysicalTransferFlatR
             numericColumn<PhysicalTransferItemResponse>('amount', t('common:table.quantity')),
           ]}
           isLocked={isLocked}
-          sectionTitle={t('common:sections.transferItems')}
+          sectionTitle={t('physical-transfer:section.items')}
         />
       )
     },
@@ -147,7 +147,7 @@ const physicalTransferViewDefinition = defineDocumentViews<PhysicalTransferFlatR
       return (
         <div className="text-sm">
           <span className="text-muted-foreground">
-            {t('common:metadata.executedAt')}
+            {t('documents:metadata.executedAt')}
             :
           </span>
           {' '}

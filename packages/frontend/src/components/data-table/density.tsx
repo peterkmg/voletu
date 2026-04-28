@@ -24,17 +24,17 @@ export const densityClasses: Record<TableDensity, string> = {
 
 // ── Density Toggle ───────────────────────────────
 
-type DensityLabelKey = 'densityCompact' | 'densityNormal' | 'densityComfortable'
+type DensityLabelKey = 'tables:density.compact' | 'tables:density.normal' | 'tables:density.comfortable'
 
 export const tableDensityOptions: { value: TableDensity, icon: typeof Rows3, labelKey: DensityLabelKey }[] = [
-  { value: 'compact', icon: Rows4, labelKey: 'densityCompact' },
-  { value: 'normal', icon: Rows3, labelKey: 'densityNormal' },
-  { value: 'comfortable', icon: Rows2, labelKey: 'densityComfortable' },
+  { value: 'compact', icon: Rows4, labelKey: 'tables:density.compact' },
+  { value: 'normal', icon: Rows3, labelKey: 'tables:density.normal' },
+  { value: 'comfortable', icon: Rows2, labelKey: 'tables:density.comfortable' },
 ]
 
 export function DensityToggle() {
   const { density, setDensity } = useDensity()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('tables')
 
   return (
     <div className="flex items-center rounded-md border">
@@ -51,10 +51,10 @@ export function DensityToggle() {
               onClick={() => setDensity(value)}
             >
               <Icon className="h-4 w-4" />
-              <span className="sr-only">{t(`table.${labelKey}`)}</span>
+              <span className="sr-only">{t(labelKey)}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{t(`table.${labelKey}`)}</TooltipContent>
+          <TooltipContent>{t(labelKey)}</TooltipContent>
         </Tooltip>
       ))}
     </div>

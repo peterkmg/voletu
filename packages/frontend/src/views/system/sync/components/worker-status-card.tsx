@@ -44,7 +44,7 @@ function formatRelativeTime(isoString: string): string {
 }
 
 export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
-  const { t } = useTranslation(['system'])
+  const { t } = useTranslation(['system', 'common'])
 
   return (
     <Card>
@@ -54,7 +54,7 @@ export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
       <CardContent>
         {isLoading
           ? (
-              <div className="text-muted-foreground">Loading...</div>
+              <div className="text-muted-foreground">{t('common:loading')}</div>
             )
           : data
             ? (
@@ -89,14 +89,14 @@ export function WorkerStatusCard({ data, isLoading }: WorkerStatusCardProps) {
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
-                      Node
+                      {t('system:node.label')}
                     </dt>
                     <dd className="mt-1 font-mono text-sm">{data.nodeName ?? t('system:sync.unknown')}</dd>
                   </div>
                 </dl>
               )
             : (
-                <div className="text-muted-foreground">No data available</div>
+                <div className="text-muted-foreground">{t('common:noDataAvailable')}</div>
               )}
       </CardContent>
     </Card>

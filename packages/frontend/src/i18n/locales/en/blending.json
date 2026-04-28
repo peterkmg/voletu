@@ -6,8 +6,8 @@
     }
   },
   "section": {
-    "components": "Components",
-    "results": "Results"
+    "components": "Components (Inputs)",
+    "results": "Results (Outputs)"
   },
   "field": {
     "documentNumber": "Document number",

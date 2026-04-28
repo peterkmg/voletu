@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '~/lib/utils'
 import { TitlebarMenu } from './titlebar-menu'
 
@@ -30,6 +31,7 @@ const controlBase = cn(
 )
 
 function WindowControls() {
+  const { t } = useTranslation('common')
   const [isTauri, setIsTauri] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
 
@@ -78,7 +80,7 @@ function WindowControls() {
         type="button"
         onClick={handleMinimize}
         className={cn(controlBase, 'hover:bg-foreground/8')}
-        aria-label="Minimize"
+        aria-label={t('titlebar.minimize')}
       >
         <svg width="10" height="1" viewBox="0 0 10 1" className="fill-current">
           <rect width="10" height="1" rx="0.5" />
@@ -90,7 +92,7 @@ function WindowControls() {
         type="button"
         onClick={handleMaximize}
         className={cn(controlBase, 'hover:bg-foreground/8')}
-        aria-label={isMaximized ? 'Restore' : 'Maximize'}
+        aria-label={isMaximized ? t('titlebar.restore') : t('titlebar.maximize')}
       >
         {isMaximized
           ? (
@@ -126,7 +128,7 @@ function WindowControls() {
           controlBase,
           'hover:bg-red-500 hover:text-white',
         )}
-        aria-label="Close"
+        aria-label={t('actions.close')}
       >
         <svg
           width="10"

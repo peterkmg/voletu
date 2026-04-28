@@ -58,6 +58,7 @@ export default antfu(
       'packages/frontend/src/**/__tests__/**',
       'packages/frontend/src/**/*.test.*',
       'packages/frontend/src/test-utils.tsx',
+      'packages/frontend/tests/**/*.{ts,tsx}',
     ],
     rules: {
       'react/component-hook-factories': 'off',

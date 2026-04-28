@@ -73,8 +73,8 @@ export function LifecycleDialog<TRow extends { id: string }>({
       }
       confirmLabel={
         action === 'execute'
-          ? t('common:actions.execute')
-          : t('common:actions.revert')
+          ? t('documents:lifecycle.execute')
+          : t('documents:lifecycle.revert')
       }
       cancelLabel={t('common:actions.cancel')}
       variant={action === 'revert' ? 'destructive' : 'default'}

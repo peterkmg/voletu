@@ -5,12 +5,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': resolve(__dirname, 'src'),
+      '@tests': resolve(__dirname, 'tests'),
     },
   },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
+    setupFiles: ['./tests/common/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov', 'json-summary'],
@@ -18,9 +19,6 @@ export default defineConfig({
       exclude: [
         'src/generated/**',
         'src/routeTree.gen.ts',
-        'src/**/*.test.{ts,tsx}',
-        'src/**/__tests__/**',
-        'src/test-setup.ts',
       ],
     },
   },

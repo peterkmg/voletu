@@ -16,13 +16,13 @@ import { useAuthStore } from '~/stores/auth-store'
 import { useStartupStore } from '~/stores/startup-store'
 
 export function DebugTrigger() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('common')
   const [seeding, setSeeding] = useState(false)
 
   const handleSeed = useCallback(async () => {
     const apiBaseUrl = useStartupStore.getState().startupState?.apiBaseUrl
     if (!apiBaseUrl) {
-      toast.error('API not configured — complete setup first')
+      toast.error(t('debug.apiNotConfigured'))
       return
     }
 
@@ -45,22 +45,22 @@ export function DebugTrigger() {
       }
 
       if (!body.success) {
-        throw new Error(body.error?.message ?? 'Seed failed')
+        throw new Error(body.error?.message ?? t('debug.seedFailed'))
       }
 
       const counts = body.data ?? {}
       const summary = Object.entries(counts)
         .map(([k, v]) => `${k}: ${v}`)
         .join(', ')
-      toast.success(`Seeded — ${summary}`)
+      toast.success(t('debug.seeded', { summary }))
     }
     catch (err) {
-      toast.error(extractErrorMessage(err, 'Seed failed'))
+      toast.error(extractErrorMessage(err, t('debug.seedFailed')))
     }
     finally {
       setSeeding(false)
     }
-  }, [])
+  }, [t])
 
   const handleToggleDevTools = useCallback(() => {
     const next = toggleDevTools()
@@ -79,7 +79,7 @@ export function DebugTrigger() {
             'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
           )}
           style={{ top: 'calc(var(--titlebar-h) + 0.5rem)', right: '0.75rem' }}
-          aria-label="Debug tools"
+          aria-label={t('debug.tools')}
         >
           <Wrench size={14} />
         </button>
