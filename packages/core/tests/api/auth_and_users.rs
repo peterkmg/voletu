@@ -20,7 +20,7 @@ const OPERATOR_PASSWORD: &str = "operator-pass";
 const OPERATOR_NEW_PASSWORD: &str = "operator-pass-new";
 
 #[tokio::test]
-async fn auth_and_user_endpoints_cover_login_create_password_change_delete_and_error_payloads() {
+async fn endpoints_handle_login_password_change_and_delete() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
@@ -153,7 +153,7 @@ async fn auth_and_user_endpoints_cover_login_create_password_change_delete_and_e
 }
 
 #[tokio::test]
-async fn auth_change_password_endpoint_returns_unauthorized_for_wrong_current_password() {
+async fn change_password_endpoint_returns_unauthorized_for_wrong_current_password() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
@@ -184,7 +184,7 @@ async fn auth_change_password_endpoint_returns_unauthorized_for_wrong_current_pa
 }
 
 #[tokio::test]
-async fn user_create_endpoint_returns_not_found_when_role_seed_data_is_missing() {
+async fn create_endpoint_returns_not_found_when_role_seed_data_is_missing() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
 
   role::Entity::delete_many()

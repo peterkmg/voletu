@@ -18,7 +18,7 @@ use crate::common::integration::{
 };
 
 #[tokio::test]
-async fn bidirectional_sync_peripheral_to_central_to_peripheral() {
+async fn peripheral_to_central_to_peripheral() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r5-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

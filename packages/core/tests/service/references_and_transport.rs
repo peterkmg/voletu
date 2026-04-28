@@ -60,7 +60,7 @@ fn dec(value: &str) -> Decimal {
 }
 
 #[tokio::test]
-async fn reference_catalog_and_topology_services_create_entities_and_return_them_in_lists() {
+async fn catalog_and_topology_services_return_created_entities_in_lists() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let mut cfg = test_config();
@@ -178,7 +178,7 @@ async fn reference_catalog_and_topology_services_create_entities_and_return_them
 }
 
 #[tokio::test]
-async fn transport_services_create_truck_and_rail_documents_and_list_them() {
+async fn creates_truck_and_rail_documents_returned_in_list() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;

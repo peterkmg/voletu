@@ -23,8 +23,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn sync_push_pull_and_watermark_endpoints_accept_valid_requests_and_return_expected_dto_fields(
-) {
+async fn push_pull_and_watermark_accept_valid_requests_returning_expected_dto_fields() {
   let db = Arc::new(setup_db().await);
   let _ = seed_defaults(&db).await.unwrap();
   let catalog = seed_inventory_catalog(&db).await;
@@ -78,7 +77,7 @@ async fn sync_push_pull_and_watermark_endpoints_accept_valid_requests_and_return
 }
 
 #[tokio::test]
-async fn sync_pull_with_malformed_query_uuid_returns_structured_validation_error() {
+async fn pull_with_malformed_query_uuid_returns_structured_validation_error() {
   let db = Arc::new(setup_db().await);
   let _ = seed_defaults(&db).await.unwrap();
   let app = build_router(Arc::new(test_api_state_with_default_restart_controls(
@@ -109,7 +108,7 @@ async fn sync_pull_with_malformed_query_uuid_returns_structured_validation_error
 }
 
 #[tokio::test]
-async fn sync_outbound_with_malformed_query_uuid_returns_structured_validation_error() {
+async fn outbound_with_malformed_query_uuid_returns_structured_validation_error() {
   let db = Arc::new(setup_db().await);
   let _ = seed_defaults(&db).await.unwrap();
   let app = build_router(Arc::new(test_api_state_with_default_restart_controls(

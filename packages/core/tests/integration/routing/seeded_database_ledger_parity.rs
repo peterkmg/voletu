@@ -28,13 +28,14 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
   DocType,
+  SyncNodeRef,
 };
 
 /// Generous deadline — a full seed can span multiple push/pull cycles.
 const SYNC_DEADLINE: Duration = Duration::from_secs(300);
 
 #[tokio::test]
-async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
+async fn peripheral_matches_central_catalog_ledger_and_documents_after_dev_seed() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r15-central")).await;
 
@@ -161,12 +162,16 @@ async fn seeded_database_syncs_to_peripheral_with_ledger_parity() {
     }
     assert_ledger_parity_for_base(
       &client,
-      &central.url,
-      &central.token,
-      "C",
-      &peripheral.url,
-      &peripheral.token,
-      "P",
+      SyncNodeRef {
+        url: &central.url,
+        token: &central.token,
+        label: "C",
+      },
+      SyncNodeRef {
+        url: &peripheral.url,
+        token: &peripheral.token,
+        label: "P",
+      },
       *base_id,
     )
     .await;

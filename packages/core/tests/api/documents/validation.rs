@@ -11,7 +11,7 @@ use crate::common::http::{
 };
 
 #[tokio::test]
-async fn query_endpoints_reject_zero_page_and_per_page_values() {
+async fn endpoints_reject_zero_page_and_per_page_values() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
@@ -48,8 +48,7 @@ async fn query_endpoints_reject_zero_page_and_per_page_values() {
 }
 
 #[tokio::test]
-async fn execute_endpoints_apply_route_specific_missing_document_semantics_and_error_payload_structure(
-) {
+async fn execute_endpoints_apply_route_specific_missing_semantics_and_error_structure() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
   let unknown_id = Uuid::now_v7();
 

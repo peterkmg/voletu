@@ -24,7 +24,7 @@ use voletu_core::{
 use crate::common::{setup_db, test_config};
 
 #[tokio::test]
-async fn dev_seed_service_is_additive_across_repeated_runs() {
+async fn is_additive_across_repeated_runs() {
   let db = Arc::new(setup_db().await);
   let local = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();
@@ -40,7 +40,7 @@ async fn dev_seed_service_is_additive_across_repeated_runs() {
 }
 
 #[tokio::test]
-async fn dev_seed_service_persists_nested_reference_and_document_graphs() {
+async fn persists_nested_reference_and_document_graphs() {
   let db = Arc::new(setup_db().await);
   let local = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();

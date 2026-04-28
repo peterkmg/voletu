@@ -22,7 +22,7 @@ use crate::common::integration::{
 };
 
 #[tokio::test]
-async fn sync_worker_central_and_one_peripheral_reconstructs_to_parity() {
+async fn company_pushed_to_central_and_catalog_pulled_to_peripheral() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("s2-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

@@ -23,7 +23,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn execute_produces_routed_update_audit_log() {
+async fn insert_and_update_audit_logs_both_target_correct_base() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r13-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

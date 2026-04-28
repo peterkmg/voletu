@@ -11,7 +11,7 @@ use crate::common::http::{
 const DEV_SEED_PATH: &str = "/dev/seed";
 
 #[tokio::test]
-async fn dev_seed_returns_populated_seed_result() {
+async fn returns_populated_seed_result() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
@@ -42,7 +42,7 @@ async fn dev_seed_returns_populated_seed_result() {
 }
 
 #[tokio::test]
-async fn dev_seed_is_additive_across_repeated_calls() {
+async fn is_additive_across_repeated_calls() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {

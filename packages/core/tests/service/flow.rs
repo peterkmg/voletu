@@ -39,7 +39,7 @@ fn timestamp(s: &str) -> chrono::DateTime<Utc> {
 }
 
 #[tokio::test]
-async fn truck_receipt_flow_returns_correct_pipeline_statuses() {
+async fn truck_receipt_returns_correct_pipeline_statuses() {
   let actor = Uuid::now_v7();
   let origin = Uuid::now_v7();
 
@@ -373,7 +373,7 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
 }
 
 #[tokio::test]
-async fn cargo_flow_flat_query_pages_and_filters_in_sql() {
+async fn cargo_flat_query_pages_and_filters_in_sql() {
   let actor = Uuid::now_v7();
   let origin = Uuid::now_v7();
 

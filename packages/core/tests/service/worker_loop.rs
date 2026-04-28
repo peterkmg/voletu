@@ -101,7 +101,7 @@ async fn wait_for_tick(
 }
 
 #[tokio::test]
-async fn worker_stays_sleeping_for_non_peripheral_topology_and_bumps_ticks() {
+async fn stays_sleeping_for_non_peripheral_topology_and_bumps_ticks() {
   let db = Arc::new(setup_db().await);
   let instance = with_audit_context(uuid::Uuid::now_v7(), uuid::Uuid::now_v7(), || async {
     let instance = database_instance::ActiveModel {
@@ -153,7 +153,7 @@ async fn worker_stays_sleeping_for_non_peripheral_topology_and_bumps_ticks() {
 }
 
 #[tokio::test]
-async fn worker_marks_offline_when_central_probe_fails() {
+async fn marks_offline_when_central_probe_fails() {
   let db = Arc::new(setup_db().await);
   let instance = with_audit_context(uuid::Uuid::now_v7(), uuid::Uuid::now_v7(), || async {
     let instance = database_instance::ActiveModel {
@@ -200,7 +200,7 @@ async fn worker_marks_offline_when_central_probe_fails() {
 }
 
 #[tokio::test]
-async fn worker_completes_noop_cycle_and_settles_online_idle() {
+async fn completes_noop_cycle_and_settles_online_idle() {
   let db = Arc::new(setup_db().await);
   let remote_node_id = uuid::Uuid::now_v7();
   let (central_api_url, server_handle) = spawn_sync_test_server(SyncStatusResponse {

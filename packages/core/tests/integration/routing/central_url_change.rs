@@ -31,7 +31,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(20);
 
 #[tokio::test]
-async fn central_url_change_end_to_end() {
+async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
   let client = reqwest::Client::new();
 
   // --- Setup: Central A + Peripheral(on A) with a base assigned --------------

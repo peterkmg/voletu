@@ -30,7 +30,7 @@ const PRODUCT_COMMON_NAME: &str = "Diesel X";
 const BASE_COMMON_NAME: &str = "Base A";
 
 #[tokio::test]
-async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dto_data() {
+async fn create_endpoints_accept_valid_payloads_and_return_expected_dto_data() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {
@@ -307,7 +307,7 @@ async fn reference_create_endpoints_accept_valid_payloads_and_return_expected_dt
 }
 
 #[tokio::test]
-async fn reference_create_endpoints_surface_structured_errors_for_invalid_foreign_keys() {
+async fn create_endpoints_surface_structured_errors_for_invalid_foreign_keys() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {

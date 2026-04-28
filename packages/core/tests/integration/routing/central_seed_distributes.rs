@@ -23,6 +23,7 @@ use crate::common::integration::{
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
+  SyncNodeRef,
 };
 
 const SYNC_DEADLINE: Duration = Duration::from_secs(300);
@@ -38,7 +39,7 @@ async fn list_all_base_ids(client: &Client, base_url: &str, token: &str) -> Vec<
 }
 
 #[tokio::test]
-async fn central_seed_distributes() {
+async fn isolates_base_scopes_and_maintains_ledger_parity() {
   let client = Client::new();
 
   // 1. Central
@@ -122,23 +123,31 @@ async fn central_seed_distributes() {
   // 10. Ledger parity on shared base b2.
   assert_ledger_parity_for_base(
     &client,
-    &central.url,
-    &central.token,
-    "C",
-    &pa.url,
-    &pa.token,
-    "PA",
+    SyncNodeRef {
+      url: &central.url,
+      token: &central.token,
+      label: "C",
+    },
+    SyncNodeRef {
+      url: &pa.url,
+      token: &pa.token,
+      label: "PA",
+    },
     b2,
   )
   .await;
   assert_ledger_parity_for_base(
     &client,
-    &central.url,
-    &central.token,
-    "C",
-    &pb.url,
-    &pb.token,
-    "PB",
+    SyncNodeRef {
+      url: &central.url,
+      token: &central.token,
+      label: "C",
+    },
+    SyncNodeRef {
+      url: &pb.url,
+      token: &pb.token,
+      label: "PB",
+    },
     b2,
   )
   .await;

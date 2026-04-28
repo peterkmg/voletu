@@ -24,7 +24,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn worker_smoke_pull_and_push() {
+async fn pull_delivers_central_doc_and_push_relays_peripheral_doc() {
   let client = reqwest::Client::new();
 
   // 1. Setup Central + 1 Peripheral

@@ -18,7 +18,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn catalog_broadcast_reaches_all_peripherals() {
+async fn reaches_all_peripherals() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r4-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

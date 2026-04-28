@@ -21,7 +21,7 @@ use crate::common::integration::{
 };
 
 #[tokio::test]
-async fn shared_target_physical_transfer_converges_via_worker() {
+async fn physical_transfer_reaches_both_peripherals_with_field_parity() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("s4-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

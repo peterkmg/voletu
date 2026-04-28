@@ -41,7 +41,7 @@ const BLENDING_PAGINATION_DOC_NUMBER_2: &str = "BLD-PAG-2";
 const BLENDING_PAGINATION_DOC_NUMBER_3: &str = "BLD-PAG-3";
 
 #[tokio::test]
-async fn acceptance_query_supports_pagination_params_and_rejects_malformed_values() {
+async fn acceptance_query_supports_params_and_rejects_malformed_values() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let ctx = seed_inventory_context(&db).await;
 
@@ -121,7 +121,7 @@ async fn acceptance_query_supports_pagination_params_and_rejects_malformed_value
 }
 
 #[tokio::test]
-async fn dispatch_query_supports_pagination_params_and_rejects_malformed_values() {
+async fn dispatch_query_supports_params_and_rejects_malformed_values() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let ctx = seed_inventory_context(&db).await;
 
@@ -205,7 +205,7 @@ async fn dispatch_query_supports_pagination_params_and_rejects_malformed_values(
 }
 
 #[tokio::test]
-async fn reconciliation_query_supports_pagination_params_and_rejects_malformed_values() {
+async fn reconciliation_query_supports_params_and_rejects_malformed_values() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let ctx = seed_inventory_context(&db).await;
 
@@ -298,7 +298,7 @@ async fn reconciliation_query_supports_pagination_params_and_rejects_malformed_v
 }
 
 #[tokio::test]
-async fn ownership_transfer_query_supports_pagination_params_and_rejects_malformed_values() {
+async fn ownership_transfer_query_supports_params_and_rejects_malformed_values() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let ctx = seed_inventory_context(&db).await;
 
@@ -400,7 +400,7 @@ async fn ownership_transfer_query_supports_pagination_params_and_rejects_malform
 }
 
 #[tokio::test]
-async fn physical_transfer_query_supports_pagination_params_and_rejects_malformed_values() {
+async fn physical_transfer_query_supports_params_and_rejects_malformed_values() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let ctx = seed_inventory_context(&db).await;
 
@@ -511,7 +511,7 @@ async fn physical_transfer_query_supports_pagination_params_and_rejects_malforme
 }
 
 #[tokio::test]
-async fn blending_query_supports_pagination_params_and_rejects_malformed_values() {
+async fn blending_query_supports_params_and_rejects_malformed_values() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let ctx = seed_inventory_context(&db).await;
 

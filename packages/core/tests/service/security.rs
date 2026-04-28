@@ -13,7 +13,7 @@ use voletu_core::{
 use crate::common::{setup_db, test_config};
 
 #[tokio::test]
-async fn password_hash_and_verify_support_roundtrip_and_wrong_password_rejection() {
+async fn password_hash_verifies_correct_and_rejects_wrong() {
   let password = "super-secret-pass";
   let hash = hash_password(password).await.unwrap();
 
@@ -23,7 +23,7 @@ async fn password_hash_and_verify_support_roundtrip_and_wrong_password_rejection
 }
 
 #[tokio::test]
-async fn token_service_create_and_verify_roundtrip_and_secret_mismatch_rejection() {
+async fn token_create_verifies_correct_secret_and_rejects_mismatch() {
   let db = Arc::new(setup_db().await);
   let mut cfg = test_config();
   cfg.node = NodeConfig::new(

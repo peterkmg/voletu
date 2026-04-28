@@ -46,7 +46,7 @@ async fn read_pull_watermark(client: &reqwest::Client, base_url: &str, token: &s
 }
 
 #[tokio::test]
-async fn incremental_pull_advances_watermark_correctly() {
+async fn watermark_advances_strictly_and_no_double_pull_on_second_wave() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r14-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

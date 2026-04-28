@@ -23,7 +23,7 @@ use crate::common::integration::{
 };
 
 #[tokio::test]
-async fn routing_envelope_populated_on_composite_document_create() {
+async fn audit_log_includes_storage_base_for_all_composite_items() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r1-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

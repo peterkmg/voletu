@@ -11,7 +11,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn openapi_query_parameter_contract_enforces_pagination_and_filter_params() {
+async fn parameter_enforces_pagination_and_filter_params() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -130,7 +130,7 @@ async fn openapi_query_parameter_contract_enforces_pagination_and_filter_params(
 }
 
 #[tokio::test]
-async fn openapi_sync_query_parameter_contract_enforces_pull_and_outbound_params() {
+async fn sync_parameter_enforces_pull_and_outbound_params() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -197,7 +197,7 @@ async fn openapi_sync_query_parameter_contract_enforces_pull_and_outbound_params
 }
 
 #[tokio::test]
-async fn openapi_document_query_routes_document_validation_error_response() {
+async fn document_routes_validation_error_response() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -238,7 +238,7 @@ async fn openapi_document_query_routes_document_validation_error_response() {
 }
 
 #[tokio::test]
-async fn openapi_sync_query_routes_document_validation_error_response() {
+async fn sync_routes_validation_error_response() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),

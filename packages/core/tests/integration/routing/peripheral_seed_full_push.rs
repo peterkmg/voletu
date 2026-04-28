@@ -27,6 +27,7 @@ use crate::common::integration::{
   setup_peripheral_via_api,
   temp_db_path,
   DocType,
+  SyncNodeRef,
 };
 
 /// Push+pull of a full seed dataset can span many batches. Keep generous.
@@ -73,7 +74,7 @@ async fn wait_for_doc_count_parity(
 }
 
 #[tokio::test]
-async fn peripheral_seed_full_push() {
+async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   let client = Client::new();
 
   // 1. Central
@@ -154,7 +155,18 @@ async fn peripheral_seed_full_push() {
 
   // 11. Ledger parity on shared base B2 between PA and PB.
   assert_ledger_parity_for_base(
-    &client, &pa.url, &pa.token, "PA", &pb.url, &pb.token, "PB", b2,
+    &client,
+    SyncNodeRef {
+      url: &pa.url,
+      token: &pa.token,
+      label: "PA",
+    },
+    SyncNodeRef {
+      url: &pb.url,
+      token: &pb.token,
+      label: "PB",
+    },
+    b2,
   )
   .await;
 

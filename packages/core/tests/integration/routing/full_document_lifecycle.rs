@@ -22,7 +22,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn full_document_lifecycle_syncs_correctly() {
+async fn status_transitions_replicate_to_peripheral_after_each_change() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r18-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

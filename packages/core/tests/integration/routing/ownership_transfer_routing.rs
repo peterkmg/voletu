@@ -23,7 +23,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn ownership_transfer_routing_via_storage() {
+async fn reaches_only_the_base_owning_the_storage() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r11-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

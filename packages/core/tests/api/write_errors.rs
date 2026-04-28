@@ -17,7 +17,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn write_routes_reject_empty_payload_with_structured_validation_error_envelope() {
+async fn routes_reject_empty_payload_with_structured_validation_error_envelope() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   let post_routes = [
@@ -68,7 +68,7 @@ async fn write_routes_reject_empty_payload_with_structured_validation_error_enve
 }
 
 #[tokio::test]
-async fn execute_and_delete_routes_reject_malformed_path_ids_with_structured_validation_error() {
+async fn execute_and_delete_routes_reject_malformed_path_ids_with_validation_error() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   let execute_routes = [
@@ -104,7 +104,7 @@ async fn execute_and_delete_routes_reject_malformed_path_ids_with_structured_val
 }
 
 #[tokio::test]
-async fn write_routes_surface_expected_404_and_409_domain_errors_in_matrix() {
+async fn routes_surface_expected_404_and_409_domain_errors_in_matrix() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let _catalog = seed_inventory_catalog(&db).await;
 

@@ -25,6 +25,7 @@ use crate::common::integration::{
   setup_central_via_api,
   setup_peripheral_via_api,
   temp_db_path,
+  SyncNodeRef,
 };
 
 const SYNC_DEADLINE: Duration = Duration::from_secs(300);
@@ -40,7 +41,7 @@ async fn list_all_base_ids(client: &Client, base_url: &str, token: &str) -> Vec<
 }
 
 #[tokio::test]
-async fn bidirectional_convergence() {
+async fn central_accumulates_docs_from_both_peripherals_with_ledger_parity() {
   let client = Client::new();
 
   // Setup: central + PA with no bases + PB with no bases.
@@ -160,23 +161,31 @@ async fn bidirectional_convergence() {
   //    All three nodes should see identical ledger entries for storages under b_a2.
   assert_ledger_parity_for_base(
     &client,
-    &pa.url,
-    &pa.token,
-    "PA",
-    &central.url,
-    &central.token,
-    "C",
+    SyncNodeRef {
+      url: &pa.url,
+      token: &pa.token,
+      label: "PA",
+    },
+    SyncNodeRef {
+      url: &central.url,
+      token: &central.token,
+      label: "C",
+    },
     b_a2,
   )
   .await;
   assert_ledger_parity_for_base(
     &client,
-    &pb.url,
-    &pb.token,
-    "PB",
-    &central.url,
-    &central.token,
-    "C",
+    SyncNodeRef {
+      url: &pb.url,
+      token: &pb.token,
+      label: "PB",
+    },
+    SyncNodeRef {
+      url: &central.url,
+      token: &central.token,
+      label: "C",
+    },
     b_a2,
   )
   .await;

@@ -38,7 +38,7 @@ use voletu_core::{
 };
 
 #[test]
-fn shared_document_and_flow_query_params_convert_into_specs() {
+fn shared_document_and_flow_convert_into_specs() {
   let acceptance_document: AcceptanceDocumentQuerySpec = AcceptanceDocumentQueryParams {
     document_number: Some("ACC-42".into()),
     status: Some(DocumentStatus::Draft),

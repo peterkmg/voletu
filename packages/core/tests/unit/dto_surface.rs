@@ -21,7 +21,7 @@ use voletu_core::{
 };
 
 #[test]
-fn shared_transport_dtos_are_exported_from_the_dto_surface() {
+fn transport_dtos_are_accessible_at_crate_surface() {
   let _ = voletu_core::dtos::AddBaseAssignmentRequest {
     base_id: Uuid::nil(),
   };
@@ -101,6 +101,7 @@ fn shared_transport_dtos_are_exported_from_the_dto_surface() {
     worker_state: "OnlineIdle".into(),
     last_sync_at: None,
     central_api_url: None,
+    assigned_base_ids: vec![Uuid::now_v7()],
   };
   let _ = SeedResult {
     product_types: 1,

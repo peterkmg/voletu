@@ -19,7 +19,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn executed_document_syncs_with_ledger_parity() {
+async fn ledger_amount_matches_central_after_executing_acceptance() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r21-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

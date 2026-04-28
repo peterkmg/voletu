@@ -47,7 +47,7 @@ fn dec(value: &str) -> Decimal {
 }
 
 #[tokio::test]
-async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
+async fn execution_applies_items_to_ledger_and_emits_audit_rows() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -143,7 +143,7 @@ async fn acceptance_execution_applies_items_to_ledger_and_emits_audit_rows() {
 }
 
 #[tokio::test]
-async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type() {
+async fn item_creation_rejects_storage_with_incompatible_product_type() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -208,7 +208,7 @@ async fn acceptance_item_creation_rejects_storage_with_incompatible_product_type
 }
 
 #[tokio::test]
-async fn acceptance_execution_applies_multiple_items_to_corresponding_storages() {
+async fn execution_applies_multiple_items_to_corresponding_storages() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -285,7 +285,7 @@ async fn acceptance_execution_applies_multiple_items_to_corresponding_storages()
 }
 
 #[tokio::test]
-async fn acceptance_item_creation_rejects_posted_document_mutation() {
+async fn item_creation_rejects_mutation_on_posted_acceptance() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -346,7 +346,7 @@ async fn acceptance_item_creation_rejects_posted_document_mutation() {
 }
 
 #[tokio::test]
-async fn dispatch_item_creation_rejects_posted_document_mutation() {
+async fn item_creation_rejects_mutation_on_posted_dispatch() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -420,7 +420,7 @@ async fn dispatch_item_creation_rejects_posted_document_mutation() {
 }
 
 #[tokio::test]
-async fn update_acceptance_composite_inserts_updates_and_deletes_items() {
+async fn update_composite_inserts_updates_and_deletes_items() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -565,7 +565,7 @@ async fn update_acceptance_composite_inserts_updates_and_deletes_items() {
 }
 
 #[tokio::test]
-async fn update_acceptance_composite_rejects_duplicate_item_ids() {
+async fn update_composite_rejects_duplicate_item_ids() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -650,7 +650,7 @@ async fn update_acceptance_composite_rejects_duplicate_item_ids() {
 }
 
 #[tokio::test]
-async fn dispatch_composite_update_inserts_updates_and_deletes_items_and_measurements() {
+async fn composite_update_mutates_items_and_measurements() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
@@ -952,7 +952,7 @@ async fn dispatch_composite_update_inserts_updates_and_deletes_items_and_measure
 }
 
 #[tokio::test]
-async fn dispatch_composite_update_rejects_duplicate_item_ids() {
+async fn composite_update_rejects_duplicate_item_ids() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;

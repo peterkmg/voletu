@@ -20,7 +20,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn health_and_openapi_endpoints_are_available_and_return_expected_payload_shape() {
+async fn health_and_openapi_are_available_with_expected_payload_shape() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -40,7 +40,7 @@ async fn health_and_openapi_endpoints_are_available_and_return_expected_payload_
 }
 
 #[tokio::test]
-async fn reference_base_create_endpoint_returns_success_response_with_base_data() {
+async fn reference_base_create_returns_success_response_with_base_data() {
   let db = Arc::new(setup_db().await);
   let _ = seed_defaults(&db).await.unwrap();
   let state = Arc::new(test_api_state_with_default_restart_controls(
@@ -63,7 +63,7 @@ async fn reference_base_create_endpoint_returns_success_response_with_base_data(
 }
 
 #[tokio::test]
-async fn list_endpoints_return_ok_for_empty_database_state_and_wrap_payload_in_api_response() {
+async fn list_return_ok_for_empty_database_state_and_wrap_payload_in_response() {
   let db = Arc::new(setup_db().await);
   let _ = seed_defaults(&db).await.unwrap();
   let state = Arc::new(test_api_state_with_default_restart_controls(
@@ -116,7 +116,7 @@ async fn list_endpoints_return_ok_for_empty_database_state_and_wrap_payload_in_a
 }
 
 #[tokio::test]
-async fn auth_initialize_endpoint_replaces_default_admin_and_blocks_old_credentials() {
+async fn auth_initialize_replaces_default_admin_and_blocks_old_credentials() {
   let db = Arc::new(setup_db().await);
   let _ = seed_defaults(&db).await.unwrap();
   let app = build_router(Arc::new(test_api_state_with_default_restart_controls(

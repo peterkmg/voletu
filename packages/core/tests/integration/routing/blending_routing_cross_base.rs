@@ -22,7 +22,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn blending_routing_spans_component_and_result_bases() {
+async fn spans_component_and_result_bases() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r10-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

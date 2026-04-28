@@ -21,7 +21,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn catalog_only_sync_with_no_base_assignment() {
+async fn receives_catalog_entities_but_no_routed_documents() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r7-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

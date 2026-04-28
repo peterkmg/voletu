@@ -2,6 +2,7 @@
 name = "voletu-core"
 version = "0.1.0"
 edition = "2021"
+autotests = false
 
 [lib]
 doctest = false
@@ -40,3 +41,19 @@ strum.workspace = true
 [dev-dependencies]
 sea-orm = { workspace = true, features = ["mock"] }
 assert-json-diff = "2"
+
+[[test]]
+name = "unit"
+path = "tests/unit/main.rs"
+
+[[test]]
+name = "service"
+path = "tests/service/main.rs"
+
+[[test]]
+name = "api"
+path = "tests/api/main.rs"
+
+[[test]]
+name = "integration"
+path = "tests/integration/main.rs"

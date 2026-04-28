@@ -25,7 +25,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn initialize_endpoint_triggers_restart_and_reloads_node_configuration() {
+async fn old_credentials_rejected_and_new_configuration_loaded_after_init() {
   let client = Client::new();
   let db_name = temp_db_path("init-restart");
   let port = crate::common::integration::reserve_port();

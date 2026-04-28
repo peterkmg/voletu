@@ -29,7 +29,7 @@ use crate::common::integration::{
 };
 
 #[tokio::test]
-async fn ledger_affected_transfer_targets_shared_then_local_scope_via_worker() {
+async fn targets_shared_then_local_scope_via_worker() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("s5-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

@@ -20,7 +20,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn routing_isolation_peripheral_gets_only_its_base_documents() {
+async fn peripheral_receives_only_documents_matching_its_assignment() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r2-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

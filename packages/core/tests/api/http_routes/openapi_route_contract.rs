@@ -11,7 +11,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn openapi_route_contract_enforces_standardized_paths_and_no_legacy_aliases() {
+async fn enforces_standardized_paths_and_no_legacy_aliases() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -148,7 +148,7 @@ async fn openapi_route_contract_enforces_standardized_paths_and_no_legacy_aliase
 }
 
 #[tokio::test]
-async fn openapi_operations_define_unique_operation_ids() {
+async fn operations_define_unique_operation_ids() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -198,7 +198,7 @@ async fn openapi_operations_define_unique_operation_ids() {
 }
 
 #[tokio::test]
-async fn openapi_route_method_contract_enforces_standardized_verbs() {
+async fn method_enforces_standardized_verbs() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -311,7 +311,7 @@ async fn openapi_route_method_contract_enforces_standardized_verbs() {
 }
 
 #[tokio::test]
-async fn openapi_route_method_contract_rejects_wrong_or_legacy_verbs() {
+async fn method_rejects_wrong_or_legacy_verbs() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),
@@ -378,7 +378,7 @@ async fn openapi_route_method_contract_rejects_wrong_or_legacy_verbs() {
 }
 
 #[tokio::test]
-async fn openapi_guarded_execute_routes_document_forbidden_response() {
+async fn guarded_execute_routes_document_forbidden_response() {
   let db = Arc::new(setup_db().await);
   let state = Arc::new(test_api_state_with_default_restart_controls(
     db.clone(),

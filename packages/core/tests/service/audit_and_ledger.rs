@@ -23,7 +23,7 @@ fn dec(value: &str) -> Decimal {
 }
 
 #[tokio::test]
-async fn audit_service_insert_and_update_persist_expected_fields_and_payloads() {
+async fn insert_and_update_persist_expected_fields_in_audit_log() {
   let actor_id = Uuid::now_v7();
   let context_origin_db_id = Uuid::now_v7();
 
@@ -94,7 +94,7 @@ async fn audit_service_insert_and_update_persist_expected_fields_and_payloads() 
 }
 
 #[tokio::test]
-async fn audit_service_model_methods_capture_full_inserts_and_field_level_update_diffs() {
+async fn model_methods_capture_full_inserts_and_field_level_update_diffs() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let origin_db_id = Uuid::now_v7();
@@ -177,7 +177,7 @@ async fn audit_service_model_methods_capture_full_inserts_and_field_level_update
 }
 
 #[tokio::test]
-async fn ledger_service_apply_delta_creates_updates_and_allows_negative_balances() {
+async fn apply_delta_creates_updates_and_allows_negative_balances() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;

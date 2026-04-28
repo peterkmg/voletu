@@ -21,7 +21,7 @@ use crate::common::integration::{
 };
 
 #[tokio::test]
-async fn targeted_acceptance_excludes_other_peripheral_via_worker() {
+async fn acceptance_scoped_to_alpha_absent_on_beta_peripheral() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("s3-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

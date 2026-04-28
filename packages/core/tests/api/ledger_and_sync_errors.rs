@@ -18,7 +18,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-async fn ledger_endpoints_lookup_entries_by_dimensions_and_return_matching_payloads() {
+async fn endpoints_lookup_entries_by_dimensions_and_return_matching_payloads() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let catalog = seed_inventory_catalog(&db).await;
   seed_ledger_balance(
@@ -58,8 +58,7 @@ async fn ledger_endpoints_lookup_entries_by_dimensions_and_return_matching_paylo
 }
 
 #[tokio::test]
-async fn sync_push_endpoint_rejects_payload_with_invalid_action_value_using_bad_request_error_shape(
-) {
+async fn push_endpoint_rejects_invalid_action_value_as_bad_request() {
   let (_db, app, token) = setup_seeded_app_with_admin_token().await;
 
   with_auth_token(token, async {

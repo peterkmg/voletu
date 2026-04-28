@@ -29,7 +29,7 @@ use voletu_core::{
 use crate::common::{catalog_seed::seed_inventory_catalog, setup_db, test_config};
 
 #[tokio::test]
-async fn auth_and_user_services_handle_login_user_lifecycle_and_password_rotation() {
+async fn login_lifecycle_with_token_refresh_and_password_rotation() {
   let db = Arc::new(setup_db().await);
   let local = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();
@@ -128,7 +128,7 @@ async fn auth_and_user_services_handle_login_user_lifecycle_and_password_rotatio
 }
 
 #[tokio::test]
-async fn system_reference_reads_are_sorted_and_filterable() {
+async fn reference_reads_are_sorted_and_filterable() {
   let db = Arc::new(setup_db().await);
   let local = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();
@@ -216,7 +216,7 @@ async fn system_reference_reads_are_sorted_and_filterable() {
 }
 
 #[tokio::test]
-async fn user_lifecycle_mutations_only_touch_local_users_and_restore_cleanly() {
+async fn user_mutations_skip_synced_records_and_restore_cleanly() {
   let db = Arc::new(setup_db().await);
   let local = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();
@@ -323,8 +323,7 @@ async fn user_lifecycle_mutations_only_touch_local_users_and_restore_cleanly() {
 }
 
 #[tokio::test]
-async fn synced_users_are_not_authenticable_on_non_origin_node_and_do_not_block_local_username_creation(
-) {
+async fn synced_user_login_fails_and_does_not_block_local_registration() {
   let db = Arc::new(setup_db().await);
   let local = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();
@@ -438,7 +437,7 @@ async fn node_base_helpers_load_assignments_and_ids_for_node() {
 }
 
 #[tokio::test]
-async fn complete_initialization_replace_rotates_bootstrap_admin_and_marks_local_initialized() {
+async fn complete_initialization_rotates_bootstrap_admin_and_marks_initialized() {
   let db = Arc::new(setup_db().await);
   let local_row = seed_defaults(&db).await.unwrap();
   let mut cfg = test_config();

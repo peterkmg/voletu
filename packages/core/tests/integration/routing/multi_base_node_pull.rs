@@ -24,7 +24,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn multi_base_node_pulls_all_assigned_bases() {
+async fn pulls_all_assigned_bases_and_excludes_unassigned() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r6-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;

@@ -23,7 +23,7 @@ use crate::common::integration::{
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[tokio::test]
-async fn hard_delete_propagates_via_sync() {
+async fn catalog_entity_absent_on_peripheral_after_hard_delete() {
   let client = reqwest::Client::new();
   let central = setup_central_via_api(&client, &temp_db_path("r17-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
