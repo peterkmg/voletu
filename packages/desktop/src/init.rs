@@ -3,12 +3,13 @@ use tauri::AppHandle;
 
 use crate::{
   config::{AppConfig, AppMode},
-  keyring::load_db_password,
+  keyring::{initialize_keyring, load_db_password},
   local_api::start_local_mode,
   state::AppState,
 };
 
 pub fn initialize_state(app: &AppHandle) -> anyhow::Result<AppState> {
+  initialize_keyring()?;
   let cfg = AppConfig::load()?;
   let db_password = load_db_password()?;
   let mut state = AppState::new(cfg.clone());

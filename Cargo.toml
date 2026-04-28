@@ -78,12 +78,15 @@ confy = "2"
 
 dotenvy = "0.15"
 
-keyring = { version = "3", features = ["windows-native"] }
+keyring-core = "1"
+windows-native-keyring-store = "1"
+apple-native-keyring-store = { version = "1", features = ["keychain"] }
+dbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] }
 rand = "0.10.1"
 fake = "5.1"
 base64 = "0.22"
 rust_decimal = { version = "1.41", features = ["serde-with-str"] }
-reqwest = { version = "0.13.2", default-features = false, features = [
+reqwest = { version = "0.13.3", default-features = false, features = [
   "json",
   "rustls",
 ] }

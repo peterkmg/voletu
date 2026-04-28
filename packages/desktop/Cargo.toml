@@ -19,6 +19,15 @@ tauri-plugin-opener.workspace = true
 tracing.workspace = true
 serde.workspace = true
 confy.workspace = true
-keyring.workspace = true
+keyring-core.workspace = true
 tokio.workspace = true
 anyhow.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-native-keyring-store.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus-secret-service-keyring-store.workspace = true
