@@ -36,7 +36,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::DispatchResponse, ApiError> {
     let item = self.dispatch_document_model(id).await?;
-    let exporter_names = self.company_name_map(item.exporter_id.into_iter()).await?;
+    let exporter_names = self.company_name_map(item.exporter_id).await?;
     let exporter_id_name = item
       .exporter_id
       .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());
@@ -83,9 +83,7 @@ impl DocumentService {
       .cloned()
       .map(dtos::DispatchMeasurementResponse::from)
       .collect();
-    let exporter_names = self
-      .company_name_map(composite.exporter_id.into_iter())
-      .await?;
+    let exporter_names = self.company_name_map(composite.exporter_id).await?;
     let exporter_id_name = composite
       .exporter_id
       .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());

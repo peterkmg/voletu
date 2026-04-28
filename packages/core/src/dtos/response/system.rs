@@ -95,6 +95,7 @@ pub struct NodeStatusResponse {
   pub worker_state: String,
   pub last_sync_at: Option<String>,
   pub central_api_url: Option<String>,
+  pub assigned_base_ids: Vec<Uuid>,
 }
 
 impl TryFrom<&ModelEx> for UserResponse {

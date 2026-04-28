@@ -14,6 +14,7 @@ use crate::{
   services::system::{
     database_instance::load_active_database_instance,
     local::load_local_bootstrap,
+    node_bases::load_node_base_ids,
     SystemService,
   },
   utils::{jwt::Claims, lifecycle::request_restart},
@@ -70,6 +71,7 @@ async fn build_node_status_response(state: &ApiState) -> ApiResult<NodeStatusRes
     .ok()
     .and_then(|row| row.central_api_url)
     .or_else(|| state.cfg.node.central_api_url.clone());
+  let assigned_base_ids = load_node_base_ids(state.db.as_ref(), state.cfg.node.db_id).await?;
 
   let worker = state.worker_status.read().await;
   Ok(ApiResponse::success(NodeStatusResponse {
@@ -79,6 +81,7 @@ async fn build_node_status_response(state: &ApiState) -> ApiResult<NodeStatusRes
     worker_state: format!("{:?}", worker.state),
     last_sync_at: worker.last_sync_at.map(|t| t.to_rfc3339()),
     central_api_url,
+    assigned_base_ids,
   }))
 }
 

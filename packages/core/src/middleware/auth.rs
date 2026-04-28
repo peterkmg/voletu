@@ -22,14 +22,13 @@ pub async fn auth_middleware(
     .get(AUTHORIZATION)
     .and_then(|v| v.to_str().ok())
     .and_then(|s| s.strip_prefix("Bearer "))
-    .ok_or_else(|| ApiError::Unauthorized("Missing or invalid Authorization header".to_string()))?
-    .to_owned();
+    .ok_or_else(|| ApiError::Unauthorized("Missing or invalid Authorization header".to_string()))?;
 
-  let claims = state.svc.system.verify_access(&token).await?;
-
-  req.extensions_mut().insert(claims.clone());
-
+  let claims = state.svc.system.verify_access(token).await?;
+  let uid = claims.uid;
   let db_id = state.cfg.node.db_id;
 
-  Ok(with_audit_context(claims.uid, db_id, || async move { next.run(req).await }).await)
+  req.extensions_mut().insert(claims);
+
+  Ok(with_audit_context(uid, db_id, || async move { next.run(req).await }).await)
 }

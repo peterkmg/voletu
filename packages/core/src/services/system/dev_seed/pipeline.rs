@@ -240,7 +240,7 @@ async fn seed_reference_data(
 
   for family in PRODUCT_FAMILIES {
     let product_type = product_type::ActiveModel {
-      common_name: Set(random_name(rng, (*family).to_string())),
+      common_name: Set(random_name(rng, &ctx.tag, (*family).to_string())),
       long_name: Set(Some(format!("{family} {}", fake_fragment(2..5)))),
       ..Default::default()
     }
@@ -253,6 +253,7 @@ async fn seed_reference_data(
         product_type_id: Set(product_type.id),
         common_name: Set(random_name(
           rng,
+          &ctx.tag,
           format!("{family} {}", title_fragment(fake_fragment(1..3))),
         )),
         long_name: Set(Some(format!("{family} {}", fake_fragment(3..6)))),
@@ -273,7 +274,7 @@ async fn seed_reference_data(
         let saved = product::ActiveModel {
           product_group_id: Set(group.id),
           manufacturer_id: Set(None),
-          common_name: Set(random_name(rng, product_name)),
+          common_name: Set(random_name(rng, &ctx.tag, product_name)),
           long_name: Set(Some(format!("{family} {}", fake_fragment(4..8)))),
           add_identification: Set(None),
           is_component: Set(is_component),
@@ -323,11 +324,12 @@ async fn seed_companies(
 
   for index in 0..18 {
     let saved = company::ActiveModel {
-      common_name: Set(company_name(rng)),
+      common_name: Set(company_name(rng, &ctx.tag)),
       legal_name: Set(Some(format!(
         "{} {}",
         random_name(
           rng,
+          &ctx.tag,
           format!(
             "{} {}",
             title_fragment(fake_fragment(1..3)),
@@ -374,6 +376,7 @@ async fn seed_ports(
     let saved = port::ActiveModel {
       common_name: Set(random_name(
         rng,
+        &ctx.tag,
         format!("{} Port", title_fragment(fake_fragment(1..3))),
       )),
       country: Set(Some(title_fragment(fake_fragment(1..3)))),
@@ -396,12 +399,13 @@ async fn seed_locations(
   for _ in 0..rng.random_range(4..=6) {
     let warehouse_count = rng.random_range(2..=4);
     let graph = base::ActiveModelEx {
-      common_name: Set(location_name(rng)),
+      common_name: Set(location_name(rng, &ctx.tag)),
       long_name: Set(Some(fake_fragment(5..9))),
       warehouses: (0..warehouse_count)
         .map(|warehouse_index| warehouse::ActiveModelEx {
           common_name: Set(random_name(
             rng,
+            &ctx.tag,
             format!("Warehouse {}", warehouse_index + 1),
           )),
           long_name: Set(Some(fake_fragment(3..6))),
@@ -417,6 +421,7 @@ async fn seed_locations(
               storage::ActiveModelEx {
                 common_name: Set(random_name(
                   rng,
+                  &ctx.tag,
                   format!(
                     "{} {}",
                     STORAGE_LABELS[storage_index % STORAGE_LABELS.len()],
@@ -485,9 +490,10 @@ async fn seed_users(
       Some(pick(rng, locations).base_id)
     };
     user::ActiveModel {
-      username: Set(random_username(rng, index)),
+      username: Set(random_username(rng, &ctx.tag, index)),
       fullname: Set(Some(random_name(
         rng,
+        &ctx.tag,
         format!("{role_type} {}", title_fragment(fake_fragment(1..3))),
       ))),
       password_hash: Set(ctx.dev_password_hash.to_string()),
@@ -514,9 +520,10 @@ async fn seed_users(
       };
       for _ in 0..repeats {
         user::ActiveModel {
-          username: Set(random_username(rng, index)),
+          username: Set(random_username(rng, &ctx.tag, index)),
           fullname: Set(Some(random_name(
             rng,
+            &ctx.tag,
             format!("{role_type} {}", title_fragment(fake_fragment(1..3))),
           ))),
           password_hash: Set(ctx.dev_password_hash.to_string()),
