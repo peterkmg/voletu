@@ -21,6 +21,8 @@ import {
 import { cn } from '~/lib/utils'
 import { DocItemRowDrawer } from './doc-item-row-drawer'
 
+const FORM_ROW_ID = '_formRowId'
+
 export interface DocItemsTableProps<TForm extends FieldValues, TItem extends FieldValues> {
   name: ArrayPath<TForm>
   columns: ColumnSpec<TItem>[]
@@ -52,7 +54,11 @@ export function DocItemsTable<TForm extends FieldValues, TItem extends FieldValu
 }: DocItemsTableProps<TForm, TItem>) {
   const { t } = useTranslation('forms')
   const { control } = useFormContext<TForm>()
-  const { fields, append, remove, update } = useFieldArray<TForm>({ control, name })
+  const { fields, append, remove, update } = useFieldArray<TForm, ArrayPath<TForm>, typeof FORM_ROW_ID>({
+    control,
+    name,
+    keyName: FORM_ROW_ID,
+  })
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const compact = density === 'compact'
@@ -152,7 +158,7 @@ export function DocItemsTable<TForm extends FieldValues, TItem extends FieldValu
               const item = row as unknown as TItem
               return (
                 <TableRow
-                  key={row.id}
+                  key={row[FORM_ROW_ID]}
                   data-state={editingIndex === index ? 'selected' : undefined}
                   className={cn(compact && '[&_td]:p-1 [&_td]:text-xs')}
                 >
@@ -204,7 +210,7 @@ export function DocItemsTable<TForm extends FieldValues, TItem extends FieldValu
           const item = row as unknown as TItem
           return (
             <div
-              key={row.id}
+              key={row[FORM_ROW_ID]}
               data-state={editingIndex === index ? 'selected' : undefined}
               className={cn(
                 'rounded-md border p-3 flex items-start gap-3',

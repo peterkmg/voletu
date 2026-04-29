@@ -54,6 +54,12 @@ interface EntityTableProps<T> {
   }
   /** Keep filter state in the URL while applying it on the server. */
   manualFiltering?: boolean
+  /** Optional stable row id for TanStack table rows. */
+  getRowId?: (row: T, index: number) => string
+  /** Enable row selection behavior. */
+  enableRowSelection?: boolean
+  /** Default page size for URL-backed pagination. */
+  defaultPageSize?: number
 }
 
 export function EntityTable<T>({
@@ -70,6 +76,9 @@ export function EntityTable<T>({
   forcedTableMode,
   serverPagination,
   manualFiltering = false,
+  getRowId,
+  enableRowSelection = true,
+  defaultPageSize = 10,
 }: EntityTableProps<T>) {
   const { t } = useTranslation(i18nNamespaces)
   const columns = useMemo(() => getColumns(t), [t, getColumns])
@@ -124,7 +133,7 @@ export function EntityTable<T>({
     navigate: routeApi.useNavigate(),
     pagination: {
       defaultPage: 1,
-      defaultPageSize: tableMode === 'virtual' ? 9999 : 10,
+      defaultPageSize: tableMode === 'virtual' ? 9999 : defaultPageSize,
     },
     globalFilter: { enabled: true, key: 'filter' },
   })
@@ -132,6 +141,7 @@ export function EntityTable<T>({
   const table = useReactTable({
     data,
     columns,
+    getRowId,
     state: {
       sorting,
       columnVisibility,
@@ -140,7 +150,7 @@ export function EntityTable<T>({
       globalFilter,
       pagination,
     },
-    enableRowSelection: true,
+    enableRowSelection,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
@@ -176,7 +186,6 @@ export function EntityTable<T>({
       <DataTableToolbar
         table={table}
         searchPlaceholder={`${t('common:actions.search')}...`}
-        filters={[]}
         tableMode={forcedTableMode ? undefined : tableMode}
         onTableModeChange={forcedTableMode ? undefined : handleModeChange}
         actions={actions}

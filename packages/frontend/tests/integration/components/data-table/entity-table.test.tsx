@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { useReactTable } from '@tanstack/react-table'
 import { act, screen } from '@testing-library/react'
 import { renderWithProviders } from '@tests/common'
 import { textColumn } from '~/components/data-table'
@@ -6,19 +7,44 @@ import { setTableDensityPreference } from '~/components/data-table/density-state
 import { EntityTable } from '~/components/data-table/entity-table'
 import { TooltipProvider } from '~/components/ui/tooltip'
 
+const reactTableMock = vi.hoisted(() => ({
+  options: [] as unknown[],
+}))
+
+const tableUrlStateMock = vi.hoisted(() => ({
+  calls: [] as unknown[],
+}))
+
+vi.mock('@tanstack/react-table', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-table')>()
+  return {
+    ...actual,
+    useReactTable: vi.fn((options: Parameters<typeof actual.useReactTable>[0]) => {
+      reactTableMock.options.push(options)
+      return actual.useReactTable(options)
+    }),
+  }
+})
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
 vi.mock('~/hooks/use-table-url-state', () => ({
-  useTableUrlState: () => ({
-    globalFilter: '',
-    onGlobalFilterChange: vi.fn(),
-    columnFilters: [],
-    onColumnFiltersChange: vi.fn(),
-    pagination: { pageIndex: 0, pageSize: 9999 },
-    onPaginationChange: vi.fn(),
-    ensurePageInRange: vi.fn(),
+  useTableUrlState: vi.fn((config) => {
+    tableUrlStateMock.calls.push(config)
+    return {
+      globalFilter: '',
+      onGlobalFilterChange: vi.fn(),
+      columnFilters: [],
+      onColumnFiltersChange: vi.fn(),
+      pagination: {
+        pageIndex: 0,
+        pageSize: config.pagination.defaultPageSize,
+      },
+      onPaginationChange: vi.fn(),
+      ensurePageInRange: vi.fn(),
+    }
   }),
 }))
 
@@ -42,7 +68,11 @@ const mockRouteApi = {
   useNavigate: () => vi.fn(),
 }
 
-function renderEntityTable(data: SimpleItem[] = [], tableId?: string) {
+function renderEntityTable(
+  data: SimpleItem[] = [],
+  tableId?: string,
+  props: Partial<React.ComponentProps<typeof EntityTable<SimpleItem>>> = {},
+) {
   return renderWithProviders(
     <TooltipProvider>
       <EntityTable<SimpleItem>
@@ -52,6 +82,7 @@ function renderEntityTable(data: SimpleItem[] = [], tableId?: string) {
         globalFilterFn={globalFilterFn}
         i18nNamespaces={['common']}
         tableId={tableId}
+        {...props}
       />
     </TooltipProvider>,
   )
@@ -62,6 +93,9 @@ function renderEntityTable(data: SimpleItem[] = [], tableId?: string) {
 describe('entityTable', () => {
   afterEach(() => {
     localStorage.clear()
+    reactTableMock.options = []
+    tableUrlStateMock.calls = []
+    vi.mocked(useReactTable).mockClear()
   })
 
   it('renders toolbar with search input', () => {
@@ -121,5 +155,34 @@ describe('entityTable', () => {
     })
 
     expect(screen.getByText('Alpha').parentElement).toHaveClass('py-1')
+  })
+
+  it('passes custom row identity and row selection settings to the table', () => {
+    const getRowId = (row: SimpleItem) => `simple:${row.id}`
+
+    renderEntityTable([{ id: '1', name: 'Alpha' }], 'test', {
+      enableRowSelection: false,
+      getRowId,
+    })
+
+    expect(reactTableMock.options[reactTableMock.options.length - 1]).toMatchObject({
+      enableRowSelection: false,
+      getRowId,
+    })
+  })
+
+  it('uses a custom default page size for url-backed pagination', () => {
+    localStorage.setItem('table-mode-test', 'paginated')
+
+    renderEntityTable([{ id: '1', name: 'Alpha' }], 'test', {
+      defaultPageSize: 25,
+    })
+
+    expect(tableUrlStateMock.calls[tableUrlStateMock.calls.length - 1]).toMatchObject({
+      pagination: {
+        defaultPage: 1,
+        defaultPageSize: 25,
+      },
+    })
   })
 })

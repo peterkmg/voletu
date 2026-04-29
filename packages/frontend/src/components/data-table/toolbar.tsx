@@ -6,7 +6,6 @@ import { Button } from '~/components/ui/button'
 import { DebouncedInput } from '~/components/ui/debounced-input'
 import { DensityToggle } from './density'
 import { ExportButton } from './export-button'
-import { DataTableFacetedFilter } from './faceted-filter'
 import { TableModeToggle } from './table-mode-toggle'
 import { DataTableViewOptions } from './view-options'
 
@@ -14,15 +13,6 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>
   searchPlaceholder?: string
   searchKey?: string
-  filters?: {
-    columnId: string
-    title: string
-    options: {
-      label: string
-      value: string
-      icon?: React.ComponentType<{ className?: string }>
-    }[]
-  }[]
   tableMode?: TableMode
   onTableModeChange?: (mode: TableMode) => void
   /** Optional action buttons (e.g. Create) rendered in the toolbar's right section. */
@@ -33,7 +23,6 @@ export function DataTableToolbar<TData>({
   table,
   searchPlaceholder,
   searchKey,
-  filters = [],
   tableMode,
   onTableModeChange,
   actions,
@@ -67,21 +56,6 @@ export function DataTableToolbar<TData>({
                 className="h-8 w-[150px] lg:w-[250px]"
               />
             )}
-        <div className="flex gap-x-2">
-          {filters.map((filter) => {
-            const column = table.getColumn(filter.columnId)
-            if (!column)
-              return null
-            return (
-              <DataTableFacetedFilter
-                key={filter.columnId}
-                column={column}
-                title={filter.title}
-                options={filter.options}
-              />
-            )
-          })}
-        </div>
         {isFiltered && (
           <Button
             variant="ghost"

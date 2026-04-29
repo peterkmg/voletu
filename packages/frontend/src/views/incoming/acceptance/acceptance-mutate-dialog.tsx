@@ -14,7 +14,7 @@
  */
 
 import type { AcceptanceCreate, AcceptanceItem } from './acceptance-form-config'
-import type { AcceptanceFlatRow, AcceptanceItemResponse } from '~/generated/types'
+import type { AcceptanceFlatRow } from '~/generated/types'
 import type { AcceptanceCompositeCreateMutationResponse } from '~/generated/types/DocumentAcceptanceTypes/AcceptanceCompositeCreate'
 import type { AcceptanceCompositeUpdateMutationRequest } from '~/generated/types/DocumentAcceptanceTypes/AcceptanceCompositeUpdate'
 import { useQueryClient } from '@tanstack/react-query'
@@ -42,6 +42,7 @@ import {
   emptyAcceptanceCreate,
   emptyAcceptanceItem,
 } from './acceptance-form-config'
+import { toAcceptanceItemFormValue } from './acceptance-item-mapping'
 
 interface AcceptanceMutateDialogProps {
   open: boolean
@@ -52,15 +53,6 @@ interface AcceptanceMutateDialogProps {
    * When `null`, the dialog opens in create mode.
    */
   currentRow?: AcceptanceFlatRow | null
-}
-
-/** Drop server-only fields and keep only the shape the composite request expects. */
-function toItemRequest(item: AcceptanceItemResponse): AcceptanceItem {
-  return {
-    productId: item.productId,
-    storageId: item.storageId,
-    acceptedAmount: item.acceptedAmount,
-  }
 }
 
 export function AcceptanceMutateDialog({
@@ -94,16 +86,16 @@ export function AcceptanceMutateDialog({
       arrivalType: loaded.arrivalType,
       contractorId: loaded.contractorId,
       sourceEntity: loaded.sourceEntity ?? null,
-      items: loaded.items.map(toItemRequest),
+      items: loaded.items.map(toAcceptanceItemFormValue),
     }
   }, [isUpdate, loaded])
 
   const mutationFn = useCallback(
     async (data: AcceptanceCreate): Promise<AcceptanceCompositeCreateMutationResponse> => {
       if (isUpdate && documentId) {
-        // The update schema mirrors the create schema at the field level
-        // (see acceptance-form-config.tsx); the wire type allows optional
-        // per-item `id`, which we don't track in the dialog yet.
+        // Update mode validates through acceptanceUpdateSchema, which wraps
+        // the generated update composite schema. Existing item ids are kept
+        // in defaultValues so the backend can diff rows in place.
         return updateMutation.mutateAsync({
           id: documentId,
           data: data as unknown as AcceptanceCompositeUpdateMutationRequest,

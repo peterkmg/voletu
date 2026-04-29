@@ -1,6 +1,7 @@
 import type { ColumnDef, Row } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { DispatchFlatRow, DispatchItemResponse, TruckDispatchPipelineResponse } from '~/generated/types'
+import type { TruckDispatchMutationTarget } from './truck-dispatch/truck-dispatch-mutate-dialog'
+import type { DispatchItemResponse, TruckDispatchPipelineResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, statusColumn, textColumn } from '~/components/data-table'
@@ -89,7 +90,7 @@ interface TruckDispatchDetailData {
  * truck-dispatch dialog. The pipeline view ships rows of
  * `TruckDispatchPipelineResponse`, but the dialog is keyed on the document
  * id (`row.id` here) and does not need the full pipeline payload, so we
- * project to the minimal `DispatchFlatRow` shape the dialog expects.
+ * project to the minimal mutation target shape the dialog expects.
  */
 function TruckDispatchMutateDialogAdapter({
   open,
@@ -100,8 +101,8 @@ function TruckDispatchMutateDialogAdapter({
   onOpenChange: (o: boolean) => void
   currentRow?: TruckDispatchPipelineResponse | null
 }) {
-  const adaptedRow: DispatchFlatRow | null = currentRow
-    ? ({ documentId: currentRow.id } as unknown as DispatchFlatRow)
+  const adaptedRow: TruckDispatchMutationTarget | null = currentRow
+    ? { documentId: currentRow.id }
     : null
   return (
     <TruckDispatchMutateDialog

@@ -1,12 +1,14 @@
-import type { Axis, AxisKind, AxisNode, GroupNode, LeafNode, MatrixVM, Orientation, SubtotalToggles, Uuid } from '../types'
+import type { AxisNode, GroupNode, LeafNode, MatrixVM, Orientation, SubtotalToggles, Uuid } from '../types'
+import type { MatrixColumnSlot, MatrixLeaf } from './matrix-layout'
 import type { TableDensity } from '~/components/data-table/density-state'
 // packages/frontend/src/views/dashboard/components/inventory-matrix.tsx
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDensity } from '~/components/data-table/density'
 import { formatAmount } from '~/lib/formatters'
 import { cn } from '~/lib/utils'
-import { findParentGroupLabel } from '../axis-utils'
 import { MatrixCell } from './matrix-cell'
+import { deriveMatrixLayout, shouldRenderSubtotal } from './matrix-layout'
 import { MatrixTotalCell } from './matrix-total-cell'
 import { EDGE_SHADOW, Z } from './sticky'
 
@@ -49,131 +51,61 @@ const DENSITY_VARS: Record<TableDensity, React.CSSProperties> = {
   } as React.CSSProperties,
 }
 
-// --- Axis tree walking ------------------------------------------------------
-
-interface Leaf { id: Uuid, label: string }
-interface Group { id: string, label: string, level: AxisNode['level'], span: number }
-
-function flattenLeaves(node: AxisNode): Leaf[] {
-  if (node.kind === 'leaf')
-    return [{ id: node.id, label: node.label }]
-  return node.children.flatMap(flattenLeaves)
-}
-
-function flattenGroupsAtLevel(node: AxisNode, level: AxisNode['level']): Group[] {
-  if (node.kind === 'leaf')
-    return []
-  if (node.level === level) {
-    return [{ id: node.id, label: node.label, level, span: flattenLeaves(node).length }]
-  }
-  return node.children.flatMap(c => flattenGroupsAtLevel(c, level))
-}
-
-function topGroupLevelFor(axis: Axis): AxisNode['level'] | null {
-  const first = axis.root.children[0]
-  if (first?.kind !== 'group')
-    return null
-  return first.level === 'type' || first.level === 'base' ? first.level : null
-}
-
-function midGroupLevelFor(axis: Axis): AxisNode['level'] {
-  return axis.kind === 'product' ? 'group' : 'warehouse'
-}
-
-// --- Subtotal gating --------------------------------------------------------
-
-function shouldRenderSubtotal(level: AxisNode['level'], axisKind: AxisKind, s: SubtotalToggles): boolean {
-  if (axisKind === 'product') {
-    if (level === 'group')
-      return s.productGroup
-    if (level === 'type')
-      return s.productType
-  }
-  else {
-    if (level === 'warehouse')
-      return s.warehouse
-    if (level === 'base')
-      return s.base
-  }
-  return false
-}
-
 // --- Main component ---------------------------------------------------------
-
-type Slot
-  = | { kind: 'leaf', leaf: Leaf }
-    | { kind: 'mid-subtotal', group: Group }
-    | { kind: 'top-subtotal', group: Group }
 
 export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: InventoryMatrixProps) {
   const { t } = useTranslation('dashboard')
   const { density } = useDensity()
+  const { productGroup, productType, warehouse, base } = subtotals
 
-  const rowAxis = orientation === 'products-as-rows' ? vm.productAxis : vm.storageAxis
-  const colAxis = orientation === 'products-as-rows' ? vm.storageAxis : vm.productAxis
-  const rowTotals = orientation === 'products-as-rows' ? vm.rowTotals : vm.colTotals
-  const colTotals = orientation === 'products-as-rows' ? vm.colTotals : vm.rowTotals
+  const layout = useMemo(
+    () => deriveMatrixLayout(vm, orientation, { productGroup, productType, warehouse, base }),
+    [vm, orientation, productGroup, productType, warehouse, base],
+  )
+  const {
+    rowAxis,
+    colTotals,
+    rowTotals,
+    rowAxisKind,
+    colAxisKind,
+    colTopGroups,
+    colMidGroups,
+    colSlots,
+    topGroupSpans,
+    midGroupSpans,
+    leafLabels,
+    storageWarehouseLabels,
+    totalCols,
+    hasColTop,
+  } = layout
 
-  const rowAxisKind: AxisKind = rowAxis.kind
-  const colAxisKind: AxisKind = colAxis.kind
-
-  const colTop = topGroupLevelFor(colAxis)
-  const colMid = midGroupLevelFor(colAxis)
-
-  const colTopGroups = colTop ? flattenGroupsAtLevel(colAxis.root, colTop) : []
-  const colMidGroups = flattenGroupsAtLevel(colAxis.root, colMid)
-
-  // Column subtotal gating
-  const colMidSub = shouldRenderSubtotal(colMid, colAxisKind, subtotals)
-  const colTopSub = colTop ? shouldRenderSubtotal(colTop, colAxisKind, subtotals) : false
-
-  // Build interleaved column slot list (leaves + col-subtotal slots appended after their group closes)
-  const colSlots: Slot[] = (() => {
-    const slots: Slot[] = []
-    function walk(node: AxisNode) {
-      if (node.kind === 'leaf') {
-        slots.push({ kind: 'leaf', leaf: { id: node.id, label: node.label } })
-        return
-      }
-      for (const child of node.children) walk(child)
-      if (node.level === colMid && colMidSub)
-        slots.push({ kind: 'mid-subtotal', group: { id: node.id, label: node.label, level: node.level, span: 1 } })
-      if (node.level === colTop && colTopSub)
-        slots.push({ kind: 'top-subtotal', group: { id: node.id, label: node.label, level: node.level, span: 1 } })
-    }
-    walk(colAxis.root)
-    return slots
-  })()
-
-  const totalCols = 1 /* row header */ + colSlots.length + 1 /* row total */
   const axisCornerLabel = rowAxisKind === 'product' ? t('toolbar.axis.products') : t('toolbar.axis.storages')
   const subtotalPrefix = t('matrix.subtotalPrefix')
-  const hasColTop = colTopGroups.length > 0
   const grh = 'var(--group-row-h)'
 
   // --- Cell + subtotal rendering helpers ---
 
-  function buildCellAriaLabel(rowLeafId: Uuid, colLeaf: Leaf, amt: number | undefined): string {
+  function buildCellAriaLabel(rowLeafId: Uuid, colLeaf: MatrixLeaf, amt: number | undefined): string {
     const product = orientation === 'products-as-rows'
-      ? findLabelInTree(rowAxis.root, rowLeafId) ?? ''
+      ? leafLabels.product.get(rowLeafId) ?? ''
       : colLeaf.label
     const storage = orientation === 'products-as-rows'
       ? colLeaf.label
-      : findLabelInTree(rowAxis.root, rowLeafId) ?? ''
+      : leafLabels.storage.get(rowLeafId) ?? ''
     const warehouseName = orientation === 'products-as-rows'
-      ? findParentGroupLabel(vm.storageAxis.root, colLeaf.id, 'warehouse') ?? ''
-      : findParentGroupLabel(vm.storageAxis.root, rowLeafId, 'warehouse') ?? ''
+      ? storageWarehouseLabels.get(colLeaf.id) ?? ''
+      : storageWarehouseLabels.get(rowLeafId) ?? ''
     return t('cell.ariaLabel', { product, warehouse: warehouseName, storage, amount: amt ?? '' })
   }
 
-  function renderColValueCell(rowLeafId: Uuid, slot: Slot): React.ReactNode {
+  function renderColValueCell(rowLeafId: Uuid, slot: MatrixColumnSlot): React.ReactNode {
     if (slot.kind === 'leaf') {
       const productId = orientation === 'products-as-rows' ? rowLeafId : slot.leaf.id
       const storageId = orientation === 'products-as-rows' ? slot.leaf.id : rowLeafId
       const amt = vm.cell(productId, storageId)
       return (
         <MatrixCell
-          key={slot.leaf.id}
+          key={slot.key}
           productId={productId}
           storageId={storageId}
           amount={amt}
@@ -183,7 +115,7 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
       )
     }
     const amt = vm.cellSubtotal(colAxisKind, slot.group.id, rowLeafId)
-    return <MatrixTotalCell key={`${slot.kind}-${slot.group.id}`} amount={amt} variant="col-subtotal" />
+    return <MatrixTotalCell key={slot.key} amount={amt} variant="col-subtotal" />
   }
 
   // --- <tbody> recursive renderer ---
@@ -314,7 +246,7 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
             <col style={{ width: 'var(--row-hdr-w)' }} />
             {colSlots.map(slot => (
               <col
-                key={slot.kind === 'leaf' ? slot.leaf.id : `${slot.kind}-${slot.group.id}`}
+                key={slot.key}
                 style={{ width: 'var(--cell-w)' }}
               />
             ))}
@@ -330,15 +262,10 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
                   style={{ top: 0, zIndex: Z.corner, width: 'var(--row-hdr-w)' }}
                 />
                 {colTopGroups.map((g) => {
-                  const spanSlots = colSlots.filter(s =>
-                    (s.kind === 'leaf' && slotBelongsToTopGroup(colAxis.root, s.leaf.id, g.id))
-                    || (s.kind === 'mid-subtotal' && midBelongsToTopGroup(colAxis.root, s.group.id, g.id))
-                    || (s.kind === 'top-subtotal' && s.group.id === g.id),
-                  ).length
                   return (
                     <th
                       key={`top-${g.id}`}
-                      colSpan={spanSlots}
+                      colSpan={topGroupSpans.get(g.id) ?? 0}
                       scope="colgroup"
                       className="bg-muted text-xs uppercase tracking-wider font-semibold text-left px-[var(--cell-px)] py-[var(--cell-py)] border-b-2 border-r border-border"
                       style={{ top: 0, position: 'sticky', zIndex: Z.head }}
@@ -366,14 +293,10 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
                 style={{ top: hasColTop ? grh : 0, zIndex: Z.corner, width: 'var(--row-hdr-w)' }}
               />
               {colMidGroups.map((g) => {
-                const spanSlots = colSlots.filter(s =>
-                  (s.kind === 'leaf' && parentIdAtLevel(colAxis.root, s.leaf.id, colMid) === g.id)
-                  || (s.kind === 'mid-subtotal' && s.group.id === g.id),
-                ).length
                 return (
                   <th
                     key={`mid-${g.id}`}
-                    colSpan={spanSlots}
+                    colSpan={midGroupSpans.get(g.id) ?? 0}
                     scope="colgroup"
                     className="bg-muted text-xs uppercase font-medium text-left px-[var(--cell-px)] py-[var(--cell-py)] border-b border-r border-border"
                     style={{ top: hasColTop ? grh : 0, position: 'sticky', zIndex: Z.head }}
@@ -501,52 +424,4 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
       </div>
     </div>
   )
-}
-
-// --- Private helpers --------------------------------------------------------
-
-function findLabelInTree(node: AxisNode, id: Uuid): string | null {
-  if (node.kind === 'leaf')
-    return node.id === id ? node.label : null
-  for (const c of node.children) {
-    const hit = findLabelInTree(c, id)
-    if (hit != null)
-      return hit
-  }
-  return null
-}
-
-function parentIdAtLevel(node: AxisNode, leafId: Uuid, level: AxisNode['level']): string | null {
-  if (node.kind === 'leaf')
-    return null
-  for (const child of node.children) {
-    if (child.kind === 'leaf' && child.id === leafId && node.level === level)
-      return node.id
-    const hit = parentIdAtLevel(child, leafId, level)
-    if (hit != null)
-      return hit
-  }
-  return null
-}
-
-function slotBelongsToTopGroup(root: AxisNode, leafId: Uuid, topGroupId: string): boolean {
-  function walk(n: AxisNode, inTop: boolean): boolean {
-    if (n.kind === 'leaf')
-      return inTop && n.id === leafId
-    const isTopMatch = (n.level === 'type' || n.level === 'base') && n.id === topGroupId
-    return n.children.some(c => walk(c, inTop || isTopMatch))
-  }
-  return walk(root, false)
-}
-
-function midBelongsToTopGroup(root: AxisNode, midGroupId: string, topGroupId: string): boolean {
-  function walk(n: AxisNode, inTop: boolean): boolean {
-    if (n.kind === 'leaf')
-      return false
-    const isTopMatch = (n.level === 'type' || n.level === 'base') && n.id === topGroupId
-    if ((n.level === 'group' || n.level === 'warehouse') && n.id === midGroupId)
-      return inTop
-    return n.children.some(c => walk(c, inTop || isTopMatch))
-  }
-  return walk(root, false)
 }

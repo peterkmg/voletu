@@ -20,7 +20,6 @@
 
 import type { ArrayPath } from 'react-hook-form'
 import type { TruckDispatchCreate, TruckDispatchItem, TruckDispatchMeasurement } from './truck-dispatch-form-config'
-import type { DispatchFlatRow } from '~/generated/types'
 import type { DispatchItemResponse } from '~/generated/types/DispatchItemResponse'
 import type { DispatchMeasurementResponse } from '~/generated/types/DispatchMeasurementResponse'
 import type { DispatchCompositeUpdateMutationRequest } from '~/generated/types/DocumentDispatchTypes/DispatchCompositeUpdate'
@@ -56,15 +55,18 @@ import {
   truckDispatchUpdateSchema,
 } from './truck-dispatch-form-config'
 
+export interface TruckDispatchMutationTarget {
+  documentId: string
+}
+
 interface TruckDispatchMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * dispatch document; `id` is item-scoped and must not be used for the
-   * update. When `null`, the dialog opens in create mode.
+   * Document currently selected for mutation. When `null`, the dialog opens in
+   * create mode.
    */
-  currentRow?: DispatchFlatRow | null
+  currentRow?: TruckDispatchMutationTarget | null
 }
 
 /** Drop server-only fields and keep only the shape the composite request expects. */

@@ -1,6 +1,6 @@
 import type { Column } from '@tanstack/react-table'
 import type { MonthNode, YearNode } from './column-filter-state'
-import { ChevronRight, Filter } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '~/components/ui/button'
@@ -20,12 +20,6 @@ import {
   CommandSeparator,
 } from '~/components/ui/command'
 import { DebouncedInput } from '~/components/ui/debounced-input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/components/ui/popover'
-import { cn } from '~/lib/utils'
 import {
   buildDateTree,
   commitFilter,
@@ -400,53 +394,4 @@ export function ColumnFilterInline<TData, TValue>({
   if (filterType === 'date')
     return <DateGroupFilterContent column={column} />
   return <TextEnumFilterContent column={column} />
-}
-
-// ---------------------------------------------------------------------------
-// Legacy ColumnFilter (standalone Popover wrapper)
-// ---------------------------------------------------------------------------
-
-/** @deprecated Use ColumnFilterInline inside the merged column header dropdown instead. */
-export function ColumnFilter<TData, TValue>({
-  column,
-}: {
-  column: Column<TData, TValue>
-}) {
-  const meta = column.columnDef.meta
-  const enableFilter = meta?.enableHeaderFilter !== false
-
-  if (!enableFilter || !column.getCanFilter())
-    return null
-
-  const facets = column.getFacetedUniqueValues()
-  const filterType = meta?.filterType ?? detectFilterType(facets)
-  const hasFilter = (() => {
-    const val = column.getFilterValue()
-    if (val == null)
-      return false
-    if (Array.isArray(val))
-      return val.length > 0
-    return true
-  })()
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn('h-6 w-6 p-0', hasFilter && 'text-primary')}
-        >
-          <Filter className="size-3" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-0" align="start">
-        {filterType === 'number'
-          ? <NumberRangeFilterContent column={column} />
-          : filterType === 'date'
-            ? <DateGroupFilterContent column={column} />
-            : <TextEnumFilterContent column={column} />}
-      </PopoverContent>
-    </Popover>
-  )
 }

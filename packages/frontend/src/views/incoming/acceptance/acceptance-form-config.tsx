@@ -24,20 +24,17 @@
  *           -> createAcceptanceRequestSchema (header object)
  *       packages/frontend/src/generated/zod/acceptanceItemCompositeRequestSchema.ts
  *           -> acceptanceItemCompositeRequestSchema { acceptedAmount: string, productId: uuid, storageId: uuid }
+ *       packages/frontend/src/generated/zod/updateAcceptanceItemCompositeRequestSchema.ts
+ *           -> updateAcceptanceItemCompositeRequestSchema { id?: uuid | null, acceptedAmount: string, productId: uuid, storageId: uuid }
+ *       packages/frontend/src/generated/zod/updateAcceptanceCompositeRequestSchema.ts
+ *           -> updateAcceptanceCompositeRequestSchema (z.lazy(...).and(z.object(...)) -- NOT .extend()-able)
  *       packages/frontend/src/generated/zod/arrivalTypeSchema.ts
  *           -> arrivalTypeSchema = z.enum(['TRUCK','RAIL','EXTERNAL','INITIAL_BALANCE'])
  *   - Types:
  *       packages/frontend/src/generated/types/CreateAcceptanceCompositeRequest.ts
+ *       packages/frontend/src/generated/types/UpdateAcceptanceCompositeRequest.ts
  *       packages/frontend/src/generated/types/AcceptanceItemCompositeRequest.ts
- *       packages/frontend/src/generated/types/UpdateAcceptanceRequest.ts (header-only update; no composite update yet)
- *
- * IMPORTANT: UpdateAcceptanceCompositeRequestSchema does NOT exist yet.
- * Task 1's backend `UpdateAcceptanceCompositeRequest` DTO has not been
- * picked up by a Kubb regen. Until `pnpm --filter frontend codegen` is
- * re-run after backend changes, edit-mode reuses the create-composite
- * schema. Field rosters happen to match (header + items) so this is
- * acceptable for v1; once the update DTO is generated, swap the
- * `acceptanceUpdateSchema` definition over to the generated one.
+ *       packages/frontend/src/generated/types/UpdateAcceptanceItemCompositeRequest.ts
  */
 
 import type { FieldValues, Path } from 'react-hook-form'
@@ -47,9 +44,10 @@ import type {
   HeaderFieldSpec,
   RowFieldSpec,
 } from '~/components/composite-form'
-import type { AcceptanceItemCompositeRequest } from '~/generated/types/AcceptanceItemCompositeRequest'
 import type { ArrivalType } from '~/generated/types/ArrivalType'
 import type { CreateAcceptanceCompositeRequest } from '~/generated/types/CreateAcceptanceCompositeRequest'
+import type { UpdateAcceptanceCompositeRequest } from '~/generated/types/UpdateAcceptanceCompositeRequest'
+import type { UpdateAcceptanceItemCompositeRequest } from '~/generated/types/UpdateAcceptanceItemCompositeRequest'
 import { z } from 'zod/v4'
 import {
   ContractorPicker,
@@ -73,6 +71,8 @@ import {
 import { arrivalTypeEnum } from '~/generated/types/ArrivalType'
 import { acceptanceItemCompositeRequestSchema } from '~/generated/zod/acceptanceItemCompositeRequestSchema'
 import { createAcceptanceCompositeRequestSchema } from '~/generated/zod/createAcceptanceCompositeRequestSchema'
+import { updateAcceptanceCompositeRequestSchema } from '~/generated/zod/updateAcceptanceCompositeRequestSchema'
+import { updateAcceptanceItemCompositeRequestSchema } from '~/generated/zod/updateAcceptanceItemCompositeRequestSchema'
 
 // --- Schemas ---
 
@@ -82,8 +82,11 @@ import { createAcceptanceCompositeRequestSchema } from '~/generated/zod/createAc
  * compose at the row + array level instead. The generated row schema is
  * reused unchanged so any future Kubb refresh propagates to validation.
  */
-const acceptanceItemsArraySchema = z
+const acceptanceCreateItemsArraySchema = z
   .array(acceptanceItemCompositeRequestSchema)
+  .min(1, { message: 'forms.validation.itemsRequired' })
+const acceptanceUpdateItemsArraySchema = z
+  .array(updateAcceptanceItemCompositeRequestSchema)
   .min(1, { message: 'forms.validation.itemsRequired' })
 
 /**
@@ -98,7 +101,7 @@ const acceptanceItemsArraySchema = z
 export const acceptanceCreateSchema = createAcceptanceCompositeRequestSchema.superRefine(
   (val, ctx) => {
     const items = (val as { items?: unknown[] }).items
-    const result = acceptanceItemsArraySchema.safeParse(items)
+    const result = acceptanceCreateItemsArraySchema.safeParse(items)
     if (!result.success) {
       for (const issue of result.error.issues) {
         ctx.addIssue({ ...issue, path: ['items', ...(issue.path ?? [])] })
@@ -109,18 +112,22 @@ export const acceptanceCreateSchema = createAcceptanceCompositeRequestSchema.sup
 
 /**
  * Composite schema for updating an acceptance.
- *
- * TODO(kubb-regen): Once `UpdateAcceptanceCompositeRequest` lands in
- * generated/zod, replace this alias with a wrapper around
- * `updateAcceptanceCompositeRequestSchema`. Until then the create schema
- * is reused; on the wire, the backend update endpoint accepts the same
- * field roster.
  */
-export const acceptanceUpdateSchema = acceptanceCreateSchema
+export const acceptanceUpdateSchema = updateAcceptanceCompositeRequestSchema.superRefine(
+  (val, ctx) => {
+    const items = (val as { items?: unknown[] }).items
+    const result = acceptanceUpdateItemsArraySchema.safeParse(items)
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        ctx.addIssue({ ...issue, path: ['items', ...(issue.path ?? [])] })
+      }
+    }
+  },
+) as unknown as z.ZodType<UpdateAcceptanceCompositeRequest>
 
 export type AcceptanceCreate = CreateAcceptanceCompositeRequest
-export type AcceptanceUpdate = CreateAcceptanceCompositeRequest
-export type AcceptanceItem = AcceptanceItemCompositeRequest
+export type AcceptanceUpdate = UpdateAcceptanceCompositeRequest
+export type AcceptanceItem = UpdateAcceptanceItemCompositeRequest
 
 // `ArrivalTypeSelect` is form-specific and stays here; everything else (text /
 // date / decimal / picker inputs) lives in `composite-form/field-cells`.
@@ -248,5 +255,6 @@ export const emptyAcceptanceCreate: AcceptanceCreate = {
   items: [],
 }
 
-// Re-export the row schema so the dialog can pass it to DocItemRowDrawer.
-export const acceptanceItemSchema = acceptanceItemCompositeRequestSchema
+// Re-export the update row schema so edit-mode row saves preserve existing item ids.
+// Create-mode rows omit `id`, which the generated update row schema also accepts.
+export const acceptanceItemSchema = updateAcceptanceItemCompositeRequestSchema
