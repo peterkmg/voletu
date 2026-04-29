@@ -12,9 +12,10 @@ use crate::{
   api::ApiError,
   dtos,
   entities::{inventory_adjustment, inventory_reconciliation},
-  enums,
+  enums::{self, LedgerEntrySourceEvent, LedgerEntrySourceKind},
   services::{
     common::{ensure_doc_mod_allowed, set_if_some},
+    ledger::LedgerDelta,
     DocumentService,
   },
 };
@@ -76,13 +77,16 @@ async fn before_reconciliation_execute<C: ConnectionTrait>(
   for adjustment in &doc.adjustments {
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        adjustment.storage_id,
-        adjustment.product_id,
-        existing.contractor_id,
-        adjustment_delta(&adjustment.adjustment_type, &adjustment.amount),
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: adjustment.storage_id,
+        product_id: adjustment.product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: adjustment_delta(&adjustment.adjustment_type, &adjustment.amount),
+        source_kind: LedgerEntrySourceKind::InventoryReconciliation,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
@@ -95,32 +99,14 @@ async fn before_reconciliation_revert<C: ConnectionTrait>(
   existing: &inventory_reconciliation::Model,
   _actor_id: Uuid,
 ) -> Result<(), ApiError> {
-  let doc = inventory_reconciliation::Entity::load()
-    .filter_by_id(existing.id)
-    .filter(inventory_reconciliation::Column::DeletedAt.is_null())
-    .with(inventory_adjustment::Entity)
-    .one(conn)
-    .await?
-    .ok_or_else(|| {
-      ApiError::NotFound(format!(
-        "Inventory reconciliation '{}' not found",
-        existing.id
-      ))
-    })?;
-
-  for adjustment in &doc.adjustments {
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        adjustment.storage_id,
-        adjustment.product_id,
-        existing.contractor_id,
-        -adjustment_delta(&adjustment.adjustment_type, &adjustment.amount),
-      )
-      .await?;
-  }
-
+  svc
+    .ledger
+    .append_reversal_deltas_on(
+      conn,
+      LedgerEntrySourceKind::InventoryReconciliation,
+      existing.id,
+    )
+    .await?;
   Ok(())
 }
 

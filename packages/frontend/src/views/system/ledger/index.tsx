@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { Header } from '~/components/layout/header'
 import { Main } from '~/components/layout/main'
-import { useLedgerEntryList } from '~/generated/hooks/LedgerHooks/useLedgerEntryList'
+import { useLedgerBalanceList } from '~/generated/hooks/LedgerHooks/useLedgerBalanceList'
 import { LedgerTable } from './components/ledger-table'
 
 export function Ledger() {
   const { t } = useTranslation(['system', 'common'])
 
-  const { data: listData, isLoading } = useLedgerEntryList()
-  const entries = listData?.data ?? []
+  const { data: listData, isLoading } = useLedgerBalanceList()
+  const balances = listData?.data ?? []
 
   return (
     <>
@@ -29,7 +29,7 @@ export function Ledger() {
               </div>
             )
           : (
-              <LedgerTable data={entries} />
+              <LedgerTable data={balances} />
             )}
       </Main>
     </>

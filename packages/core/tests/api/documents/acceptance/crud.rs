@@ -64,7 +64,7 @@ async fn endpoints_create_item_execute_and_return_expected_payloads() {
       .await
       .unwrap()
       .unwrap();
-    assert_eq!(entry.current_amount.to_string(), "5");
+    assert_eq!(entry.quantity_delta.to_string(), "5");
   })
   .await;
 }

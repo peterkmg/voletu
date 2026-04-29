@@ -209,7 +209,11 @@ pub async fn seed_ledger_balance(
       storage_id: Set(storage_id),
       product_id: Set(product_id),
       contractor_id: Set(contractor_id),
-      current_amount: Set(current_amount),
+      quantity_delta: Set(current_amount),
+      source_kind: Set(voletu_core::enums::LedgerEntrySourceKind::OpeningBalance),
+      source_id: Set(Uuid::now_v7()),
+      source_event: Set(voletu_core::enums::LedgerEntrySourceEvent::OpeningBalance),
+      reverses_entry_id: Set(None),
       ..Default::default()
     }
     .insert(&**db)

@@ -57,7 +57,7 @@ function mkEntry(contractorId: string, productId: string, storageId: string, amo
 function makeInput(overrides: Partial<BuilderInput> = {}): BuilderInput {
   return {
     contractorId: CONTRACTOR_A,
-    ledgerEntries: [],
+    ledgerBalances: [],
     products: [
       mkProduct(P_95, PG_GASOLINE, 'Petrol 95'),
       mkProduct(P_98, PG_GASOLINE, 'Petrol 98'),
@@ -105,7 +105,7 @@ function collectLeafIds(node: AxisNode): string[] {
 
 describe('buildMatrixVM', () => {
   it('returns empty product axis when ledger is empty but keeps all storages', () => {
-    const vm = buildMatrixVM(makeInput({ ledgerEntries: [] }))
+    const vm = buildMatrixVM(makeInput({ ledgerBalances: [] }))
     expect(vm.productAxis.root.children.length).toBe(0)
     expect(vm.stats.leafRowCount).toBe(0)
     expect(vm.stats.leafColCount).toBe(4)
@@ -115,7 +115,7 @@ describe('buildMatrixVM', () => {
 
   it('includes a product row and populates totals when one non-zero entry exists', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [mkEntry(CONTRACTOR_A, P_95, S_1, '120')],
+      ledgerBalances: [mkEntry(CONTRACTOR_A, P_95, S_1, '120')],
     }))
     expect(vm.stats.leafRowCount).toBe(1)
     expect(vm.cell(P_95, S_1)).toBe(120)
@@ -127,7 +127,7 @@ describe('buildMatrixVM', () => {
 
   it('excludes products that have no non-zero entry for the selected contractor', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_A, P_98, S_2, '0'),
       ],
@@ -140,7 +140,7 @@ describe('buildMatrixVM', () => {
 
   it('adds the product type level when showType is true', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_A, P_LUBE, S_2, '10'),
       ],
@@ -152,7 +152,7 @@ describe('buildMatrixVM', () => {
 
   it('omits the product type level when showType is false', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [mkEntry(CONTRACTOR_A, P_95, S_1, '120')],
+      ledgerBalances: [mkEntry(CONTRACTOR_A, P_95, S_1, '120')],
       showType: false,
     }))
     const topLevels = vm.productAxis.root.children
@@ -167,7 +167,7 @@ describe('buildMatrixVM', () => {
 
   it('populates group subtotals for both axes', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_A, P_98, S_1, '45'),
       ],
@@ -178,7 +178,7 @@ describe('buildMatrixVM', () => {
 
   it('prunes products whose name does not match the search query', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_A, P_DIESEL, S_1, '300'),
       ],
@@ -191,7 +191,7 @@ describe('buildMatrixVM', () => {
 
   it('prunes storages whose name does not match the search query', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_A, P_95, S_3, '80'),
       ],
@@ -204,7 +204,7 @@ describe('buildMatrixVM', () => {
 
   it('counts orphan ledger entries and excludes them from totals', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, 'nonexistent-product', S_1, '500'),
         mkEntry(CONTRACTOR_A, P_95, 'nonexistent-storage', '300'),
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
@@ -217,7 +217,7 @@ describe('buildMatrixVM', () => {
   it('excludes ledger entries belonging to a different contractor', () => {
     const vm = buildMatrixVM(makeInput({
       contractorId: CONTRACTOR_A,
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_B, P_95, S_1, '999'),
       ],
@@ -234,7 +234,7 @@ describe('buildMatrixVM', () => {
 
   it('computes per-cell subtotal sums for each group and cross-leaf', () => {
     const vm = buildMatrixVM(makeInput({
-      ledgerEntries: [
+      ledgerBalances: [
         mkEntry(CONTRACTOR_A, P_95, S_1, '120'),
         mkEntry(CONTRACTOR_A, P_98, S_1, '45'),
         mkEntry(CONTRACTOR_A, P_95, S_3, '80'),

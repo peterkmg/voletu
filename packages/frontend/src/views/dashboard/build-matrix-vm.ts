@@ -258,7 +258,7 @@ function accumulateGroupSubtotals(
 
 export function buildMatrixVM(input: BuilderInput): MatrixVM {
   const ledger = input.contractorId
-    ? (input.ledgerEntries as any[]).filter(e => e.contractorId === input.contractorId)
+    ? (input.ledgerBalances as any[]).filter(e => e.contractorId === input.contractorId)
     : []
 
   const productById = new Map(input.products.map(p => [p.id, p]))

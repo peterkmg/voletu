@@ -7,6 +7,8 @@ use sea_orm::{
   ActiveValue::Set,
   DatabaseTransaction,
   EntityLoaderTrait,
+  EntityTrait,
+  PaginatorTrait,
   TransactionError,
   TransactionTrait,
 };
@@ -16,15 +18,15 @@ use uuid::Uuid;
 use super::{
   documents::{seed_inventory_documents, seed_transport_documents},
   helpers::{
-    company_name,
     fake_fragment,
-    location_name,
+    numbered_name,
     pick,
-    random_name,
     random_username,
     saved_uuid,
     title_fragment,
+    versioned_name,
     SeedTag,
+    BASE_SUFFIXES,
     COMPANY_ROLE_TAILS,
     LEGAL_SUFFIXES,
     PRODUCT_FAMILIES,
@@ -58,6 +60,7 @@ pub(super) struct SeedContext<'a> {
   pub(super) audit: &'a AuditService,
   pub(super) now: DateTime<Utc>,
   pub(super) tag: SeedTag,
+  pub(super) name_offsets: SeedNameOffsets,
   pub(super) dev_password_hash: &'a str,
 }
 
@@ -67,6 +70,7 @@ impl<'a> SeedContext<'a> {
     audit: &'a AuditService,
     now: DateTime<Utc>,
     tag: SeedTag,
+    name_offsets: SeedNameOffsets,
     dev_password_hash: &'a str,
   ) -> Self {
     Self {
@@ -74,12 +78,24 @@ impl<'a> SeedContext<'a> {
       audit,
       now,
       tag,
+      name_offsets,
       dev_password_hash,
     }
   }
 }
 
 pub(super) type DocumentContext<'a> = SeedContext<'a>;
+
+#[derive(Clone, Copy, Debug)]
+pub(super) struct SeedNameOffsets {
+  product_types: usize,
+  product_groups: usize,
+  products: usize,
+  companies: usize,
+  ports: usize,
+  bases: usize,
+  users: usize,
+}
 
 #[derive(Clone, Debug)]
 pub(super) struct CompanyPool {
@@ -167,11 +183,14 @@ impl SystemService {
         let audit = audit.clone();
         let dev_password_hash = dev_password_hash.clone();
         Box::pin(async move {
+          let name_offsets = seed_name_offsets(txn).await?;
+          let display_sequence = display_sequence_from_existing(name_offsets.product_types);
           let ctx = SeedContext::new(
             txn,
             audit.as_ref(),
             now,
-            SeedTag::new(now, run_id),
+            SeedTag::new(now, run_id, display_sequence),
+            name_offsets,
             &dev_password_hash,
           );
           let mut rng = rng_from_run(run_id);
@@ -228,6 +247,22 @@ fn rng_from_run(run_id: Uuid) -> rand::rngs::StdRng {
   rand::rngs::StdRng::from_seed(seed)
 }
 
+async fn seed_name_offsets(txn: &DatabaseTransaction) -> Result<SeedNameOffsets, ApiError> {
+  Ok(SeedNameOffsets {
+    product_types: product_type::Entity::find().count(txn).await? as usize,
+    product_groups: product_group::Entity::find().count(txn).await? as usize,
+    products: product::Entity::find().count(txn).await? as usize,
+    companies: company::Entity::find().count(txn).await? as usize,
+    ports: port::Entity::find().count(txn).await? as usize,
+    bases: base::Entity::find().count(txn).await? as usize,
+    users: user::Entity::find().count(txn).await? as usize,
+  })
+}
+
+fn display_sequence_from_existing(existing_product_types: usize) -> usize {
+  ((existing_product_types + PRODUCT_FAMILIES.len() - 1) / PRODUCT_FAMILIES.len()) + 1
+}
+
 async fn seed_reference_data(
   ctx: &SeedContext<'_>,
   rng: &mut rand::rngs::StdRng,
@@ -240,7 +275,7 @@ async fn seed_reference_data(
 
   for family in PRODUCT_FAMILIES {
     let product_type = product_type::ActiveModel {
-      common_name: Set(random_name(rng, &ctx.tag, (*family).to_string())),
+      common_name: Set(versioned_name(&ctx.tag, *family)),
       long_name: Set(Some(format!("{family} {}", fake_fragment(2..5)))),
       ..Default::default()
     }
@@ -249,13 +284,10 @@ async fn seed_reference_data(
     product_type_ids.push(product_type.id);
 
     for group_index in 0..rng.random_range(2..=3) {
+      let group_serial = ctx.name_offsets.product_groups + product_group_ids.len();
       let group = product_group::ActiveModel {
         product_type_id: Set(product_type.id),
-        common_name: Set(random_name(
-          rng,
-          &ctx.tag,
-          format!("{family} {}", title_fragment(fake_fragment(1..3))),
-        )),
+        common_name: Set(numbered_name(format!("{family} Group"), group_serial)),
         long_name: Set(Some(format!("{family} {}", fake_fragment(3..6)))),
         ..Default::default()
       }
@@ -265,16 +297,17 @@ async fn seed_reference_data(
 
       for product_index in 0..rng.random_range(2..=4) {
         let is_component = group_index == 0 || (group_index == 1 && product_index == 0);
+        let product_serial = ctx.name_offsets.products + product_ids.len();
         let product_name = if is_component {
-          format!("{family} Component {}", title_fragment(fake_fragment(1..3)))
+          numbered_name(format!("{family} Component"), product_serial)
         } else {
-          format!("{family} Blend {}", title_fragment(fake_fragment(1..3)))
+          numbered_name(format!("{family} Blend"), product_serial)
         };
 
         let saved = product::ActiveModel {
           product_group_id: Set(group.id),
           manufacturer_id: Set(None),
-          common_name: Set(random_name(rng, &ctx.tag, product_name)),
+          common_name: Set(product_name),
           long_name: Set(Some(format!("{family} {}", fake_fragment(4..8)))),
           add_identification: Set(None),
           is_component: Set(is_component),
@@ -315,7 +348,7 @@ async fn seed_reference_data(
 
 async fn seed_companies(
   ctx: &SeedContext<'_>,
-  rng: &mut rand::rngs::StdRng,
+  _rng: &mut rand::rngs::StdRng,
 ) -> Result<CompanyPool, ApiError> {
   let mut all = Vec::new();
   let mut contractors = Vec::new();
@@ -323,19 +356,14 @@ async fn seed_companies(
   let mut senders = Vec::new();
 
   for index in 0..18 {
+    let company_serial = ctx.name_offsets.companies + index;
+    let role_tail = COMPANY_ROLE_TAILS[index % COMPANY_ROLE_TAILS.len()];
+    let company_common_name = numbered_name(format!("{role_tail} Company"), company_serial);
     let saved = company::ActiveModel {
-      common_name: Set(company_name(rng, &ctx.tag)),
+      common_name: Set(company_common_name.clone()),
       legal_name: Set(Some(format!(
         "{} {}",
-        random_name(
-          rng,
-          &ctx.tag,
-          format!(
-            "{} {}",
-            title_fragment(fake_fragment(1..3)),
-            COMPANY_ROLE_TAILS[index % COMPANY_ROLE_TAILS.len()]
-          )
-        ),
+        company_common_name,
         LEGAL_SUFFIXES[index % LEGAL_SUFFIXES.len()]
       ))),
       is_contractor: Set(index < 10 || index % 3 == 0),
@@ -369,16 +397,12 @@ async fn seed_companies(
 
 async fn seed_ports(
   ctx: &SeedContext<'_>,
-  rng: &mut rand::rngs::StdRng,
+  _rng: &mut rand::rngs::StdRng,
 ) -> Result<Vec<Uuid>, ApiError> {
   let mut port_ids = Vec::with_capacity(8);
-  for _ in 0..8 {
+  for index in 0..8 {
     let saved = port::ActiveModel {
-      common_name: Set(random_name(
-        rng,
-        &ctx.tag,
-        format!("{} Port", title_fragment(fake_fragment(1..3))),
-      )),
+      common_name: Set(numbered_name("Port", ctx.name_offsets.ports + index)),
       country: Set(Some(title_fragment(fake_fragment(1..3)))),
       ..Default::default()
     }
@@ -398,16 +422,13 @@ async fn seed_locations(
 
   for _ in 0..rng.random_range(4..=6) {
     let warehouse_count = rng.random_range(2..=4);
+    let base_serial = ctx.name_offsets.bases + locations.len();
     let graph = base::ActiveModelEx {
-      common_name: Set(location_name(rng, &ctx.tag)),
+      common_name: Set(numbered_name(*pick(rng, BASE_SUFFIXES), base_serial)),
       long_name: Set(Some(fake_fragment(5..9))),
       warehouses: (0..warehouse_count)
         .map(|warehouse_index| warehouse::ActiveModelEx {
-          common_name: Set(random_name(
-            rng,
-            &ctx.tag,
-            format!("Warehouse {}", warehouse_index + 1),
-          )),
+          common_name: Set(numbered_name("Warehouse", warehouse_index)),
           long_name: Set(Some(fake_fragment(3..6))),
           storages: (0..rng.random_range(2..=5))
             .map(|storage_index| {
@@ -419,14 +440,9 @@ async fn seed_locations(
               };
 
               storage::ActiveModelEx {
-                common_name: Set(random_name(
-                  rng,
-                  &ctx.tag,
-                  format!(
-                    "{} {}",
-                    STORAGE_LABELS[storage_index % STORAGE_LABELS.len()],
-                    storage_index + 1
-                  ),
+                common_name: Set(numbered_name(
+                  STORAGE_LABELS[storage_index % STORAGE_LABELS.len()],
+                  storage_index,
                 )),
                 long_name: Set(Some(fake_fragment(2..5))),
                 capacity: Set(Some(Decimal::from(rng.random_range(4_000u64..=120_000u64)))),
@@ -481,7 +497,7 @@ async fn seed_users(
   locations: &[LocationSeed],
 ) -> Result<usize, ApiError> {
   let mut created = 0usize;
-  let mut index = 0usize;
+  let mut index = ctx.name_offsets.users;
 
   for role_type in RoleType::VARIANTS {
     let home_base_id = if matches!(role_type, RoleType::Admin) {
@@ -491,11 +507,7 @@ async fn seed_users(
     };
     user::ActiveModel {
       username: Set(random_username(rng, &ctx.tag, index)),
-      fullname: Set(Some(random_name(
-        rng,
-        &ctx.tag,
-        format!("{role_type} {}", title_fragment(fake_fragment(1..3))),
-      ))),
+      fullname: Set(Some(numbered_name(format!("{role_type} User"), index))),
       password_hash: Set(ctx.dev_password_hash.to_string()),
       role_id: Set(role_type.uuid()),
       home_base_id: Set(home_base_id),
@@ -521,11 +533,7 @@ async fn seed_users(
       for _ in 0..repeats {
         user::ActiveModel {
           username: Set(random_username(rng, &ctx.tag, index)),
-          fullname: Set(Some(random_name(
-            rng,
-            &ctx.tag,
-            format!("{role_type} {}", title_fragment(fake_fragment(1..3))),
-          ))),
+          fullname: Set(Some(numbered_name(format!("{role_type} User"), index))),
           password_hash: Set(ctx.dev_password_hash.to_string()),
           role_id: Set(role_type.uuid()),
           home_base_id: Set(Some(location.base_id)),
@@ -559,12 +567,18 @@ async fn seed_ledger(
           refs.companies.contractors[(location_index * 7 + warehouse_index * 3 + storage_index)
             % refs.companies.contractors.len()];
 
+        let amount = Decimal::from(rng.random_range(500u64..=40_000u64));
+
         inventory_ledger_entry::ActiveModel {
           id: Set(Uuid::now_v7()),
           storage_id: Set(storage_id),
           product_id: Set(product_id),
           contractor_id: Set(contractor_id),
-          current_amount: Set(Decimal::from(rng.random_range(500u64..=40_000u64))),
+          quantity_delta: Set(amount),
+          source_kind: Set(crate::enums::LedgerEntrySourceKind::OpeningBalance),
+          source_id: Set(Uuid::now_v7()),
+          source_event: Set(crate::enums::LedgerEntrySourceEvent::OpeningBalance),
+          reverses_entry_id: Set(None),
           ..Default::default()
         }
         .insert(ctx.conn)
@@ -579,12 +593,18 @@ async fn seed_ledger(
             refs.companies.contractors[(location_index + warehouse_index * 11 + storage_index + 1)
               % refs.companies.contractors.len()];
 
+          let secondary_amount = Decimal::from(rng.random_range(150u64..=12_000u64));
+
           inventory_ledger_entry::ActiveModel {
             id: Set(Uuid::now_v7()),
             storage_id: Set(storage_id),
             product_id: Set(secondary_product_id),
             contractor_id: Set(secondary_contractor_id),
-            current_amount: Set(Decimal::from(rng.random_range(150u64..=12_000u64))),
+            quantity_delta: Set(secondary_amount),
+            source_kind: Set(crate::enums::LedgerEntrySourceKind::OpeningBalance),
+            source_id: Set(Uuid::now_v7()),
+            source_event: Set(crate::enums::LedgerEntrySourceEvent::OpeningBalance),
+            reverses_entry_id: Set(None),
             ..Default::default()
           }
           .insert(ctx.conn)

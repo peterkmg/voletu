@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { getApiBaseUrl } from '~/platform/runtime/api-base-url'
+import { client } from '~/api/client'
 import {
   applyHealthSnapshot,
   applyNodeStatusSnapshot,
@@ -11,6 +11,8 @@ import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 import { getCurrentSyncPollInterval } from './sync-polling-policy'
 
+const backgroundPollingMeta = { suppressErrorToast: true } as const
+
 export function useHealthCheck() {
   const accessToken = useAuthStore(s => s.accessToken)
 
@@ -19,6 +21,7 @@ export function useHealthCheck() {
     queryFn: () => fetchHealth(),
     refetchInterval: 60_000,
     enabled: !!accessToken,
+    meta: backgroundPollingMeta,
   })
 
   useEffect(() => {
@@ -41,6 +44,7 @@ export function useNodeStatus() {
     refetchInterval: syncRefetchInterval,
     refetchIntervalInBackground: true,
     enabled: isInitialized && !!accessToken,
+    meta: backgroundPollingMeta,
   })
 
   // Also fetch base assignments for peripheral nodes
@@ -48,17 +52,16 @@ export function useNodeStatus() {
   const basesQuery = useQuery<{ success: true, data: Array<{ baseId: string }> }>({
     queryKey: ['node', 'bases'],
     queryFn: async () => {
-      const token = useAuthStore.getState().accessToken
-      const res = await fetch(`${getApiBaseUrl()}/node/bases`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await client<{ success: true, data: Array<{ baseId: string }> }>({
+        method: 'GET',
+        url: '/node/bases',
       })
-      if (!res.ok)
-        throw new Error('Failed to fetch node bases')
-      return res.json()
+      return response.data
     },
     refetchInterval: syncRefetchInterval,
     refetchIntervalInBackground: true,
     enabled: isInitialized && !!accessToken && nodeType === 'PERIPHERAL',
+    meta: backgroundPollingMeta,
   })
 
   useEffect(() => {

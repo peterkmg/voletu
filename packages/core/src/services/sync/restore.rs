@@ -1,5 +1,6 @@
-use sea_orm::{ActiveModelTrait, ConnectionTrait, DbErr};
+use sea_orm::{ActiveModelTrait, ActiveValue, ConnectionTrait, DbErr, EntityLoaderTrait, SqlErr};
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::{
   api::ApiError,
@@ -9,6 +10,68 @@ use crate::{
 
 fn is_nonfatal_restore_error(error: &DbErr) -> bool {
   matches!(error, DbErr::PrimaryKeyNotSet { .. } | DbErr::AttrNotSet(_))
+}
+
+fn is_idempotent_insert_error(error: &DbErr) -> bool {
+  matches!(error, DbErr::RecordNotInserted)
+    || matches!(error.sql_err(), Some(SqlErr::UniqueConstraintViolation(_)))
+}
+
+fn inventory_ledger_entry_id(active_model: &inventory_ledger_entry::ActiveModel) -> Option<Uuid> {
+  match &active_model.id {
+    ActiveValue::Set(id) | ActiveValue::Unchanged(id) => Some(*id),
+    ActiveValue::NotSet => None,
+  }
+}
+
+async fn inventory_ledger_entry_exists<C: ConnectionTrait>(
+  conn: &C,
+  id: Uuid,
+) -> Result<bool, ApiError> {
+  Ok(
+    inventory_ledger_entry::Entity::load()
+      .filter_by_id(id)
+      .one(conn)
+      .await?
+      .is_some(),
+  )
+}
+
+async fn restore_inventory_ledger_entry<C: ConnectionTrait>(
+  conn: &C,
+  action: AuditAction,
+  new_values: Option<&Value>,
+) -> Result<(), ApiError> {
+  match action {
+    AuditAction::Insert => {
+      if let Some(snapshot) = new_values {
+        let active_model = match inventory_ledger_entry::ActiveModel::from_json(snapshot.clone()) {
+          Ok(model) => model,
+          Err(error) if is_nonfatal_restore_error(&error) => return Ok(()),
+          Err(error) => return Err(error.into()),
+        };
+        let Some(row_id) = inventory_ledger_entry_id(&active_model) else {
+          return Ok(());
+        };
+
+        match active_model.insert(conn).await {
+          Ok(_) => Ok(()),
+          Err(error) if is_nonfatal_restore_error(&error) => Ok(()),
+          Err(error) if is_idempotent_insert_error(&error) => {
+            if inventory_ledger_entry_exists(conn, row_id).await? {
+              Ok(())
+            } else {
+              Err(error.into())
+            }
+          }
+          Err(error) => Err(error.into()),
+        }
+      } else {
+        Ok(())
+      }
+    }
+    AuditAction::Update | AuditAction::HardDelete => Ok(()),
+  }
 }
 
 pub(super) async fn apply_audit_log_restore<C: ConnectionTrait>(
@@ -91,7 +154,9 @@ pub(super) async fn apply_audit_log_restore<C: ConnectionTrait>(
       restore_table!(dispatch_storage_measurement::ActiveModel)
     }
     AuditTable::InventoryAdjustments => restore_table!(inventory_adjustment::ActiveModel),
-    AuditTable::InventoryLedgerEntries => restore_table!(inventory_ledger_entry::ActiveModel),
+    AuditTable::InventoryLedgerEntries => {
+      restore_inventory_ledger_entry(conn, action, new_values).await
+    }
     AuditTable::InventoryReconciliations => restore_table!(inventory_reconciliation::ActiveModel),
     AuditTable::OwnershipTransfers => restore_table!(ownership_transfer::ActiveModel),
     AuditTable::OwnershipTransferItems => restore_table!(ownership_transfer_item::ActiveModel),

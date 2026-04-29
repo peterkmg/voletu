@@ -5,9 +5,11 @@ use crate::{
   api::ApiError,
   dtos,
   entities::{dispatch_document, dispatch_item},
+  enums::{LedgerEntrySourceEvent, LedgerEntrySourceKind},
   services::{
     common::{ensure_doc_mod_allowed, set_if_some, set_if_some_mapped},
     document::DocumentService,
+    ledger::LedgerDelta,
   },
 };
 
@@ -70,13 +72,16 @@ async fn before_dispatch_document_execute(
   for item in doc.items {
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        existing.contractor_id,
-        -item.dispatched_amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: item.storage_id,
+        product_id: item.product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: -item.dispatched_amount,
+        source_kind: LedgerEntrySourceKind::DispatchDocument,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
@@ -89,21 +94,10 @@ async fn before_dispatch_document_revert<C: sea_orm::ConnectionTrait>(
   existing: &dispatch_document::Model,
   _actor_id: Uuid,
 ) -> Result<(), ApiError> {
-  let doc = get_by_id(conn, existing.id).await?;
-
-  for item in doc.items {
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        existing.contractor_id,
-        item.dispatched_amount,
-      )
-      .await?;
-  }
-
+  svc
+    .ledger
+    .append_reversal_deltas_on(conn, LedgerEntrySourceKind::DispatchDocument, existing.id)
+    .await?;
   Ok(())
 }
 

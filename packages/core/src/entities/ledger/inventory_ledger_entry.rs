@@ -1,6 +1,9 @@
 use sea_orm::{entity::prelude::*, model};
 
-use crate::entities::{company, product, storage};
+use crate::{
+  entities::{company, product, storage},
+  enums,
+};
 
 #[voletu_core_macros::handle_audit]
 #[voletu_core_macros::handle_service_fields]
@@ -19,5 +22,10 @@ pub struct Model {
   pub contractor_id: Uuid,
   #[sea_orm(belongs_to, from = "contractor_id", to = "id")]
   pub contractor: HasOne<company::Entity>,
-  pub current_amount: Decimal,
+  pub quantity_delta: Decimal,
+  pub source_kind: enums::LedgerEntrySourceKind,
+  pub source_id: Uuid,
+  pub source_event: enums::LedgerEntrySourceEvent,
+  #[sea_orm(unique)]
+  pub reverses_entry_id: Option<Uuid>,
 }

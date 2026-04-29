@@ -1,5 +1,4 @@
-use sea_orm::{ColumnTrait, QueryFilter};
-use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entry};
+use voletu_core::{endpoints::paths as api_paths, services::ledger::LedgerService};
 
 use super::super::seed_inventory_context;
 use crate::common::{
@@ -54,11 +53,8 @@ async fn endpoint_auto_executes_and_applies_ledger_entries() {
     assert_eq!(provided_json["data"]["status"], "EXECUTED");
     assert_eq!(provided_json["data"]["items"].as_array().unwrap().len(), 1);
 
-    let ledger_entry = inventory_ledger_entry::Entity::load()
-      .filter(inventory_ledger_entry::Column::StorageId.eq(ctx.storage_a))
-      .filter(inventory_ledger_entry::Column::ProductId.eq(ctx.product_id))
-      .filter(inventory_ledger_entry::Column::ContractorId.eq(ctx.contractor_id))
-      .one(&*db)
+    let ledger_entry = LedgerService::new(db.clone())
+      .balance_by_dimensions(ctx.storage_a, ctx.product_id, ctx.contractor_id)
       .await
       .unwrap()
       .unwrap();

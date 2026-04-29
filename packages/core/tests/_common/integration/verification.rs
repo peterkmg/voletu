@@ -173,7 +173,7 @@ pub async fn get_ownership_transfer_json(
     .cloned()
 }
 
-pub async fn get_ledger_entry_json(
+pub async fn get_ledger_balance_json(
   client: &Client,
   node_url: &str,
   token: &str,
@@ -200,8 +200,8 @@ pub async fn get_ledger_entry_json(
   }
 }
 
-/// Get all ledger entries from a node via GET /ledger.
-pub async fn get_all_ledger_entries(client: &Client, base_url: &str, token: &str) -> Vec<Value> {
+/// Get all ledger balances from a node via GET /ledger.
+pub async fn get_all_ledger_balances(client: &Client, base_url: &str, token: &str) -> Vec<Value> {
   let data = api_get(client, &format!("{base_url}/ledger"), token).await;
   data.as_array().cloned().unwrap_or_default()
 }

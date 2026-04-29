@@ -21,7 +21,7 @@ use crate::common::integration::{
   assert_ledger_parity_for_base,
   dev_seed_via_api,
   doc_count,
-  get_all_ledger_entries,
+  get_all_ledger_balances,
   get_storages_for_base,
   poll_until,
   setup_central_via_api,
@@ -88,10 +88,10 @@ async fn peripheral_matches_central_catalog_ledger_and_documents_after_dev_seed(
         }
       }
       // Also require the ledger to arrive in full.
-      let central_ledger_len = get_all_ledger_entries(&client, &central.url, &central.token)
+      let central_ledger_len = get_all_ledger_balances(&client, &central.url, &central.token)
         .await
         .len();
-      let periph_ledger_len = get_all_ledger_entries(&client, &peripheral.url, &peripheral.token)
+      let periph_ledger_len = get_all_ledger_balances(&client, &peripheral.url, &peripheral.token)
         .await
         .len();
       periph_ledger_len >= central_ledger_len
@@ -178,8 +178,8 @@ async fn peripheral_matches_central_catalog_ledger_and_documents_after_dev_seed(
   }
 
   // Full-ledger length parity as a final safety check.
-  let central_ledger = get_all_ledger_entries(&client, &central.url, &central.token).await;
-  let periph_ledger = get_all_ledger_entries(&client, &peripheral.url, &peripheral.token).await;
+  let central_ledger = get_all_ledger_balances(&client, &central.url, &central.token).await;
+  let periph_ledger = get_all_ledger_balances(&client, &peripheral.url, &peripheral.token).await;
   assert_eq!(
     periph_ledger.len(),
     central_ledger.len(),

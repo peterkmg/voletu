@@ -20,7 +20,7 @@ use crate::common::integration::{
   assert_ledger_parity_for_base,
   assert_seed_completeness,
   dev_seed_via_api,
-  get_all_ledger_entries,
+  get_all_ledger_balances,
   poll_until,
   setup_central_via_api,
   setup_peripheral_via_api,
@@ -126,7 +126,7 @@ async fn central_accumulates_docs_from_both_peripherals_with_ledger_parity() {
   poll_until(
     || async {
       // PA should see ledger entries for b_a2 from both PA's own data and PB's overlap.
-      !get_all_ledger_entries(&client, &pa.url, &pa.token)
+      !get_all_ledger_balances(&client, &pa.url, &pa.token)
         .await
         .is_empty()
     },

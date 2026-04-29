@@ -9,7 +9,7 @@ use std::time::Duration;
 use crate::common::integration::{
   api_post,
   await_sync_cycle,
-  get_all_ledger_entries,
+  get_all_ledger_balances,
   seed_catalog_via_api,
   setup_central_via_api,
   setup_peripheral_via_api,
@@ -37,7 +37,7 @@ async fn ledger_amount_matches_central_after_executing_acceptance() {
     })).await;
 
   // Check ledger on Central
-  let central_ledger = get_all_ledger_entries(&client, &central.url, &central.token).await;
+  let central_ledger = get_all_ledger_balances(&client, &central.url, &central.token).await;
   let central_entry = central_ledger.iter().find(|e| {
     e["storageId"].as_str() == Some(&catalog.storage_alpha.to_string())
       && e["productId"].as_str() == Some(&catalog.product.to_string())
@@ -50,7 +50,7 @@ async fn ledger_amount_matches_central_after_executing_acceptance() {
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   // Verify ledger on PA matches
-  let pa_ledger = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
+  let pa_ledger = get_all_ledger_balances(&client, &pa.url, &pa.token).await;
   let pa_entry = pa_ledger.iter().find(|e| {
     e["storageId"].as_str() == Some(&catalog.storage_alpha.to_string())
       && e["productId"].as_str() == Some(&catalog.product.to_string())

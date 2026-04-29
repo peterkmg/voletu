@@ -1,7 +1,7 @@
 use std::{str::FromStr, sync::Arc};
 
 use chrono::{DateTime, Utc};
-use sea_orm::prelude::Decimal;
+use sea_orm::{prelude::Decimal, ColumnTrait, QueryFilter};
 use uuid::Uuid;
 use voletu_core::{
   api::ApiError,
@@ -15,6 +15,7 @@ use voletu_core::{
     UpdateInventoryReconciliationCompositeRequest,
     UpdateInventoryReconciliationRequest,
   },
+  entities::inventory_ledger_entry,
   enums::AdjustmentType,
   services::{audit::AuditService, document::DocumentService, ledger::LedgerService},
 };
@@ -93,8 +94,22 @@ async fn adjustments_apply_on_execute_and_reverse_on_revert() {
       .await
       .unwrap();
 
+    let executed_rows: Vec<inventory_ledger_entry::ModelEx> =
+      inventory_ledger_entry::Entity::load()
+        .filter(inventory_ledger_entry::Column::StorageId.eq(catalog.storage_a_id))
+        .filter(inventory_ledger_entry::Column::ProductId.eq(catalog.product_a_id))
+        .filter(inventory_ledger_entry::Column::ContractorId.eq(catalog.contractor_a_id))
+        .all(&*db)
+        .await
+        .unwrap();
+    assert_eq!(executed_rows.len(), 3);
+    let executed_amounts: Vec<_> = executed_rows.iter().map(|row| row.quantity_delta).collect();
+    assert!(executed_amounts.contains(&dec("5.0")));
+    assert!(executed_amounts.contains(&dec("3.0")));
+    assert!(executed_amounts.contains(&dec("-2.0")));
+
     let final_entry = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -108,8 +123,25 @@ async fn adjustments_apply_on_execute_and_reverse_on_revert() {
       .reconciliation_revert(reconciliation.id, Uuid::now_v7())
       .await
       .unwrap();
+
+    let reverted_rows: Vec<inventory_ledger_entry::ModelEx> =
+      inventory_ledger_entry::Entity::load()
+        .filter(inventory_ledger_entry::Column::StorageId.eq(catalog.storage_a_id))
+        .filter(inventory_ledger_entry::Column::ProductId.eq(catalog.product_a_id))
+        .filter(inventory_ledger_entry::Column::ContractorId.eq(catalog.contractor_a_id))
+        .all(&*db)
+        .await
+        .unwrap();
+    assert_eq!(reverted_rows.len(), 5);
+    let reverted_amounts: Vec<_> = reverted_rows.iter().map(|row| row.quantity_delta).collect();
+    assert!(reverted_amounts.contains(&dec("5.0")));
+    assert!(reverted_amounts.contains(&dec("3.0")));
+    assert!(reverted_amounts.contains(&dec("-2.0")));
+    assert!(reverted_amounts.contains(&dec("-3.0")));
+    assert!(reverted_amounts.contains(&dec("2.0")));
+
     let reverted_entry = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -118,6 +150,22 @@ async fn adjustments_apply_on_execute_and_reverse_on_revert() {
       .unwrap()
       .unwrap();
     assert_eq!(reverted_entry.current_amount, dec("5.0"));
+
+    service
+      .reconciliation_revert(reconciliation.id, Uuid::now_v7())
+      .await
+      .unwrap();
+
+    let rows_after_repeat_revert: Vec<inventory_ledger_entry::ModelEx> =
+      inventory_ledger_entry::Entity::load()
+        .filter(inventory_ledger_entry::Column::StorageId.eq(catalog.storage_a_id))
+        .filter(inventory_ledger_entry::Column::ProductId.eq(catalog.product_a_id))
+        .filter(inventory_ledger_entry::Column::ContractorId.eq(catalog.contractor_a_id))
+        .all(&*db)
+        .await
+        .unwrap();
+    assert_eq!(rows_after_repeat_revert.len(), 5);
+
     assert_eq!(service.reconciliation_list(None).await.unwrap().len(), 1);
     assert_eq!(service.adjustment_list(None).await.unwrap().len(), 2);
   })

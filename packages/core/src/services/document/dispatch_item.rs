@@ -8,7 +8,7 @@ use crate::{
   services::{
     common::{ensure_doc_mod_allowed, ensure_storage_accepts_product, set_if_some},
     document::DocumentService,
-    ledger::load_entry_by_dimensions_on,
+    ledger::load_balance_by_dimensions_on,
   },
 };
 
@@ -33,7 +33,7 @@ async fn ensure_dispatch_item_create_allowed(
   ensure_doc_mod_allowed(doc.status)?;
   ensure_storage_accepts_product(conn, req.item.storage_id, req.item.product_id).await?;
 
-  let current_amount_row = load_entry_by_dimensions_on(
+  let current_amount_row = load_balance_by_dimensions_on(
     conn,
     req.item.storage_id,
     req.item.product_id,
@@ -78,7 +78,7 @@ async fn ensure_dispatch_item_update_allowed(
   ensure_storage_accepts_product(txn, storage_id, product_id).await?;
 
   let current_amount_row =
-    load_entry_by_dimensions_on(txn, storage_id, product_id, doc.contractor_id).await?;
+    load_balance_by_dimensions_on(txn, storage_id, product_id, doc.contractor_id).await?;
   let current_amount = match current_amount_row {
     Some(entry) => entry.current_amount,
     None => Decimal::ZERO,

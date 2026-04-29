@@ -5,9 +5,11 @@ use crate::{
   api::ApiError,
   dtos,
   entities::{blending_component, blending_document, blending_result},
+  enums::{LedgerEntrySourceEvent, LedgerEntrySourceKind},
   services::{
     common::{ensure_doc_mod_allowed, set_if_some},
     document::DocumentService,
+    ledger::LedgerDelta,
   },
 };
 
@@ -84,26 +86,32 @@ async fn before_blending_document_execute(
   for comp in doc.components {
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        comp.storage_id,
-        comp.source_product_id,
-        existing.contractor_id,
-        -comp.amount_used,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: comp.storage_id,
+        product_id: comp.source_product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: -comp.amount_used,
+        source_kind: LedgerEntrySourceKind::BlendingDocument,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
   for res in doc.results {
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        res.storage_id,
-        existing.target_product_id,
-        existing.contractor_id,
-        res.produced_amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: res.storage_id,
+        product_id: existing.target_product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: res.produced_amount,
+        source_kind: LedgerEntrySourceKind::BlendingDocument,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
@@ -116,40 +124,10 @@ async fn before_blending_document_revert<C: sea_orm::ConnectionTrait>(
   existing: &blending_document::Model,
   _actor_id: Uuid,
 ) -> Result<(), ApiError> {
-  let doc = blending_document::Entity::load()
-    .filter_by_id(existing.id)
-    .with(blending_component::Entity)
-    .with(blending_result::Entity)
-    .one(conn)
-    .await?
-    .ok_or_else(|| ApiError::NotFound(format!("Blending document '{}' not found", existing.id)))?;
-
-  for comp in doc.components {
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        comp.storage_id,
-        comp.source_product_id,
-        existing.contractor_id,
-        comp.amount_used,
-      )
-      .await?;
-  }
-
-  for res in doc.results {
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        res.storage_id,
-        existing.target_product_id,
-        existing.contractor_id,
-        -res.produced_amount,
-      )
-      .await?;
-  }
-
+  svc
+    .ledger
+    .append_reversal_deltas_on(conn, LedgerEntrySourceKind::BlendingDocument, existing.id)
+    .await?;
   Ok(())
 }
 

@@ -1,22 +1,12 @@
 use std::ops::Range;
 
 use chrono::{DateTime, Duration, Utc};
-use fake::{
-  faker::{
-    address::en::CityName,
-    company::en::CompanyName,
-    internet::en::Username,
-    lorem::en::Sentence,
-  },
-  Fake,
-};
+use fake::{faker::lorem::en::Sentence, Fake};
 use rand::RngExt;
 use sea_orm::ActiveValue;
 use uuid::Uuid;
 
 use crate::api::ApiError;
-
-const RUN_SHORT_LEN: usize = 8;
 
 pub const PRODUCT_FAMILIES: &[&str] = &[
   "Crude Oil",
@@ -45,22 +35,17 @@ pub const LEGAL_SUFFIXES: &[&str] = &["LLC", "Ltd.", "Inc.", "GmbH", "Zrt."];
 pub struct SeedTag {
   date_code: String,
   run_code: String,
-  run_short: String,
+  display_sequence: usize,
 }
 
 impl SeedTag {
-  pub fn new(now: DateTime<Utc>, run_id: Uuid) -> Self {
+  pub fn new(now: DateTime<Utc>, run_id: Uuid, display_sequence: usize) -> Self {
     let run_code = run_id.as_simple().to_string();
-    let run_short = run_code[..RUN_SHORT_LEN].to_string();
     Self {
       date_code: now.format("%y%m%d").to_string(),
       run_code,
-      run_short,
+      display_sequence,
     }
-  }
-
-  pub fn run_short(&self) -> &str {
-    &self.run_short
   }
 
   pub fn document_number(&self, prefix: &str, serial: usize) -> String {
@@ -70,6 +55,10 @@ impl SeedTag {
       self.run_code,
       serial + 1
     )
+  }
+
+  pub fn display_sequence(&self) -> usize {
+    self.display_sequence
   }
 }
 
@@ -89,45 +78,21 @@ pub fn maybe<T>(
   }
 }
 
-pub fn random_name(rng: &mut rand::rngs::StdRng, tag: &SeedTag, base: impl Into<String>) -> String {
-  format!(
-    "{} {:03} {}",
-    base.into(),
-    rng.random_range(100..=999),
-    tag.run_short()
-  )
-}
-
-pub fn random_username(_rng: &mut rand::rngs::StdRng, tag: &SeedTag, index: usize) -> String {
-  let raw = Username().fake::<String>();
-  let cleaned: String = raw
-    .chars()
-    .filter(|ch| ch.is_ascii_alphanumeric() || *ch == '_' || *ch == '.')
-    .collect();
-  let base = if cleaned.is_empty() {
-    "devuser".to_string()
+pub fn versioned_name(tag: &SeedTag, base: impl Into<String>) -> String {
+  let base = base.into();
+  if tag.display_sequence() <= 1 {
+    base
   } else {
-    cleaned.to_lowercase()
-  };
-  format!("{base}-{}-{:02}", tag.run_short(), index + 1)
+    format!("{base} {}", tag.display_sequence())
+  }
 }
 
-pub fn company_name(rng: &mut rand::rngs::StdRng, tag: &SeedTag) -> String {
-  let tail = pick(rng, COMPANY_ROLE_TAILS);
-  random_name(
-    rng,
-    tag,
-    format!("{} {}", CompanyName().fake::<String>(), tail),
-  )
+pub fn numbered_name(base: impl AsRef<str>, serial: usize) -> String {
+  format!("{} {}", base.as_ref(), serial + 1)
 }
 
-pub fn location_name(rng: &mut rand::rngs::StdRng, tag: &SeedTag) -> String {
-  let suffix = pick(rng, BASE_SUFFIXES);
-  random_name(
-    rng,
-    tag,
-    format!("{} {}", CityName().fake::<String>(), suffix),
-  )
+pub fn random_username(_rng: &mut rand::rngs::StdRng, _tag: &SeedTag, index: usize) -> String {
+  format!("devuser{:03}", index + 1)
 }
 
 pub fn fake_fragment(words: Range<usize>) -> String {

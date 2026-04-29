@@ -85,7 +85,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .unwrap();
 
     let before_execute_from = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -101,7 +101,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .unwrap();
 
     let after_from = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -110,7 +110,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .unwrap()
       .unwrap();
     let after_to = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -145,7 +145,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .unwrap();
 
     let ownership_before_execute = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -161,7 +161,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .unwrap();
 
     let owner_a = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -170,7 +170,7 @@ async fn physical_and_ownership_transfers_apply_on_execute() {
       .unwrap()
       .unwrap();
     let owner_b = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_b_id,
@@ -274,7 +274,7 @@ async fn shortcut_create_execute_posts_documents_and_applies_ledger_effects() {
     assert_eq!(ownership_model.status, DocumentStatus::Executed);
 
     let source = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -283,7 +283,7 @@ async fn shortcut_create_execute_posts_documents_and_applies_ledger_effects() {
       .unwrap()
       .unwrap();
     let target = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_b_id,

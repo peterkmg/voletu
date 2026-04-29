@@ -5,9 +5,11 @@ use crate::{
   api::ApiError,
   dtos,
   entities::{ownership_transfer, ownership_transfer_item},
+  enums::{LedgerEntrySourceEvent, LedgerEntrySourceKind},
   services::{
     common::{ensure_doc_mod_allowed, set_if_some},
     document::DocumentService,
+    ledger::LedgerDelta,
   },
 };
 
@@ -65,23 +67,29 @@ async fn before_ownership_transfer_execute(
   for item in doc.items {
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        item.from_contractor_id,
-        -item.amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: item.storage_id,
+        product_id: item.product_id,
+        contractor_id: item.from_contractor_id,
+        quantity_delta: -item.amount,
+        source_kind: LedgerEntrySourceKind::OwnershipTransfer,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        item.to_contractor_id,
-        item.amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: item.storage_id,
+        product_id: item.product_id,
+        contractor_id: item.to_contractor_id,
+        quantity_delta: item.amount,
+        source_kind: LedgerEntrySourceKind::OwnershipTransfer,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
@@ -94,31 +102,10 @@ async fn before_ownership_transfer_revert(
   existing: &ownership_transfer::Model,
   _actor_id: Uuid,
 ) -> Result<(), ApiError> {
-  let doc = get_by_id(conn, existing.id).await?;
-
-  for item in doc.items {
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        item.from_contractor_id,
-        item.amount,
-      )
-      .await?;
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        item.to_contractor_id,
-        -item.amount,
-      )
-      .await?;
-  }
-
+  svc
+    .ledger
+    .append_reversal_deltas_on(conn, LedgerEntrySourceKind::OwnershipTransfer, existing.id)
+    .await?;
   Ok(())
 }
 

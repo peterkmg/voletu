@@ -510,6 +510,11 @@ impl EntityServiceGenerator {
         }
 
         if existing.status == crate::enums::DocumentStatus::Draft {
+          if existing.reverted_at.is_some() {
+            tracing::trace!(document_id = %document_id, "{} already reverted to draft", #entity_name);
+            return Ok(());
+          }
+
           return Err(crate::api::ApiError::BadRequest(format!(
             "Attempted to revert non-executed {}",
             #entity_name

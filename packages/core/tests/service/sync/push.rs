@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use sea_orm::{
+  entity::prelude::Decimal,
   ActiveModelTrait,
   ActiveValue::Set,
   EntityLoaderTrait,
@@ -13,7 +14,15 @@ use voletu_core::{
   api::ApiError,
   context::audit::with_audit_context,
   dtos::PushAuditLogRequest,
-  entities::{audit_log, company, database_instance, local, node_base_assignment, sync_watermark},
+  entities::{
+    audit_log,
+    company,
+    database_instance,
+    inventory_ledger_entry,
+    local,
+    node_base_assignment,
+    sync_watermark,
+  },
   enums::{self, AuditAction, AuditTable, SyncDirection},
   services::sync::{specs::SyncStatusQuerySpec, SyncService},
 };
@@ -171,6 +180,123 @@ async fn restores_company_from_snapshot_and_is_idempotent_on_reapply() {
       .await
       .unwrap();
     assert!(restore_log.is_some(), "pushed restore log should exist");
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn inventory_ledger_insert_restore_is_insert_only_and_duplicate_is_idempotent() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
+    let catalog = seed_inventory_catalog(&db).await;
+
+    let local_entry = inventory_ledger_entry::ActiveModel {
+      storage_id: Set(catalog.storage_a_id),
+      product_id: Set(catalog.product_a_id),
+      contractor_id: Set(catalog.contractor_a_id),
+      quantity_delta: Set(Decimal::new(3, 0)),
+      source_kind: Set(enums::LedgerEntrySourceKind::ManualAdjustment),
+      source_id: Set(Uuid::now_v7()),
+      source_event: Set(enums::LedgerEntrySourceEvent::Execution),
+      reverses_entry_id: Set(None),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let mut incoming_snapshot = local_entry.clone();
+    incoming_snapshot.quantity_delta = Decimal::new(5, 0);
+    let payload = vec![PushAuditLogRequest {
+      id: Uuid::now_v7(),
+      table_name: AuditTable::InventoryLedgerEntries,
+      record_id: local_entry.id,
+      action: AuditAction::Insert,
+      old_values_json: None,
+      new_values_json: Some(serde_json::to_string(&incoming_snapshot).unwrap()),
+      target_base_ids: String::new(),
+      user_role_weight: 10,
+      user_id: Uuid::now_v7(),
+      timestamp: ts("2026-01-04T00:00:00Z"),
+      origin_db_id: Uuid::now_v7(),
+    }];
+
+    let first_apply = service.push_logs(&payload).await.unwrap();
+    assert_eq!(first_apply.accepted, 1);
+    assert_eq!(first_apply.rejected, 0);
+
+    let preserved_entry = inventory_ledger_entry::Entity::load()
+      .filter_by_id(local_entry.id)
+      .one(&*db)
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(preserved_entry.quantity_delta, Decimal::new(3, 0));
+
+    let second_apply = service.push_logs(&payload).await.unwrap();
+    assert_eq!(second_apply.accepted, 0);
+    assert_eq!(second_apply.rejected, 0);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn inventory_ledger_restore_rejects_unique_conflict_for_different_row() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
+    let catalog = seed_inventory_catalog(&db).await;
+    let source_id = Uuid::now_v7();
+
+    let original = inventory_ledger_entry::ActiveModel {
+      storage_id: Set(catalog.storage_a_id),
+      product_id: Set(catalog.product_a_id),
+      contractor_id: Set(catalog.contractor_a_id),
+      quantity_delta: Set(Decimal::new(3, 0)),
+      source_kind: Set(enums::LedgerEntrySourceKind::ManualAdjustment),
+      source_id: Set(source_id),
+      source_event: Set(enums::LedgerEntrySourceEvent::Execution),
+      reverses_entry_id: Set(None),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let local_reversal = inventory_ledger_entry::ActiveModel {
+      storage_id: Set(original.storage_id),
+      product_id: Set(original.product_id),
+      contractor_id: Set(original.contractor_id),
+      quantity_delta: Set(-original.quantity_delta),
+      source_kind: Set(original.source_kind),
+      source_id: Set(original.source_id),
+      source_event: Set(enums::LedgerEntrySourceEvent::Reversion),
+      reverses_entry_id: Set(Some(original.id)),
+      ..Default::default()
+    }
+    .insert(&*db)
+    .await
+    .unwrap();
+
+    let mut incoming_reversal = local_reversal.clone();
+    incoming_reversal.id = Uuid::now_v7();
+
+    let payload = vec![PushAuditLogRequest {
+      id: Uuid::now_v7(),
+      table_name: AuditTable::InventoryLedgerEntries,
+      record_id: incoming_reversal.id,
+      action: AuditAction::Insert,
+      old_values_json: None,
+      new_values_json: Some(serde_json::to_string(&incoming_reversal).unwrap()),
+      target_base_ids: String::new(),
+      user_role_weight: 10,
+      user_id: Uuid::now_v7(),
+      timestamp: ts("2026-01-04T00:00:00Z"),
+      origin_db_id: Uuid::now_v7(),
+    }];
+
+    assert!(service.push_logs(&payload).await.is_err());
   })
   .await;
 }

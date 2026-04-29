@@ -8,9 +8,11 @@ use crate::{
   },
   dtos,
   entities::{acceptance_document, acceptance_item},
+  enums::{LedgerEntrySourceEvent, LedgerEntrySourceKind},
   services::{
     common::{ensure_doc_mod_allowed, set_if_some, set_if_some_mapped},
     document::DocumentService,
+    ledger::LedgerDelta,
   },
 };
 
@@ -36,13 +38,16 @@ async fn before_acceptance_document_execute(
   for item in doc.items {
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        existing.contractor_id,
-        item.accepted_amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: item.storage_id,
+        product_id: item.product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: item.accepted_amount,
+        source_kind: LedgerEntrySourceKind::AcceptanceDocument,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
@@ -55,26 +60,10 @@ async fn before_acceptance_document_revert(
   existing: &acceptance_document::Model,
   _actor_id: Uuid,
 ) -> Result<(), ApiError> {
-  let doc = acceptance_document::Entity::load()
-    .filter_by_id(existing.id)
-    .with(acceptance_item::Entity)
-    .one(conn)
-    .await?
-    .ok_or_else(|| NotFound(format!("Acceptance document '{}' not found", existing.id)))?;
-
-  for item in doc.items {
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        item.storage_id,
-        item.product_id,
-        existing.contractor_id,
-        -item.accepted_amount,
-      )
-      .await?;
-  }
-
+  svc
+    .ledger
+    .append_reversal_deltas_on(conn, LedgerEntrySourceKind::AcceptanceDocument, existing.id)
+    .await?;
   Ok(())
 }
 

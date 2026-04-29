@@ -129,7 +129,7 @@ pub use request::{
     UpdateTruckWaybillRequest,
     UpdateTruckWeightDocRequest,
   },
-  ledger::LedgerEntryLookupRequest,
+  ledger::LedgerBalanceLookupRequest,
   query::{
     AcceptanceDocumentQueryParams,
     AcceptanceFlatQueryParams,
@@ -226,7 +226,7 @@ pub use response::{
     TruckDispatchPipelineResponse,
     TruckReceiptPipelineResponse,
   },
-  ledger::LedgerEntryResponse,
+  ledger::LedgerBalanceResponse,
   sync::{
     AwaitCycleResponse,
     PullAuditLogsResponse,

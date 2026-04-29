@@ -7,7 +7,7 @@ import { useCatalogProductList } from '~/generated/hooks/CatalogHooks/useCatalog
 import { useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
 import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalogStorageList'
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
-import { useLedgerEntryList } from '~/generated/hooks/LedgerHooks/useLedgerEntryList'
+import { useLedgerBalanceList } from '~/generated/hooks/LedgerHooks/useLedgerBalanceList'
 import { buildMatrixVM } from '../build-matrix-vm'
 import { useDashboardStore } from '../state/dashboard-store'
 
@@ -19,7 +19,7 @@ export function useInventoryMatrixData(searchQuery: string): DashboardData {
   const storages = useCatalogStorageList()
   const warehouses = useCatalogWarehouseList()
   const bases = useCatalogBaseList()
-  const ledger = useLedgerEntryList()
+  const ledger = useLedgerBalanceList()
 
   const all = useMemo(
     () => [companies, products, productGroups, productTypes, storages, warehouses, bases, ledger],
@@ -45,7 +45,7 @@ export function useInventoryMatrixData(searchQuery: string): DashboardData {
       return null
     return buildMatrixVM({
       contractorId,
-      ledgerEntries: (ledger.data as any)?.data ?? [],
+      ledgerBalances: (ledger.data as any)?.data ?? [],
       products: (products.data as any)?.data ?? [],
       productGroups: (productGroups.data as any)?.data ?? [],
       productTypes: (productTypes.data as any)?.data ?? [],

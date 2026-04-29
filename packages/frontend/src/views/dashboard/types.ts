@@ -1,7 +1,7 @@
 // packages/frontend/src/views/dashboard/types.ts
 
 import type { BaseResponse } from '~/generated/types/BaseResponse'
-import type { LedgerEntryResponse } from '~/generated/types/LedgerEntryResponse'
+import type { LedgerBalanceResponse } from '~/generated/types/LedgerBalanceResponse'
 import type { ProductGroupResponse } from '~/generated/types/ProductGroupResponse'
 // Re-exported generated types — use the canonical names from src/generated/*.
 // If a generated name differs, update this file and the consumers together.
@@ -78,7 +78,7 @@ export interface MatrixVM {
 
 export interface BuilderInput {
   contractorId: Uuid | null
-  ledgerEntries: LedgerEntryResponse[]
+  ledgerBalances: LedgerBalanceResponse[]
   products: ProductResponse[]
   productGroups: ProductGroupResponse[]
   productTypes: ProductTypeResponse[]

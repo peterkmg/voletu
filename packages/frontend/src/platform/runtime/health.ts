@@ -1,4 +1,5 @@
 import type { NodeType, WorkerState } from '~/stores/node-store'
+import { client } from '~/api/client'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 import { getApiBaseUrl } from './api-base-url'
@@ -117,6 +118,15 @@ export function applyHealthSnapshot(health: HealthSnapshot): void {
 export async function fetchNodeStatus(
   options?: { accessToken?: string | null, baseUrl?: string, signal?: AbortSignal },
 ): Promise<NodeStatusSnapshot> {
+  if (options?.accessToken === undefined && options?.baseUrl === undefined) {
+    const response = await client<ApiEnvelope<NodeStatusPayload>>({
+      method: 'GET',
+      url: '/node/status',
+      signal: options?.signal,
+    })
+    return toNodeStatusSnapshot(response.data.data!)
+  }
+
   const accessToken = options?.accessToken ?? useAuthStore.getState().accessToken
   if (!accessToken) {
     throw new Error('Missing access token')
@@ -133,6 +143,10 @@ export async function fetchNodeStatus(
     'Node status request failed',
   )
 
+  return toNodeStatusSnapshot(payload)
+}
+
+function toNodeStatusSnapshot(payload: NodeStatusPayload): NodeStatusSnapshot {
   return {
     isInitialized: payload.isInitialized,
     nodeType: toNodeType(payload.nodeType),

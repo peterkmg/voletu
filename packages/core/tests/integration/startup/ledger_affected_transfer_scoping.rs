@@ -19,7 +19,7 @@ use super::parse_doc_id;
 use crate::common::integration::{
   api_post,
   await_sync_cycle,
-  get_all_ledger_entries,
+  get_all_ledger_balances,
   get_physical_transfer_composite_json,
   get_storages_for_base,
   seed_catalog_via_api,
@@ -131,9 +131,9 @@ async fn targets_shared_then_local_scope_via_worker() {
 
   // Ledger rows are storage-scoped, so each peripheral should mirror the
   // subset of Central rows whose storage belongs to its assigned base.
-  let central_ledger_w1 = get_all_ledger_entries(&client, &central.url, &central.token).await;
-  let pa_ledger_w1 = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
-  let pb_ledger_w1 = get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+  let central_ledger_w1 = get_all_ledger_balances(&client, &central.url, &central.token).await;
+  let pa_ledger_w1 = get_all_ledger_balances(&client, &pa.url, &pa.token).await;
+  let pb_ledger_w1 = get_all_ledger_balances(&client, &pb.url, &pb.token).await;
   let central_alpha_w1 = filter_by_storage(&central_ledger_w1, &alpha_storage_ids);
   let central_beta_w1 = filter_by_storage(&central_ledger_w1, &beta_storage_ids);
   assert!(
@@ -180,8 +180,8 @@ async fn targets_shared_then_local_scope_via_worker() {
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
   // Wave 2 only affects alpha-scoped ledger rows.
-  let pa_ledger_w2 = get_all_ledger_entries(&client, &pa.url, &pa.token).await;
-  let central_ledger_w2 = get_all_ledger_entries(&client, &central.url, &central.token).await;
+  let pa_ledger_w2 = get_all_ledger_balances(&client, &pa.url, &pa.token).await;
+  let central_ledger_w2 = get_all_ledger_balances(&client, &central.url, &central.token).await;
   let central_alpha_w2 = filter_by_storage(&central_ledger_w2, &alpha_storage_ids);
   assert_eq!(
     summarize(&pa_ledger_w2),
@@ -190,7 +190,7 @@ async fn targets_shared_then_local_scope_via_worker() {
   );
 
   // PB should remain on the beta-scoped subset it already had after wave 1.
-  let pb_ledger_w2 = get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+  let pb_ledger_w2 = get_all_ledger_balances(&client, &pb.url, &pb.token).await;
   let central_beta_w2 = filter_by_storage(&central_ledger_w2, &beta_storage_ids);
   assert_eq!(
     summarize(&pb_ledger_w2),

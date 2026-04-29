@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use super::{
   api_client::api_get,
-  verification::{get_all_ledger_entries, get_storages_for_base},
+  verification::{get_all_ledger_balances, get_storages_for_base},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -147,7 +147,7 @@ pub async fn assert_seed_completeness(
   );
 
   // Ledger must also be present.
-  let ledger = get_all_ledger_entries(client, base_url, token).await;
+  let ledger = get_all_ledger_balances(client, base_url, token).await;
   assert!(
     !ledger.is_empty(),
     "node {node_label} has no ledger entries after seed"
@@ -234,8 +234,8 @@ pub async fn assert_ledger_parity_for_base(
     node_a.label, node_b.label
   );
 
-  let entries_a = get_all_ledger_entries(client, node_a.url, node_a.token).await;
-  let entries_b = get_all_ledger_entries(client, node_b.url, node_b.token).await;
+  let entries_a = get_all_ledger_balances(client, node_a.url, node_a.token).await;
+  let entries_b = get_all_ledger_balances(client, node_b.url, node_b.token).await;
 
   let storage_set: std::collections::HashSet<Uuid> = storages_a.into_iter().collect();
 
@@ -289,7 +289,7 @@ pub async fn assert_no_ledger_for_base(
 ) {
   let storages = get_storages_for_base(client, base_url, token, forbidden_base_id).await;
   let storage_set: std::collections::HashSet<Uuid> = storages.into_iter().collect();
-  let entries = get_all_ledger_entries(client, base_url, token).await;
+  let entries = get_all_ledger_balances(client, base_url, token).await;
 
   let violations: Vec<Value> = entries
     .into_iter()

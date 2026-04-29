@@ -3,7 +3,7 @@ import type {
   OnChangeFn,
   PaginationState,
 } from '@tanstack/react-table'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 type SearchRecord = Record<string, unknown>
 
@@ -81,7 +81,7 @@ export function useTableUrlState<TSearch extends SearchRecord>(
   const globalFilterEnabled = globalFilterCfg?.enabled ?? true
   const trimGlobal = globalFilterCfg?.trim ?? true
 
-  const initialColumnFilters: ColumnFiltersState = useMemo(() => {
+  const urlColumnFilters: ColumnFiltersState = useMemo(() => {
     const collected: ColumnFiltersState = []
     for (const cfg of columnFiltersCfg) {
       const raw = (search as SearchRecord)[cfg.searchKey]
@@ -101,7 +101,27 @@ export function useTableUrlState<TSearch extends SearchRecord>(
     }
     return collected
   }, [columnFiltersCfg, search])
-  const columnFilters = initialColumnFilters
+
+  // Internal state keeps filters that aren't tracked in the URL (in-header
+  // multi-select filters, etc.) alive across re-renders. URL-tracked filters
+  // are merged in from `urlColumnFilters` whenever the URL changes.
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(urlColumnFilters)
+  useEffect(() => {
+    const configuredIds = new Set(columnFiltersCfg.map(cfg => cfg.columnId))
+    setColumnFilters((prev) => {
+      const next = [
+        ...prev.filter(f => !configuredIds.has(f.id)),
+        ...urlColumnFilters,
+      ]
+      // Bail out when content is unchanged so the default `[]` columnFiltersCfg
+      // — a new array each render — doesn't ping-pong the state.
+      if (next.length === prev.length
+        && next.every((f, i) => f.id === prev[i]?.id && f.value === prev[i]?.value)) {
+        return prev
+      }
+      return next
+    })
+  }, [urlColumnFilters, columnFiltersCfg])
 
   const pagination: PaginationState = useMemo(() => {
     const rawPage = (search as SearchRecord)[pageKey]
@@ -154,6 +174,11 @@ export function useTableUrlState<TSearch extends SearchRecord>(
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = useCallback((updater) => {
     const next
       = typeof updater === 'function' ? updater(columnFilters) : updater
+
+    setColumnFilters(next)
+
+    if (columnFiltersCfg.length === 0)
+      return
 
     const patch: Record<string, unknown> = {}
 

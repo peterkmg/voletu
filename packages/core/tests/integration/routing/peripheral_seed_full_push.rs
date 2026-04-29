@@ -142,7 +142,7 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   poll_until(
     || async {
       let entries =
-        crate::common::integration::get_all_ledger_entries(&client, &pb.url, &pb.token).await;
+        crate::common::integration::get_all_ledger_balances(&client, &pb.url, &pb.token).await;
       !entries.is_empty()
     },
     SYNC_DEADLINE,

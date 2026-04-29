@@ -2,7 +2,14 @@ use std::{str::FromStr, sync::Arc};
 
 use assert_json_diff::assert_json_eq;
 use chrono::{DateTime, Utc};
-use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue::Set, EntityTrait};
+use sea_orm::{
+  prelude::Decimal,
+  ActiveModelTrait,
+  ActiveValue::Set,
+  ColumnTrait,
+  EntityTrait,
+  QueryFilter,
+};
 use uuid::Uuid;
 use voletu_core::{
   api::ApiError,
@@ -25,7 +32,7 @@ use voletu_core::{
     UpdateDispatchMeasurementCompositeRequest,
     UpdateDispatchRequest,
   },
-  entities::{acceptance_document, audit_log, product_type, storage},
+  entities::{acceptance_document, audit_log, inventory_ledger_entry, product_type, storage},
   enums::{self, ArrivalType, AuditTable, DispatchMethod, DispatchPurpose},
   services::{audit::AuditService, document::DocumentService, ledger::LedgerService},
 };
@@ -97,7 +104,7 @@ async fn execution_applies_items_to_ledger_and_emits_audit_rows() {
       .unwrap();
 
     let entry = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -138,6 +145,76 @@ async fn execution_applies_items_to_ledger_and_emits_audit_rows() {
     let expected_new = serde_json::to_value(&updated_doc).unwrap();
     assert_json_eq!(update_log.old_values.as_ref().unwrap(), &expected_old);
     assert_json_eq!(update_log.new_values.as_ref().unwrap(), &expected_new);
+  })
+  .await;
+}
+
+#[tokio::test]
+async fn document_executions_append_ledger_rows_and_lookup_returns_summed_balance() {
+  with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
+    let db = Arc::new(setup_db().await);
+    let catalog = seed_inventory_catalog(&db).await;
+    let ledger = Arc::new(LedgerService::new(db.clone()));
+    let mut cfg = test_config();
+    cfg.node.db_id = Uuid::now_v7();
+    let audit = Arc::new(AuditService::new(Arc::new(cfg)));
+    let service = DocumentService::new(db.clone(), ledger.clone(), audit);
+
+    for (document_number, amount) in [("ACC-APPEND-1", "10.0"), ("ACC-APPEND-2", "7.5")] {
+      let doc = service
+        .acceptance_document_create(&CreateAcceptanceRequest {
+          document_number: document_number.to_string(),
+          date_accepted: ts("2026-01-01T00:00:00Z"),
+          arrival_type: ArrivalType::Truck,
+          source_entity: None,
+          contractor_id: catalog.contractor_a_id,
+          truck_waybill_id: None,
+          rail_waybill_id: None,
+          transit_dispatch_id: None,
+        })
+        .await
+        .unwrap();
+
+      service
+        .acceptance_item_create(&CreateAcceptanceItemRequest {
+          acceptance_doc_id: doc.id,
+          item: AcceptanceItemCompositeRequest {
+            product_id: catalog.product_a_id,
+            storage_id: catalog.storage_a_id,
+            accepted_amount: dec(amount),
+          },
+        })
+        .await
+        .unwrap();
+
+      service
+        .acceptance_document_execute(doc.id, Uuid::now_v7())
+        .await
+        .unwrap();
+    }
+
+    let rows: Vec<inventory_ledger_entry::ModelEx> = inventory_ledger_entry::Entity::load()
+      .filter(inventory_ledger_entry::Column::StorageId.eq(catalog.storage_a_id))
+      .filter(inventory_ledger_entry::Column::ProductId.eq(catalog.product_a_id))
+      .filter(inventory_ledger_entry::Column::ContractorId.eq(catalog.contractor_a_id))
+      .all(&*db)
+      .await
+      .unwrap();
+    assert_eq!(rows.len(), 2);
+    let amounts: Vec<_> = rows.iter().map(|row| row.quantity_delta).collect();
+    assert!(amounts.contains(&dec("10.0")));
+    assert!(amounts.contains(&dec("7.5")));
+
+    let balance = ledger
+      .balance_by_dimensions(
+        catalog.storage_a_id,
+        catalog.product_a_id,
+        catalog.contractor_a_id,
+      )
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(balance.current_amount, dec("17.5"));
   })
   .await;
 }
@@ -261,7 +338,7 @@ async fn execution_applies_multiple_items_to_corresponding_storages() {
       .unwrap();
 
     let storage_a = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -270,7 +347,7 @@ async fn execution_applies_multiple_items_to_corresponding_storages() {
       .unwrap()
       .unwrap();
     let storage_b = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_a_id,
         catalog.contractor_a_id,

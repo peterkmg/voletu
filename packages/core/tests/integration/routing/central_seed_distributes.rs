@@ -18,7 +18,7 @@ use crate::common::integration::{
   assert_no_ledger_for_base,
   assert_seed_completeness,
   dev_seed_via_api,
-  get_all_ledger_entries,
+  get_all_ledger_balances,
   poll_until,
   setup_central_via_api,
   setup_peripheral_via_api,
@@ -73,7 +73,7 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
   // 6. Wait until PA has pulled enough — its ledger for b2 should be non-empty.
   poll_until(
     || async {
-      !get_all_ledger_entries(&client, &pa.url, &pa.token)
+      !get_all_ledger_balances(&client, &pa.url, &pa.token)
         .await
         .is_empty()
     },
@@ -85,7 +85,7 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
   // 7. Wait until PB has pulled.
   poll_until(
     || async {
-      !get_all_ledger_entries(&client, &pb.url, &pb.token)
+      !get_all_ledger_balances(&client, &pb.url, &pb.token)
         .await
         .is_empty()
     },

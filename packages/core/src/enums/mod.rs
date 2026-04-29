@@ -62,6 +62,25 @@ pub enum DocumentStatus {
   Executed,
 }
 
+#[enum_type]
+pub enum LedgerEntrySourceKind {
+  OpeningBalance,
+  AcceptanceDocument,
+  DispatchDocument,
+  PhysicalStorageTransfer,
+  OwnershipTransfer,
+  BlendingDocument,
+  InventoryReconciliation,
+  ManualAdjustment,
+}
+
+#[enum_type]
+pub enum LedgerEntrySourceEvent {
+  OpeningBalance,
+  Execution,
+  Reversion,
+}
+
 /// Pipeline status for flow views.
 ///
 /// Represents the computed lifecycle stage of a document in a flow pipeline:

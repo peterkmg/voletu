@@ -6,7 +6,7 @@ use voletu_core::{
     AwaitCycleQueryRequest,
     AwaitCycleResponse,
     HealthData,
-    LedgerEntryLookupRequest,
+    LedgerBalanceLookupRequest,
     NodeStatusResponse,
     OperationMessageResponse,
     OutboundLogsQueryRequest,
@@ -25,7 +25,7 @@ fn transport_dtos_are_accessible_at_crate_surface() {
   let _ = voletu_core::dtos::AddBaseAssignmentRequest {
     base_id: Uuid::nil(),
   };
-  let _ = LedgerEntryLookupRequest {
+  let _ = LedgerBalanceLookupRequest {
     storage_id: Uuid::nil(),
     product_id: Uuid::nil(),
     contractor_id: Uuid::nil(),

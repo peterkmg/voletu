@@ -1,6 +1,6 @@
-use sea_orm::{prelude::Decimal, ColumnTrait, QueryFilter};
+use sea_orm::prelude::Decimal;
 use uuid::Uuid;
-use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entry};
+use voletu_core::{endpoints::paths as api_paths, services::ledger::LedgerService};
 
 use super::seed_inventory_context;
 use crate::common::{
@@ -86,21 +86,16 @@ async fn composite_endpoint_auto_executes_and_applies_ledger_entries() {
       1
     );
 
-    let source_entry = inventory_ledger_entry::Entity::load()
-      .filter(inventory_ledger_entry::Column::StorageId.eq(ctx.storage_a))
-      .filter(inventory_ledger_entry::Column::ProductId.eq(ctx.product_id))
-      .filter(inventory_ledger_entry::Column::ContractorId.eq(ctx.contractor_id))
-      .one(&*db)
+    let ledger = LedgerService::new(db.clone());
+    let source_entry = ledger
+      .balance_by_dimensions(ctx.storage_a, ctx.product_id, ctx.contractor_id)
       .await
       .unwrap()
       .unwrap();
     assert_eq!(source_entry.current_amount.to_string(), "5");
 
-    let result_entry = inventory_ledger_entry::Entity::load()
-      .filter(inventory_ledger_entry::Column::StorageId.eq(ctx.storage_b))
-      .filter(inventory_ledger_entry::Column::ProductId.eq(ctx.second_product_id))
-      .filter(inventory_ledger_entry::Column::ContractorId.eq(ctx.contractor_id))
-      .one(&*db)
+    let result_entry = ledger
+      .balance_by_dimensions(ctx.storage_b, ctx.second_product_id, ctx.contractor_id)
       .await
       .unwrap()
       .unwrap();

@@ -133,7 +133,7 @@ async fn execution_requires_balanced_component_and_result_totals() {
       .unwrap();
 
     let src = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_a_id,
         catalog.product_a_id,
         catalog.contractor_a_id,
@@ -142,7 +142,7 @@ async fn execution_requires_balanced_component_and_result_totals() {
       .unwrap()
       .unwrap();
     let dst = ledger
-      .by_dimensions(
+      .balance_by_dimensions(
         catalog.storage_b_id,
         catalog.product_b_id,
         catalog.contractor_a_id,

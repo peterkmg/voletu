@@ -1,6 +1,6 @@
 import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/react-table'
 import type { TFunction } from 'i18next'
-import type { LedgerEntryResponse } from '~/generated/types'
+import type { LedgerBalanceResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import {
   flexRender,
@@ -30,7 +30,7 @@ import { cn } from '~/lib/utils'
 
 // --- Columns ---
 
-function getLedgerColumns(t: TFunction): ColumnDef<LedgerEntryResponse>[] {
+function getLedgerColumns(t: TFunction): ColumnDef<LedgerBalanceResponse>[] {
   return [
     {
       accessorKey: 'storageId',
@@ -72,7 +72,7 @@ function getLedgerColumns(t: TFunction): ColumnDef<LedgerEntryResponse>[] {
         </span>
       ),
     },
-    numericColumn<LedgerEntryResponse>('currentAmount', t('system:ledger.columns.quantity')),
+    numericColumn<LedgerBalanceResponse>('currentAmount', t('system:ledger.columns.quantity')),
     {
       accessorKey: 'createdAt',
       header: ({ column }) => (
@@ -96,7 +96,7 @@ function getLedgerColumns(t: TFunction): ColumnDef<LedgerEntryResponse>[] {
 const route = getRouteApi('/_authenticated/ledger/')
 
 interface LedgerTableProps {
-  data: LedgerEntryResponse[]
+  data: LedgerBalanceResponse[]
 }
 
 export function LedgerTable({ data }: LedgerTableProps) {
@@ -124,6 +124,7 @@ export function LedgerTable({ data }: LedgerTableProps) {
   const table = useReactTable({
     data,
     columns,
+    getRowId: row => `${row.storageId}:${row.productId}:${row.contractorId}`,
     state: {
       sorting,
       columnVisibility,

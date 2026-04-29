@@ -5,9 +5,11 @@ use crate::{
   api::ApiError,
   dtos,
   entities::{physical_storage_transfer, physical_transfer_item},
+  enums::{LedgerEntrySourceEvent, LedgerEntrySourceKind},
   services::{
     common::{ensure_doc_mod_allowed, ensure_storage_accepts_product, set_if_some},
     document::DocumentService,
+    ledger::LedgerDelta,
   },
 };
 
@@ -67,23 +69,29 @@ async fn before_physical_transfer_execute(
 
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        item.from_storage_id,
-        item.product_id,
-        existing.contractor_id,
-        -item.amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: item.from_storage_id,
+        product_id: item.product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: -item.amount,
+        source_kind: LedgerEntrySourceKind::PhysicalStorageTransfer,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
     svc
       .ledger
-      .apply_delta_on(
-        conn,
-        item.to_storage_id,
-        item.product_id,
-        existing.contractor_id,
-        item.amount,
-      )
+      .append_delta_on(conn, LedgerDelta {
+        storage_id: item.to_storage_id,
+        product_id: item.product_id,
+        contractor_id: existing.contractor_id,
+        quantity_delta: item.amount,
+        source_kind: LedgerEntrySourceKind::PhysicalStorageTransfer,
+        source_id: existing.id,
+        source_event: LedgerEntrySourceEvent::Execution,
+        reverses_entry_id: None,
+      })
       .await?;
   }
 
@@ -96,34 +104,14 @@ async fn before_physical_transfer_revert(
   existing: &physical_storage_transfer::Model,
   _actor_id: Uuid,
 ) -> Result<(), ApiError> {
-  let doc = get_by_id(conn, existing.id).await?;
-
-  for item in doc.items {
-    ensure_storage_accepts_product(conn, item.from_storage_id, item.product_id).await?;
-    ensure_storage_accepts_product(conn, item.to_storage_id, item.product_id).await?;
-
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        item.from_storage_id,
-        item.product_id,
-        existing.contractor_id,
-        item.amount,
-      )
-      .await?;
-    svc
-      .ledger
-      .apply_delta_on(
-        conn,
-        item.to_storage_id,
-        item.product_id,
-        existing.contractor_id,
-        -item.amount,
-      )
-      .await?;
-  }
-
+  svc
+    .ledger
+    .append_reversal_deltas_on(
+      conn,
+      LedgerEntrySourceKind::PhysicalStorageTransfer,
+      existing.id,
+    )
+    .await?;
   Ok(())
 }
 

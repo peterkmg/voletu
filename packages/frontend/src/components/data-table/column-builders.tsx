@@ -2,6 +2,11 @@ import type { ColumnDef, Row } from '@tanstack/react-table'
 import { StatusBadge } from '~/components/ui/status-badge'
 import { DateCell, NumericCell, ResolvedCell } from './cell-renderers'
 import { DataTableColumnHeader } from './column-header'
+import {
+  dateArrayFilter,
+  numberRangeFilter,
+  textArrayFilter,
+} from './filter-utils'
 import { SelectAllCheckbox, SelectRowCheckbox } from './selection-cells'
 
 export function selectColumn<T>(): ColumnDef<T> {
@@ -50,16 +55,7 @@ export function dateColumn<T>(
     accessorKey,
     minSize: 100,
     maxSize: 130,
-    filterFn: (row, columnId, filterValue: string[] | undefined) => {
-      if (filterValue === undefined)
-        return true
-      if (filterValue.length === 0)
-        return false
-      const val = row.getValue<string>(columnId)
-      if (!val)
-        return false
-      return filterValue.includes(val.slice(0, 10))
-    },
+    filterFn: dateArrayFilter,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
@@ -91,6 +87,7 @@ export function textColumn<T>(
     accessorKey,
     minSize: opts?.minSize ?? 120,
     ...(sizing === 'capped' ? { maxSize: opts?.maxSize ?? 160 } : {}),
+    filterFn: textArrayFilter,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
@@ -120,6 +117,7 @@ export function resolvedColumn<T>(
   return {
     accessorKey,
     minSize: 120,
+    filterFn: textArrayFilter,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
@@ -139,6 +137,7 @@ export function statusColumn<T>(
     accessorKey,
     minSize: 90,
     maxSize: 130,
+    filterFn: textArrayFilter,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
@@ -158,6 +157,7 @@ export function numericColumn<T>(
     accessorKey,
     minSize: 90,
     maxSize: 150,
+    filterFn: numberRangeFilter,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
