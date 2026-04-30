@@ -55,14 +55,14 @@ describe('dataTable', () => {
 
   it('renders data rows in paginated mode', () => {
     renderWithProviders(<TestDataTable data={createTestData(5)} mode="paginated" />)
-    // 1 header row + 5 data rows
+
     const rows = screen.getAllByRole('row')
     expect(rows.length).toBe(1 + 5)
   })
 
   it('renders data rows in virtual mode', () => {
     renderWithProviders(<TestDataTable data={createTestData(5)} mode="virtual" />)
-    // Virtual body wrapper has position: relative style
+
     const rowgroups = screen.getAllByRole('rowgroup')
     const body = rowgroups.find(el => el.dataset.slot === 'table-body')
     expect(body).toBeDefined()
@@ -76,7 +76,7 @@ describe('dataTable', () => {
 
   it('renders loading skeleton when isLoading with no data', () => {
     renderWithProviders(<TestDataTable data={[]} isLoading />)
-    // TableSkeleton renders SKELETON_ROWS (5) rows, each with 3 columns = 15 skeleton cells
+
     const skeletonCells = screen.getAllByRole('cell')
     expect(skeletonCells.length).toBe(5 * 3)
   })

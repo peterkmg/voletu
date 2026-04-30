@@ -1,42 +1,3 @@
-/**
- * Direct-dispatch composite form configuration.
- *
- * The direct-dispatch document is a `dispatch_document` with `dispatchMethod`
- * hard-locked to `VESSEL_TERMINAL` (the wire variant for the direct vessel /
- * terminal transfer flow) and `dispatchPurpose` hard-locked to `EXTERNAL`.
- * Both discriminators are injected at submit time by the dialog and never
- * surface as user-editable header fields.
- *
- * i18n keys this file depends on (all in the `direct-dispatch` namespace):
- *   direct-dispatch.dialog.title.create
- *   direct-dispatch.dialog.title.edit
- *   direct-dispatch.field.documentNumber
- *   direct-dispatch.field.date
- *   direct-dispatch.field.contractorId
- *   direct-dispatch.field.destinationBaseId
- *   direct-dispatch.field.product
- *   direct-dispatch.field.storage
- *   direct-dispatch.field.dispatchedAmount
- *   direct-dispatch.field.measurementStorage
- *   direct-dispatch.field.{before,after}{Height,Volume,Density,Mass}
- *   direct-dispatch.section.items
- *   direct-dispatch.section.storageMeasurements
- *   direct-dispatch.toast.created
- *   direct-dispatch.toast.updated
- *
- * Generated Kubb artifacts consumed (camelCase field naming throughout):
- *   - Schemas (zod/v4):
- *       packages/frontend/src/generated/zod/createDispatchCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/updateDispatchCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/dispatchItemCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/dispatchMeasurementCompositeRequestSchema.ts
- *   - Types:
- *       packages/frontend/src/generated/types/CreateDispatchCompositeRequest.ts
- *       packages/frontend/src/generated/types/UpdateDispatchCompositeRequest.ts
- *       packages/frontend/src/generated/types/DispatchItemCompositeRequest.ts
- *       packages/frontend/src/generated/types/DispatchMeasurementCompositeRequest.ts
- */
-
 import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
@@ -64,8 +25,6 @@ import { createDispatchCompositeRequestSchema } from '~/generated/zod/createDisp
 import { dispatchItemCompositeRequestSchema } from '~/generated/zod/dispatchItemCompositeRequestSchema'
 import { dispatchMeasurementCompositeRequestSchema } from '~/generated/zod/dispatchMeasurementCompositeRequestSchema'
 import { updateDispatchCompositeRequestSchema } from '~/generated/zod/updateDispatchCompositeRequestSchema'
-
-// --- Schemas ---
 
 const dispatchItemsArraySchema = z
   .array(dispatchItemCompositeRequestSchema)
@@ -122,10 +81,6 @@ export type DirectDispatchUpdate = UpdateDispatchCompositeRequest
 export type DirectDispatchItem = DispatchItemCompositeRequest
 export type DirectDispatchMeasurement = DispatchMeasurementCompositeRequest
 
-// Inputs and pickers come from the shared `composite-form/field-cells` module.
-
-// --- Header field spec ---
-
 export const directDispatchHeaderSpec: HeaderFieldSpec<DirectDispatchCreate>[] = [
   {
     name: 'documentNumber' as Path<DirectDispatchCreate>,
@@ -151,8 +106,6 @@ export const directDispatchHeaderSpec: HeaderFieldSpec<DirectDispatchCreate>[] =
     component: BasePicker,
   },
 ]
-
-// --- Items column / row drawer specs ---
 
 export const directDispatchItemColumns: ColumnSpec<DirectDispatchItem>[] = [
   {
@@ -195,8 +148,6 @@ export const directDispatchItemFields: RowFieldSpec<DirectDispatchItem>[] = [
   },
 ]
 
-// --- Measurements column / row drawer specs ---
-
 export const directDispatchMeasurementColumns: ColumnSpec<DirectDispatchMeasurement>[] = [
   {
     key: 'storageId',
@@ -231,8 +182,6 @@ export const directDispatchMeasurementFields: RowFieldSpec<DirectDispatchMeasure
   { name: 'afterMass', labelKey: 'direct-dispatch:field.afterMass', component: DecimalAmountInput, required: true, colSpan: 1 },
 ]
 
-// --- Empty defaults ---
-
 export const emptyDirectDispatchItem: DirectDispatchItem = {
   productId: '',
   storageId: '',
@@ -251,13 +200,6 @@ export const emptyDirectDispatchMeasurement: DirectDispatchMeasurement = {
   afterMass: '',
 }
 
-/**
- * Empty `CreateDispatchCompositeRequest` defaults for the direct variant.
- *
- * The dispatch_method / dispatch_purpose discriminators are hard-coded here
- * (VESSEL_TERMINAL / EXTERNAL) and never user-editable; they are also re-applied
- * at submit time as a defensive measure inside the dialog.
- */
 export const emptyDirectDispatchCreate: DirectDispatchCreate = {
   documentNumber: '',
   date: '',
@@ -275,6 +217,5 @@ export const emptyDirectDispatchCreate: DirectDispatchCreate = {
   storageMeasurements: null,
 }
 
-// Re-export the row schemas so the dialog can pass them to DocItemRowDrawer.
 export const directDispatchItemSchema = dispatchItemCompositeRequestSchema
 export const directDispatchMeasurementSchema = dispatchMeasurementCompositeRequestSchema

@@ -7,10 +7,6 @@ import {
   hasAnyPinning,
 } from '~/components/data-table/table-utils'
 
-// ---------------------------------------------------------------------------
-// Helpers to build mock Column / Table objects
-// ---------------------------------------------------------------------------
-
 function mockColumn(overrides: {
   id?: string
   isPinned?: false | 'left' | 'right'
@@ -66,10 +62,6 @@ function mockTable(overrides: {
   } as unknown as TanstackTable<unknown>
 }
 
-// ---------------------------------------------------------------------------
-// alignClasses (smoke check)
-// ---------------------------------------------------------------------------
-
 describe('alignClasses', () => {
   it('maps left/center/right to the correct tailwind classes', () => {
     expect(alignClasses.left).toBe('text-left justify-start')
@@ -77,10 +69,6 @@ describe('alignClasses', () => {
     expect(alignClasses.right).toBe('text-right justify-end')
   })
 })
-
-// ---------------------------------------------------------------------------
-// getPinningStyles
-// ---------------------------------------------------------------------------
 
 describe('getPinningStyles', () => {
   it('returns an empty object for an unpinned column', () => {
@@ -109,10 +97,6 @@ describe('getPinningStyles', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// hasAnyPinning
-// ---------------------------------------------------------------------------
-
 describe('hasAnyPinning', () => {
   it('returns false when no columns are pinned', () => {
     const table = mockTable({ leftLeafColumns: [], rightLeafColumns: [] })
@@ -135,10 +119,6 @@ describe('hasAnyPinning', () => {
     expect(hasAnyPinning(table)).toBe(true)
   })
 })
-
-// ---------------------------------------------------------------------------
-// hasAnyFooter
-// ---------------------------------------------------------------------------
 
 describe('hasAnyFooter', () => {
   it('returns false when no footers are defined', () => {
@@ -164,10 +144,6 @@ describe('hasAnyFooter', () => {
     expect(hasAnyFooter(table)).toBe(true)
   })
 })
-
-// ---------------------------------------------------------------------------
-// getGridTemplate
-// ---------------------------------------------------------------------------
 
 describe('getGridTemplate', () => {
   it('returns px for fixed-width columns (minSize === maxSize)', () => {
@@ -211,8 +187,6 @@ describe('getGridTemplate', () => {
 
     expect(getGridTemplate(table)).toBe('minmax(80px, 1fr)')
   })
-
-  // --- sizingCategory tests ---
 
   it('returns exact px for sizingCategory=fixed', () => {
     const col = mockColumn({ id: 'a', size: 36, minSize: 36, maxSize: 36, meta: { sizingCategory: 'fixed' } })

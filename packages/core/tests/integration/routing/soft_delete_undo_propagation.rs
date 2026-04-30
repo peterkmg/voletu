@@ -1,9 +1,3 @@
-//! **Soft delete undo propagates via sync**: A soft-deleted entity restored on Central
-//! reappears in the peripheral's active catalog after sync.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Entity is active after initial sync, absent after soft-delete sync, and active again after restore sync
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -31,7 +25,6 @@ async fn restored_entity_reappears_in_active_catalog_on_peripheral() {
   ])
   .await;
 
-  // Create company, sync, soft-delete, sync
   let company = api_post(&client, &format!("{}/catalog/companies", central.url), &central.token,
     serde_json::json!({"commonName": "Undo Co", "legalName": null, "isContractor": true, "isExporter": false, "isManufacturer": false, "isSender": false})).await;
   let company_id = Uuid::parse_str(company["id"].as_str().unwrap()).unwrap();
@@ -48,7 +41,6 @@ async fn restored_entity_reappears_in_active_catalog_on_peripheral() {
     .await
   );
 
-  // Soft-delete, sync to PA
   soft_delete_via_api(
     &client,
     &central.url,
@@ -70,7 +62,6 @@ async fn restored_entity_reappears_in_active_catalog_on_peripheral() {
     "should be soft-deleted"
   );
 
-  // Undo soft-delete (restore) on Central
   api_post(
     &client,
     &format!("{}/catalog/companies/{company_id}/restore", central.url),
@@ -79,7 +70,6 @@ async fn restored_entity_reappears_in_active_catalog_on_peripheral() {
   )
   .await;
 
-  // Sync to PA — entity should be active again
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   assert!(
     has_catalog_entity(

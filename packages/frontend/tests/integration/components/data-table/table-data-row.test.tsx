@@ -102,7 +102,7 @@ describe('dataRow', () => {
 
     const row = screen.getByRole('row')
     await userEvent.dblClick(row)
-    // No error thrown, row still renders
+
     expect(row).toBeInTheDocument()
   })
 

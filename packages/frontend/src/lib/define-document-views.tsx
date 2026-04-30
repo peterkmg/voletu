@@ -1,6 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
-/* eslint-disable react/component-hook-factories */
-
 import type { TFunction } from 'i18next'
 import type { MutateDialogProps } from './create-entity-dialogs'
 import type {
@@ -162,6 +159,7 @@ export function defineDocumentViews<TRow extends { id: string }, TDetailData>(
   const LifecycleDialog = config.documentActions?.enableRowLifecycle
     ? createDocumentLifecycleDialog(config.useText, config.documentActions)
     : undefined
+
   const crudViewDefinition = LifecycleDialog
     ? defineCrudViews<TRow>({
         displayName: config.displayName,

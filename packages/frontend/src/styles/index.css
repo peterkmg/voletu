@@ -30,18 +30,6 @@
     display: none;
   }
 
-  /*
-   * Native `<input type="date">` and `<input type="datetime-local">` ignore
-   * the `placeholder` CSS pseudo-class — the empty-state `mm/dd/yyyy` text is
-   * the browser's own UI, styled by the WebKit `::-webkit-datetime-edit-*`
-   * pseudo-elements. Without this rule those inputs render their empty
-   * placeholder in the regular text color (effectively black on light themes),
-   * which looks visibly different from every other empty `<Input>` next to
-   * them. The shared `DateInput` / `DateTimeInput` cells (see
-   * `components/composite-form/field-cells`) set `data-empty` on the element
-   * whenever the form value is empty, so the rule fires regardless of the
-   * `:invalid` state (which only matches `required` inputs).
-   */
   input[type='date'][data-empty]::-webkit-datetime-edit,
   input[type='datetime-local'][data-empty]::-webkit-datetime-edit,
   input[type='date'][data-empty]::-webkit-datetime-edit-text,
@@ -126,12 +114,6 @@
   }
 }
 
-/*
- * Print stylesheet for document detail pages.
- * Hides app chrome (sidebar, dialogs, toasts) so the document content
- * prints cleanly. The detail page itself adds `print:hidden` / `print:p-0`
- * Tailwind utilities to its sticky header and content padding.
- */
 @media print {
   body {
     background: white !important;
@@ -150,7 +132,6 @@
     display: none !important;
   }
 
-  /* Detail page resets when nested in a fixed-shell layout */
   [data-slot='document-detail-page'] {
     height: auto !important;
     overflow: visible !important;

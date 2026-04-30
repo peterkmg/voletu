@@ -2,7 +2,6 @@ import type { NodeStatus } from '~/stores/node-store'
 import type { SyncUiState } from '~/views/system/sync/sync-ui-state'
 import { deriveSyncUiState, isSetupComplete } from '~/views/system/sync/sync-ui-state'
 
-// Helper: build a NodeStatus with sensible defaults; override fields per test.
 function status(overrides: Partial<NodeStatus> = {}): NodeStatus {
   return {
     isInitialized: false,
@@ -23,7 +22,6 @@ describe('deriveSyncUiState', () => {
     })
 
     it('returns "central" even if other fields are inconsistent', () => {
-      // Shouldn't happen in practice but the central branch is short-circuit.
       expect(
         deriveSyncUiState(
           status({ nodeType: 'CENTRAL', isInitialized: false, assignedBaseIds: [] }),
@@ -129,7 +127,6 @@ describe('deriveSyncUiState', () => {
     })
 
     it('returns "offline" when workerState is null (not yet reported)', () => {
-      // Critical: after setup is complete, a transient "we don't know" must NOT regress to "setup needed".
       expect(deriveSyncUiState(base(null), true)).toBe('offline')
     })
   })
@@ -151,7 +148,7 @@ describe('deriveSyncUiState', () => {
       const s = status({
         nodeType: 'PERIPHERAL',
         isInitialized: true,
-        assignedBaseIds: [], // default — bases query hasn't resolved yet
+        assignedBaseIds: [],
       })
       const result: SyncUiState = deriveSyncUiState(s, false)
       expect(result).toBe('setupIncomplete')

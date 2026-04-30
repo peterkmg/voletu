@@ -23,7 +23,7 @@ describe('node-store', () => {
       const { status } = useNodeStore.getState()
       expect(status.nodeType).toBe('CENTRAL')
       expect(status.nodeName).toBe('node-1')
-      // Unchanged fields stay at defaults
+
       expect(status.isInitialized).toBe(false)
       expect(status.workerState).toBeNull()
     })

@@ -229,30 +229,6 @@ impl SyncService {
     Ok(result)
   }
 
-  /// Apply a batch of pulled audit logs from a remote peer and advance the
-  /// PULL watermark in a single database transaction.
-  ///
-  /// This is the peripheral's entry point for pull responses. Unlike
-  /// `push_logs` (which is called on Central when a peripheral uploads its
-  /// outbound batch), `apply_pulled_logs`:
-  ///
-  ///   1. Opens one transaction on the local DB.
-  ///   2. Re-reads `node_base_assignment` and recomputes the current
-  ///      `base_discriminant`.
-  ///   3. Aborts with `ApiError::Conflict` if the caller's
-  ///      `expected_discriminant` does not match the current one — nothing is
-  ///      persisted, nothing is advanced. The worker treats this as a
-  ///      transient drift and retries on the next tick.
-  ///   4. Applies each log via `apply_audit_log_restore` + audit_log row
-  ///      insert, subject to the same conflict-resolution rule as `push_logs`
-  ///      (reject lower-role updates when a newer higher-role log exists
-  ///      locally).
-  ///   5. Upserts the PULL watermark with the new `last_audit_log_id` and the
-  ///      current discriminant via `upsert_watermark_in_txn`.
-  ///   6. Commits.
-  ///
-  /// Either everything commits or nothing does. There is no code path where
-  /// the PULL watermark advances past rows that were not applied.
   pub async fn apply_pulled_logs(
     &self,
     logs: &[PushAuditLogRequest],
@@ -263,13 +239,11 @@ impl SyncService {
     let local_node_id = self.cfg.node.db_id;
     let txn = self.db.begin().await?;
 
-    // Re-read base assignments inside the transaction and recompute the
-    // current discriminant. If it has drifted since the pull was issued,
-    // abort the whole transaction — no logs applied, no watermark advanced.
     let assignment_rows = node_base_assignment::Entity::load()
       .filter(node_base_assignment::Column::NodeId.eq(local_node_id))
       .all(&txn)
       .await?;
+
     let current_base_ids: Vec<Uuid> = assignment_rows.into_iter().map(|r| r.base_id).collect();
     let current_discriminant = compute_base_discriminant(&current_base_ids);
 

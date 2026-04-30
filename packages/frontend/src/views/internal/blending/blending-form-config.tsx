@@ -1,39 +1,3 @@
-/**
- * Blending composite form configuration.
- *
- * i18n keys this file depends on (all in the `blending` namespace):
- *   blending.dialog.title.create
- *   blending.dialog.title.edit
- *   blending.field.documentNumber
- *   blending.field.date
- *   blending.field.contractorId
- *   blending.field.targetProductId
- *   blending.field.sourceProduct
- *   blending.field.storage
- *   blending.field.amountUsed
- *   blending.field.producedAmount
- *   blending.section.components
- *   blending.section.results
- *   blending.toast.created
- *   blending.toast.updated
- *
- * Generated Kubb artifacts consumed (camelCase field naming throughout):
- *   - Schemas (zod/v4):
- *       packages/frontend/src/generated/zod/createBlendingCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/updateBlendingCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/blendingComponentCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/blendingResultCompositeRequestSchema.ts
- *   - Types:
- *       packages/frontend/src/generated/types/CreateBlendingCompositeRequest.ts
- *       packages/frontend/src/generated/types/UpdateBlendingCompositeRequest.ts
- *       packages/frontend/src/generated/types/BlendingComponentCompositeRequest.ts
- *       packages/frontend/src/generated/types/BlendingResultCompositeRequest.ts
- *
- * Both create and update validate min(1) on `components` AND `results`: a
- * blending document with no inputs or no outputs is not useful and the dialog
- * enforces at least one row in each collection.
- */
-
 import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
@@ -61,15 +25,6 @@ import { blendingResultCompositeRequestSchema } from '~/generated/zod/blendingRe
 import { createBlendingCompositeRequestSchema } from '~/generated/zod/createBlendingCompositeRequestSchema'
 import { updateBlendingCompositeRequestSchema } from '~/generated/zod/updateBlendingCompositeRequestSchema'
 
-// --- Schemas ---
-
-/**
- * Hand-refined collection schemas with min(1) — the generated composite schemas
- * are `z.lazy(...).and(z.object(...))` (or plain `z.object`) which are not
- * `.extend()`-able, so we compose at the row + array level instead. The
- * generated row schemas are reused unchanged so any future Kubb refresh
- * propagates to validation.
- */
 const blendingComponentsArraySchema = z
   .array(blendingComponentCompositeRequestSchema)
   .min(1, { message: 'forms.validation.itemsRequired' })
@@ -78,10 +33,6 @@ const blendingResultsArraySchema = z
   .array(blendingResultCompositeRequestSchema)
   .min(1, { message: 'forms.validation.itemsRequired' })
 
-/**
- * Composite schema for creating a blending document. Layered min(1) on both
- * `components` and `results` is surfaced before the server rejects the payload.
- */
 export const blendingCreateSchema = createBlendingCompositeRequestSchema.superRefine(
   (val, ctx) => {
     const components = (val as { components?: unknown[] }).components
@@ -101,11 +52,6 @@ export const blendingCreateSchema = createBlendingCompositeRequestSchema.superRe
   },
 ) as unknown as z.ZodType<BlendingCreate>
 
-/**
- * Composite schema for updating a blending document. Mirrors the create
- * schema at the field level; the wire type allows optional per-row `id`,
- * which the dialog does not yet round-trip (every row treated as insert).
- */
 export const blendingUpdateSchema = updateBlendingCompositeRequestSchema.superRefine(
   (val, ctx) => {
     const components = (val as { components?: unknown[] }).components
@@ -129,10 +75,6 @@ export type BlendingCreate = CreateBlendingCompositeRequest
 export type BlendingUpdate = UpdateBlendingCompositeRequest
 export type BlendingComponent = BlendingComponentCompositeRequest
 export type BlendingResult = BlendingResultCompositeRequest
-
-// Inputs and pickers come from the shared `composite-form/field-cells` module.
-
-// --- Header field spec ---
 
 export const blendingHeaderSpec: HeaderFieldSpec<BlendingCreate>[] = [
   {
@@ -160,8 +102,6 @@ export const blendingHeaderSpec: HeaderFieldSpec<BlendingCreate>[] = [
     required: true,
   },
 ]
-
-// --- Component (input) row column / field specs ---
 
 export const blendingComponentColumns: ColumnSpec<BlendingComponent>[] = [
   {
@@ -204,8 +144,6 @@ export const blendingComponentFields: RowFieldSpec<BlendingComponent>[] = [
   },
 ]
 
-// --- Result (output) row column / field specs ---
-
 export const blendingResultColumns: ColumnSpec<BlendingResult>[] = [
   {
     key: 'storageId',
@@ -236,8 +174,6 @@ export const blendingResultFields: RowFieldSpec<BlendingResult>[] = [
   },
 ]
 
-// --- Empty defaults ---
-
 export const emptyBlendingComponent: BlendingComponent = {
   sourceProductId: '',
   storageId: '',
@@ -258,6 +194,5 @@ export const emptyBlendingCreate: BlendingCreate = {
   results: [],
 }
 
-// Re-export the row schemas so the dialog can pass them to DocItemRowDrawer.
 export const blendingComponentSchema = blendingComponentCompositeRequestSchema
 export const blendingResultSchema = blendingResultCompositeRequestSchema

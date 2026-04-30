@@ -40,12 +40,11 @@ export function BulkActionsBar<TData>({
           'transition-all duration-200 ease-out',
         )}
       >
-        {/* Selected count */}
+
         <span className="text-sm font-medium tabular-nums">
           {t('tables:selected', { count })}
         </span>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-1">
           {actions.map(action => (
             <Button
@@ -61,7 +60,6 @@ export function BulkActionsBar<TData>({
           ))}
         </div>
 
-        {/* Deselect all */}
         <Button
           variant="ghost"
           size="icon-sm"

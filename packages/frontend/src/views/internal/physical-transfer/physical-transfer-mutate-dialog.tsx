@@ -1,17 +1,3 @@
-/**
- * Per-document mutate dialog for Physical Transfer (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the physical-transfer
- * header spec / items table coming from `physical-transfer-form-config.tsx`,
- * and wires the Kubb-generated composite create and update mutations.
- *
- * Edit-mode `defaultValues` are pre-fetched via `usePhysicalTransferCompositeGet`
- * (gated on `open && isUpdate`). While the fetch is in flight the form
- * renders with `emptyPhysicalTransferCreate`; once data arrives, the dialog
- * is re-mounted with the real values by keying `<CompositeFormDialog>` on
- * the loaded document id.
- */
-
 import type { PhysicalTransferCreate, PhysicalTransferItem } from './physical-transfer-form-config'
 import type { PhysicalTransferFlatRow, PhysicalTransferItemResponse } from '~/generated/types'
 import type { PhysicalTransferCompositeUpdateMutationRequest } from '~/generated/types/DocumentOperationsTypes/PhysicalTransferCompositeUpdate'
@@ -44,15 +30,10 @@ import {
 interface PhysicalTransferMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * physical transfer; `id` is item-scoped and must not be used for the update.
-   * When `null`, the dialog opens in create mode.
-   */
+
   currentRow?: PhysicalTransferFlatRow | null
 }
 
-/** Drop server-only fields and keep only the shape the composite request expects. */
 function toItemRequest(item: PhysicalTransferItemResponse): PhysicalTransferItem {
   return {
     productId: item.productId,
@@ -75,7 +56,6 @@ export function PhysicalTransferMutateDialog({
   const isUpdate = currentRow != null
   const documentId = currentRow?.documentId ?? null
 
-  // Pre-fetch the full composite only when editing.
   const composite = usePhysicalTransferCompositeGet(documentId ?? '', undefined, {
     query: { enabled: Boolean(open && documentId) },
   })
@@ -116,8 +96,6 @@ export function PhysicalTransferMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetch resolves so that
-  // defaultValues are applied via react-hook-form's initialization path.
   const dialogKey = isUpdate ? (loaded?.id ?? 'edit-loading') : 'create'
 
   return (

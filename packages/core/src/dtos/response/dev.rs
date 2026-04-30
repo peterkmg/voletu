@@ -1,6 +1,5 @@
 use voletu_core_macros::response_dto;
 
-/// Functional DTO returned by the debug seed endpoint.
 #[response_dto]
 pub struct SeedResult {
   pub product_types: usize,

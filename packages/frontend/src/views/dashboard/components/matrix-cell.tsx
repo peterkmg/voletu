@@ -10,7 +10,7 @@ export interface MatrixCellProps {
   onClick?: () => void
 }
 
-const DASH = '\u2014' // em dash — placeholder for zero/empty cells
+const DASH = '\u2014'
 
 export function MatrixCell({ amount, ariaLabel, onClick }: MatrixCellProps) {
   const isEmpty = amount == null || amount === 0

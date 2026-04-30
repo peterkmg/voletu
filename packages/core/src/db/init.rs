@@ -12,6 +12,7 @@ use tracing::{debug, log::LevelFilter, trace};
 use uuid::Uuid;
 
 use crate::{
+  api::ApiError,
   config::{DatabaseType, DbConfig, NodeConfig},
   constants::{DEFAULT_ADMIN_PASSWORD, DEFAULT_ADMIN_USERNAME, DEFAULT_DATABASE_COMMON_NAME},
   context::audit::with_audit_context,
@@ -33,6 +34,7 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
       id: Set(role_type.uuid()),
       common_name: Set(*role_type),
     };
+
     m.insert(&txn).await?;
     trace!("Seeded {} role.", role_type);
   }
@@ -42,8 +44,6 @@ pub async fn seed_defaults(db: &DatabaseConnection) -> anyhow::Result<local::Mod
   let bootstrap_admin_id = Uuid::now_v7();
   let now = ChronoUtc::now();
 
-  // Wrap syncable entity inserts in an audit context so they produce audit logs.
-  // Without this, database_instance and user records would never sync to other nodes.
   let (_instance, local) = with_audit_context(bootstrap_admin_id, bootstrap_db_id, || async {
     let instance = database_instance::ActiveModel {
       id: Set(bootstrap_db_id),
@@ -107,6 +107,7 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
   let connection_url = cfg
     .connection_url()
     .map_err(|err| anyhow::anyhow!("Invalid database configuration: {err}"))?;
+
   let mut options = ConnectOptions::new(connection_url);
   options.sqlx_logging(true);
   options.sqlx_logging_level(LevelFilter::Trace);
@@ -118,14 +119,7 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
     if !cfg.params.sqlite_in_memory && cfg.params.sqlite_shared_memory_name.is_none() {
       options.sqlcipher_key(cfg.password.clone());
     }
-    // For in-memory / shared-memory SQLite, constrain the connection pool
-    // to a single connection. SQLite's shared-cache mode has known
-    // cross-connection visibility quirks where a commit on one pooled
-    // connection isn't consistently seen by SELECTs on another pooled
-    // connection — readers can remain pinned to an earlier snapshot.
-    // Serializing all access through one connection eliminates that class
-    // of races. File-based SQLite under WAL gets normal snapshot semantics
-    // and keeps the default pool size.
+
     if cfg.params.sqlite_in_memory || cfg.params.sqlite_shared_memory_name.is_some() {
       options.max_connections(1);
       options.min_connections(1);
@@ -144,7 +138,7 @@ pub async fn init_database(cfg: &DbConfig) -> anyhow::Result<(DatabaseConnection
 
   let local = match load_local_bootstrap(&db).await {
     Ok(existing) => existing,
-    Err(crate::api::ApiError::NotFound(_)) => seed_defaults(&db).await?,
+    Err(ApiError::NotFound(_)) => seed_defaults(&db).await?,
     Err(other) => return Err(anyhow::anyhow!(other.to_string())),
   };
 

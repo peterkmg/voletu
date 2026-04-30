@@ -36,9 +36,7 @@ function getColumns(
     textColumn<RailReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
     numericColumn<RailReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
     statusColumn<RailReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
-    // 3 inline slots: View details (always), Edit (PENDING only), Issue
-    // acceptance (PENDING only). With fewer slots the kebab takes the only
-    // visible cell and the inline icons clip out of view.
+
     actionsColumn<RailReceiptPipelineResponse>(RowActions, 3),
   ]
 }
@@ -63,7 +61,6 @@ function useRailReceiptTitle() {
   return useTranslation(['common', 'documents']).t('common:nav.railReceipt')
 }
 
-// See truck-receipt.tsx header for the IssueAcceptanceDialog rationale.
 const railReceiptViewDefinition = defineCrudViews<RailReceiptPipelineResponse>({
   displayName: 'RailReceipt',
   useTitle: useRailReceiptTitle,
@@ -119,7 +116,6 @@ function useRailReceiptDetailVariants(id: string) {
   const [issueAcceptanceOpen, setIssueAcceptanceOpen] = useState(false)
   const [editAcceptanceOpen, setEditAcceptanceOpen] = useState(false)
 
-  // Acceptance variant
   let acceptanceContent: ReactNode
   if (acceptanceQuery.data?.data) {
     const doc = acceptanceQuery.data.data
@@ -202,7 +198,6 @@ function useRailReceiptDetailVariants(id: string) {
     )
   }
 
-  // Basis (waybill) variant
   let basisContent: ReactNode
   if (waybillQuery.data?.data) {
     const composite = waybillQuery.data.data

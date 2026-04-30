@@ -81,12 +81,6 @@ pub enum LedgerEntrySourceEvent {
   Reversion,
 }
 
-/// Pipeline status for flow views.
-///
-/// Represents the computed lifecycle stage of a document in a flow pipeline:
-/// - `Pending` -- basis document exists but no action document yet
-/// - `Draft` -- action document exists in draft state
-/// - `Executed` -- action document has been posted/executed
 #[enum_type]
 pub enum PipelineStatus {
   Pending,
@@ -95,10 +89,6 @@ pub enum PipelineStatus {
 }
 
 impl PipelineStatus {
-  /// Derive pipeline status from an optional linked document's status.
-  ///
-  /// If no document exists, the pipeline is `Pending`.
-  /// Otherwise, `Draft` maps to `Draft` and `Executed` maps to `Executed`.
   pub fn from_doc_status(status: Option<&DocumentStatus>) -> Self {
     match status {
       None => Self::Pending,

@@ -1,9 +1,3 @@
-//! **Full document lifecycle syncs correctly**: A document goes through Draft, Execute,
-//! Revert, and Re-Execute on Central, with each state correctly propagated to the peripheral.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Document status transitions (DRAFT -> EXECUTED -> DRAFT -> EXECUTED) are faithfully replicated via sync
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -31,7 +25,6 @@ async fn status_transitions_replicate_to_peripheral_after_each_change() {
   ])
   .await;
 
-  // Create acceptance draft
   let acc = create_acceptance_via_api(
     &client,
     &central.url,
@@ -45,14 +38,12 @@ async fn status_transitions_replicate_to_peripheral_after_each_change() {
   .await;
   let acc_id = parse_doc_id(&acc);
 
-  // Step 1: Sync draft to PA → verify DRAFT
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
     .await
     .unwrap();
   assert_eq!(pa_acc["status"], "DRAFT");
 
-  // Step 2: Execute on Central → sync → verify EXECUTED
   execute_document_via_api(
     &client,
     &central.url,
@@ -67,7 +58,6 @@ async fn status_transitions_replicate_to_peripheral_after_each_change() {
     .unwrap();
   assert_eq!(pa_acc["status"], "EXECUTED");
 
-  // Step 3: Revert on Central → sync → verify DRAFT again
   revert_document_via_api(
     &client,
     &central.url,
@@ -82,7 +72,6 @@ async fn status_transitions_replicate_to_peripheral_after_each_change() {
     .unwrap();
   assert_eq!(pa_acc["status"], "DRAFT");
 
-  // Step 4: Re-execute → sync → verify EXECUTED again
   execute_document_via_api(
     &client,
     &central.url,

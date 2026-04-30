@@ -202,12 +202,10 @@ describe('locale integrity', () => {
       throw new Error('Missing locale trees')
 
     const interpolationPattern = /\{\{[^}]+\}\}/g
-    // Unicode property escape: any letter in the Cyrillic script (Russian
-    // plus all Cyrillic-script extensions). Avoids the obscure-range lint.
+
     const cyrillicPattern = /\p{Script=Cyrillic}/u
     const latinLetterPattern = /[a-z]/i
-    // Keys whose value is a keyboard shortcut, brand name, or technical token
-    // that is correctly identical in en and ru.
+
     const identicalLatinAllowlist = new Set([
       'forms:saveAndAddHint',
       'auth:setup.databasePlaceholder',

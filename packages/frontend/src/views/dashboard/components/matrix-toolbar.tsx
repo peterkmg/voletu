@@ -1,6 +1,6 @@
 import type { Orientation } from '../types'
 import { ChevronDown } from 'lucide-react'
-// packages/frontend/src/views/dashboard/components/matrix-toolbar.tsx
+
 import { useTranslation } from 'react-i18next'
 import { DensityToggle } from '~/components/data-table/density'
 import { EntityPickerCombobox } from '~/components/entity-picker'

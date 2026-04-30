@@ -25,14 +25,6 @@ pub struct ApiResponse<T> {
 
 impl<T: Serialize> IntoResponse for ApiResponse<T> {
   fn into_response(self) -> Response {
-    // Handlers return ApiResponse only on the success path; errors go through
-    // ApiError::into_response().  Calling this with success=false means the
-    // call site bypassed ApiError entirely, which is a bug.
-    debug_assert!(
-      self.success,
-      "ApiResponse::into_response called with success=false; \
-       error responses must be produced via ApiError"
-    );
     (StatusCode::OK, Json(self)).into_response()
   }
 }

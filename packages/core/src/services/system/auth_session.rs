@@ -27,6 +27,7 @@ use crate::{
 impl SystemService {
   pub async fn authenticate(&self, dto: &LoginRequest) -> Result<LoginResponse, ApiError> {
     let local_db_id = self.local_db_id().await?;
+
     let user = user::Entity::load()
       .filter(user::Column::Username.eq(&dto.username))
       .filter(user::Column::OriginDbId.eq(local_db_id))
@@ -39,6 +40,7 @@ impl SystemService {
     let is_valid = verify_password(&dto.password, &user.password_hash)
       .await
       .map_err(|_| ApiError::Unauthorized("Invalid credentials".to_string()))?;
+
     if !is_valid {
       return Err(ApiError::Unauthorized("Invalid credentials".to_string()));
     }
@@ -47,11 +49,13 @@ impl SystemService {
       .role
       .as_ref()
       .ok_or(ApiError::Unauthorized("User role not found".to_string()))?;
+
     let role_name = role.common_name.to_string();
 
     let access_token = self
       .access_create(user.id, &user.username, &role_name)
       .await?;
+
     let refresh_token = self
       .issue_refresh_token(self.db.as_ref(), user.id, None)
       .await?;
@@ -66,6 +70,7 @@ impl SystemService {
   pub async fn refresh_access_token(&self, token: &str) -> Result<LoginResponse, ApiError> {
     let local_db_id = self.local_db_id().await?;
     let (refresh_id, refresh_secret) = parse_refresh_token(token)?;
+
     let txn = self.db.begin().await?;
 
     let stored = refresh_token::Entity::load()
@@ -83,6 +88,7 @@ impl SystemService {
     let is_valid = verify_password(&refresh_secret, &stored.token_hash)
       .await
       .map_err(|_| ApiError::Unauthorized("Invalid refresh token".to_string()))?;
+
     if !is_valid {
       return Err(ApiError::Unauthorized("Invalid refresh token".to_string()));
     }
@@ -110,11 +116,13 @@ impl SystemService {
       .role
       .as_ref()
       .ok_or(ApiError::Unauthorized("User role not found".to_string()))?;
+
     let role_name = role.common_name.to_string();
 
     let access_token = self
       .access_create(user.id, &user.username, &role_name)
       .await?;
+
     let refresh_token = self
       .issue_refresh_token(&txn, user.id, stored.device_info.clone())
       .await?;
@@ -135,9 +143,11 @@ impl SystemService {
     device_info: Option<String>,
   ) -> Result<String, ApiError> {
     let refresh_secret = self.create_refresh_secret();
+
     let token_hash = hash_password(&refresh_secret)
       .await
       .map_err(ApiError::Internal)?;
+
     let expires_at = ChronoUtc::now()
       .checked_add_signed(
         Duration::try_seconds(self.refresh_expiration_seconds())

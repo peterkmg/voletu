@@ -1,5 +1,10 @@
 use super::context::WorkerContext;
-use crate::{config::SyncConfig, dtos::SyncStatusResponse, utils::http::get_api_json};
+use crate::{
+  config::SyncConfig,
+  dtos::SyncStatusResponse,
+  services::sync::helpers::join_uuid_csv,
+  utils::http::get_api_json,
+};
 
 pub(super) enum RemoteSyncProbe {
   Offline,
@@ -11,7 +16,7 @@ pub(super) async fn probe_remote_sync_status(
   config: &SyncConfig,
   context: &WorkerContext,
 ) -> RemoteSyncProbe {
-  let base_ids_param = crate::services::sync::helpers::join_uuid_csv(&context.local_base_ids);
+  let base_ids_param = join_uuid_csv(&context.local_base_ids);
 
   match get_api_json::<SyncStatusResponse>(
     client,

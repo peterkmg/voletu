@@ -1,4 +1,16 @@
-use super::*;
+use sea_orm::entity::prelude::Decimal;
+use uuid::Uuid;
+use voletu_core_macros::response_dto;
+
+use crate::entities::{
+  rail_wagon_manifest,
+  rail_wagon_measurement,
+  rail_wagon_weight,
+  rail_waybill,
+  truck_waybill,
+  truck_waybill_item,
+  truck_weight_doc,
+};
 
 #[response_dto(service_fields(common))]
 pub struct TruckWaybillResponse {

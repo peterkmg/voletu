@@ -47,8 +47,8 @@ export async function saveExportFileWithTauri(
   file: ExportFile,
 ): Promise<SaveExportFileResult> {
   const [{ save }, { writeFile }] = await Promise.all([
-    import(/* @vite-ignore */ '@tauri-apps/plugin-dialog') as Promise<TauriDialogModule>,
-    import(/* @vite-ignore */ '@tauri-apps/plugin-fs') as Promise<TauriFsModule>,
+    import('@tauri-apps/plugin-dialog') as Promise<TauriDialogModule>,
+    import('@tauri-apps/plugin-fs') as Promise<TauriFsModule>,
   ])
 
   return createTauriSaveAdapter({ save, writeFile })(file)
@@ -68,11 +68,15 @@ function exportFileFilters(
 function filterName(extension: string, mimeType: string): string {
   if (extension === 'csv' || mimeType.includes('csv'))
     return 'CSV'
+
   if (extension === 'xlsx')
     return 'Excel'
+
   if (extension === 'png')
     return 'PNG'
+
   if (extension === 'svg')
     return 'SVG'
+
   return extension.toUpperCase()
 }

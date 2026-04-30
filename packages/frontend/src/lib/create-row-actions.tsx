@@ -16,16 +16,8 @@ interface CreateRowActionsConfig<TRow extends { id: string }> {
   }
   lifecycle?: boolean
   deleteOnly?: boolean
-  /** Hide edit button (for pipeline tables without update dialog) */
   disableEdit?: boolean
-  /** Returns the detail page path for the given row. Adds an inline details button. */
   getDetailPath?: (row: TRow) => string
-  /**
-   * Pipeline-aware per-row predicates. When `editVisible` is set it overrides
-   * `disableEdit` for the inline Edit button. When `issueAcceptance` is set
-   * an extra inline button dispatches `openIssueAcceptance(row)` for rows
-   * matching the predicate.
-   */
   pipelineActions?: {
     editVisible?: (row: TRow) => boolean
     issueAcceptance?: { visible: (row: TRow) => boolean }
@@ -49,7 +41,6 @@ export function createRowActions<TRow extends { id: string }>(
 
     const actions: RowAction[] = []
 
-    // Slot 1: Details (navigate to detail page)
     if (config.getDetailPath) {
       actions.push({
         label: t('common:actions.viewDetails'),
@@ -59,12 +50,6 @@ export function createRowActions<TRow extends { id: string }>(
       })
     }
 
-    // Slot 2: Edit (open edit dialog)
-    // Pipeline views drive Edit visibility from a per-row predicate
-    // (`pipelineActions.editVisible`) instead of the legacy boolean
-    // `disableEdit`. Spec §3.2: row Edit is only visible for PENDING rows in
-    // the pipeline lists; the basis-detail page uses the broader
-    // `canEditBasis` predicate which also includes DRAFT.
     const editVisible = config.pipelineActions?.editVisible
       ? config.pipelineActions.editVisible(row.original)
       : !config.disableEdit
@@ -77,7 +62,6 @@ export function createRowActions<TRow extends { id: string }>(
       })
     }
 
-    // Slot 2b: Issue acceptance (pipeline lists only)
     if (config.pipelineActions?.issueAcceptance?.visible(row.original)) {
       actions.push({
         label: t('documents:actions.issueAcceptance'),
@@ -87,9 +71,9 @@ export function createRowActions<TRow extends { id: string }>(
       })
     }
 
-    // Slot 3: Overflow menu actions
     if (config.lifecycle) {
       const status = (row.original as { status?: string }).status
+
       if (status === 'DRAFT') {
         actions.push({
           label: t('documents:lifecycle.execute'),
@@ -97,6 +81,7 @@ export function createRowActions<TRow extends { id: string }>(
           onClick: selectLifecycle('execute'),
         })
       }
+
       if (
         status === 'EXECUTED'
         && (userRole === 'ADMIN' || userRole === 'SENIOR_SUPERVISOR')

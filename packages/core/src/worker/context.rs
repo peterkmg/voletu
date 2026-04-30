@@ -1,7 +1,11 @@
 use uuid::Uuid;
 
 use super::{engine::WorkerRuntime, topology};
-use crate::{services::sync::specs::SyncStatusQuerySpec, utils::http::normalize_base_url};
+use crate::{
+  services::sync::{helpers::compute_base_discriminant, specs::SyncStatusQuerySpec},
+  utils::http::normalize_base_url,
+  worker::topology::load_local_base_ids,
+};
 
 pub(super) struct WorkerContext {
   pub(super) central_sync_api_url: String,
@@ -32,14 +36,14 @@ pub(super) async fn load_worker_context(
     return Ok(None);
   };
 
-  let local_base_ids =
-    topology::load_local_base_ids(runtime.db.as_ref(), topology.local_node_id).await?;
-  let local_base_discriminant =
-    crate::services::sync::helpers::compute_base_discriminant(&local_base_ids);
+  let local_base_ids = load_local_base_ids(runtime.db.as_ref(), topology.local_node_id).await?;
+  let local_base_discriminant = compute_base_discriminant(&local_base_ids);
+
   let local_status = runtime
     .sync_service
     .sync_status(SyncStatusQuerySpec::default())
     .await?;
+
   let local_highest_audit_log_id = local_status.highest_audit_log_id;
 
   Ok(Some(LoadedWorkerContext {

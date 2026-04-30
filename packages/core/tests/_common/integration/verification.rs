@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use super::{api_get, api_post};
 
-/// Query audit logs, optionally filtered by table name and/or record ID (client-side filter).
 pub async fn query_audit_logs(
   client: &Client,
   base_url: &str,
@@ -32,7 +31,6 @@ pub async fn query_audit_logs(
     .collect()
 }
 
-/// Find audit logs for a specific record and assert target_base_ids contains the expected base.
 pub fn assert_audit_log_targets(
   logs: &[Value],
   table_name: &str,
@@ -76,7 +74,6 @@ pub async fn has_audit_record(
     .any(|log| log["tableName"] == table_name && log["recordId"] == record_id.to_string())
 }
 
-/// Check that a catalog entity exists on a node by querying the list endpoint.
 pub async fn has_catalog_entity(
   client: &Client,
   base_url: &str,
@@ -92,7 +89,6 @@ pub async fn has_catalog_entity(
     .any(|e| e["id"] == entity_id.to_string())
 }
 
-/// Retrieve an acceptance composite document by ID.
 pub async fn get_acceptance_composite_json(
   client: &Client,
   base_url: &str,
@@ -114,7 +110,6 @@ pub async fn get_acceptance_composite_json(
   Some(body["data"].clone())
 }
 
-/// Retrieve a physical transfer composite document by ID.
 pub async fn get_physical_transfer_composite_json(
   client: &Client,
   base_url: &str,
@@ -136,7 +131,6 @@ pub async fn get_physical_transfer_composite_json(
   Some(body["data"].clone())
 }
 
-/// Retrieve a generic composite document by ID. Returns None if 404.
 pub async fn get_composite_json(
   client: &Client,
   base_url: &str,
@@ -200,13 +194,11 @@ pub async fn get_ledger_balance_json(
   }
 }
 
-/// Get all ledger balances from a node via GET /ledger.
 pub async fn get_all_ledger_balances(client: &Client, base_url: &str, token: &str) -> Vec<Value> {
   let data = api_get(client, &format!("{base_url}/ledger"), token).await;
   data.as_array().cloned().unwrap_or_default()
 }
 
-/// Get all storages belonging to a specific base via warehouse->base chain.
 pub async fn get_storages_for_base(
   client: &Client,
   base_url: &str,

@@ -48,8 +48,14 @@ export default antfu(
   },
   {
     // Factory files intentionally define components/hooks inside creator functions
-    files: ['packages/frontend/src/lib/create-*.tsx'],
-    rules: { 'react/component-hook-factories': 'off' },
+    files: [
+      'packages/frontend/src/lib/create-*.tsx',
+      'packages/frontend/src/lib/define-*.tsx',
+    ],
+    rules: {
+      'react/component-hook-factories': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
   },
   {
     // Test infrastructure: vi.mock factories define hooks inside callbacks,

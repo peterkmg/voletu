@@ -1,9 +1,7 @@
 import type { AxisNode, BuilderInput } from '~/views/dashboard/types'
-// packages/frontend/src/views/dashboard/__tests__/build-matrix-vm.test.ts
+
 import { describe, expect, it } from 'vitest'
 import { buildMatrixVM } from '~/views/dashboard/build-matrix-vm'
-
-// --- Fixture constants ------------------------------------------------------
 
 const CONTRACTOR_A = '00000000-0000-0000-0000-000000000001'
 const CONTRACTOR_B = '00000000-0000-0000-0000-000000000002'
@@ -25,12 +23,6 @@ const S_1 = 's-1'
 const S_2 = 's-2'
 const S_3 = 's-3'
 const S_4 = 's-4'
-
-// --- Fixture helpers --------------------------------------------------------
-// Generated response types have broader shapes than what the builder actually
-// reads; we cast via `any` here to keep tests decoupled from the generated
-// Kubb fields (which carry timestamps, soft-delete flags, etc. that the
-// builder does not use).
 
 function mkProduct(id: string, groupId: string, name: string): any {
   return { id, productGroupId: groupId, commonName: name, longName: name, manufacturerId: null, isComponent: false, addIdentification: null }
@@ -100,8 +92,6 @@ function collectLeafIds(node: AxisNode): string[] {
     return [node.id]
   return node.children.flatMap(collectLeafIds)
 }
-
-// --- Tests ------------------------------------------------------------------
 
 describe('buildMatrixVM', () => {
   it('returns empty product axis when ledger is empty but keeps all storages', () => {
@@ -240,13 +230,13 @@ describe('buildMatrixVM', () => {
         mkEntry(CONTRACTOR_A, P_95, S_3, '80'),
       ],
     }))
-    // Product axis: Gasoline group × S_1 = 120 + 45 = 165
+
     expect(vm.cellSubtotal('product', PG_GASOLINE, S_1)).toBe(165)
-    // Product axis: Gasoline group × S_3 = 80
+
     expect(vm.cellSubtotal('product', PG_GASOLINE, S_3)).toBe(80)
-    // Product axis: Gasoline group × S_2 = undefined (no entries)
+
     expect(vm.cellSubtotal('product', PG_GASOLINE, S_2)).toBeUndefined()
-    // Storage axis: WH_1 warehouse × P_95 = 120 (only S_1 has an entry in WH_1)
+
     expect(vm.cellSubtotal('storage', WH_1, P_95)).toBe(120)
   })
 })

@@ -13,7 +13,7 @@ import { cn } from '~/lib/utils'
 
 interface DocHeaderSectionProps<TForm extends FieldValues> {
   fields: HeaderFieldSpec<TForm>[]
-  /** Optional i18n key for a section heading. */
+
   titleKey?: string
   className?: string
 }

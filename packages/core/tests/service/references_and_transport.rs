@@ -281,7 +281,6 @@ async fn creates_truck_and_rail_documents_returned_in_list() {
     );
     assert_eq!(doc_service.rail_weight_list(None).await.unwrap().len(), 1);
 
-    // The create helpers should preserve the seeded linkage without extra lookup hops.
     assert_eq!(truck_waybill_row.sender_id, catalog.sender_id);
     assert_eq!(truck_waybill_row.base_id, catalog.base_id);
     assert_eq!(rail_waybill_row.sender_id, catalog.sender_id);
@@ -305,7 +304,6 @@ async fn truck_waybill_composite_update_inserts_updates_and_deletes_items() {
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create a truck waybill composite with three items.
     let initial = service
       .truck_waybill_composite_create(&TruckWaybillCompositeRequest {
         document_number: "TW-COMP-UPDATE-1".to_string(),
@@ -335,8 +333,7 @@ async fn truck_waybill_composite_update_inserts_updates_and_deletes_items() {
     assert_eq!(initial_items.len(), 3);
 
     let waybill_id = initial.waybill.id;
-    // Capture each id by initial declared_amount so the test does not depend
-    // on a specific row ordering of the response.
+
     let pick = |amount: Decimal| -> (Uuid, Uuid, Decimal) {
       let item = initial_items
         .iter()
@@ -348,11 +345,6 @@ async fn truck_waybill_composite_update_inserts_updates_and_deletes_items() {
     let (update_id, update_product, _) = pick(dec("2.0"));
     let (delete_id, _, _) = pick(dec("3.0"));
 
-    // 2. Apply a composite update:
-    //    - keep item_unchanged as-is,
-    //    - update item_to_update.declared_amount,
-    //    - drop item_to_delete by omitting it,
-    //    - insert one fresh item with id: None.
     let updated = service
       .truck_waybill_composite_update(waybill_id, &UpdateTruckWaybillCompositeRequest {
         waybill: UpdateTruckWaybillRequest {
@@ -382,7 +374,6 @@ async fn truck_waybill_composite_update_inserts_updates_and_deletes_items() {
       .await
       .unwrap();
 
-    // 3. Assertions on the response.
     let updated_items = updated.items.as_ref().expect("items present after update");
     assert_eq!(updated_items.len(), 3);
 
@@ -425,7 +416,6 @@ async fn truck_waybill_composite_update_rejects_duplicate_item_ids() {
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // Seed: create a truck waybill composite with a single item.
     let initial = service
       .truck_waybill_composite_create(&TruckWaybillCompositeRequest {
         document_number: "TW-COMP-UPDATE-DUP".to_string(),
@@ -446,7 +436,6 @@ async fn truck_waybill_composite_update_rejects_duplicate_item_ids() {
     let existing = &initial_items[0];
     let dup_id = existing.id;
 
-    // Build a request that references the same existing id twice.
     let err = service
       .truck_waybill_composite_update(waybill_id, &UpdateTruckWaybillCompositeRequest {
         waybill: UpdateTruckWaybillRequest {
@@ -488,20 +477,6 @@ async fn truck_waybill_composite_update_rejects_duplicate_item_ids() {
   .await;
 }
 
-/// Cover the recursive composite update for rail waybills.
-///
-/// The seed creates three manifests:
-///   - manifest A: with 1 measurement + 1 weight (will be left UNCHANGED at the manifest level)
-///   - manifest B: with 1 weight, 0 measurements (will UPDATE its declared_mass; ADD a measurement)
-///   - manifest C: with 1 measurement + 1 weight (will be DELETED entirely; children must go too)
-///
-/// The update payload also INSERTS a brand-new manifest D with one measurement
-/// and one weight, exercising the create-with-children branch.
-///
-/// Note: rail measurement / weight rows enforce a `UNIQUE(wagon_manifest_id)`
-/// constraint at the entity level, so each manifest holds at most one of each.
-/// This keeps the nested-diff scenario realistic for the actual schema while
-/// still exercising insert / update / delete / unchanged at both levels.
 #[tokio::test]
 async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_children() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
@@ -513,7 +488,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create the rail waybill composite with three manifests.
     let initial = service
       .rail_waybill_composite_create(&RailWaybillCompositeRequest {
         document_number: "RW-COMP-UPDATE-1".to_string(),
@@ -521,7 +495,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
         sender_id: catalog.sender_id,
         base_id: catalog.base_id,
         manifests: Some(vec![
-          // Manifest A - kept unchanged at every level.
           RailWagonManifestCompositeRequest {
             wagon_number: "WAG-A".to_string(),
             product_id: catalog.product_a_id,
@@ -541,7 +514,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
               net_product_weight: dec("8.5"),
             }]),
           },
-          // Manifest B - will have its declared_mass updated and gain a measurement.
           RailWagonManifestCompositeRequest {
             wagon_number: "WAG-B".to_string(),
             product_id: catalog.product_a_id,
@@ -556,7 +528,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
               net_product_weight: dec("10.0"),
             }]),
           },
-          // Manifest C - will be deleted entirely with both children.
           RailWagonManifestCompositeRequest {
             wagon_number: "WAG-C".to_string(),
             product_id: catalog.product_a_id,
@@ -595,18 +566,10 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
     let manifest_b = pick_manifest("WAG-B");
     let manifest_c = pick_manifest("WAG-C");
 
-    // Capture child ids for the update payload (round-tripped so the
-    // backend treats them as updates, not deletes-and-inserts).
     let manifest_a_measurement_id = manifest_a.measurements.as_ref().unwrap()[0].id;
     let manifest_a_weight_id = manifest_a.weights.as_ref().unwrap()[0].id;
     let manifest_b_weight_id = manifest_b.weights.as_ref().unwrap()[0].id;
 
-    // 2. Apply the composite update:
-    //    - Manifest A: unchanged at every level (round-trip ids and values).
-    //    - Manifest B: scalar update (declared_mass) + INSERT one measurement
-    //      (id: None) + keep its weight unchanged (id round-tripped).
-    //    - Manifest C: omitted entirely => delete manifest + cascade children.
-    //    - Manifest D: brand-new manifest with one measurement and one weight.
     let updated = service
       .rail_waybill_composite_update(waybill_id, &UpdateRailWaybillCompositeRequest {
         waybill: UpdateRailWaybillRequest {
@@ -681,20 +644,17 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
       .await
       .unwrap();
 
-    // 3. Assertions.
     let updated_manifests = updated
       .wagon_manifests
       .as_ref()
       .expect("manifests present after update");
     assert_eq!(updated_manifests.len(), 3, "manifest C should be deleted");
 
-    // Manifest C must be gone.
     assert!(
       updated_manifests.iter().all(|m| m.id != manifest_c.id),
       "manifest C should be hard-deleted from the composite"
     );
 
-    // Manifest A: id preserved, scalar values unchanged, child ids preserved.
     let returned_a = updated_manifests
       .iter()
       .find(|m| m.id == manifest_a.id)
@@ -709,8 +669,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
       manifest_a_weight_id
     );
 
-    // Manifest B: id preserved, scalar update applied, weight id preserved,
-    // measurement INSERTED with a fresh id.
     let returned_b = updated_manifests
       .iter()
       .find(|m| m.id == manifest_b.id)
@@ -727,7 +685,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
     assert_eq!(b_measurements.len(), 1);
     assert_eq!(b_measurements[0].calculated_mass, dec("11.3"));
 
-    // Manifest D: brand-new id, both children present with fresh ids.
     let returned_d = updated_manifests
       .iter()
       .find(|m| m.wagon_number == "WAG-D")
@@ -749,8 +706,6 @@ async fn rail_waybill_composite_update_inserts_updates_and_deletes_nested_childr
   .await;
 }
 
-/// Composite update must reject duplicate manifest ids before any write,
-/// matching the truck-waybill guard.
 #[tokio::test]
 async fn rail_waybill_composite_update_rejects_duplicate_manifest_ids() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {

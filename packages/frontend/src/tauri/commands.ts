@@ -2,7 +2,6 @@ import { invoke } from '@tauri-apps/api/core'
 
 const DEFAULT_IPC_TIMEOUT = 15_000
 
-/** Wraps Tauri invoke with a timeout to prevent indefinite hangs */
 async function invokeWithTimeout<T>(
   cmd: string,
   args?: Record<string, unknown>,

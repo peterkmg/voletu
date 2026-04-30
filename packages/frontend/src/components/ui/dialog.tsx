@@ -104,10 +104,6 @@ function DialogFooter({
 }) {
   const { t } = useTranslation('common')
 
-  // The footer always gets a solid background + a top border so that when a
-  // dialog body uses an internal `ScrollArea` / `CommandList`, the last visible
-  // item never bleeds into the action buttons. Callers can still override via
-  // `className` (e.g. `border-t-0` for footer-less variants).
   return (
     <div
       data-slot="dialog-footer"

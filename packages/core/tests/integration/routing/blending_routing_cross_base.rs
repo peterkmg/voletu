@@ -1,9 +1,3 @@
-//! **Blending routing across bases**: A blending document with components from base_alpha
-//! and result in base_beta routes to both bases.
-//!
-//! **Topology:** Central + 2 Peripherals (one base each)
-//! **Verifies:** Audit log targets both component and result bases; both peripherals receive the blending document
-
 use std::time::Duration;
 
 use uuid::Uuid;

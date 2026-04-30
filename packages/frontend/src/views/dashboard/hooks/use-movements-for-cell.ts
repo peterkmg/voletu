@@ -9,15 +9,6 @@ export interface CellMovementsResult {
   error: unknown
 }
 
-/**
- * Client-side filter by name triple.
- *
- * Known limitation: filters by (contractorName, productName, storageName) because
- * the generated CargoFlowFlatRow does not carry ids. Two catalog rows sharing the
- * same common_name for product or storage would cross-leak between cells. Mitigation
- * in the UI: document the limitation near the sheet. Long-term fix: add ids to the
- * cargo-flow flat payload or replace with an id-filtered endpoint.
- */
 export function useMovementsForCell(params: {
   contractorName: string | null
   productName: string | null
@@ -29,8 +20,10 @@ export function useMovementsForCell(params: {
 
   const movements = useMemo(() => {
     const rows = ((q.data as any)?.data ?? []) as CargoFlowFlatRow[]
+
     if (!params.contractorName || !params.productName || !params.storageName)
       return []
+
     return rows
       .filter(r =>
         r.contractorName === params.contractorName

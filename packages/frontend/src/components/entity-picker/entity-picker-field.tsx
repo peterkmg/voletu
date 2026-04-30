@@ -22,6 +22,7 @@ export function EntityPickerField<TForm extends FieldValues>({
   ...inputProps
 }: EntityPickerFieldProps<TForm>) {
   const form = useFormContext<TForm>()
+
   return (
     <FormField
       control={form.control}

@@ -1,6 +1,6 @@
 import type { StartupState } from '~/tauri/commands'
 
-export {} // module boundary for top-level await
+export {}
 
 const ensureBootstrapped = vi.fn(async () => {})
 const fetchMock = vi.fn()

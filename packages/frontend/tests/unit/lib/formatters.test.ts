@@ -6,9 +6,8 @@ describe('formatDate()', () => {
   })
 
   it('formats a specific date correctly', () => {
-    // Use a UTC midnight date to avoid timezone shifts
     const result = formatDate('2026-01-05T00:00:00.000Z')
-    // The exact output depends on the local timezone, but the format should be YYYY-MM-DD
+
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
@@ -30,7 +29,6 @@ describe('formatDateTime()', () => {
   })
 
   it('pads hours and minutes', () => {
-    // Use a time that will be early morning in most timezones
     const result = formatDateTime('2026-06-15T04:05:00.000Z')
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
   })

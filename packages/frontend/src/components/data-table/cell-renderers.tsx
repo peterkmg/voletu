@@ -14,6 +14,7 @@ export const NullCell = memo(() => (
 export const DateCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
+
   return (
     <span className="text-sm tabular-nums text-muted-foreground">
       {formatDate(value)}
@@ -24,6 +25,7 @@ export const DateCell = memo(({ value }: { value: string | null | undefined }) =
 export const DateTimeCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
+
   return (
     <span className="text-sm tabular-nums text-muted-foreground">
       {formatDateTime(value)}
@@ -42,15 +44,19 @@ export const NumericCell = memo(({
 }) => {
   if (value == null)
     return <NullCell />
+
   const num = typeof value === 'string' ? Number.parseFloat(value) : value
+
   const display = padWidth
     ? String(value).padStart(padWidth, '0')
     : formatAmount(value, unit)
+
   const colorClass = Number.isNaN(num) || num === 0
     ? undefined
     : num < 0
       ? 'text-red-600 dark:text-red-400'
       : 'text-green-700 dark:text-green-400'
+
   return (
     <span className={cn('text-sm font-medium tabular-nums', colorClass)}>{display}</span>
   )
@@ -59,6 +65,7 @@ export const NumericCell = memo(({
 export const IdCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -76,6 +83,7 @@ export const IdCell = memo(({ value }: { value: string | null | undefined }) => 
 export const ResolvedCell = memo(({ value }: { value: string | null | undefined }) => {
   if (!value)
     return <NullCell />
+
   return <span>{value}</span>
 })
 
@@ -88,9 +96,12 @@ export const LookupCell = memo(({
 }) => {
   if (!value)
     return <NullCell />
+
   const resolved = lookupMap.get(value)
+
   if (resolved) {
     return <span>{resolved}</span>
   }
+
   return <IdCell value={value} />
 })

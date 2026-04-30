@@ -1,9 +1,3 @@
-//! **Cross-base physical transfer**: A physical transfer from storage_alpha to storage_beta
-//! routes to both bases and is visible on both peripherals.
-//!
-//! **Topology:** Central + 2 Peripherals (one base each)
-//! **Verifies:** Audit log targets both bases; both peripherals receive the transfer with field parity
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -50,7 +44,6 @@ async fn routes_to_both_peripherals() {
   .await;
   let transfer_id = Uuid::parse_str(transfer["id"].as_str().unwrap()).unwrap();
 
-  // Verify routing has BOTH bases
   let logs = query_audit_logs(
     &client,
     &central.url,
@@ -72,7 +65,6 @@ async fn routes_to_both_peripherals() {
     );
   }
 
-  // Both peripherals get it
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   await_sync_cycle(&client, &pb.url, &pb.token, SYNC_TIMEOUT).await;
 
@@ -81,7 +73,6 @@ async fn routes_to_both_peripherals() {
   assert!(pa_t.is_some(), "PA should have cross-base transfer");
   assert!(pb_t.is_some(), "PB should have cross-base transfer");
 
-  // Field parity
   let central_t =
     get_physical_transfer_composite_json(&client, &central.url, &central.token, transfer_id)
       .await

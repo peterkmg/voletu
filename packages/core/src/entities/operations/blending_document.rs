@@ -4,6 +4,7 @@ use uuid::Uuid;
 use crate::{
   dtos::{CreateBlendingCompositeRequest, CreateBlendingRequest},
   entities::{blending_component, blending_result, company, product},
+  enums::DocumentStatus,
 };
 
 #[voletu_core_macros::handle_audit]
@@ -17,7 +18,7 @@ pub struct Model {
   #[sea_orm(unique)]
   pub document_number: String,
   pub date: DateTimeUtc,
-  pub status: crate::enums::DocumentStatus,
+  pub status: DocumentStatus,
   pub version: i32,
   pub executed_at: Option<DateTimeUtc>,
   pub executed_by: Option<Uuid>,
@@ -40,7 +41,7 @@ impl From<&CreateBlendingRequest> for ActiveModel {
     Self {
       document_number: Set(dto.document_number.clone()),
       date: Set(dto.date),
-      status: Set(crate::enums::DocumentStatus::Draft),
+      status: Set(DocumentStatus::Draft),
       executed_at: Set(None),
       executed_by: Set(None),
       reverted_at: Set(None),
@@ -57,7 +58,7 @@ impl From<&CreateBlendingCompositeRequest> for ActiveModel {
     Self {
       document_number: Set(dto.document_number.clone()),
       date: Set(dto.date),
-      status: Set(crate::enums::DocumentStatus::Draft),
+      status: Set(DocumentStatus::Draft),
       executed_at: Set(None),
       executed_by: Set(None),
       reverted_at: Set(None),

@@ -15,8 +15,6 @@ import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { companyRoleColors } from '~/lib/badge-colors'
 import { defineCrudViews } from '~/lib/define-crud-views'
 
-// --- Columns ---
-
 function getCompanyColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<CompanyResponse> }>,
@@ -56,8 +54,6 @@ function getCompanyColumns(
   ]
 }
 
-// --- Table ---
-
 const companiesRoute = getRouteApi('/_authenticated/catalog/companies/')
 const companiesGlobalFilterFn = createGlobalFilter<CompanyResponse>('commonName', 'legalName')
 
@@ -84,8 +80,6 @@ function CompaniesTable({ data, actions, RowActions }: CompaniesTableProps) {
 function useCompaniesTitle() {
   return useTranslation(['catalog']).t('catalog:company.title')
 }
-
-// --- Mutate Dialog ---
 
 const companyFormSchema = z.object({
   commonName: z.string().min(1),

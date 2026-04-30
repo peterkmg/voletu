@@ -6,13 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNodeStore } from '~/stores/node-store'
 import { BaseAssignmentDialog } from '~/views/system/sync/components/base-assignment-dialog'
 
-// Mock the API client so we can assert which endpoints get hit and control
-// what /catalog/bases returns. The real `~/api/client` is an axios-like
-// callable that takes a config object and returns a Promise<{ data }>.
 interface ApiConfig { method: string, url: string, data?: unknown }
 const apiCalls: ApiConfig[] = []
 let mockBases: Array<{ id: string, commonName: string, longName?: string | null }> = []
-// Set to a concrete string to make the next /node/bases mutation reject with that message.
+
 let nextMutationError: string | null = null
 
 vi.mock('~/api/client', () => ({
@@ -72,7 +69,6 @@ describe('baseAssignmentDialog', () => {
     expect(screen.getByText('South')).toBeInTheDocument()
     expect(screen.getByText('East')).toBeInTheDocument()
 
-    // The initial assigned state (b1) should show as checked.
     expect(screen.getByRole('checkbox', { name: /north/i })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: /south/i })).not.toBeChecked()
     expect(screen.getByRole('checkbox', { name: /east/i })).not.toBeChecked()
@@ -83,13 +79,11 @@ describe('baseAssignmentDialog', () => {
     renderDialog()
     await screen.findByText('South')
 
-    // Snapshot the API calls before interaction (should be only the GET).
     const apiCountBefore = apiCalls.length
 
     await user.click(screen.getByRole('checkbox', { name: /south/i }))
     await user.click(screen.getByRole('checkbox', { name: /east/i }))
 
-    // No mutation calls should have been issued yet.
     expect(apiCalls.length).toBe(apiCountBefore)
   })
 
@@ -113,10 +107,9 @@ describe('baseAssignmentDialog', () => {
     renderDialog(onOpenChange)
     await screen.findByText('South')
 
-    // Diff: add b2 (South), add b3 (East), remove b1 (North).
-    await user.click(screen.getByRole('checkbox', { name: /north/i })) // uncheck (remove)
-    await user.click(screen.getByRole('checkbox', { name: /south/i })) // check (add)
-    await user.click(screen.getByRole('checkbox', { name: /east/i })) // check (add)
+    await user.click(screen.getByRole('checkbox', { name: /north/i }))
+    await user.click(screen.getByRole('checkbox', { name: /south/i }))
+    await user.click(screen.getByRole('checkbox', { name: /east/i }))
 
     await user.click(screen.getByRole('button', { name: /^apply$/i }))
 
@@ -131,7 +124,6 @@ describe('baseAssignmentDialog', () => {
     expect(posts.map(c => (c.data as { baseId: string }).baseId).sort()).toEqual(['b2', 'b3'])
     expect(deletes.map(c => c.url)).toEqual(['/node/bases/b1'])
 
-    // Dialog should close via onOpenChange(false) after full success.
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
   })
 
@@ -159,7 +151,7 @@ describe('baseAssignmentDialog', () => {
   it('wraps the list in a ScrollArea with a max-height constraint', async () => {
     renderDialog()
     await screen.findByText('North')
-    // Dialog content is rendered inside a portal, so search document.body.
+
     const scrollArea = document.body.querySelector('[data-slot="scroll-area"]')
     expect(scrollArea).not.toBeNull()
     expect(scrollArea!.className).toMatch(/max-h-\[60vh\]/)
@@ -177,7 +169,7 @@ describe('baseAssignmentDialog', () => {
     const label = await screen.findByText('South')
     await user.click(label)
     expect(screen.getByRole('checkbox', { name: /south/i })).toBeChecked()
-    // Apply is now enabled.
+
     expect(screen.getByRole('button', { name: /^apply$/i })).toBeEnabled()
   })
 
@@ -186,9 +178,6 @@ describe('baseAssignmentDialog', () => {
     const { rerender } = renderDialog()
     await screen.findByText('North')
 
-    // First: user checks South, then we simulate a store update reflecting
-    // that b2 is now server-assigned (and b1 removed), and the dialog is
-    // reopened with a fresh pending set.
     await user.click(screen.getByRole('checkbox', { name: /south/i }))
 
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -206,7 +195,6 @@ describe('baseAssignmentDialog', () => {
       )
     })
 
-    // Re-seeded from the store: b2 checked, b1 unchecked.
     await waitFor(() => {
       expect(screen.getByRole('checkbox', { name: /south/i })).toBeChecked()
       expect(screen.getByRole('checkbox', { name: /north/i })).not.toBeChecked()
@@ -221,7 +209,6 @@ describe('baseAssignmentDialog', () => {
 
     await user.click(screen.getByRole('checkbox', { name: /south/i }))
 
-    // Force the single add mutation to fail.
     nextMutationError = 'network boom'
     await user.click(screen.getByRole('button', { name: /^apply$/i }))
 
@@ -229,16 +216,14 @@ describe('baseAssignmentDialog', () => {
       const mutations = apiCalls.filter(c => c.url.startsWith('/node/bases'))
       expect(mutations).toHaveLength(1)
     })
-    // Dialog must NOT be closed if every mutation failed.
+
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
   })
 
-  // Use `within` to silence unused-import warnings if any — keep the import
-  // referenced for future tests that need scoped queries.
   it('exposes dialog content within the same testing tree', async () => {
     const { container } = renderDialog()
     await screen.findByText('North')
-    // Just a sanity check: there's only one dialog.
+
     const dialogs = within(container).queryAllByRole('dialog')
     expect(dialogs.length).toBeGreaterThanOrEqual(0)
   })

@@ -2,22 +2,17 @@ import type { LoginResponse } from '~/generated/types/LoginResponse'
 import type { UserResponse } from '~/generated/types/UserResponse'
 import { getApiBaseUrl } from '~/platform/runtime/api-base-url'
 
-// ---------------------------------------------------------------------------
-// JWT utilities
-// ---------------------------------------------------------------------------
-
-/**
- * Decode a JWT payload and extract the `exp` (expiration) claim.
- * Client-side convenience only — the server always verifies the full token.
- */
 export function decodeJwtExp(token: string): number | null {
   try {
     const parts = token.split('.')
+
     if (parts.length !== 3)
       return null
+
     const payload = parts[1]!.replace(/-/g, '+').replace(/_/g, '/')
     const padded = payload + '='.repeat((4 - payload.length % 4) % 4)
     const decoded = JSON.parse(atob(padded))
+
     return typeof decoded.exp === 'number' ? decoded.exp : null
   }
   catch {
@@ -25,17 +20,14 @@ export function decodeJwtExp(token: string): number | null {
   }
 }
 
-/** Returns true if the token will expire within `thresholdSeconds` or is already expired. */
 export function isTokenExpiringSoon(token: string, thresholdSeconds = 300): boolean {
   const exp = decodeJwtExp(token)
+
   if (exp === null)
     return true
+
   return exp - Math.floor(Date.now() / 1000) < thresholdSeconds
 }
-
-// ---------------------------------------------------------------------------
-// Session types & storage
-// ---------------------------------------------------------------------------
 
 const STORAGE_KEY = 'voletu.auth.session'
 
@@ -55,8 +47,10 @@ export function toSession(payload: LoginResponse): AuthSession {
 
 export function loadSession(): AuthSession | null {
   const raw = globalThis.localStorage.getItem(STORAGE_KEY)
+
   if (!raw)
     return null
+
   try {
     return JSON.parse(raw) as AuthSession
   }
@@ -74,26 +68,23 @@ export function clearSession(): void {
   globalThis.localStorage.removeItem(STORAGE_KEY)
 }
 
-// ---------------------------------------------------------------------------
-// Backend API calls (used by the auth store)
-// ---------------------------------------------------------------------------
-
-/** Verify the access token by calling GET /auth/me. Returns the user on success. */
 export async function verifyToken(accessToken: string): Promise<UserResponse> {
   const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
+
   if (!response.ok) {
     throw new Error(`Token verification failed: ${response.status}`)
   }
+
   const envelope = await response.json() as { success: boolean, data?: UserResponse }
   if (!envelope.success || !envelope.data) {
     throw new Error('Token verification failed')
   }
+
   return envelope.data
 }
 
-/** Exchange a refresh token for a new session. */
 export async function refreshTokens(refreshToken: string): Promise<AuthSession> {
   const response = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
     method: 'POST',
@@ -103,12 +94,15 @@ export async function refreshTokens(refreshToken: string): Promise<AuthSession> 
     },
     body: JSON.stringify({ refreshToken }),
   })
+
   if (!response.ok) {
     throw new Error(`Refresh failed: ${response.status}`)
   }
+
   const envelope = await response.json() as { success: boolean, data?: LoginResponse, error?: { message?: string } }
   if (!envelope.success || !envelope.data) {
     throw new Error(envelope.error?.message ?? 'Refresh failed')
   }
+
   return toSession(envelope.data)
 }

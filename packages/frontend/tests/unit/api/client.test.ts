@@ -2,10 +2,6 @@ import { client, getBaseUrl, setApiBaseUrl } from '~/api/client'
 import { useAuthStore } from '~/stores/auth-store'
 import { useNodeStore } from '~/stores/node-store'
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
 vi.mock('~/auth/session', () => ({
   isTokenExpiringSoon: vi.fn(() => false),
 }))
@@ -20,10 +16,6 @@ beforeEach(() => {
   useNodeStore.getState().reset()
   setApiBaseUrl('http://localhost:3000')
 })
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function jsonResponse(body: object, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -44,10 +36,6 @@ function getHeaderValue(headersInit: HeadersInit | undefined, name: string): str
   }
   return (headersInit as Record<string, string>)[name]
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('client()', () => {
   it('attaches Authorization header when token exists', async () => {
@@ -141,10 +129,6 @@ describe('client()', () => {
       .toThrow('Internal Server Error')
   })
 
-  // ---------------------------------------------------------------------------
-  // 401 + refresh
-  // ---------------------------------------------------------------------------
-
   it('on 401: calls onUnauthorized and replays if refresh succeeds', async () => {
     const onUnauthorized = vi.fn().mockResolvedValue(true)
     useAuthStore.setState({ onUnauthorized } as any)
@@ -190,10 +174,6 @@ describe('client()', () => {
       .toThrow('Session expired')
   })
 
-  // ---------------------------------------------------------------------------
-  // Proactive refresh
-  // ---------------------------------------------------------------------------
-
   it('proactively refreshes when token is near expiry', async () => {
     vi.mocked(isTokenExpiringSoon).mockReturnValue(true)
     const onUnauthorized = vi.fn().mockResolvedValue(true)
@@ -204,10 +184,6 @@ describe('client()', () => {
 
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
-
-  // ---------------------------------------------------------------------------
-  // 403 NODE_NOT_INITIALIZED
-  // ---------------------------------------------------------------------------
 
   it('on 403 NODE_NOT_INITIALIZED: sets node store to uninitialized', async () => {
     useNodeStore.getState().setStatus({ isInitialized: true })
@@ -222,10 +198,6 @@ describe('client()', () => {
 
     expect(useNodeStore.getState().status.isInitialized).toBe(false)
   })
-
-  // ---------------------------------------------------------------------------
-  // Base URL
-  // ---------------------------------------------------------------------------
 
   it('uses configured base URL', async () => {
     setApiBaseUrl('http://custom:8080/')

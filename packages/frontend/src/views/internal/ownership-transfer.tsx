@@ -19,16 +19,16 @@ function getColumns(
   RowActions: React.ComponentType<{ row: Row<OwnershipTransferFlatRow> }>,
 ): ColumnDef<OwnershipTransferFlatRow>[] {
   return [
-    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+
     { ...dateColumn<OwnershipTransferFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
-    // Item-level columns (groupRole: 'item' — shown on every row)
+
     { ...textColumn<OwnershipTransferFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<OwnershipTransferFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<OwnershipTransferFlatRow>('fromContractorIdName', t('common:columns.fromContractor'), { primary: false }), meta: { label: t('common:columns.fromContractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<OwnershipTransferFlatRow>('toContractorIdName', t('common:columns.toContractor'), { primary: false }), meta: { label: t('common:columns.toContractor'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<OwnershipTransferFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
     { ...statusColumn<OwnershipTransferFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    // Actions (doc-level)
+
     { ...actionsColumn<OwnershipTransferFlatRow>(RowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }

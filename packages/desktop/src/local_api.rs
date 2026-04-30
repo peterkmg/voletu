@@ -41,8 +41,10 @@ fn normalize_db_params(app: &AppHandle, db_params: &mut DbParams) -> anyhow::Res
       .file
       .as_ref()
       .ok_or_else(|| anyhow!("sqlite file path is required for sqlite mode"))?;
+
     let resolved = resolve_relative(sqlite_file, &data_dir);
     ensure_parent_dir(&resolved)?;
+
     db_params.file = Some(resolved);
   }
   Ok(())
@@ -82,8 +84,10 @@ pub fn start_local_mode(
   if !state.logging_initialized {
     let log_file = default_log_file(app)?;
     ensure_parent_dir(&log_file)?;
+
     let logging_cfg = LoggingConfig::new(DEFAULT_LOG_FILTER.to_string(), log_file);
     init_logging(&logging_cfg).context("failed to initialize logging")?;
+
     state.logging_initialized = true;
   }
 
@@ -97,6 +101,7 @@ pub fn start_local_mode(
 
   state.local_api_shutdown = Some(shutdown_tx);
   state.local_api_task = Some(task);
+
   Ok(local_api_base_url())
 }
 

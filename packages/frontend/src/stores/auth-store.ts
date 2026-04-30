@@ -9,28 +9,6 @@ import {
   verifyToken,
 } from '~/auth/session'
 
-// ---------------------------------------------------------------------------
-// Auth state machine
-// ---------------------------------------------------------------------------
-//
-// States:
-//   unknown         → app just started, tokens may exist in storage
-//   validating      → verifying access token with backend (GET /auth/me)
-//   valid           → tokens confirmed working, app is usable
-//   refreshing      → exchanging refresh token for new access token
-//   unauthenticated → no valid session, redirect to sign-in
-//
-// Transitions:
-//   unknown → validating → valid          (token verified)
-//   unknown → validating → refreshing → valid  (token expired, refresh ok)
-//   unknown → validating → refreshing → unauthenticated (refresh failed)
-//   unknown → unauthenticated             (no stored tokens)
-//   valid → refreshing → valid            (proactive or 401-triggered refresh)
-//   valid → refreshing → unauthenticated  (refresh failed)
-//   * → unauthenticated                   (logout)
-//
-// ---------------------------------------------------------------------------
-
 export type AuthStatus = 'unknown' | 'validating' | 'valid' | 'refreshing' | 'unauthenticated'
 
 interface AuthStore {
@@ -38,18 +16,12 @@ interface AuthStore {
   accessToken: string | null
   refreshToken: string | null
   user: UserResponse | null
-
-  /** One-time startup: load stored session → verify → valid or unauthenticated */
   boot: () => Promise<void>
-  /** Called on 401 or near-expiry: refresh tokens. Returns true if caller should replay. */
   onUnauthorized: () => Promise<boolean>
-  /** Called after successful sign-in */
   login: (session: AuthSession) => void
-  /** Clear session and redirect to sign-in */
   logout: () => void
 }
 
-// Dedup concurrent refresh calls (multiple 401s from parallel requests)
 let inflight: Promise<boolean> | null = null
 
 export const useAuthStore = create<AuthStore>()((set, get) => ({
@@ -66,7 +38,6 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       return
     }
 
-    // Try to verify the access token with the backend
     set({
       status: 'validating',
       accessToken: stored.accessToken,
@@ -79,9 +50,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       set({ status: 'valid', user })
       return
     }
-    catch {
-      // Access token invalid — try refresh
-    }
+    catch { }
 
     if (!stored.refreshToken) {
       clearSession()

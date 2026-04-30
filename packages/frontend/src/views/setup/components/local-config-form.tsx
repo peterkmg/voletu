@@ -48,8 +48,6 @@ export function LocalConfigForm({ onBack }: LocalConfigFormProps) {
   const { t } = useTranslation(['auth', 'common'])
   const { isSubmitting, error, submitLocalConfig } = useSetupFlow()
 
-  // SAFETY: zodResolver handles z.coerce input/output type mismatch at runtime correctly;
-  // cast needed because Zod v4 coerce types expose `unknown` as input which RHF can't spread.
   const form = useForm<LocalFormValues>({
     resolver: zodResolver(localSchema) as unknown as Resolver<LocalFormValues>,
     defaultValues: {
@@ -88,7 +86,7 @@ export function LocalConfigForm({ onBack }: LocalConfigFormProps) {
       await submitLocalConfig(payload)
     }
     catch {
-      // error handled by hook
+
     }
   }
 

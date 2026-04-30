@@ -35,10 +35,9 @@ describe('useTableUrlState', () => {
         expect.objectContaining({ search: expect.any(Function) }),
       )
 
-      // Extract and call the search updater function
       const searchFn = navigate.mock.calls[0]![0].search
       const updated = searchFn({})
-      expect(updated.page).toBe(3) // pageIndex 2 → page 3
+      expect(updated.page).toBe(3)
     })
 
     it('omits default page value from search', () => {
@@ -50,7 +49,7 @@ describe('useTableUrlState', () => {
 
       const searchFn = navigate.mock.calls[0]![0].search
       const updated = searchFn({})
-      expect(updated.page).toBeUndefined() // page 1 is default, omitted
+      expect(updated.page).toBeUndefined()
     })
   })
 
@@ -75,7 +74,7 @@ describe('useTableUrlState', () => {
       const searchFn = navigate.mock.calls[0]![0].search
       const updated = searchFn({ page: 3 })
       expect(updated.filter).toBe('search-term')
-      expect(updated.page).toBeUndefined() // reset to page 1
+      expect(updated.page).toBeUndefined()
     })
 
     it('disables global filter when enabled=false', () => {

@@ -472,7 +472,6 @@ async fn blending_status_filter_returns_posted_only_and_rejects_invalid_status()
     )
     .await;
 
-    // Create blending doc_2 via composite (with balanced components/results for execution)
     let posted_doc = post_json(
       &app,
       api_paths::blending::COMPOSITE_SAVE,

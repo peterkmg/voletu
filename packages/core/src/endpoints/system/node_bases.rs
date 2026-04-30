@@ -109,5 +109,3 @@ pub fn node_base_routes(state: Arc<ApiState>) -> OpenApiRouter {
     .routes(routes!(remove_base_assignment))
     .with_state(state)
 }
-
-// Workaround: utoipa routes macro needs to be split when paths differ.

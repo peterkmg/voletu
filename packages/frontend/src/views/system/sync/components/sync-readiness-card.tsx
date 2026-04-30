@@ -50,9 +50,6 @@ function ChecklistItem({ done, label, action }: ChecklistItemProps) {
   )
 }
 
-// Maps the fine-grained UI state to the runtime-status label shown next to the
-// "Node configured" title. Only states reachable while setupComplete are
-// considered here.
 const RUNTIME_LABEL_KEY: Record<'online' | 'syncing' | 'offline', string> = {
   online: 'node.syncState.online',
   syncing: 'node.syncState.syncing',
@@ -80,8 +77,7 @@ export function SyncReadinessCard() {
   if (uiState === 'setupIncomplete') {
     const isInitialized = status.isInitialized
     const basesAssigned = status.assignedBaseIds.length > 0
-    // Sticky: once the central link has been verified during this session, keep
-    // the step checked even if the worker later goes Offline/Backoff.
+
     const centralConnected = centralVerifiedOnce
     const fullSync = isInitialized && centralConnected && basesAssigned
 
@@ -119,9 +115,6 @@ export function SyncReadinessCard() {
     )
   }
 
-  // Remaining cases: 'online' | 'syncing' | 'offline' — setup is complete.
-  // Render a collapsible summary so the user can still reach reconfiguration
-  // actions.
   const runtime = uiState
   const baseCount = status.assignedBaseIds.length
 

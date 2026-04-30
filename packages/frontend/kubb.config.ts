@@ -9,7 +9,7 @@ import { pluginZod } from '@kubb/plugin-zod'
 const openApiTarget
   = process.env.OPENAPI_URL ?? 'http://127.0.0.1:3000/api-docs/openapi.json'
 
-// Sanitize OpenAPI tag names (e.g. "Document - Acceptance") into PascalCase dir names
+
 function tagName(group: string, suffix: string): string {
   return group.replace(/[^a-z0-9]/gi, '') + suffix
 }

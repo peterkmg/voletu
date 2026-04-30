@@ -6,8 +6,6 @@ import { useNodeStore } from '~/stores/node-store'
 import { SyncReadinessCard } from '~/views/system/sync/components/sync-readiness-card'
 
 function renderCard() {
-  // A plain QueryClient is needed because BaseAssignmentDialog uses useQuery.
-  // The dialog only runs its queries when opened, so the provider is enough.
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
@@ -37,7 +35,7 @@ describe('syncReadinessCard', () => {
         isInitialized: true,
         assignedBaseIds: [],
       })
-      // basesLoaded intentionally left false.
+
       renderCard()
 
       expect(screen.getByText(/sync configuration/i)).toBeInTheDocument()
@@ -66,13 +64,12 @@ describe('syncReadinessCard', () => {
     })
 
     it('keeps the central-connection step checked after a transient Offline, once verified', () => {
-      // Observe a reachable state first, then flip to Offline.
       useNodeStore.getState().setStatus({ workerState: 'OnlineIdle' })
       useNodeStore.getState().setStatus({ workerState: 'Offline' })
 
       renderCard()
       const centralConnectedItem = screen.getByText(/central connection verified/i)
-      // The "done" state is conveyed via the line-through class on the <span>.
+
       expect(centralConnectedItem.className).toMatch(/line-through/)
     })
 
@@ -103,7 +100,7 @@ describe('syncReadinessCard', () => {
 
     it('renders the runtime status subtitle (Online)', () => {
       renderCard()
-      // "Online" appears in the collapsed header.
+
       expect(screen.getAllByText(/^online$/i).length).toBeGreaterThan(0)
     })
 
@@ -114,8 +111,7 @@ describe('syncReadinessCard', () => {
 
     it('hides the expanded content by default', () => {
       renderCard()
-      // Central API URL row is behind the collapsible; "break-all" text not
-      // rendered unless expanded.
+
       expect(screen.queryByText('https://central.example.com')).toBeNull()
     })
 
@@ -134,7 +130,7 @@ describe('syncReadinessCard', () => {
       const changeBtn = await screen.findByRole('button', { name: /change/i })
       expect(changeBtn).toBeEnabled()
       await user.click(changeBtn)
-      // Dialog title from i18n (sync.centralUrl.title).
+
       expect(await screen.findByText(/change central api url/i)).toBeInTheDocument()
     })
 
@@ -144,7 +140,7 @@ describe('syncReadinessCard', () => {
       await user.click(screen.getByTestId('sync-readiness-trigger'))
       const manageBtn = await screen.findByRole('button', { name: /manage/i })
       await user.click(manageBtn)
-      // The dialog renders its own title once open.
+
       expect(await screen.findByText(/base assignment/i)).toBeInTheDocument()
     })
 

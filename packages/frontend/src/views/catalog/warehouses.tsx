@@ -17,8 +17,6 @@ import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { defineCrudViews } from '~/lib/define-crud-views'
 import { BaseMutateDialog } from '~/views/catalog/bases'
 
-// --- Columns ---
-
 function getWarehouseColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<WarehouseResponse> }>,
@@ -30,8 +28,6 @@ function getWarehouseColumns(
     actionsColumn<WarehouseResponse>(RowActions, 2),
   ]
 }
-
-// --- Table ---
 
 const warehousesRoute = getRouteApi('/_authenticated/catalog/warehouses/')
 const warehousesGlobalFilterFn = createGlobalFilter<WarehouseResponse>('commonName', 'longName')
@@ -59,8 +55,6 @@ function WarehousesTable({ data, actions, RowActions }: WarehousesTableProps) {
 function useWarehousesTitle() {
   return useTranslation(['catalog']).t('catalog:warehouse.title')
 }
-
-// --- Mutate Dialog ---
 
 const warehouseFormSchema = z.object({
   commonName: z.string().min(1),

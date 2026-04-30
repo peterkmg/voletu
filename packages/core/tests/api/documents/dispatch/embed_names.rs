@@ -2,11 +2,19 @@ use sea_orm::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core::endpoints::paths as api_paths;
 
-use super::super::seed_inventory_context;
-use crate::common::{
-  catalog_seed::seed_ledger_balance,
-  http::{assert_api_success, get, post_json, setup_seeded_app_with_admin_token, with_auth_token},
-  payloads::{dispatch_composite_save, dispatch_storage_measurement},
+use crate::{
+  common::{
+    catalog_seed::seed_ledger_balance,
+    http::{
+      assert_api_success,
+      get,
+      post_json,
+      setup_seeded_app_with_admin_token,
+      with_auth_token,
+    },
+    payloads::{dispatch_composite_save, dispatch_storage_measurement},
+  },
+  documents::seed_inventory_context,
 };
 
 const DISPATCH_NAMES_DOC_NUMBER: &str = "DISP-NAMES-1";

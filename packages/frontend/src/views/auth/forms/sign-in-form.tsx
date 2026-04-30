@@ -53,7 +53,7 @@ export function SignInForm({ redirect }: SignInFormProps) {
       await navigate({ to: redirect ?? '/' })
     }
     catch {
-      // error is handled by useSignIn
+
     }
   }
 

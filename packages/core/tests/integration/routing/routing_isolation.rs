@@ -1,9 +1,3 @@
-//! **Routing isolation**: Peripheral A (base_alpha) receives only alpha documents;
-//! Peripheral B (base_beta) receives only beta documents.
-//!
-//! **Topology:** Central + 2 Peripherals (one base each)
-//! **Verifies:** Sync routing isolates documents by base assignment, with field parity on the correct node
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -34,7 +28,6 @@ async fn peripheral_receives_only_documents_matching_its_assignment() {
   ])
   .await;
 
-  // Create two documents: one for alpha, one for beta
   let acc_alpha = create_acceptance_via_api(
     &client,
     &central.url,
@@ -61,11 +54,9 @@ async fn peripheral_receives_only_documents_matching_its_assignment() {
   .await;
   let acc_beta_id = parse_doc_id(&acc_beta);
 
-  // Wait for each peripheral to sync
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   await_sync_cycle(&client, &pb.url, &pb.token, SYNC_TIMEOUT).await;
 
-  // PA: has alpha, NOT beta
   assert!(
     get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_alpha_id)
       .await
@@ -79,7 +70,6 @@ async fn peripheral_receives_only_documents_matching_its_assignment() {
     "PA should NOT have beta doc"
   );
 
-  // PB: has beta, NOT alpha
   assert!(
     get_acceptance_composite_json(&client, &pb.url, &pb.token, acc_beta_id)
       .await
@@ -93,7 +83,6 @@ async fn peripheral_receives_only_documents_matching_its_assignment() {
     "PB should NOT have alpha doc"
   );
 
-  // Field parity: alpha on Central == alpha on PA
   let central_alpha =
     get_acceptance_composite_json(&client, &central.url, &central.token, acc_alpha_id)
       .await

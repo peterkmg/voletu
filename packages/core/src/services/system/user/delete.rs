@@ -8,8 +8,13 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
-use super::{super::SystemService, helpers::load_local_user_by_id};
-use crate::{api::ApiError, context::audit::current_actor_id, entities::user};
+use super::helpers::load_local_user_by_id;
+use crate::{
+  api::ApiError,
+  context::audit::current_actor_id,
+  entities::user,
+  services::system::SystemService,
+};
 
 fn map_hard_delete_db_error(err: DbErr, entity_name: &str) -> ApiError {
   let message = err.to_string().to_lowercase();
@@ -54,6 +59,7 @@ impl SystemService {
   async fn load_local_user_for_soft_delete(&self, id: Uuid) -> Result<Uuid, ApiError> {
     let local_db_id = self.user_local_db_id().await?;
     let existing = load_local_user_by_id(self.db.as_ref(), local_db_id, id).await?;
+
     let Some(existing) = existing else {
       tracing::warn!(id = %id, "User not found for deletion");
       return Err(ApiError::NotFound(format!("User '{}' not found", id)));
@@ -70,6 +76,7 @@ impl SystemService {
   async fn load_local_user_for_restore(&self, id: Uuid) -> Result<Uuid, ApiError> {
     let local_db_id = self.user_local_db_id().await?;
     let existing = load_local_user_by_id(self.db.as_ref(), local_db_id, id).await?;
+
     let Some(existing) = existing else {
       tracing::warn!(id = %id, "Soft deleted user not found for restore");
       return Err(ApiError::NotFound(format!(
@@ -110,6 +117,7 @@ impl SystemService {
     let local_db_id = self.user_local_db_id().await?;
 
     let txn = self.db.begin().await?;
+
     let existing = load_local_user_by_id(&txn, local_db_id, id)
       .await?
       .ok_or_else(|| ApiError::NotFound(format!("User '{}' not found", id)))?;
@@ -120,7 +128,9 @@ impl SystemService {
       .map_err(|err| map_hard_delete_db_error(err, "user"))?;
 
     self.audit.register_delete(&txn, id, &existing).await?;
+
     txn.commit().await?;
+
     tracing::info!(id = %id, "User hard deleted");
     Ok(())
   }

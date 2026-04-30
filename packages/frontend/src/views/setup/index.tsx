@@ -21,9 +21,6 @@ export function Setup() {
   const [step, setStep] = useState<SetupStep>('selecting')
   const needsSetup = useStartupStore(s => s.startupState?.needsSetup)
 
-  // Navigate to sign-in reactively when setup completes.
-  // This fires after applyStartupState sets needsSetup=false
-  // from either local or remote config flows.
   useEffect(() => {
     if (needsSetup === false) {
       void navigate({ to: '/sign-in' })

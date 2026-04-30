@@ -2,6 +2,7 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
+  api::ApiError,
   dtos,
   entities::{company, product, product_group},
   services::{
@@ -14,7 +15,7 @@ async fn ensure_active_product_group(
   conn: &impl ConnectionTrait,
   product_group_id: Uuid,
   field_name: &str,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   let exists = product_group::Entity::load()
     .filter_by_id(product_group_id)
     .filter(product_group::Column::DeletedAt.is_null())
@@ -22,7 +23,7 @@ async fn ensure_active_product_group(
     .await?;
 
   if exists.is_none() {
-    return Err(crate::api::ApiError::BadRequest(format!(
+    return Err(ApiError::BadRequest(format!(
       "{field_name} '{product_group_id}' does not reference a valid record"
     )));
   }
@@ -34,7 +35,7 @@ async fn ensure_active_company(
   conn: &impl ConnectionTrait,
   company_id: Uuid,
   field_name: &str,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   let exists = company::Entity::load()
     .filter_by_id(company_id)
     .filter(company::Column::DeletedAt.is_null())
@@ -42,7 +43,7 @@ async fn ensure_active_company(
     .await?;
 
   if exists.is_none() {
-    return Err(crate::api::ApiError::BadRequest(format!(
+    return Err(ApiError::BadRequest(format!(
       "{field_name} '{company_id}' does not reference a valid record"
     )));
   }
@@ -67,7 +68,7 @@ async fn before_product_create(
   _svc: &CatalogService,
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateProductRequest,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   ensure_active_product_group(conn, req.product_group_id, "productGroupId").await?;
   if let Some(manufacturer_id) = req.manufacturer_id {
     ensure_active_company(conn, manufacturer_id, "manufacturerId").await?;
@@ -80,7 +81,7 @@ async fn before_product_update(
   conn: &impl sea_orm::ConnectionTrait,
   _existing: &product::Model,
   req: &dtos::UpdateProductRequest,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   if let Some(product_group_id) = req.product_group_id {
     ensure_active_product_group(conn, product_group_id, "productGroupId").await?;
   }

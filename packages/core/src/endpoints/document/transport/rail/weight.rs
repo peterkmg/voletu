@@ -1,4 +1,18 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{CreateRailWagonWeightRequest, RailWagonWeightResponse, UpdateRailWagonWeightRequest},
+  endpoints::paths,
+};
 
 #[utoipa::path(
   get,

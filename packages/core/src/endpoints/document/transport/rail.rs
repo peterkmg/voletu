@@ -1,35 +1,8 @@
 use std::sync::Arc;
 
-use axum::{
-  extract::{Path, Query, State},
-  Json,
-};
-use axum_valid::Valid;
-use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
+use utoipa_axum::router::OpenApiRouter;
 
-use crate::{
-  api::{ApiResponse, ApiResult, ApiState},
-  dtos::{
-    CreateRailWagonManifestRequest,
-    CreateRailWagonMeasurementRequest,
-    CreateRailWagonWeightRequest,
-    CreateRailWaybillRequest,
-    EmbedParams,
-    RailWagonManifestResponse,
-    RailWagonMeasurementResponse,
-    RailWagonWeightResponse,
-    RailWaybillCompositeRequest,
-    RailWaybillCompositeResponse,
-    RailWaybillResponse,
-    UpdateRailWagonManifestRequest,
-    UpdateRailWagonMeasurementRequest,
-    UpdateRailWagonWeightRequest,
-    UpdateRailWaybillCompositeRequest,
-    UpdateRailWaybillRequest,
-  },
-  endpoints::paths,
-};
+use crate::api::ApiState;
 
 mod composite;
 mod manifest;

@@ -60,7 +60,7 @@ export function RemoteConfigForm({ onBack }: RemoteConfigFormProps) {
       await navigate({ to: '/sign-in' })
     }
     catch {
-      // error handled by hook
+
     }
   }
 

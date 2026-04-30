@@ -1,9 +1,3 @@
-//! **Catalog-only sync with no base assignment**: A peripheral with no base assignments
-//! receives catalog entities but no business documents.
-//!
-//! **Topology:** Central + 1 Peripheral (no base assignments)
-//! **Verifies:** Pull with empty base_ids syncs global catalog but excludes routed documents
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -26,7 +20,6 @@ async fn receives_catalog_entities_but_no_routed_documents() {
   let central = setup_central_via_api(&client, &temp_db_path("r7-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  // Create a document on Central
   let acc = create_acceptance_via_api(
     &client,
     &central.url,
@@ -40,10 +33,8 @@ async fn receives_catalog_entities_but_no_routed_documents() {
   .await;
   let acc_id = parse_doc_id(&acc);
 
-  // Peripheral with NO base assignments
   let pa = setup_peripheral_via_api(&client, &temp_db_path("r7-pa"), &central, &[]).await;
 
-  // Worker already synced during setup; run one more cycle to pick up the acceptance
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   assert!(

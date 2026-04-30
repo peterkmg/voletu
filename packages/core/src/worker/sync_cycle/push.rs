@@ -8,6 +8,7 @@ use crate::{
   enums::SyncDirection,
   services::sync::{specs::OutboundAuditLogsQuerySpec, SyncService},
   utils::http::post_api_json,
+  worker::topology::find_sync_watermark,
 };
 
 pub(super) struct PushPhaseOutcome {
@@ -22,14 +23,15 @@ pub(super) async fn push_outbound_logs(
   watermarks: &[SyncWatermarkResponse],
   config: &SyncConfig,
 ) -> anyhow::Result<PushPhaseOutcome> {
-  let (push_after, _) =
-    super::super::topology::find_sync_watermark(watermarks, remote_status.remote_node_id(), "PUSH");
+  let (push_after, _) = find_sync_watermark(watermarks, remote_status.remote_node_id(), "PUSH");
+
   let outbound_logs = sync_service
     .outbound_logs(OutboundAuditLogsQuerySpec::new(
       push_after,
       Some(config.sync_batch_limit),
     ))
     .await?;
+
   let pushed_log_count = outbound_logs.len() as u64;
   let last_outbound_log_id = outbound_logs.last().map(|last| last.id);
 
@@ -46,6 +48,7 @@ pub(super) async fn push_outbound_logs(
     config.request_timeout,
   )
   .await?;
+
   debug!(
     accepted = push_response.accepted,
     rejected = push_response.rejected,

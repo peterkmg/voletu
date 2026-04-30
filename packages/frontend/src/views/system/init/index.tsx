@@ -91,7 +91,7 @@ export function InitializePage() {
       await navigate({ to: '/' })
     }
     catch {
-      // Error is available via mutation.error — displayed inline below
+
     }
   }
 

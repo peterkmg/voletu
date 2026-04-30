@@ -40,10 +40,12 @@ async fn ensure_dispatch_item_create_allowed(
     doc.contractor_id,
   )
   .await?;
+
   let current_amount = match current_amount_row {
     Some(entry) => entry.current_amount,
     None => Decimal::ZERO,
   };
+
   if req.item.dispatched_amount > current_amount {
     return Err(ApiError::Conflict(
       "dispatchedAmount exceeds available inventory balance".to_string(),
@@ -83,6 +85,7 @@ async fn ensure_dispatch_item_update_allowed(
     Some(entry) => entry.current_amount,
     None => Decimal::ZERO,
   };
+
   if dispatched_amount > current_amount {
     return Err(ApiError::Conflict(
       "dispatchedAmount exceeds available inventory balance".to_string(),

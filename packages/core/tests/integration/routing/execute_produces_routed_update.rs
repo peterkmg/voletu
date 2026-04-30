@@ -1,10 +1,3 @@
-//! **Execute produces routed update audit log**: After executing a draft acceptance,
-//! both the INSERT and UPDATE audit logs carry correct routing, and the peripheral
-//! receives the document in EXECUTED status.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Both INSERT and UPDATE audit logs target the correct base; peripheral sees EXECUTED status
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -32,7 +25,6 @@ async fn insert_and_update_audit_logs_both_target_correct_base() {
   ])
   .await;
 
-  // Create draft, then execute
   let acc = create_acceptance_via_api(
     &client,
     &central.url,
@@ -54,7 +46,6 @@ async fn insert_and_update_audit_logs_both_target_correct_base() {
   )
   .await;
 
-  // Both INSERT and UPDATE audit logs should have routing
   let all_logs = query_audit_logs(
     &client,
     &central.url,
@@ -78,7 +69,6 @@ async fn insert_and_update_audit_logs_both_target_correct_base() {
     );
   }
 
-  // Peripheral gets the executed document
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   let pa_acc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id).await;
   assert!(pa_acc.is_some());

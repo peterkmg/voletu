@@ -40,27 +40,17 @@ interface EntityTableProps<T> {
   i18nNamespaces: string[]
   isLoading?: boolean
   bulkActions?: (t: TFunction) => BulkAction<T>[]
-  /** Unique ID for persisting table preferences (e.g. 'companies'). */
   tableId?: string
-  /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
   groupKey?: keyof T & string
-  /** Optional action buttons rendered in the toolbar (e.g. Create button). */
   actions?: React.ReactNode
-  /** Base filename for table exports. Defaults to `tableId` when available. */
   exportFilename?: string
-  /** Force a specific table mode and hide the mode toggle. */
   forcedTableMode?: TableMode
-  /** Use server-provided pagination instead of slicing locally. */
   serverPagination?: {
     pageCount: number
   }
-  /** Keep filter state in the URL while applying it on the server. */
   manualFiltering?: boolean
-  /** Optional stable row id for TanStack table rows. */
   getRowId?: (row: T, index: number) => string
-  /** Enable row selection behavior. */
   enableRowSelection?: boolean
-  /** Default page size for URL-backed pagination. */
   defaultPageSize?: number
 }
 
@@ -89,6 +79,7 @@ export function EntityTable<T>({
   const [storedTableMode, setStoredTableMode] = useState<TableMode>(
     () => forcedTableMode ?? getStoredTableMode(tableId),
   )
+
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
@@ -104,13 +95,16 @@ export function EntityTable<T>({
       return defaults
     },
   )
+
   const tableMode = forcedTableMode ?? storedTableMode
 
   const handleModeChange = useCallback(
     (mode: TableMode) => {
       if (forcedTableMode)
         return
+
       setStoredTableMode(mode)
+
       if (tableId) {
         try {
           localStorage.setItem(`table-mode-${tableId}`, mode)

@@ -80,6 +80,7 @@ async fn before_physical_transfer_execute(
         reverses_entry_id: None,
       })
       .await?;
+
     svc
       .ledger
       .append_delta_on(conn, LedgerDelta {
@@ -112,6 +113,7 @@ async fn before_physical_transfer_revert(
       existing.id,
     )
     .await?;
+
   Ok(())
 }
 

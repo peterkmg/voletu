@@ -10,20 +10,7 @@ import { useCatalogStorageList } from '~/generated/hooks/CatalogHooks/useCatalog
 import { useCatalogWarehouseList } from '~/generated/hooks/CatalogHooks/useCatalogWarehouseList'
 import { toDateTimeLocalValue } from '~/lib/datetime-local'
 
-/*
- * Shared bare-input components used as `HeaderFieldSpec.component` in every
- * `*-form-config.tsx`. They render only the input element — labels, required
- * asterisks, FormControl wiring, and validation messages are provided by the
- * outer renderer (`<DocHeaderSection>` / `<DocItemRowDrawer>`). NEVER wrap
- * these in a `<FormField>` again; doing so produces nested Controllers and
- * duplicate validation messages (see `HeaderFieldComponentProps` docs).
- */
-
 type CatalogQuery = UseQueryResult<{ data?: Array<Record<string, unknown>> }>
-
-/* ──────────────────────────────────────────────────────────────────────── */
-/*  Text & decimal inputs                                                   */
-/* ──────────────────────────────────────────────────────────────────────── */
 
 export function PlainTextInput<TForm extends FieldValues>({
   field,
@@ -83,9 +70,6 @@ export function DateTimeInput<TForm extends FieldValues>({
   field,
   disabled,
 }: HeaderFieldComponentProps<TForm>) {
-  // The native `datetime-local` control round-trips `YYYY-MM-DDTHH:MM`,
-  // but the wire/schema layer expects a full RFC 3339 string (z.iso.datetime()).
-  // Display: coerce any wire ISO down to local form. Submit: re-expand to ISO.
   const value = toDateTimeLocalValue(field.value as string | null | undefined)
   return (
     <Input
@@ -149,12 +133,7 @@ export function OptionalDecimalInput<TForm extends FieldValues>({
   )
 }
 
-/* Aliases — some callers used `DecimalAmountInput` for the same semantics. */
 export const DecimalAmountInput = DecimalInput
-
-/* ──────────────────────────────────────────────────────────────────────── */
-/*  Entity-picker inputs (each binds a specific catalog list hook)          */
-/* ──────────────────────────────────────────────────────────────────────── */
 
 interface PickerCellProps<TForm extends FieldValues> extends HeaderFieldComponentProps<TForm> {
   queryResult: CatalogQuery
@@ -189,14 +168,12 @@ export function ProductPicker<TForm extends FieldValues>(
   return <PickerCell {...props} queryResult={useCatalogProductList() as CatalogQuery} />
 }
 
-/** Storage *base* (depot) — bound to `useCatalogBaseList`. */
 export function BasePicker<TForm extends FieldValues>(
   props: HeaderFieldComponentProps<TForm>,
 ) {
   return <PickerCell {...props} queryResult={useCatalogBaseList() as CatalogQuery} />
 }
 
-/** Storage *cell* (tank) — bound to `useCatalogStorageList`. */
 export function StoragePicker<TForm extends FieldValues>(
   props: HeaderFieldComponentProps<TForm>,
 ) {

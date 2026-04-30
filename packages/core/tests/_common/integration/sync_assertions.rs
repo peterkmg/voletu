@@ -16,7 +16,6 @@ pub struct SyncNodeRef<'a> {
   pub label: &'a str,
 }
 
-/// Document type identifiers as they appear in SeedResult and endpoint paths.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DocType {
   Acceptance,
@@ -70,7 +69,6 @@ impl DocType {
   }
 }
 
-/// Fetch the count of documents of a given type on a node.
 pub async fn doc_count(client: &Client, base_url: &str, token: &str, doc_type: DocType) -> usize {
   let response = api_get(
     client,
@@ -89,7 +87,6 @@ pub async fn doc_count(client: &Client, base_url: &str, token: &str, doc_type: D
     .len()
 }
 
-/// Fetch all documents of a given type on a node.
 pub async fn doc_list(
   client: &Client,
   base_url: &str,
@@ -113,7 +110,6 @@ pub async fn doc_list(
     .clone()
 }
 
-/// Return a map of document type -> count for a node.
 pub async fn doc_counts(client: &Client, base_url: &str, token: &str) -> HashMap<DocType, usize> {
   let mut out = HashMap::new();
   for doc_type in DocType::all() {
@@ -125,8 +121,6 @@ pub async fn doc_counts(client: &Client, base_url: &str, token: &str) -> HashMap
   out
 }
 
-/// Assert that every document type has at least one entry on the node.
-/// Use this right after seeding to catch seed-side bugs before blaming sync.
 pub async fn assert_seed_completeness(
   client: &Client,
   base_url: &str,
@@ -146,7 +140,6 @@ pub async fn assert_seed_completeness(
     "node {node_label} missing seeded document types: {missing:?} (counts: {counts:?})"
   );
 
-  // Ledger must also be present.
   let ledger = get_all_ledger_balances(client, base_url, token).await;
   assert!(
     !ledger.is_empty(),
@@ -154,8 +147,6 @@ pub async fn assert_seed_completeness(
   );
 }
 
-/// Assert that node B has at least as many documents of each type as node A.
-/// Used for central-has-everything assertions after peripheral push.
 pub async fn assert_doc_count_at_least(
   client: &Client,
   url_a: &str,
@@ -184,7 +175,6 @@ pub async fn assert_doc_count_at_least(
   );
 }
 
-/// Assert that both nodes have identical counts per document type.
 pub async fn assert_doc_count_equal(
   client: &Client,
   url_a: &str,
@@ -213,7 +203,6 @@ pub async fn assert_doc_count_equal(
   );
 }
 
-/// Assert that ledger entries for all storages under `base_id` match between two nodes.
 pub async fn assert_ledger_parity_for_base(
   client: &Client,
   node_a: SyncNodeRef<'_>,
@@ -223,7 +212,6 @@ pub async fn assert_ledger_parity_for_base(
   let storages_a = get_storages_for_base(client, node_a.url, node_a.token, base_id).await;
   let storages_b = get_storages_for_base(client, node_b.url, node_b.token, base_id).await;
 
-  // Broadcast catalog: both nodes should see the same storages under this base.
   let mut sa = storages_a.clone();
   let mut sb = storages_b.clone();
   sa.sort();
@@ -257,10 +245,7 @@ pub async fn assert_ledger_parity_for_base(
           .as_str()
           .and_then(|s| Uuid::parse_str(s).ok())
           .unwrap_or_else(|| panic!("ledger entry missing contractorId: {e}"));
-        // NOTE: Compared as JSON-serialized form. If the server ever returns this field
-        // as a string on one node and a number on another (e.g. due to Decimal
-        // serialization differences), the comparison will produce a false mismatch.
-        // In that case, parse into a canonical form here.
+
         let amount = e["currentAmount"].to_string();
         Some((storage_id, product_id, contractor_id, amount))
       })
@@ -279,7 +264,6 @@ pub async fn assert_ledger_parity_for_base(
   );
 }
 
-/// Assert that the node has NO ledger entries for storages under `forbidden_base_id`.
 pub async fn assert_no_ledger_for_base(
   client: &Client,
   base_url: &str,

@@ -1,9 +1,3 @@
-//! **Multi-base node pull**: A peripheral assigned to alpha+beta receives documents for both,
-//! but not for an unassigned gamma base.
-//!
-//! **Topology:** Central + 1 Peripheral (assigned to base_alpha and base_beta, not gamma)
-//! **Verifies:** Multi-base peripheral pulls documents for all assigned bases and excludes unassigned ones
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -29,7 +23,6 @@ async fn pulls_all_assigned_bases_and_excludes_unassigned() {
   let central = setup_central_via_api(&client, &temp_db_path("r6-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  // Create gamma base + warehouse + storage on Central
   let base_gamma = api_post(
     &client,
     &format!("{}/catalog/bases", central.url),
@@ -50,14 +43,12 @@ async fn pulls_all_assigned_bases_and_excludes_unassigned() {
     serde_json::json!({"warehouseId": wh_gamma_id, "commonName": "Tank Gamma", "longName": null, "capacity": null, "isTypeSpecific": false, "productTypeId": null})).await;
   let storage_gamma_id = Uuid::parse_str(st_gamma["id"].as_str().unwrap()).unwrap();
 
-  // PA handles alpha + beta (not gamma) — set up with alpha, add beta via API
   let pa = setup_peripheral_via_api(&client, &temp_db_path("r6-pa"), &central, &[
     catalog.base_alpha
   ])
   .await;
   add_base_assignment_via_api(&client, &pa.url, &pa.token, catalog.base_beta).await;
 
-  // Create documents for all three bases
   let acc_a = create_acceptance_via_api(
     &client,
     &central.url,
@@ -95,7 +86,6 @@ async fn pulls_all_assigned_bases_and_excludes_unassigned() {
   let acc_b_id = parse_doc_id(&acc_b);
   let acc_g_id = parse_doc_id(&acc_g);
 
-  // Wait for worker to sync
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
   assert!(

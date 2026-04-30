@@ -36,7 +36,7 @@ interface UseMutateDialogReturn<TForm extends FieldValues> {
   form: UseFormReturn<TForm>
   isUpdate: boolean
   onSubmit: (values: TForm) => Promise<void>
-  /** form.handleSubmit wrapped with scroll-to-first-error on validation failure */
+
   handleSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>
   handleOpenChange: (open: boolean) => void
 }

@@ -1,9 +1,3 @@
-//! **Reconciliation routing via warehouse**: A reconciliation referencing warehouse_alpha
-//! routes to base_alpha and is visible on the alpha peripheral.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Reconciliation audit log targets the warehouse's base; peripheral receives the reconciliation
-
 use std::time::Duration;
 
 use uuid::Uuid;

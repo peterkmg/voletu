@@ -20,9 +20,6 @@ async function runBootstrap(): Promise<void> {
     await authStore.boot()
   }
 
-  // In Tauri mode, skip health fetch while setup is still needed.
-  // In browser mode (startupState is null), always fetch health because the API
-  // base URL is resolved independently via env / default fallback.
   const skipHealth = startupState?.needsSetup === true
 
   if (!skipHealth) {
@@ -33,8 +30,6 @@ async function runBootstrap(): Promise<void> {
     }
     catch {
       useRuntimeStore.getState().markHealthUnavailable()
-      // Health hydration is best-effort during bootstrap because the API may be
-      // restarting while setup/auth state is still otherwise usable.
     }
   }
 }

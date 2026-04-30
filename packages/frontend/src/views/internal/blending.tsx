@@ -14,30 +14,26 @@ import { defineDocumentViews } from '~/lib/define-document-views'
 import { formatDate, formatDateTime } from '~/lib/formatters'
 import { BlendingMutateDialog } from './blending/blending-mutate-dialog'
 
-// --- Columns ---
-
 function getBlendingColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<BlendingFlatRow> }>,
 ): ColumnDef<BlendingFlatRow>[] {
   return [
-    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+
     { ...textColumn<BlendingFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<BlendingFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<BlendingFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
     { ...textColumn<BlendingFlatRow>('targetProductIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    // Item-level columns (groupRole: 'item' — shown on every row)
+
     { ...textColumn<BlendingFlatRow>('itemType', t('common:columns.type'), { primary: false }), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
     { ...textColumn<BlendingFlatRow>('productIdName', t('common:table.product'), { primary: false }), id: 'itemProduct', meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<BlendingFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<BlendingFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
     { ...statusColumn<BlendingFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    // Actions (doc-level)
+
     { ...actionsColumn<BlendingFlatRow>(RowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }
-
-// --- Table ---
 
 const blendingRoute = getRouteApi('/_authenticated/internal/blending/')
 const blendingDetailRoute = getRouteApi('/_authenticated/internal/blending/$id')
@@ -79,8 +75,6 @@ function useBlendingText() {
     entityLabel: t('documents:document.blending'),
   }
 }
-
-// --- Detail Data ---
 
 interface BlendingDetailData {
   document: {

@@ -28,10 +28,6 @@ import {
 } from './column-filter-state'
 import { detectFilterType } from './filter-utils'
 
-// ---------------------------------------------------------------------------
-// Text/Enum Filter — checkbox list with Select All, all-selected-by-default
-// ---------------------------------------------------------------------------
-
 export function TextEnumFilterContent<TData, TValue>({
   column,
   searchPlaceholder,
@@ -49,11 +45,13 @@ export function TextEnumFilterContent<TData, TValue>({
 
   const sortedOptions = useMemo(() => {
     const entries: { label: string, value: string, count: number }[] = []
+
     for (const [value, count] of facets) {
       if (value == null || value === '')
         continue
       entries.push({ label: String(value), value: String(value), count })
     }
+
     return entries.sort((a, b) => a.label.localeCompare(b.label))
   }, [facets])
 
@@ -63,9 +61,12 @@ export function TextEnumFilterContent<TData, TValue>({
 
   function toggle(value: string) {
     const next = new Set(selectedSet)
+
     if (next.has(value))
       next.delete(value)
-    else next.add(value)
+    else
+      next.add(value)
+
     commitFilter(column, next, allValues)
   }
 
@@ -83,7 +84,7 @@ export function TextEnumFilterContent<TData, TValue>({
       <CommandList>
         <CommandEmpty className="text-xs py-4">{resolvedEmptyMessage}</CommandEmpty>
         <CommandGroup>
-          {/* Select All */}
+
           <CommandItem
             value="__table-filter-select-all"
             keywords={[t('tables:selectAll')]}
@@ -138,10 +139,6 @@ export function TextEnumFilterContent<TData, TValue>({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Date Filter — 3-level Year → Month → Day tree, all-selected-by-default
-// ---------------------------------------------------------------------------
-
 export function DateGroupFilterContent<TData, TValue>({
   column,
 }: {
@@ -158,13 +155,14 @@ export function DateGroupFilterContent<TData, TValue>({
   const currentYear = useMemo(() => new Date().getFullYear(), [])
   const hasSearch = search.trim().length > 0
 
-  // --- Toggle functions ---
-
   function toggleDay(date: string) {
     const next = new Set(selectedSet)
+
     if (next.has(date))
       next.delete(date)
-    else next.add(date)
+    else
+      next.add(date)
+
     commitFilter(column, next, allDates)
   }
 
@@ -172,12 +170,14 @@ export function DateGroupFilterContent<TData, TValue>({
     const dates = monthNode.days.map(d => d.date)
     const allSelected = dates.every(d => selectedSet.has(d))
     const next = new Set(selectedSet)
+
     if (allSelected) {
       for (const d of dates) next.delete(d)
     }
     else {
       for (const d of dates) next.add(d)
     }
+
     commitFilter(column, next, allDates)
   }
 
@@ -185,12 +185,14 @@ export function DateGroupFilterContent<TData, TValue>({
     const dates = yearNode.months.flatMap(m => m.days.map(d => d.date))
     const allSelected = dates.every(d => selectedSet.has(d))
     const next = new Set(selectedSet)
+
     if (allSelected) {
       for (const d of dates) next.delete(d)
     }
     else {
       for (const d of dates) next.add(d)
     }
+
     commitFilter(column, next, allDates)
   }
 
@@ -201,8 +203,6 @@ export function DateGroupFilterContent<TData, TValue>({
     else
       column.setFilterValue(undefined)
   }
-
-  // --- Tri-state helpers ---
 
   function monthChecked(m: MonthNode): boolean | 'indeterminate' {
     return selectAllState(m.days.map(d => d.date), selectedSet)
@@ -218,7 +218,7 @@ export function DateGroupFilterContent<TData, TValue>({
       <CommandList>
         <CommandEmpty className="text-xs py-4">{t('tables:filter.noDates')}</CommandEmpty>
         <CommandGroup>
-          {/* Select All */}
+
           <CommandItem
             value="__date-filter-select-all"
             keywords={[t('tables:selectAll')]}
@@ -338,10 +338,6 @@ export function DateGroupFilterContent<TData, TValue>({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Number Range Filter — min/max inputs
-// ---------------------------------------------------------------------------
-
 export function NumberRangeFilterContent<TData, TValue>({
   column,
 }: {
@@ -393,10 +389,6 @@ export function NumberRangeFilterContent<TData, TValue>({
   )
 }
 
-// ---------------------------------------------------------------------------
-// ColumnFilterInline — auto-detecting inline filter for the merged header
-// ---------------------------------------------------------------------------
-
 export function ColumnFilterInline<TData, TValue>({
   column,
 }: {
@@ -411,7 +403,9 @@ export function ColumnFilterInline<TData, TValue>({
 
   if (filterType === 'number')
     return <NumberRangeFilterContent column={column} />
+
   if (filterType === 'date')
     return <DateGroupFilterContent column={column} />
+
   return <TextEnumFilterContent column={column} />
 }

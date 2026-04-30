@@ -1,30 +1,3 @@
-/**
- * Tabbed "based on" header section for AcceptanceMutateDialog.
- *
- * The component encapsulates the discriminated-union UX described in spec
- * section 3.1: a tab strip selects `arrivalType`, and the visible
- * tab-specific field (`sourceEntity` / `truckWaybillId` / `railWaybillId`)
- * follows the active tab. Common fields (`documentNumber`, `dateAccepted`,
- * `contractorId`) are intentionally NOT rendered here — they live in the
- * sibling `<DocHeaderSection>` so the basis section only owns the
- * arrival-type discriminator and its conditional payload.
- *
- * Lock states:
- *   locked=false (incoming/external "+ New acceptance"): all three tabs
- *     visible and switchable; switching clears the previous tab's
- *     specific field and resets `items` (with a confirm dialog when items
- *     are non-empty).
- *   locked=true (row trigger / edit mode): only the active tab is
- *     rendered with `aria-disabled` and a "lock" hint; switching is
- *     blocked at the source.
- *
- * The waybill picker (used in unlocked TRUCK / RAIL tabs) is implemented
- * as a sibling `<WaybillPicker>` subcomponent below. It is filtered to
- * `pipelineStatus === 'PENDING'` to enforce the 1:1 cardinality rule from
- * spec section 2.1 — a waybill that already has an acceptance is not a
- * candidate for issuing another one.
- */
-
 import type { AcceptanceCreate } from './acceptance-form-config'
 import type { ArrivalType } from '~/generated/types/ArrivalType'
 import type { RailReceiptPipelineResponse } from '~/generated/types/RailReceiptPipelineResponse'
@@ -33,6 +6,7 @@ import { LockIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { EntityPickerInput } from '~/components/entity-picker/entity-picker-input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '~/components/ui/alert-dialog'
-import { EntityPickerInput } from '~/components/entity-picker/entity-picker-input'
 import { Input } from '~/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { useFlowTruckReceiptQuery } from '~/generated/hooks/FlowsHooks/useFlowTruckReceiptQuery'
@@ -52,9 +25,9 @@ import { cn } from '~/lib/utils'
 
 interface AcceptanceBasisSectionProps {
   mode: 'create' | 'edit'
-  /** When true, only the active tab is rendered and tab switching is disabled. */
+
   locked?: boolean
-  /** Optional human-readable hint shown next to the lock glyph (e.g. waybill number). */
+
   lockedHintNumber?: string
 }
 
@@ -79,12 +52,6 @@ export function AcceptanceBasisSection({
   const [pendingTab, setPendingTab] = useState<BasisTab | null>(null)
 
   function applyTabSwitch(next: BasisTab) {
-    // Clear all three basis-discriminator fields unconditionally; the active
-    // tab's field will be re-populated by user input. This guards against
-    // stale FKs from a partial reset / programmatic mutation surviving the
-    // switch and tripping the discriminated-union refine on submit. Common
-    // fields (documentNumber, dateAccepted, contractorId) are intentionally
-    // preserved across switches.
     form.setValue('sourceEntity', null, { shouldDirty: true })
     form.setValue('truckWaybillId', null, { shouldDirty: true })
     form.setValue('railWaybillId', null, { shouldDirty: true })
@@ -194,10 +161,6 @@ function BasisTabContent({
   locked: boolean
   activeTab: BasisTab
 }) {
-  // Each branch is a separate component so that React unmounts the previous
-  // branch on tab switch — keeping the hook count of *this* component stable
-  // while the unmount/mount cycle gives the active branch its own clean
-  // hook lifecycle.
   if (activeTab === 'EXTERNAL')
     return <SourceEntityField />
   if (activeTab === 'TRUCK') {
@@ -250,22 +213,6 @@ interface WaybillPickerProps {
   labelKey: string
 }
 
-/**
- * PENDING-scoped waybill picker.
- *
- * Renders the project-standard `<EntityPickerInput>` (combobox + browse-all
- * dialog) so the picker behaves identically to every other entity selector
- * in the app — typeahead filtering, scrollable result list, browse-all
- * fallback, accessible keyboard handling. Replacing the prior raw
- * Radix `<Select>` fixes the jumpy long-list UX that drops the scrollbar.
- *
- * The flow query (`useFlowTruckReceiptQuery` / `useRailReceiptPipelineQuery`)
- * returns rows keyed by `id` with `basisDocumentNumber` (primary label) and
- * `contractorName` (secondary label). Filtering to
- * `pipelineStatus === 'PENDING'` is applied client-side via the picker's
- * `filter` prop — the dataset is small enough that a server-side filter is
- * not worth the API surface cost today.
- */
 function WaybillPicker({ kind, locked, labelKey }: WaybillPickerProps) {
   const { t } = useTranslation(['acceptance'])
   const form = useFormContext<AcceptanceCreate>()
@@ -283,8 +230,6 @@ function WaybillPicker({ kind, locked, labelKey }: WaybillPickerProps) {
   })
   const queryResult = kind === 'truck' ? truckQ : railQ
 
-  // In locked mode the picker is informational only — the value is already set
-  // by `useBasisPrefill` and the user cannot change it from this UI.
   if (locked) {
     return (
       <div className="grid gap-2">

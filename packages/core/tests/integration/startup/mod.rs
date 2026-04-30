@@ -7,7 +7,6 @@ mod targeted_record_excludes_other_peripheral;
 use serde_json::Value;
 use uuid::Uuid;
 
-/// Extract document ID from composite response (handles both flattened and nested shapes).
 fn parse_doc_id(response: &Value) -> Uuid {
   let id_str = response["id"]
     .as_str()

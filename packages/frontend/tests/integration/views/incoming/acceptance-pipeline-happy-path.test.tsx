@@ -1,35 +1,3 @@
-/**
- * Happy-path integration test for the acceptance pipeline.
- *
- * Plan Tasks 6.4 (truck) and 6.5 (rail) — spec §4.6.
- *
- * The spec calls for an end-to-end test that walks:
- *   1. Create a waybill → row appears with pipelineStatus=PENDING.
- *   2. Click "Issue acceptance" on the row → dialog opens with the matching
- *      basis tab pre-selected and locked.
- *   3. Items pre-filled, basis-tab fields locked, common fields editable.
- *   4. Submit → row transitions to DRAFT.
- *   5. From the basis detail page (DRAFT state), Edit is enabled, Issue
- *      acceptance is disabled with the "already issued" tooltip; the
- *      RelatedDocuments block links to the acceptance.
- *   6. After execute, the basis detail page (EXECUTED state) disables both
- *      Edit and Issue acceptance, and the items panel is locked.
- *
- * The test stitches three layers — RowActions, AcceptanceMutateDialog,
- * TruckReceiptDetail / RailReceiptDetail — into a single narrative that
- * fails loudly if any state-machine transition is broken end to end.
- *
- * The lower-level component behaviors are individually covered in:
- *   tests/unit/lib/create-row-actions.test.tsx
- *   tests/integration/views/incoming/acceptance-prefill.test.tsx
- *   tests/integration/views/incoming/truck-receipt-detail.test.tsx
- *   tests/integration/views/incoming/rail-receipt-detail.test.tsx
- *
- * Mocking strategy: vi.mock the generated API hooks (the project does not
- * use MSW; pattern matches acceptance-prefill.test.tsx and
- * truck-receipt-detail.test.tsx).
- */
-
 import type { Row } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -47,10 +15,6 @@ import { createRowActions } from '~/lib/create-row-actions'
 import { AcceptanceMutateDialog } from '~/views/incoming/acceptance/acceptance-mutate-dialog'
 import { RailReceiptDetail } from '~/views/incoming/rail-receipt'
 import { TruckReceiptDetail } from '~/views/incoming/truck-receipt'
-
-// ----------------------------------------------------------------------------
-// Module mocks (mirror the patterns used by sibling integration tests).
-// ----------------------------------------------------------------------------
 
 vi.mock('@tanstack/react-router', () => ({
   getRouteApi: () => ({ useParams: () => ({ id: 'wb-1' }) }),
@@ -103,10 +67,6 @@ vi.mock('~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillComposi
 vi.mock('~/generated/hooks/DocumentTransportHooks/useTransportRailWaybillCompositeUpdate', () => ({
   useTransportRailWaybillCompositeUpdate: () => ({ mutateAsync: vi.fn() }),
 }))
-
-// ----------------------------------------------------------------------------
-// Fixtures
-// ----------------------------------------------------------------------------
 
 const TRUCK_WB_ID = '11111111-1111-4111-8111-111111111111'
 const RAIL_WB_ID = '55555555-5555-4555-8555-555555555555'
@@ -306,15 +266,10 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-// ----------------------------------------------------------------------------
-// Truck happy path (Task 6.4)
-// ----------------------------------------------------------------------------
-
 describe('acceptance pipeline happy path — truck', () => {
   it('walks the PENDING → DRAFT → EXECUTED chain end to end', async () => {
     const user = userEvent.setup()
 
-    // -- Step 1-2: PENDING row exposes "Issue acceptance" affordance. ----------
     const { Component: TruckRow, openIssueAcceptance } = makeRowActions()
     const { unmount: unmountRow } = renderWith(
       <TruckRow row={rowOf({ id: TRUCK_WB_ID, pipelineStatus: 'PENDING' })} />,
@@ -330,7 +285,6 @@ describe('acceptance pipeline happy path — truck', () => {
     )
     unmountRow()
 
-    // -- Step 3: dialog opens with truck tab locked, items pre-filled. ---------
     setTruckComposite(makeTruckComposite('WB-2026-074'))
     clearAcceptance()
     const { unmount: unmountDialog } = renderWith(
@@ -345,12 +299,10 @@ describe('acceptance pipeline happy path — truck', () => {
     expect(screen.queryByRole('tab', { name: /^external/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: /rail waybill/i })).not.toBeInTheDocument()
     expect(screen.getByText(/WB-2026-074/)).toBeInTheDocument()
-    // Items table seeded with the waybill's items (no empty-state).
+
     expect(screen.queryByText(/no items yet/i)).not.toBeInTheDocument()
     unmountDialog()
 
-    // -- Step 4-5: basis detail in DRAFT — Edit enabled, Issue disabled,  -----
-    //              RelatedDocuments links to the acceptance.
     setTruckComposite(makeTruckComposite('WB-2026-074'))
     clearAcceptance()
     setTruckPipelineRow({
@@ -364,12 +316,10 @@ describe('acceptance pipeline happy path — truck', () => {
     expect(screen.getByRole('button', { name: /^issue acceptance$/i })).toBeDisabled()
     expect(screen.getByText(/related documents/i)).toBeInTheDocument()
     expect(screen.getByText(ACCEPTANCE_NUMBER)).toBeInTheDocument()
-    // Status pill reflects DRAFT, not the legacy hardcoded PENDING.
+
     expect(screen.queryByText(/^pending$/i)).not.toBeInTheDocument()
     unmountDraft()
 
-    // -- Step 7: after execute, basis detail shows EXECUTED, both buttons -----
-    //            disabled, items table locked.
     setTruckComposite(makeTruckComposite('WB-2026-074'))
     clearAcceptance()
     setTruckPipelineRow({
@@ -402,15 +352,10 @@ describe('acceptance pipeline happy path — truck', () => {
   })
 })
 
-// ----------------------------------------------------------------------------
-// Rail happy path (Task 6.5) — mirrors the truck flow with rail substitutions.
-// ----------------------------------------------------------------------------
-
 describe('acceptance pipeline happy path — rail', () => {
   it('walks the PENDING → DRAFT → EXECUTED chain end to end', async () => {
     const user = userEvent.setup()
 
-    // -- Step 1-2: PENDING row exposes "Issue acceptance" affordance. ----------
     const { Component: RailRow, openIssueAcceptance } = makeRowActions()
     const { unmount: unmountRow } = renderWith(
       <RailRow row={rowOf({ id: RAIL_WB_ID, pipelineStatus: 'PENDING' })} />,
@@ -422,8 +367,6 @@ describe('acceptance pipeline happy path — rail', () => {
     expect(openIssueAcceptance).toHaveBeenCalledTimes(1)
     unmountRow()
 
-    // -- Step 3: dialog opens with rail tab locked, items derived from  --------
-    //            wagonManifests.
     setRailComposite(makeRailComposite('RW-2026-001'))
     clearAcceptance()
     const { unmount: unmountDialog } = renderWith(
@@ -441,7 +384,6 @@ describe('acceptance pipeline happy path — rail', () => {
     expect(screen.queryByText(/no items yet/i)).not.toBeInTheDocument()
     unmountDialog()
 
-    // -- Step 4-5: basis detail in DRAFT. -------------------------------------
     setRailComposite(makeRailComposite('RW-2026-001'))
     clearAcceptance()
     setRailPipelineRow({
@@ -458,7 +400,6 @@ describe('acceptance pipeline happy path — rail', () => {
     expect(screen.queryByText(/^pending$/i)).not.toBeInTheDocument()
     unmountDraft()
 
-    // -- Step 7: after execute, basis EXECUTED locks both actions. ------------
     setRailComposite(makeRailComposite('RW-2026-001'))
     clearAcceptance()
     setRailPipelineRow({

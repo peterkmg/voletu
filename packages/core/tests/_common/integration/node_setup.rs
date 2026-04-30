@@ -17,7 +17,6 @@ use super::{
   wait::{await_sync_cycle, wait_for_worker_online},
 };
 
-/// Add a base assignment to a running node via HTTP API (POST /node/bases).
 pub async fn add_base_assignment_via_api(
   client: &Client,
   base_url: &str,
@@ -33,8 +32,6 @@ pub async fn add_base_assignment_via_api(
   .await;
 }
 
-/// Spawn a server and initialize it as Central via API only.
-/// Central nodes do not run the sync worker (no `centralApiUrl`).
 pub async fn setup_central_via_api(client: &Client, db_name: &str) -> NodeHandle {
   let port = reserve_port();
   let (shutdown_tx, mut task) =
@@ -71,9 +68,6 @@ pub async fn setup_central_via_api(client: &Client, db_name: &str) -> NodeHandle
   }
 }
 
-/// Spawn a server and initialize it as a Peripheral via API only.
-/// The real sync worker starts automatically after initialization (central_api_url is set).
-/// Waits for the worker to come online and complete the initial catalog sync.
 pub async fn setup_peripheral_via_api(
   client: &Client,
   db_name: &str,
@@ -107,13 +101,8 @@ pub async fn setup_peripheral_via_api(
   wait_for_health(client, &url, Duration::from_secs(20), &mut task).await;
   let token = wait_for_login_token(client, &url, "root", "rootpass", Duration::from_secs(10)).await;
 
-  // Wait for the REAL sync worker to come online and complete initial catalog sync.
-  // The worker transitions to OnlineIdle only AFTER a successful sync cycle,
-  // so by the time this returns, catalog is already synced.
-  // Catalog must sync BEFORE adding base assignments (bases must exist locally).
   wait_for_worker_online(client, &url, &token, Duration::from_secs(15)).await;
 
-  // Add base assignments via API (bases now exist from catalog sync)
   for base_id in base_ids {
     add_base_assignment_via_api(client, &url, &token, *base_id).await;
   }

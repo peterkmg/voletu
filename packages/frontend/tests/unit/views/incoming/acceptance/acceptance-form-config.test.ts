@@ -164,10 +164,6 @@ describe('acceptanceCreateSchema discriminated union', () => {
 })
 
 describe('acceptanceUpdateSchema discriminated union (mirrors create)', () => {
-  // Per the implementation choice in Task 2.2: the update schema applies the
-  // same discriminated-union refine as create. Immutability of arrivalType /
-  // basis FKs in edit mode is enforced at the dialog/UI layer (Task 3.5),
-  // not at the schema layer.
   const baseValid = {
     documentNumber: 'ACC-001',
     dateAccepted: '2026-04-30T00:00:00Z',

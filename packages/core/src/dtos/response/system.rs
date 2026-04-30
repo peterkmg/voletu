@@ -6,7 +6,6 @@ use crate::entities::{
   system::{database_instance, local, refresh_token, role, user::ModelEx},
 };
 
-/// Response DTO for the `user` entity.
 #[response_dto(service_fields(common))]
 pub struct UserResponse {
   #[schema(example = "123e4567-e89b-12d3-a456-426614174000")]
@@ -19,7 +18,6 @@ pub struct UserResponse {
   pub role: String,
 }
 
-/// Functional DTO returned by authentication login endpoints.
 #[response_dto]
 pub struct LoginResponse {
   pub access_token: String,
@@ -27,14 +25,12 @@ pub struct LoginResponse {
   pub user: UserResponse,
 }
 
-/// Response DTO for the `role` entity.
 #[response_dto]
 pub struct RoleResponse {
   pub id: Uuid,
   pub common_name: String,
 }
 
-/// Response DTO for the `local` entity.
 #[response_dto]
 pub struct LocalResponse {
   pub id: i32,
@@ -43,7 +39,6 @@ pub struct LocalResponse {
   pub central_api_url: Option<String>,
 }
 
-/// Response DTO for the `database_instance` entity.
 #[response_dto(service_fields(common))]
 pub struct DatabaseInstanceResponse {
   pub id: Uuid,
@@ -52,7 +47,6 @@ pub struct DatabaseInstanceResponse {
   pub base_id: Option<Uuid>,
 }
 
-/// Response DTO for the `refresh_token` entity.
 #[response_dto(service_fields(created_at, updated_at))]
 pub struct RefreshTokenResponse {
   pub id: Uuid,
@@ -62,7 +56,6 @@ pub struct RefreshTokenResponse {
   pub device_info: Option<String>,
 }
 
-/// Functional DTO describing node/base assignment configuration.
 #[response_dto]
 pub struct BaseAssignmentResponse {
   pub id: Uuid,
@@ -70,14 +63,11 @@ pub struct BaseAssignmentResponse {
   pub base_id: Uuid,
 }
 
-/// Functional DTO used by command-style endpoints that only return a status
-/// message.
 #[response_dto]
 pub struct OperationMessageResponse {
   pub message: String,
 }
 
-/// Functional DTO returned by the health endpoint.
 #[response_dto]
 pub struct HealthData {
   pub status: String,
@@ -86,7 +76,6 @@ pub struct HealthData {
   pub node_name: String,
 }
 
-/// Functional DTO returned by the node status endpoint.
 #[response_dto]
 pub struct NodeStatusResponse {
   pub is_initialized: bool,

@@ -62,7 +62,6 @@ export function EmptyState({ variant, onClearSearch }: EmptyStateProps) {
     )
   }
 
-  // no-search
   return (
     <Card className="p-8">
       <CardHeader className="flex flex-col items-center gap-2">

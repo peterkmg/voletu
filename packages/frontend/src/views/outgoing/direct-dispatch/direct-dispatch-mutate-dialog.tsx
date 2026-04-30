@@ -1,23 +1,3 @@
-/**
- * Per-document mutate dialog for Direct Dispatch (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the direct-dispatch header
- * spec / items table / measurements table coming from
- * `direct-dispatch-form-config.tsx`, and wires the Kubb-generated composite
- * create + update + get hooks.
- *
- * Edit-mode `defaultValues` are pre-fetched via `useDispatchCompositeGet`
- * (gated on `open && isUpdate`). While the fetch is in flight the form
- * renders with `emptyDirectDispatchCreate`; once data arrives, the dialog is
- * re-mounted with the real values by keying `<CompositeFormDialog>` on the
- * loaded document id.
- *
- * Discriminator policy: the dispatch_method / dispatch_purpose enum values
- * are hard-coded per-doc-type (VESSEL_TERMINAL / EXTERNAL) and never user-
- * editable. They are baked into `emptyDirectDispatchCreate` and re-stamped on
- * the payload at submit time as a defensive measure.
- */
-
 import type { ArrayPath } from 'react-hook-form'
 import type { DirectDispatchCreate, DirectDispatchItem, DirectDispatchMeasurement } from './direct-dispatch-form-config'
 import type { DispatchFlatRow } from '~/generated/types'
@@ -58,11 +38,7 @@ import {
 interface DirectDispatchMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * dispatch document; `id` is item-scoped and must not be used for the
-   * update. When `null`, the dialog opens in create mode.
-   */
+
   currentRow?: DispatchFlatRow | null
   onCreated?: (id: string) => void
 }
@@ -158,8 +134,7 @@ export function DirectDispatchMutateDialog({
       toast.success(
         t(isUpdate ? 'direct-dispatch:toast.updated' : 'direct-dispatch:toast.created'),
       )
-      // Mirror the existing inline MutateDialog: forward the new id to callers
-      // that want to navigate after a successful create.
+
       if (!isUpdate && onCreated) {
         const data = (saved as { data?: { document?: { id?: string } } } | null)?.data
         const newId = data?.document?.id

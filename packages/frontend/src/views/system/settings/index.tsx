@@ -28,7 +28,7 @@ export default function Settings() {
 
         <div className="flex-1 overflow-y-auto -mx-4 px-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* User Info */}
+
             <Card>
               <CardHeader>
                 <CardTitle>{t('system:settings.userInfo')}</CardTitle>
@@ -61,7 +61,6 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            {/* Language */}
             <Card>
               <CardHeader>
                 <CardTitle>{t('system:settings.language')}</CardTitle>
@@ -88,7 +87,6 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            {/* Theme */}
             <Card>
               <CardHeader>
                 <CardTitle>{t('system:settings.theme')}</CardTitle>

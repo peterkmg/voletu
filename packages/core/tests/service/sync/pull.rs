@@ -91,8 +91,7 @@ async fn target_matching_is_delimiter_safe_for_base_ids() {
       ))
       .await
       .unwrap();
-    // Only targeted (non-global) logs for base_other should be excluded.
-    // Global entries (bases, database_instances) may be present.
+
     let targeted_logs: Vec<_> = response
       .logs
       .iter()
@@ -248,7 +247,7 @@ async fn empty_scope_advances_to_highest_evaluated_id() {
       ))
       .await
       .unwrap();
-    // Only targeted (non-global) logs for base_b should be excluded.
+
     let targeted_logs: Vec<_> = response
       .logs
       .iter()

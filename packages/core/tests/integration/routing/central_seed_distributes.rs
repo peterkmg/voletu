@@ -1,10 +1,3 @@
-//! **Central seed distributes**: central seeds all data; peripherals must pull
-//! exactly their routing-filtered subset (broadcast + assigned bases).
-//!
-//! **Topology:** Central (seeded) + PA ([B1, B2]) + PB ([B2, B3])
-//! **Verifies:** Central's seeded data propagates correctly to both peripherals,
-//! routing isolation is enforced, ledger parity holds on the shared base.
-
 use std::time::Duration;
 
 use reqwest::Client;
@@ -42,10 +35,8 @@ async fn list_all_base_ids(client: &Client, base_url: &str, token: &str) -> Vec<
 async fn isolates_base_scopes_and_maintains_ledger_parity() {
   let client = Client::new();
 
-  // 1. Central
   let central = setup_central_via_api(&client, &temp_db_path("c-seed-central")).await;
 
-  // 2. Seed central
   let seed_result: Value = dev_seed_via_api(&client, &central.url, &central.token).await;
   let bases_seeded = seed_result["bases"].as_u64().unwrap_or(0);
   assert!(
@@ -53,10 +44,8 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
     "seed must produce at least 3 bases (got {bases_seeded}): {seed_result}"
   );
 
-  // 3. Seed completeness on central
   assert_seed_completeness(&client, &central.url, &central.token, "C").await;
 
-  // 4. Extract bases
   let all_bases = list_all_base_ids(&client, &central.url, &central.token).await;
   assert!(
     all_bases.len() >= 3,
@@ -66,11 +55,9 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
   let b2 = all_bases[1];
   let b3 = all_bases[2];
 
-  // 5. PA and PB with distinct + overlapping base assignments
   let pa = setup_peripheral_via_api(&client, &temp_db_path("c-seed-pa"), &central, &[b1, b2]).await;
   let pb = setup_peripheral_via_api(&client, &temp_db_path("c-seed-pb"), &central, &[b2, b3]).await;
 
-  // 6. Wait until PA has pulled enough — its ledger for b2 should be non-empty.
   poll_until(
     || async {
       !get_all_ledger_balances(&client, &pa.url, &pa.token)
@@ -82,7 +69,6 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
   )
   .await;
 
-  // 7. Wait until PB has pulled.
   poll_until(
     || async {
       !get_all_ledger_balances(&client, &pb.url, &pb.token)
@@ -94,7 +80,6 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
   )
   .await;
 
-  // 8. Central must have at least as many docs as each peripheral (it's the source).
   assert_doc_count_at_least(
     &client,
     &pa.url,
@@ -116,11 +101,9 @@ async fn isolates_base_scopes_and_maintains_ledger_parity() {
   )
   .await;
 
-  // 9. Routing isolation: PA has nothing for b3; PB has nothing for b1.
   assert_no_ledger_for_base(&client, &pa.url, &pa.token, "PA", b3).await;
   assert_no_ledger_for_base(&client, &pb.url, &pb.token, "PB", b1).await;
 
-  // 10. Ledger parity on shared base b2.
   assert_ledger_parity_for_base(
     &client,
     SyncNodeRef {

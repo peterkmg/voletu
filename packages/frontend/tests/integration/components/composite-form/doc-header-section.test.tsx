@@ -50,38 +50,20 @@ function Harness() {
 }
 
 describe('docHeaderSection', () => {
-  /*
-   * Regression for the nested-FormField bug where each header field rendered
-   * its validation message TWICE: once from the section's outer FormField and
-   * once from the wrapper's own FormField. After the refactor the section
-   * passes Controller render-prop pieces (`field`, `fieldState`) directly to
-   * the cell, and the cell renders only the bare input — so the section is
-   * the sole owner of label / message rendering.
-   */
   it('renders exactly one FormMessage per field on validation error', async () => {
     const form = render(<Harness />)
-    // Trigger an empty-submit to invalidate the field. Use the schema's
-    // resolver to mark the field as required by setting an error directly.
+
     const result = schema.safeParse({ name: '' })
     expect(result.success).toBe(false)
 
-    // Manually set the error to mimic resolver output without wiring zod here.
-    // Using the harness submit triggers an empty-form submission; RHF won't
-    // produce a built-in error without a resolver. We instead poll for the
-    // single FormMessage container slot to assert the structure.
     const { container } = form
 
     await waitFor(() => {
       const messages = container.querySelectorAll('[data-slot="form-message"]')
-      // Without an active error, no FormMessage should render at all — but
-      // critically there must never be more than one per field, even when
-      // an error fires later. The structural guarantee is a count of 0 or 1.
+
       expect(messages.length).toBeLessThanOrEqual(1)
     })
 
-    // And there must be only ONE input (no nested cell-level FormField double-
-    // registration); the cell renders its own input via the Controller's
-    // `field` prop, not via a nested useFormContext registration.
     expect(container.querySelectorAll('[data-testid="cell-input"]').length).toBe(1)
     expect(container.querySelectorAll('[data-slot="form-item"]').length).toBe(1)
   })

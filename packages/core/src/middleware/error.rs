@@ -9,19 +9,6 @@ use axum::{
 
 use crate::api::{error::HandledByApiError, response::ApiResponse};
 
-/// Catches error responses that were **not** produced by [`ApiError`] (framework
-/// rejections such as extractor failures, method-not-allowed, etc.) and wraps
-/// them in the standard `ApiResponse` envelope.
-///
-/// Responses already handled by `ApiError::into_response` carry a
-/// [`HandledByApiError`] extension and pass through unchanged — no body reading
-/// required. For bare framework rejections, the original axum error body is
-/// consumed to surface a descriptive message (path/query parse errors carry the
-/// field name and reason; JSON deserialization errors carry the serde detail).
-/// Re-wrapped responses are also tagged so the middleware is idempotent when
-/// layered multiple times.
-///
-/// [`ApiError`]: crate::api::ApiError
 pub async fn error_middleware(req: Request, next: Next) -> Response {
   let response = next.run(req).await;
   let status = response.status();
@@ -30,9 +17,6 @@ pub async fn error_middleware(req: Request, next: Next) -> Response {
     return response;
   }
 
-  // Framework rejection: consume the original (small, plain-text) body so we
-  // can surface the axum extractor's descriptive error message rather than the
-  // generic canonical reason phrase.
   let message = body::to_bytes(response.into_body(), 16 * 1024)
     .await
     .ok()
@@ -55,9 +39,6 @@ pub async fn error_middleware(req: Request, next: Next) -> Response {
     .into_response()
 }
 
-/// Maps a raw HTTP status code to a canonical error code string.
-/// Only called for framework-level rejections — application errors use
-/// `ApiError::error_code()` directly.
 fn error_code_for_status(status: StatusCode) -> &'static str {
   match status {
     StatusCode::BAD_REQUEST | StatusCode::UNPROCESSABLE_ENTITY => "VALIDATION_ERROR",

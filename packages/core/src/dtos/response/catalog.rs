@@ -13,7 +13,6 @@ use crate::entities::{
   warehouse,
 };
 
-/// Response DTO for the `company` entity.
 #[response_dto(service_fields(common))]
 pub struct CompanyResponse {
   pub id: Uuid,
@@ -25,7 +24,6 @@ pub struct CompanyResponse {
   pub is_sender: bool,
 }
 
-/// Response DTO for the `product_type` entity.
 #[response_dto(service_fields(common))]
 pub struct ProductTypeResponse {
   pub id: Uuid,
@@ -33,7 +31,6 @@ pub struct ProductTypeResponse {
   pub long_name: Option<String>,
 }
 
-/// Response DTO for the `product_group` entity.
 #[response_dto(service_fields(common))]
 pub struct ProductGroupResponse {
   pub id: Uuid,
@@ -45,7 +42,6 @@ pub struct ProductGroupResponse {
   pub product_type_id_name: Option<String>,
 }
 
-/// Response DTO for the `product` entity.
 #[response_dto(service_fields(common))]
 pub struct ProductResponse {
   pub id: Uuid,
@@ -63,7 +59,6 @@ pub struct ProductResponse {
   pub manufacturer_id_name: Option<String>,
 }
 
-/// Response DTO for the `base` entity.
 #[response_dto(service_fields(common))]
 pub struct BaseResponse {
   pub id: Uuid,
@@ -71,7 +66,6 @@ pub struct BaseResponse {
   pub long_name: Option<String>,
 }
 
-/// Response DTO for the `warehouse` entity.
 #[response_dto(service_fields(common))]
 pub struct WarehouseResponse {
   pub id: Uuid,
@@ -83,7 +77,6 @@ pub struct WarehouseResponse {
   pub base_id_name: Option<String>,
 }
 
-/// Response DTO for the `storage` entity.
 #[response_dto(service_fields(common))]
 pub struct StorageResponse {
   pub id: Uuid,
@@ -101,15 +94,12 @@ pub struct StorageResponse {
   pub product_type_id_name: Option<String>,
 }
 
-/// Response DTO for the `port` entity.
 #[response_dto(service_fields(common))]
 pub struct PortResponse {
   pub id: Uuid,
   pub common_name: String,
   pub country: Option<String>,
 }
-
-// ── From impls ──────────────────────────────────────────────────────────
 
 impl From<company::Model> for CompanyResponse {
   fn from(row: company::Model) -> Self {
@@ -221,6 +211,7 @@ impl From<product::ModelEx> for ProductResponse {
       .product_group
       .as_ref()
       .map(|product_group| product_group.common_name.clone());
+
     let manufacturer_id_name = row
       .manufacturer
       .as_ref()
@@ -333,6 +324,7 @@ impl From<storage::ModelEx> for StorageResponse {
       .warehouse
       .as_ref()
       .map(|warehouse| warehouse.common_name.clone());
+
     let product_type_id_name = row
       .product_type
       .as_ref()

@@ -2,7 +2,7 @@ use sea_orm::{ColumnTrait, EntityLoaderTrait, QueryFilter, QueryOrder};
 use uuid::Uuid;
 
 use super::SystemService;
-use crate::{api::ApiError, dtos::RoleResponse, entities::role};
+use crate::{api::ApiError, dtos::RoleResponse, entities::role, enums::RoleType};
 
 impl SystemService {
   pub async fn role_list(&self) -> Result<Vec<RoleResponse>, ApiError> {
@@ -26,7 +26,7 @@ impl SystemService {
 
   pub async fn role_query(
     &self,
-    common_name: Option<crate::enums::RoleType>,
+    common_name: Option<RoleType>,
   ) -> Result<Vec<RoleResponse>, ApiError> {
     let mut query = role::Entity::load();
 

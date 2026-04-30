@@ -13,7 +13,7 @@ import { StatusBadge } from '~/components/ui/status-badge'
 import { LifecycleActions } from './lifecycle-actions'
 
 export interface ActionDescriptor {
-  /** Stable identifier used as React key. Recommended for i18n contexts where label may collide across locales. Falls back to label when omitted. */
+
   id?: string
   label: string
   onClick: () => void
@@ -29,27 +29,14 @@ interface DocumentHeaderProps {
   status: string
   statusColorMap?: Record<string, string>
   backTo: string
-  /**
-   * Legacy lifecycle slot — renders Execute / Revert buttons through
-   * `LifecycleActions`, which carries its own confirm-dialog + mutation
-   * wiring. Used by both pipeline (acceptance) and non-pipeline (blending,
-   * ownership-transfer, etc.) detail pages.
-   *
-   * Complementary to `actions`: callers MUST NOT include Execute / Revert
-   * descriptors (`id: 'execute' | 'revert'`) in `actions` while also
-   * passing this slot, or the same buttons will render twice.
-   */
+
   executeFn?: (id: string) => Promise<unknown>
   revertFn?: (id: string) => Promise<unknown>
   queryKey?: readonly unknown[]
   entityLabel: string
   documentId: string
   onDelete?: () => void
-  /**
-   * Non-lifecycle action buttons (Edit, Issue acceptance, ...). Renders
-   * before the legacy lifecycle slot. See `executeFn` / `revertFn` for the
-   * complementary-slot contract.
-   */
+
   actions?: ActionDescriptor[]
 }
 
@@ -58,8 +45,7 @@ function mapActionVariant(
 ): 'default' | 'destructive' {
   if (variant === 'destructive')
     return 'destructive'
-  // 'primary' maps to 'default' since the Button component has no separate
-  // 'primary' variant; the existing Execute button also uses the default variant.
+
   return 'default'
 }
 

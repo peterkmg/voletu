@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 
-export {} // module boundary for top-level await
+export {}
 
 const fetchMock = vi.fn()
 

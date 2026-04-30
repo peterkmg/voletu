@@ -1,17 +1,3 @@
-/**
- * Integration tests for `<AcceptanceBasisSection>`.
- *
- * Coverage corresponds to plan tasks 3.1, 3.2, 3.3:
- *   3.1 — tab visibility per locked state, tab-switch updates `arrivalType`.
- *   3.2 — items-clear confirm dialog: shows when items > 0, cancel preserves,
- *         confirm clears and switches.
- *   3.3 — waybill picker is filtered to PENDING rows only and writes the
- *         selected id into form state.
- *
- * The flow query hooks are mocked at the module level so tests can drive
- * the picker's data deterministically.
- */
-
 import type { ReactNode } from 'react'
 import type { ArrivalType } from '~/generated/types/ArrivalType'
 import type { AcceptanceCreate } from '~/views/incoming/acceptance/acceptance-form-config'
@@ -277,9 +263,9 @@ describe('acceptanceBasisSection — waybill picker (truck tab)', () => {
     ])
     setRailRows([])
     renderHarness({ defaultValues: { arrivalType: 'TRUCK' } })
-    // Open the select
+
     await userEvent.click(screen.getByRole('combobox'))
-    // Only PENDING row appears as an option
+
     expect(screen.getByRole('option', { name: /WB-A/ })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /WB-B/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /WB-C/ })).not.toBeInTheDocument()
@@ -298,14 +284,6 @@ describe('acceptanceBasisSection — waybill picker (truck tab)', () => {
   })
 
   it('lists no options when no PENDING rows are available', async () => {
-    // The picker delegates to the project-standard `EntityPickerInput`. The
-    // PENDING filter excludes DRAFT/EXECUTED rows; with only a DRAFT row in
-    // the dataset, the combobox opens with zero matching options.
-    //
-    // We assert by absence of any waybill-row option rather than by the
-    // empty-state text — `cmdk`'s `<CommandEmpty>` is only rendered after a
-    // search query is typed, so an opened-but-empty combobox renders no
-    // visible empty-state by design.
     setTruckRows([
       makeRow({ id: 'd', basisDocumentNumber: 'WB-Drafted', pipelineStatus: 'DRAFT' }),
     ])

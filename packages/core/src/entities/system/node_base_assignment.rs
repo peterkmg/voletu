@@ -2,8 +2,6 @@ use sea_orm::{entity::prelude::*, model};
 
 use crate::entities::{base, database_instance};
 
-/// Local-only junction table: which bases a node handles.
-/// Not synced — excluded from audit logging and sync operations.
 #[voletu_core_macros::handle_uuid]
 #[model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]

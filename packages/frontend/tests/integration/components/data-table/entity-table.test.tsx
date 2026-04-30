@@ -57,8 +57,6 @@ vi.mock('~/lib/files', () => ({
   saveExportFile: fileSaveMock.saveExportFile,
 }))
 
-// ---------- test helpers ----------
-
 interface SimpleItem {
   id: string
   name: string
@@ -97,8 +95,6 @@ function renderEntityTable(
   )
 }
 
-// ---------- tests ----------
-
 describe('entityTable', () => {
   afterEach(() => {
     localStorage.clear()
@@ -116,8 +112,6 @@ describe('entityTable', () => {
   })
 
   it('renders table with data', () => {
-    // Use paginated mode because the virtualizer requires real DOM dimensions
-    // that jsdom cannot provide.
     localStorage.setItem('table-mode-test', 'paginated')
     const data: SimpleItem[] = [
       { id: '1', name: 'Alpha' },
@@ -148,8 +142,6 @@ describe('entityTable', () => {
   it('defaults to virtual mode', () => {
     renderEntityTable([{ id: '1', name: 'Solo' }])
 
-    // In virtual mode, no pagination controls are rendered.
-    // DataTablePagination renders navigation buttons with specific aria-labels.
     expect(screen.queryByRole('button', { name: /last page/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /next page/i })).not.toBeInTheDocument()
   })

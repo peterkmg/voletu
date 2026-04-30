@@ -2,16 +2,18 @@ use sea_orm::{ColumnTrait, QueryFilter};
 use uuid::Uuid;
 use voletu_core::{endpoints::paths as api_paths, entities::inventory_ledger_entry};
 
-use super::super::seed_inventory_context;
-use crate::common::{
-  http::{
-    assert_api_success,
-    post_empty,
-    post_json,
-    setup_seeded_app_with_admin_token,
-    with_auth_token,
+use crate::{
+  common::{
+    http::{
+      assert_api_success,
+      post_empty,
+      post_json,
+      setup_seeded_app_with_admin_token,
+      with_auth_token,
+    },
+    payloads::acceptance_composite_save,
   },
-  payloads::acceptance_composite_save,
+  documents::seed_inventory_context,
 };
 
 const ACCEPTANCE_DOC_NUMBER: &str = "ACC-EP-1";
@@ -22,7 +24,6 @@ async fn endpoints_create_item_execute_and_return_expected_payloads() {
   let ctx = seed_inventory_context(&db).await;
 
   with_auth_token(token, async {
-    // Create acceptance document + item via composite endpoint
     let create_composite = post_json(
       &app,
       api_paths::acceptance::COMPOSITE_SAVE,
@@ -46,7 +47,6 @@ async fn endpoints_create_item_execute_and_return_expected_payloads() {
 
     let doc_id = Uuid::parse_str(composite_json["data"]["id"].as_str().unwrap()).unwrap();
 
-    // Execute
     let execute = post_empty(
       &app,
       api_paths::acceptance::EXECUTE_BY_ID.replace("{id}", &doc_id.to_string()),
@@ -55,7 +55,6 @@ async fn endpoints_create_item_execute_and_return_expected_payloads() {
     let execute_json = assert_api_success(execute).await;
     assert!(execute_json["data"].is_null());
 
-    // Verify ledger entry
     let entry = inventory_ledger_entry::Entity::load()
       .filter(inventory_ledger_entry::Column::StorageId.eq(ctx.storage_a))
       .filter(inventory_ledger_entry::Column::ProductId.eq(ctx.product_id))

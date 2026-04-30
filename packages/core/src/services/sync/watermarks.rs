@@ -69,9 +69,6 @@ impl SyncService {
     Ok(rows.into_iter().map(SyncWatermarkResponse::from).collect())
   }
 
-  /// Load the `(last_audit_log_id, base_discriminant)` pair for a specific
-  /// target node and direction. Returns `(Uuid::nil(), String::new())` when no
-  /// row exists yet — this is the "fresh peripheral, never synced" state.
   pub async fn load_pull_watermark(
     &self,
     target_node_id: Uuid,
@@ -84,12 +81,6 @@ impl SyncService {
     })
   }
 
-  /// Upsert a watermark row outside of any caller-managed transaction. The
-  /// peripheral's pull path must NOT use this method directly — it should go
-  /// through `apply_pulled_logs`, which atomically applies logs and advances
-  /// the watermark with a discriminant re-check. This is the entry point for
-  /// the push path, which has no scope/discriminant concept and may pass an
-  /// empty string for `base_discriminant`.
   pub async fn upsert_watermark(
     &self,
     target_node_id: Uuid,
@@ -105,13 +96,10 @@ impl SyncService {
       base_discriminant,
     )
     .await?;
+
     Ok(row.into())
   }
 
-  /// Upsert a watermark row on an existing connection or transaction. Used by
-  /// `apply_pulled_logs` to advance the PULL watermark in the same transaction
-  /// as the audit-log restore, guaranteeing the two commit together or not at
-  /// all.
   pub async fn upsert_watermark_in_txn<C: ConnectionTrait>(
     conn: &C,
     target_node_id: Uuid,

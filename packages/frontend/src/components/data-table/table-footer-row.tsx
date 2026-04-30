@@ -16,6 +16,7 @@ export function TableFooterRow<TData>({
       {footerGroup.headers.map((header) => {
         const meta = header.column.columnDef.meta
         const alignCls = meta?.align ? alignClasses[meta.align] : ''
+
         return (
           <TableCell
             key={header.id}

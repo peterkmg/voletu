@@ -39,6 +39,7 @@ impl SystemService {
 
     let row = instance
       .ok_or_else(|| ApiError::NotFound(format!("Database instance '{}' not found", id)))?;
+
     Ok((&row).into())
   }
 
@@ -67,6 +68,7 @@ impl SystemService {
     .update(self.db.as_ref())
     .await
     .map_err(ApiError::Database)?;
+
     Ok((&saved).into())
   }
 }

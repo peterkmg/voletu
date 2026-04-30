@@ -1,5 +1,15 @@
-use super::*;
-use crate::dtos::{AuditLogQueryRequest, OutboundLogsQueryRequest};
+use std::sync::Arc;
+
+use axum::extract::{Query, State};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{AuditLogQueryRequest, AuditLogResponse, OutboundLogsQueryRequest, PushAuditLogRequest},
+  endpoints::paths,
+  enums::AuditTable,
+};
 
 #[utoipa::path(
   get,
@@ -9,9 +19,9 @@ use crate::dtos::{AuditLogQueryRequest, OutboundLogsQueryRequest};
   description = "Returns persisted local audit logs in ascending order for diagnostics and replication inspection.",
   path = paths::sync::AUDIT_LOGS,
   params(
-    ("tableName" = Option<crate::enums::AuditTable>, Query, description = "Filter to a specific audited table"),
-    ("recordId" = Option<Uuid>, Query, description = "Filter to audit events for one record"),
-    ("originDbId" = Option<Uuid>, Query, description = "Filter to audit events originating from one node"),
+    ("tableName" = Option<AuditTable>, Query, description = "Filter to a specific audited table"),
+    ("recordId" = Option<uuid::Uuid>, Query, description = "Filter to audit events for one record"),
+    ("originDbId" = Option<uuid::Uuid>, Query, description = "Filter to audit events originating from one node"),
     ("limit" = Option<u64>, Query, description = "Max number of logs to return"),
     ("offset" = Option<u64>, Query, description = "Skip this many matching logs before returning results")
   ),
@@ -38,7 +48,7 @@ async fn audit_log_list(
   description = "Returns outbound replication events after a specific audit log id, constrained by optional limit.",
   path = paths::sync::OUTBOUND,
   params(
-    ("afterAuditLogId" = Uuid, Query, description = "Return logs with id greater than this value"),
+    ("afterAuditLogId" = uuid::Uuid, Query, description = "Return logs with id greater than this value"),
     ("limit" = Option<u64>, Query, description = "Max number of logs to return")
   ),
   responses(

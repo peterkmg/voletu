@@ -1,15 +1,3 @@
-//! **Routing envelope populated**: Verifies that audit log routing envelopes contain
-//! the correct `target_base_ids` when a composite acceptance document is created.
-//!
-//! **Scope:** Central-only. This test does NOT exercise sync — it only verifies the
-//! envelope-population logic that other routing tests depend on. Think of it as a
-//! unit-level precondition check for the whole routing stack: if the envelope
-//! isn't stamped correctly here, no downstream sync test can pass either. Kept
-//! in `routing/` because it tests the routing-envelope machinery, but it will
-//! never catch a sync bug on its own.
-//!
-//! **Verifies:** Audit logs for both the document and its items include the base derived from the storage
-
 use serde_json::Value;
 
 use super::parse_doc_id;
@@ -28,7 +16,6 @@ async fn audit_log_includes_storage_base_for_all_composite_items() {
   let central = setup_central_via_api(&client, &temp_db_path("r1-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  // Create acceptance with item referencing storage_alpha → should route to base_alpha
   let acc = create_acceptance_via_api(
     &client,
     &central.url,
@@ -42,7 +29,6 @@ async fn audit_log_includes_storage_base_for_all_composite_items() {
   .await;
   let doc_id = parse_doc_id(&acc);
 
-  // Verify document INSERT audit log has base_alpha in target_base_ids
   let logs = query_audit_logs(
     &client,
     &central.url,
@@ -57,7 +43,6 @@ async fn audit_log_includes_storage_base_for_all_composite_items() {
   );
   assert_audit_log_targets(&logs, "acceptance_documents", doc_id, catalog.base_alpha);
 
-  // Verify item audit logs also have correct routing
   let item_logs = query_audit_logs(
     &client,
     &central.url,

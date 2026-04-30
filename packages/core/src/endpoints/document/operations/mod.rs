@@ -1,44 +1,8 @@
 use std::sync::Arc;
 
-use axum::{
-  extract::{Path, Query, State},
-  Extension,
-  Json,
-};
-use axum_valid::Valid;
-use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
+use utoipa_axum::router::OpenApiRouter;
 
-use crate::{
-  api::{ApiResponse, ApiResult, ApiState},
-  dtos::{
-    BlendingCompositeResponse,
-    BlendingResponse,
-    CreateBlendingCompositeRequest,
-    CreateBlendingRequest,
-    CreateInventoryAdjustmentRequest,
-    CreateInventoryReconciliationCompositeRequest,
-    CreateInventoryReconciliationRequest,
-    CreateOwnershipTransferRequest,
-    CreatePhysicalTransferRequest,
-    EmbedParams,
-    InventoryAdjustmentResponse,
-    InventoryReconciliationCompositeResponse,
-    InventoryReconciliationResponse,
-    OwnershipTransferResponse,
-    PhysicalTransferResponse,
-    UpdateBlendingRequest,
-    UpdateInventoryAdjustmentRequest,
-    UpdateInventoryReconciliationCompositeRequest,
-    UpdateInventoryReconciliationRequest,
-    UpdateOwnershipTransferRequest,
-    UpdatePhysicalTransferRequest,
-  },
-  endpoints::paths,
-  enums,
-  services::common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
-  utils::jwt::Claims,
-};
+use crate::api::ApiState;
 
 mod blending;
 mod ownership;

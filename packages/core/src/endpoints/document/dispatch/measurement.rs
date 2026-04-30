@@ -1,4 +1,22 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateDispatchMeasurementRequest,
+    DispatchMeasurementResponse,
+    UpdateDispatchMeasurementRequest,
+  },
+  endpoints::paths,
+};
 
 #[utoipa::path(
   get,
@@ -76,14 +94,14 @@ async fn dispatch_storage_measurement_get(
   summary = "Update dispatch storage measurement",
   path = paths::dispatch::STORAGE_MEASUREMENTS_BY_ID,
   params(("id" = Uuid, Path)),
-  request_body = crate::dtos::UpdateDispatchMeasurementRequest,
+  request_body = UpdateDispatchMeasurementRequest,
   responses((status = 200, body = ApiResponse<DispatchMeasurementResponse>), (status = 400), (status = 404))
 )]
 #[axum::debug_handler]
 async fn dispatch_storage_measurement_update(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
-  Valid(Json(req)): Valid<Json<crate::dtos::UpdateDispatchMeasurementRequest>>,
+  Valid(Json(req)): Valid<Json<UpdateDispatchMeasurementRequest>>,
 ) -> ApiResult<DispatchMeasurementResponse> {
   Ok(ApiResponse::success(
     state

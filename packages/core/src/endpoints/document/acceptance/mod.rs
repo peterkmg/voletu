@@ -29,6 +29,5 @@ pub fn acceptance_routes(state: Arc<ApiState>) -> OpenApiRouter {
     ))
     .routes(routes!(composite::acceptance_composite_create))
     .routes(routes!(composite::acceptance_composite_create_and_execute))
-    // Standalone item CRUD disabled — items are managed through composite endpoints only.
     .with_state(state)
 }

@@ -1,16 +1,3 @@
-/**
- * Integration tests for `AcceptanceMutateDialog` opened with `prefillBasis`.
- *
- * Plan tasks covered:
- *   3.4 — pre-fetches the basis composite, seeds defaults, locks the tab.
- *   3.5 — edit mode locks the basis tab regardless of arrivalType.
- *   3.6 — `incoming/external` regression: dialog opens unlocked with all
- *         three tabs visible and EXTERNAL active by default.
- *   3.7 — items table is mutable when prefilled (add / delete remain
- *         enabled). The "productId read-only on pre-filled rows" sub-task
- *         is documented in the verification log; see the `it.todo` below.
- */
-
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
@@ -180,9 +167,7 @@ describe('acceptanceMutateDialog — prefillBasis (truck)', () => {
       onOpenChange: () => {},
       prefillBasis: { kind: 'truck', basisId: '11111111-1111-4111-8111-111111111111' },
     })
-    // The items table renders one row per pre-filled item. The exact selector
-    // depends on the table primitive — we look for two action menus or use
-    // the empty-state absence as a coarse signal.
+
     expect(screen.queryByText(/no items yet/i)).not.toBeInTheDocument()
   })
 

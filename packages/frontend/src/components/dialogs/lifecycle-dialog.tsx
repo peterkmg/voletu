@@ -46,6 +46,7 @@ export function LifecycleDialog<TRow extends { id: string }>({
           { entity: entityLabel },
         ),
       )
+
       await queryClient.invalidateQueries({ queryKey })
       onOpenChange(false)
     }

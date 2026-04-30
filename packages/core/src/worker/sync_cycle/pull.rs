@@ -14,6 +14,7 @@ use crate::{
   },
   services::sync::SyncService,
   utils::http::get_api_json,
+  worker::topology::find_sync_watermark,
 };
 
 pub(super) struct PullPhaseOutcome {
@@ -29,6 +30,7 @@ pub(super) async fn pull_remote_logs(
   config: &SyncConfig,
 ) -> anyhow::Result<PullPhaseOutcome> {
   let pull_cursor = resolve_pull_cursor(remote_status, watermarks);
+
   let pulled_logs: PullAuditLogsResponse = get_api_json(
     client,
     &format!(
@@ -84,7 +86,7 @@ fn resolve_pull_cursor(
   watermarks: &[SyncWatermarkResponse],
 ) -> Uuid {
   let (stored_last_id, stored_discriminant) =
-    super::super::topology::find_sync_watermark(watermarks, remote_status.remote_node_id(), "PULL");
+    find_sync_watermark(watermarks, remote_status.remote_node_id(), "PULL");
 
   if stored_discriminant == remote_status.assigned_base_discriminant {
     return stored_last_id;
@@ -95,5 +97,6 @@ fn resolve_pull_cursor(
     current = %remote_status.assigned_base_discriminant,
     "base discriminant changed, resetting pull cursor"
   );
+
   Uuid::nil()
 }

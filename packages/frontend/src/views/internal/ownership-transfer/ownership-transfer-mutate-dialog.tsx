@@ -1,17 +1,3 @@
-/**
- * Per-document mutate dialog for Ownership Transfer (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the ownership-transfer
- * header spec / items table coming from `ownership-transfer-form-config.tsx`,
- * and wires the Kubb-generated composite create and update mutations.
- *
- * Edit-mode `defaultValues` are pre-fetched via `useOwnershipTransferCompositeGet`
- * (gated on `open && isUpdate`). While the fetch is in flight the form
- * renders with `emptyOwnershipTransferCreate`; once data arrives, the dialog
- * is re-mounted with the real values by keying `<CompositeFormDialog>` on
- * the loaded document id.
- */
-
 import type { OwnershipTransferCreate, OwnershipTransferItem } from './ownership-transfer-form-config'
 import type { OwnershipTransferFlatRow, OwnershipTransferItemResponse } from '~/generated/types'
 import type { OwnershipTransferCompositeUpdateMutationRequest } from '~/generated/types/DocumentOperationsTypes/OwnershipTransferCompositeUpdate'
@@ -44,15 +30,10 @@ import {
 interface OwnershipTransferMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * ownership transfer; `id` is item-scoped and must not be used for the
-   * update. When `null`, the dialog opens in create mode.
-   */
+
   currentRow?: OwnershipTransferFlatRow | null
 }
 
-/** Drop server-only fields and keep only the shape the composite request expects. */
 function toItemRequest(item: OwnershipTransferItemResponse): OwnershipTransferItem {
   return {
     storageId: item.storageId,
@@ -76,7 +57,6 @@ export function OwnershipTransferMutateDialog({
   const isUpdate = currentRow != null
   const documentId = currentRow?.documentId ?? null
 
-  // Pre-fetch the full composite only when editing.
   const composite = useOwnershipTransferCompositeGet(documentId ?? '', undefined, {
     query: { enabled: Boolean(open && documentId) },
   })
@@ -113,8 +93,6 @@ export function OwnershipTransferMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetch resolves so that
-  // defaultValues are applied via react-hook-form's initialization path.
   const dialogKey = isUpdate ? (loaded?.id ?? 'edit-loading') : 'create'
 
   return (

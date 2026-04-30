@@ -1,9 +1,3 @@
-//! **Hard delete propagates via sync**: A hard-deleted catalog entity on Central
-//! is completely removed from the peripheral after sync.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Hard-deleted entity is absent from the peripheral's catalog after pull
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -32,7 +26,6 @@ async fn catalog_entity_absent_on_peripheral_after_hard_delete() {
   ])
   .await;
 
-  // Create and sync a company
   let company = api_post(&client, &format!("{}/catalog/companies", central.url), &central.token,
     serde_json::json!({"commonName": "HardDel Co", "legalName": null, "isContractor": true, "isExporter": false, "isManufacturer": false, "isSender": false})).await;
   let company_id = Uuid::parse_str(company["id"].as_str().unwrap()).unwrap();
@@ -49,7 +42,6 @@ async fn catalog_entity_absent_on_peripheral_after_hard_delete() {
     .await
   );
 
-  // Soft-delete first (required before hard-delete)
   soft_delete_via_api(
     &client,
     &central.url,
@@ -58,7 +50,7 @@ async fn catalog_entity_absent_on_peripheral_after_hard_delete() {
     company_id,
   )
   .await;
-  // Hard-delete
+
   hard_delete_via_api(
     &client,
     &central.url,
@@ -68,10 +60,8 @@ async fn catalog_entity_absent_on_peripheral_after_hard_delete() {
   )
   .await;
 
-  // Sync to PA
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
-  // PA should not have it at all
   assert!(
     !has_catalog_entity(
       &client,

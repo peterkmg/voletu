@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use super::api_post;
 
-/// Create an acceptance document via composite HTTP endpoint. Returns the response JSON.
 #[allow(clippy::too_many_arguments)]
 pub async fn create_acceptance_via_api(
   client: &Client,
@@ -39,7 +38,6 @@ pub async fn create_acceptance_via_api(
   .await
 }
 
-/// Create a physical transfer via composite HTTP endpoint. Returns the response JSON.
 #[allow(clippy::too_many_arguments)]
 pub async fn create_physical_transfer_via_api(
   client: &Client,
@@ -73,7 +71,6 @@ pub async fn create_physical_transfer_via_api(
   .await
 }
 
-/// Create a dispatch composite document via HTTP API.
 #[allow(clippy::too_many_arguments)]
 pub async fn create_dispatch_via_api(
   client: &Client,
@@ -114,7 +111,6 @@ pub async fn create_dispatch_via_api(
   .await
 }
 
-/// Create a blending composite document via HTTP API.
 #[allow(clippy::too_many_arguments)]
 pub async fn create_blending_via_api(
   client: &Client,
@@ -152,7 +148,6 @@ pub async fn create_blending_via_api(
   .await
 }
 
-/// Create an ownership transfer composite document via HTTP API.
 #[allow(clippy::too_many_arguments)]
 pub async fn create_ownership_transfer_via_api(
   client: &Client,
@@ -182,7 +177,6 @@ pub async fn create_ownership_transfer_via_api(
   .await
 }
 
-/// Create a reconciliation document via HTTP API.
 pub async fn create_reconciliation_via_api(
   client: &Client,
   base_url: &str,
@@ -205,7 +199,6 @@ pub async fn create_reconciliation_via_api(
   .await
 }
 
-/// Execute a document via HTTP API (POST to execute/{id}).
 pub async fn execute_document_via_api(
   client: &Client,
   base_url: &str,
@@ -235,7 +228,6 @@ pub async fn execute_document_via_api(
   body["data"].clone()
 }
 
-/// Revert a document via HTTP POST /{revert_path}/{id}.
 pub async fn revert_document_via_api(
   client: &Client,
   base_url: &str,
@@ -246,7 +238,6 @@ pub async fn revert_document_via_api(
   execute_document_via_api(client, base_url, token, revert_path, doc_id).await;
 }
 
-/// Soft-delete an entity via HTTP DELETE /{path}/{id}.
 pub async fn soft_delete_via_api(
   client: &Client,
   base_url: &str,
@@ -271,7 +262,6 @@ pub async fn soft_delete_via_api(
   );
 }
 
-/// Hard-delete an entity via HTTP DELETE /{path}/{id}/hard.
 pub async fn hard_delete_via_api(
   client: &Client,
   base_url: &str,
@@ -296,7 +286,6 @@ pub async fn hard_delete_via_api(
   );
 }
 
-/// Call POST /dev/seed on a running node. Returns the seed result.
 pub async fn dev_seed_via_api(client: &Client, base_url: &str, token: &str) -> Value {
   api_post(client, &format!("{base_url}/dev/seed"), token, json!({})).await
 }

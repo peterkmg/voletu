@@ -32,12 +32,6 @@ interface EntityPickerDialogProps {
   onCreateNew?: () => void
 }
 
-/**
- * Browse-all dialog reachable via the combobox's "View all…" item. Uses the
- * exact same cmdk primitives as the inline dropdown so typography, hover
- * state, keyboard navigation, and search behaviour stay identical between
- * the two surfaces.
- */
 export function EntityPickerDialog({
   open,
   onOpenChange,

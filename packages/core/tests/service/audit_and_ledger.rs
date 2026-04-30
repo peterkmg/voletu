@@ -74,8 +74,6 @@ async fn insert_and_update_persist_expected_fields_in_audit_log() {
     .await
     .unwrap();
 
-    // INSERT audit log is created automatically by the entity's after_save hook.
-
     let updated = company::ActiveModel {
       id: Set(saved.id),
       common_name: Set("ACME 2".to_string()),
@@ -141,8 +139,6 @@ async fn model_methods_capture_full_inserts_and_field_level_update_diffs() {
     .insert(&*db)
     .await
     .unwrap();
-
-    // INSERT audit log is created automatically by the entity's after_save hook.
 
     let updated = company::ActiveModel {
       id: Set(saved.id),
@@ -404,7 +400,6 @@ async fn manual_adjustment_deltas_allow_missing_negative_balances_and_exact_targ
     let catalog = seed_inventory_catalog(&db).await;
     let service = LedgerService::new(db.clone());
 
-    // Negative deltas are allowed (balance can go below zero).
     append_manual_adjustment(
       &service,
       &db,

@@ -20,15 +20,15 @@ function getColumns(
   RowActions: React.ComponentType<{ row: Row<TruckDispatchPipelineResponse> }>,
 ): ColumnDef<TruckDispatchPipelineResponse>[] {
   return [
-    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+
     { ...textColumn<TruckDispatchPipelineResponse>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<TruckDispatchPipelineResponse>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<TruckDispatchPipelineResponse>('contractorName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    // Item-level columns (groupRole: 'item' — shown on every row)
+
     { ...textColumn<TruckDispatchPipelineResponse>('productName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<TruckDispatchPipelineResponse>('dispatchedQuantity', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
     { ...statusColumn<TruckDispatchPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    // Actions (doc-level)
+
     { ...actionsColumn<TruckDispatchPipelineResponse>(RowActions, 1), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }
@@ -85,13 +85,6 @@ interface TruckDispatchDetailData {
   executedAt?: string | null
 }
 
-/**
- * Adapter that lets the shared `defineDocumentViews` invoke the composite
- * truck-dispatch dialog. The pipeline view ships rows of
- * `TruckDispatchPipelineResponse`, but the dialog is keyed on the document
- * id (`row.id` here) and does not need the full pipeline payload, so we
- * project to the minimal mutation target shape the dialog expects.
- */
 function TruckDispatchMutateDialogAdapter({
   open,
   onOpenChange,

@@ -1,9 +1,3 @@
-//! **Three-peripheral convergence with overlapping bases**: Three peripherals with different
-//! base assignments all receive the correct subset of documents, including a cross-base transfer.
-//!
-//! **Topology:** Central + 3 Peripherals (P1: alpha, P2: beta, P3: alpha+beta)
-//! **Verifies:** P1 gets alpha + cross-base, P2 gets beta + cross-base, P3 gets all three documents
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -30,7 +24,6 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
   let central = setup_central_via_api(&client, &temp_db_path("r19-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  // P1: alpha only, P2: beta only, P3: alpha+beta
   let p1 = setup_peripheral_via_api(&client, &temp_db_path("r19-p1"), &central, &[
     catalog.base_alpha
   ])
@@ -45,7 +38,6 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
   .await;
   add_base_assignment_via_api(&client, &p3.url, &p3.token, catalog.base_beta).await;
 
-  // Doc for alpha only
   let acc_a = create_acceptance_via_api(
     &client,
     &central.url,
@@ -59,7 +51,6 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
   .await;
   let acc_a_id = parse_doc_id(&acc_a);
 
-  // Doc for beta only
   let acc_b = create_acceptance_via_api(
     &client,
     &central.url,
@@ -73,7 +64,6 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
   .await;
   let acc_b_id = parse_doc_id(&acc_b);
 
-  // Cross-base physical transfer (alpha→beta)
   let cross = create_physical_transfer_via_api(
     &client,
     &central.url,
@@ -88,12 +78,10 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
   .await;
   let cross_id = Uuid::parse_str(cross["id"].as_str().unwrap()).unwrap();
 
-  // Wait for all three to sync
   await_sync_cycle(&client, &p1.url, &p1.token, SYNC_TIMEOUT).await;
   await_sync_cycle(&client, &p2.url, &p2.token, SYNC_TIMEOUT).await;
   await_sync_cycle(&client, &p3.url, &p3.token, SYNC_TIMEOUT).await;
 
-  // P1: alpha + cross, NOT beta
   assert!(
     get_acceptance_composite_json(&client, &p1.url, &p1.token, acc_a_id)
       .await
@@ -110,7 +98,6 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
       .is_some()
   );
 
-  // P2: beta + cross, NOT alpha
   assert!(
     get_acceptance_composite_json(&client, &p2.url, &p2.token, acc_a_id)
       .await
@@ -127,7 +114,6 @@ async fn each_peripheral_receives_only_its_assigned_subset() {
       .is_some()
   );
 
-  // P3: ALL three documents
   assert!(
     get_acceptance_composite_json(&client, &p3.url, &p3.token, acc_a_id)
       .await

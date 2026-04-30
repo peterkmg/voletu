@@ -1,7 +1,7 @@
 import type { AxisNode, GroupNode, LeafNode, MatrixVM, Orientation, SubtotalToggles, Uuid } from '../types'
 import type { MatrixColumnSlot, MatrixLeaf } from './matrix-layout'
 import type { TableDensity } from '~/components/data-table/density-state'
-// packages/frontend/src/views/dashboard/components/inventory-matrix.tsx
+
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDensity } from '~/components/data-table/density'
@@ -18,8 +18,6 @@ export interface InventoryMatrixProps {
   subtotals: SubtotalToggles
   onCellClick: (productId: Uuid, storageId: Uuid) => void
 }
-
-// --- Density → CSS variables ------------------------------------------------
 
 const DENSITY_VARS: Record<TableDensity, React.CSSProperties> = {
   compact: {
@@ -51,8 +49,6 @@ const DENSITY_VARS: Record<TableDensity, React.CSSProperties> = {
   } as React.CSSProperties,
 }
 
-// --- Main component ---------------------------------------------------------
-
 export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: InventoryMatrixProps) {
   const { t } = useTranslation('dashboard')
   const { density } = useDensity()
@@ -82,8 +78,6 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
   const axisCornerLabel = rowAxisKind === 'product' ? t('toolbar.axis.products') : t('toolbar.axis.storages')
   const subtotalPrefix = t('matrix.subtotalPrefix')
   const grh = 'var(--group-row-h)'
-
-  // --- Cell + subtotal rendering helpers ---
 
   function buildCellAriaLabel(rowLeafId: Uuid, colLeaf: MatrixLeaf, amt: number | undefined): string {
     const product = orientation === 'products-as-rows'
@@ -117,8 +111,6 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
     const amt = vm.cellSubtotal(colAxisKind, slot.group.id, rowLeafId)
     return <MatrixTotalCell key={slot.key} amount={amt} variant="col-subtotal" />
   }
-
-  // --- <tbody> recursive renderer ---
 
   function renderRows(node: AxisNode, depth: number): React.ReactNode[] {
     if (node.kind === 'leaf')
@@ -222,8 +214,6 @@ export function InventoryMatrix({ vm, orientation, subtotals, onCellClick }: Inv
       </tr>
     )
   }
-
-  // --- Render ---
 
   return (
     <div

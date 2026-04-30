@@ -20,9 +20,13 @@ use crate::{
     PhysicalTransferResponse,
   },
   entities::{company, physical_storage_transfer, physical_transfer_item, product, storage},
-  services::document::{
-    specs::{PhysicalTransferFlatQuerySpec, PhysicalTransferQuerySpec},
-    DocumentService,
+  enums::DocumentStatus,
+  services::{
+    common::normalize_pagination,
+    document::{
+      specs::{PhysicalTransferFlatQuerySpec, PhysicalTransferQuerySpec},
+      DocumentService,
+    },
   },
 };
 
@@ -33,6 +37,7 @@ impl DocumentService {
   ) -> Result<PhysicalTransferResponse, ApiError> {
     tracing::info!(document_number = %req.document_number, "Creating physical storage transfer");
     let txn = self.db.begin().await?;
+
     let response = self
       .physical_transfer_composite_create_no_tx(&txn, req)
       .await?;
@@ -57,7 +62,7 @@ impl DocumentService {
       .physical_transfer_execute_no_tx(&txn, response.id, actor_id)
       .await?;
 
-    response.status = crate::enums::DocumentStatus::Executed;
+    response.status = DocumentStatus::Executed;
 
     txn.commit().await?;
 
@@ -72,6 +77,7 @@ impl DocumentService {
     let saved = physical_storage_transfer::ActiveModelEx::from(req)
       .save(conn)
       .await?;
+
     let transfer_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -101,20 +107,19 @@ impl DocumentService {
     )
   }
 
-  /// Composite update: applies a header partial update plus a full diff on the items list.
-  /// Items with `id: Some(uuid)` matching an existing row are updated.
-  /// Items with `id: None` are inserted.
-  /// Existing items not present in the request are hard-deleted.
   pub async fn physical_transfer_composite_update(
     &self,
     physical_transfer_id: Uuid,
     req: &dtos::UpdatePhysicalTransferCompositeRequest,
   ) -> Result<PhysicalTransferResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .physical_transfer_composite_update_no_tx(&txn, physical_transfer_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -124,15 +129,10 @@ impl DocumentService {
     physical_transfer_id: Uuid,
     req: &dtos::UpdatePhysicalTransferCompositeRequest,
   ) -> Result<PhysicalTransferResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater.
-    //    This enforces draft-only mutation, applies set_if_some semantics,
-    //    and registers an audit log row.
     self
       .physical_transfer_update_no_tx(conn, physical_transfer_id, &req.physical_transfer)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
-    //    database. The HashSet doubles as the dedup guard.
     let mut kept_ids: HashSet<Uuid> = HashSet::new();
     for item in &req.items {
       if let Some(item_id) = item.id {
@@ -145,8 +145,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist the items as a graph save. `HasManyModel::Replace(_)` deletes
-    //    every existing related row that is not present in the new set.
     let items: Vec<physical_transfer_item::ActiveModelEx> = req
       .items
       .iter()
@@ -171,14 +169,11 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Re-derive document routing tags via the existing utility.
-    //    Storage changes on items can shift which bases the document is routed to.
     self
       .audit
       .backfill_document_routing::<physical_storage_transfer::Entity>(conn, physical_transfer_id)
       .await?;
 
-    // 5. Reload the full composite using the same eager-loading shape as on create.
     PhysicalTransferResponse::try_from(
       physical_storage_transfer::Entity::load()
         .filter_by_id(physical_transfer_id)
@@ -216,8 +211,7 @@ impl DocumentService {
     &self,
     query: &PhysicalTransferQuerySpec,
   ) -> Result<Vec<physical_storage_transfer::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(physical_storage_transfer::Column::DeletedAt.is_null());
@@ -277,18 +271,11 @@ impl DocumentService {
       .collect()
   }
 
-  /// Returns one row per physical transfer item with document fields repeated.
-  /// Used by the grouped-row list table on the frontend.
-  ///
-  /// `from_storage` is resolved via the entity loader relationship.
-  /// `to_storage` has no `belongs_to` on the entity, so we resolve it
-  /// in-memory by batch-fetching storage records for all `to_storage_id` values.
   pub async fn physical_transfer_flat_query(
     &self,
     query: PhysicalTransferFlatQuerySpec,
   ) -> Result<Vec<PhysicalTransferFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let docs = self
       .physical_transfer_query_models(&PhysicalTransferQuerySpec {
@@ -299,7 +286,6 @@ impl DocumentService {
       })
       .await?;
 
-    // Collect all to_storage_id values and batch-fetch storage names.
     let to_storage_map = self
       .storage_name_map(
         docs
@@ -325,6 +311,7 @@ impl DocumentService {
           to_storage_id_name: "\u{2014}",
         }));
       }
+
       for item in &doc.items {
         let to_storage_id_name = to_storage_map
           .get(&item.to_storage_id)

@@ -7,6 +7,7 @@ export async function saveExportFileInBrowser(
   const blob = new Blob([normalizeExportContents(file.contents)], {
     type: file.mimeType,
   })
+
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
 

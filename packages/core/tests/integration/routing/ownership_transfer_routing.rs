@@ -1,9 +1,3 @@
-//! **Ownership transfer routing via storage**: An ownership transfer on storage_alpha
-//! routes only to base_alpha, not to base_beta.
-//!
-//! **Topology:** Central + 2 Peripherals (one base each)
-//! **Verifies:** Ownership transfer audit log targets the storage's base; only the correct peripheral receives it
-
 use std::time::Duration;
 
 use uuid::Uuid;

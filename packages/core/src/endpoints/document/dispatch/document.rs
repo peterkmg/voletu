@@ -1,8 +1,31 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Extension,
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
 use crate::{
-  dtos::{DispatchDocumentQueryParams, EmbedParams, PaginationParams},
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateDispatchRequest,
+    DispatchDocumentQueryParams,
+    DispatchResponse,
+    EmbedParams,
+    PaginationParams,
+    UpdateDispatchRequest,
+  },
   endpoints::paths,
-  services::document::specs::DispatchDocumentQuerySpec,
+  enums,
+  services::{
+    common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
+    document::specs::DispatchDocumentQuerySpec,
+  },
+  utils::jwt::Claims,
 };
 
 #[utoipa::path(
@@ -159,14 +182,14 @@ async fn dispatch_document_get(
   summary = "Update dispatch document",
   path = paths::dispatch::BY_ID,
   params(("id" = Uuid, Path)),
-  request_body = crate::dtos::UpdateDispatchRequest,
+  request_body = UpdateDispatchRequest,
   responses((status = 200, body = ApiResponse<DispatchResponse>), (status = 400), (status = 404))
 )]
 #[axum::debug_handler]
 async fn dispatch_document_update(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
-  Valid(Json(req)): Valid<Json<crate::dtos::UpdateDispatchRequest>>,
+  Valid(Json(req)): Valid<Json<UpdateDispatchRequest>>,
 ) -> ApiResult<DispatchResponse> {
   Ok(ApiResponse::success(
     state

@@ -4,15 +4,13 @@ use anyhow::anyhow;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityLoaderTrait};
 use uuid::Uuid;
 
-use super::{
-  super::SystemService,
-  helpers::{load_local_active_user_by_id, load_local_active_user_by_username},
-};
+use super::helpers::{load_local_active_user_by_id, load_local_active_user_by_username};
 use crate::{
   api::ApiError,
   dtos::{UpdateUserRequest, UserResponse},
   entities::{role, user},
   enums::RoleType,
+  services::system::SystemService,
   utils::password::hash_password,
 };
 

@@ -47,7 +47,6 @@ async fn token_create_verifies_correct_secret_and_rejects_mismatch() {
   assert_eq!(claims.role, "operator");
   assert!(claims.exp >= claims.iat);
 
-  // Same token must fail verification with a different secret.
   cfg.node.jwt_secret = generate_secret();
   let other_cfg = Arc::new(cfg);
   let other = SystemService::new(db, other_cfg);

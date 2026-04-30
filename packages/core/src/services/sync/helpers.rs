@@ -6,13 +6,6 @@ use uuid::Uuid;
 
 use crate::{api::ApiError, entities::audit_log, enums::AuditTable};
 
-/// Compute a canonical "base discriminant" string for a set of base UUIDs.
-///
-/// The discriminant is a sorted, deduplicated, comma-joined list of UUIDs in
-/// their standard hyphenated form. An empty slice produces an empty string
-/// (representing catalog-only scope). The result is stable regardless of the
-/// input order, which lets it be compared byte-for-byte against a stored value
-/// on a `sync_watermarks` row.
 pub fn compute_base_discriminant(base_ids: &[Uuid]) -> String {
   let mut out = base_ids.to_vec();
   out.sort_unstable();
@@ -33,31 +26,13 @@ pub fn join_uuid_csv(ids: &[Uuid]) -> String {
   out
 }
 
-/// The set of audit-log `table_name` values that are never included in sync
-/// pulls regardless of scope. These are node-local control / config tables
-/// whose rows should never leave the node that owns them.
 pub fn excluded_sync_tables() -> Vec<AuditTable> {
   AuditTable::sync_excluded_tables().to_vec()
 }
 
-/// Build the audit-log scope filter shared by `pull_logs` and `sync_status`.
-///
-/// The scope matches:
-///   - any log in a "global" table (catalog + system broadcast tables), OR
-///   - any log whose `target_base_ids` envelope includes at least one of the
-///     provided base UUIDs.
-///
-/// An empty `base_ids` slice produces a catalog-only filter (global tables
-/// only), which is what a peripheral with no base assignments should see.
-///
-/// Note: callers are still responsible for the `id > W` range filter and the
-/// `tableName NOT IN excluded_sync_tables()` exclusion. This helper covers
-/// only the positive "what's in scope" part.
 pub fn scope_condition_for(base_ids: &[uuid::Uuid]) -> Condition {
-  let mut cond = Condition::any().add(
-    crate::entities::audit_log::Column::TableName
-      .is_in(AuditTable::sync_global_tables().iter().copied()),
-  );
+  let mut cond = Condition::any()
+    .add(audit_log::Column::TableName.is_in(AuditTable::sync_global_tables().iter().copied()));
 
   for base_id in base_ids {
     cond = cond.add(targeted_base_condition(&base_id.to_string()));

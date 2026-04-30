@@ -16,6 +16,7 @@ use crate::{
     CreateAcceptanceRequest,
     EmbedParams,
     PaginationParams,
+    UpdateAcceptanceRequest,
   },
   endpoints::paths,
   enums,
@@ -176,14 +177,14 @@ pub(super) async fn acceptance_document_get(
   summary = "Update acceptance document",
   path = paths::acceptance::BY_ID,
   params(("id" = Uuid, Path)),
-  request_body = crate::dtos::UpdateAcceptanceRequest,
+  request_body = UpdateAcceptanceRequest,
   responses((status = 200, body = ApiResponse<AcceptanceResponse>), (status = 400), (status = 404))
 )]
 #[axum::debug_handler]
 pub(super) async fn acceptance_document_update(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
-  Valid(Json(req)): Valid<Json<crate::dtos::UpdateAcceptanceRequest>>,
+  Valid(Json(req)): Valid<Json<UpdateAcceptanceRequest>>,
 ) -> ApiResult<AcceptanceResponse> {
   Ok(ApiResponse::success(
     state

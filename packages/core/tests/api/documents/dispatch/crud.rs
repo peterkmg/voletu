@@ -2,17 +2,19 @@ use sea_orm::prelude::Decimal;
 use uuid::Uuid;
 use voletu_core::endpoints::paths as api_paths;
 
-use super::super::seed_inventory_context;
-use crate::common::{
-  catalog_seed::seed_ledger_balance,
-  http::{
-    assert_api_success,
-    post_empty,
-    post_json,
-    setup_seeded_app_with_admin_token,
-    with_auth_token,
+use crate::{
+  common::{
+    catalog_seed::seed_ledger_balance,
+    http::{
+      assert_api_success,
+      post_empty,
+      post_json,
+      setup_seeded_app_with_admin_token,
+      with_auth_token,
+    },
+    payloads::{dispatch_composite_save, dispatch_storage_measurement},
   },
-  payloads::{dispatch_composite_save, dispatch_storage_measurement},
+  documents::seed_inventory_context,
 };
 
 const DISPATCH_DOC_NUMBER: &str = "DISP-EP-1";
@@ -23,7 +25,6 @@ async fn endpoints_create_measure_and_execute_successfully() {
   let ctx = seed_inventory_context(&db).await;
 
   with_auth_token(token, async {
-    // Seed ledger balance first (dispatch validation checks balance)
     seed_ledger_balance(
       &db,
       ctx.storage_a,
@@ -33,7 +34,6 @@ async fn endpoints_create_measure_and_execute_successfully() {
     )
     .await;
 
-    // Create dispatch document + item via composite endpoint
     let create_composite = post_json(
       &app,
       api_paths::dispatch::COMPOSITE_SAVE,
@@ -56,7 +56,6 @@ async fn endpoints_create_measure_and_execute_successfully() {
 
     let dispatch_doc_id = Uuid::parse_str(composite_json["data"]["id"].as_str().unwrap()).unwrap();
 
-    // Add measurement (kept as standalone — linked to doc)
     let measure = post_json(
       &app,
       api_paths::dispatch::STORAGE_MEASUREMENTS,
@@ -77,7 +76,6 @@ async fn endpoints_create_measure_and_execute_successfully() {
     let measure_json = assert_api_success(measure).await;
     assert_eq!(measure_json["data"]["afterMass"], "7");
 
-    // Execute
     let execute = post_empty(
       &app,
       api_paths::dispatch::EXECUTE_BY_ID.replace("{id}", &dispatch_doc_id.to_string()),

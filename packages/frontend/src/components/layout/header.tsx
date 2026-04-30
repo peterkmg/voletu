@@ -15,7 +15,7 @@ export function Header({ className, fixed, ...props }: HeaderProps) {
   useEffect(() => {
     const onScroll = () => {
       const scrollTop = document.body.scrollTop || document.documentElement.scrollTop
-      // Only trigger re-render when crossing the shadow threshold (10px)
+
       setOffset(prev => (prev <= 10) !== (scrollTop <= 10) ? scrollTop : prev)
     }
 

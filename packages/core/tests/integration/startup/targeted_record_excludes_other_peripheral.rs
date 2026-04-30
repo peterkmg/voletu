@@ -1,12 +1,3 @@
-//! Verifies that a document targeted at one Peripheral's base assignment is
-//! excluded from the sync destined for a different Peripheral, using the real
-//! sync worker.
-//!
-//! Topology: Central + 2 Peripherals (PA on base_alpha, PB on base_beta).
-//!
-//! Property: after Central creates an acceptance scoped to storage_alpha
-//! (which routes to base_alpha), PA receives the document but PB does not.
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -35,7 +26,6 @@ async fn acceptance_scoped_to_alpha_absent_on_beta_peripheral() {
   ])
   .await;
 
-  // Create an acceptance on Central for storage_alpha (routes to base_alpha only)
   let acc = create_acceptance_via_api(
     &client,
     &central.url,
@@ -49,11 +39,9 @@ async fn acceptance_scoped_to_alpha_absent_on_beta_peripheral() {
   .await;
   let acc_id = parse_doc_id(&acc);
 
-  // Let both peripherals sync
   await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  // PA (base_alpha) should have the acceptance
   assert!(
     get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
       .await
@@ -61,7 +49,6 @@ async fn acceptance_scoped_to_alpha_absent_on_beta_peripheral() {
     "PA (base_alpha) should have the alpha-scoped acceptance"
   );
 
-  // PB (base_beta) should NOT have the acceptance
   assert!(
     get_acceptance_composite_json(&client, &pb.url, &pb.token, acc_id)
       .await
@@ -69,7 +56,6 @@ async fn acceptance_scoped_to_alpha_absent_on_beta_peripheral() {
     "PB (base_beta) should NOT have the alpha-scoped acceptance"
   );
 
-  // Central still has it
   assert!(
     get_acceptance_composite_json(&client, &central.url, &central.token, acc_id)
       .await

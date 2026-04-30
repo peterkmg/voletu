@@ -21,16 +21,16 @@ import {
 import { cn } from '~/lib/utils'
 
 export interface DocItemRowDrawerProps<TItem extends FieldValues> {
-  /** Use `unknown` to mirror DocFormProvider's loosened typing. */
+
   rowSchema: unknown
   fields: RowFieldSpec<TItem>[]
   defaultValues: DefaultValues<TItem>
-  /** Called when user saves the row. */
+
   onSave: (data: TItem) => void
-  /** Called when user wants to save and immediately open a new empty row. */
+
   onSaveAndAdd: (data: TItem) => void
   onCancel: () => void
-  /** Optional extra content rendered below the field grid (used for nested DocItemsTable in rail-receipt). */
+
   children?: ReactNode
 }
 
@@ -51,32 +51,38 @@ export function DocItemRowDrawer<TItem extends FieldValues>({
   })
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const didFocusInitialFieldRef = useRef(false)
 
-  // Focus the first field when the drawer opens
   useEffect(() => {
+    if (didFocusInitialFieldRef.current)
+      return
+
     const firstFieldName = fields[0]?.name
     if (firstFieldName) {
       form.setFocus(firstFieldName as Path<TItem>)
+      didFocusInitialFieldRef.current = true
     }
-    // eslint-disable-next-line react/exhaustive-deps -- intentionally focus only on mount
-  }, [])
+  }, [fields, form])
 
-  // Ctrl/Cmd+Enter inside drawer = Save & Add Another; Esc = cancel
   useEffect(() => {
     const node = containerRef.current
     if (!node)
       return
+
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault()
         void form.handleSubmit(data => onSaveAndAdd(data))()
       }
+
       if (e.key === 'Escape') {
         e.preventDefault()
         onCancel()
       }
     }
+
     node.addEventListener('keydown', onKey)
+
     return () => node.removeEventListener('keydown', onKey)
   }, [form, onSaveAndAdd, onCancel])
 

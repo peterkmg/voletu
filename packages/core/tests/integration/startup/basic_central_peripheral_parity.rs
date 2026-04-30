@@ -1,12 +1,3 @@
-//! Verifies that a basic sync cycle between a Central node and one Peripheral
-//! node reconstructs catalog data to parity on both sides using the real sync worker.
-//!
-//! Topology: Central + 1 Peripheral (assigned to base_alpha).
-//!
-//! Property: after the Peripheral's worker syncs, a company created on the
-//! Peripheral appears on Central, and catalog entities seeded on Central
-//! appear on the Peripheral.
-
 use std::time::Duration;
 
 use serde_json::json;
@@ -32,7 +23,6 @@ async fn company_pushed_to_central_and_catalog_pulled_to_peripheral() {
   ])
   .await;
 
-  // Create a company on the Peripheral
   let new_company = api_post(
     &client,
     &format!("{}/catalog/companies", pa.url),
@@ -50,10 +40,8 @@ async fn company_pushed_to_central_and_catalog_pulled_to_peripheral() {
   let company_id =
     uuid::Uuid::parse_str(new_company["id"].as_str().expect("company should have id")).unwrap();
 
-  // Wait for the worker to push the company to Central and complete a cycle
   await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
 
-  // Verify: Central has the company created on Peripheral
   assert!(
     has_catalog_entity(
       &client,
@@ -66,7 +54,6 @@ async fn company_pushed_to_central_and_catalog_pulled_to_peripheral() {
     "Central should have the company created on Peripheral after sync"
   );
 
-  // Verify: Peripheral has catalog entities seeded on Central
   assert!(
     has_catalog_entity(
       &client,

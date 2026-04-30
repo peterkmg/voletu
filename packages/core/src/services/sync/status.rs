@@ -86,19 +86,20 @@ impl SyncService {
     )
   }
 
-  pub async fn audit_log_get(&self, id: Uuid) -> Result<crate::dtos::AuditLogResponse, ApiError> {
+  pub async fn audit_log_get(&self, id: Uuid) -> Result<AuditLogResponse, ApiError> {
     let row: audit_log::ModelEx = audit_log::Entity::load()
       .filter_by_id(id)
       .one(self.db.as_ref())
       .await?
       .ok_or_else(|| ApiError::NotFound(format!("Audit log '{}' not found", id)))?;
+
     Ok(row.into())
   }
 
   pub async fn audit_log_query(
     &self,
     query: AuditLogQuerySpec,
-  ) -> Result<Vec<crate::dtos::AuditLogResponse>, ApiError> {
+  ) -> Result<Vec<AuditLogResponse>, ApiError> {
     let mut condition = Condition::all();
     let max_limit = bounded_limit(query.limit, 100);
     let offset = query.offset.unwrap_or(0);
@@ -120,14 +121,6 @@ impl SyncService {
     Ok(rows.into_iter().map(AuditLogResponse::from).collect())
   }
 
-  /// Return the node's identity and sync high-water marks.
-  ///
-  /// `base_ids` is the caller's requested scope. When non-empty, Central
-  /// filters the `highest_matching_id` computation to logs matching that
-  /// scope (global tables OR targeted for any of the provided bases). When
-  /// empty, the scope is catalog-only (global tables only). This is what
-  /// lets the worker's `has_updates` check avoid hot-polling when Central
-  /// has activity on bases the caller does not serve.
   pub async fn sync_status(
     &self,
     query: SyncStatusQuerySpec,
@@ -166,22 +159,6 @@ impl SyncService {
     )
   }
 
-  /// Pull audit logs for a requesting node.
-  ///
-  /// Returns logs matching the requester's scope with `id > last_audit_log_id`,
-  /// ordered by id ascending, up to `limit` rows (default 1000, capped at 1000).
-  /// `base_ids` is provided by the requesting peripheral — Central filters
-  /// accordingly. An empty `base_ids` slice means catalog-only scope
-  /// (global tables only).
-  ///
-  /// The `highest_evaluated_id` in the response is the id of the last log in
-  /// the batch, or `last_audit_log_id` if no logs matched. It is NOT the max
-  /// audit_log id in Central's table — that optimization used to cause a
-  /// leapfrog bug where the peripheral's PULL watermark advanced past logs it
-  /// had never actually processed under its scope. Correct watermark-advancement
-  /// discipline now lives on the peripheral side in `apply_pulled_logs`, which
-  /// is guarded by `base_discriminant`. Central just reports what it actually
-  /// returned.
   pub async fn pull_logs(
     &self,
     query: PullAuditLogsQuerySpec,

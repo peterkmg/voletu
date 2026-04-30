@@ -29,9 +29,12 @@ use crate::{
     storage,
   },
   enums::{DispatchMethod, DocumentStatus, PipelineStatus},
-  services::document::{
-    specs::{DispatchDocumentQuerySpec, DispatchFlatQuerySpec, TruckDispatchPipelineQuerySpec},
-    DocumentService,
+  services::{
+    common::normalize_pagination,
+    document::{
+      specs::{DispatchDocumentQuerySpec, DispatchFlatQuerySpec, TruckDispatchPipelineQuerySpec},
+      DocumentService,
+    },
   },
 };
 
@@ -55,8 +58,7 @@ impl DocumentService {
     &self,
     query: &DispatchDocumentQuerySpec,
   ) -> Result<Vec<dispatch_document::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(dispatch_document::Column::DeletedAt.is_null());
@@ -118,7 +120,9 @@ impl DocumentService {
     req: &dtos::CreateDispatchCompositeRequest,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let response = self.dispatch_composite_create_no_tx(&txn, req).await?;
+
     txn.commit().await?;
 
     Ok(response)
@@ -137,7 +141,7 @@ impl DocumentService {
       .dispatch_document_execute_no_tx(&txn, response.document.id, actor_id)
       .await?;
 
-    response.document.status = crate::enums::DocumentStatus::Executed;
+    response.document.status = DocumentStatus::Executed;
     txn.commit().await?;
 
     Ok(response)
@@ -151,6 +155,7 @@ impl DocumentService {
     let saved = dispatch_document::ActiveModelEx::from(req)
       .save(conn)
       .await?;
+
     let document_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -183,26 +188,19 @@ impl DocumentService {
     )
   }
 
-  /// Composite update: applies a header partial update plus full diffs over
-  /// the items list and (when present) the storage-measurements list.
-  ///
-  /// Diff semantics for both child collections:
-  /// - rows with `id: Some(uuid)` matching an existing row are updated;
-  /// - rows with `id: None` are inserted;
-  /// - existing rows omitted from the request are hard-deleted.
-  ///
-  /// `storage_measurements: None` leaves the existing measurement rows
-  /// untouched; pass `Some(vec![])` to clear them all.
   pub async fn dispatch_composite_update(
     &self,
     dispatch_doc_id: Uuid,
     req: &dtos::UpdateDispatchCompositeRequest,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .dispatch_composite_update_no_tx(&txn, dispatch_doc_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -212,16 +210,10 @@ impl DocumentService {
     dispatch_doc_id: Uuid,
     req: &dtos::UpdateDispatchCompositeRequest,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater. Enforces
-    //    draft-only mutation, applies set_if_some semantics, and registers an
-    //    audit log row.
     self
       .dispatch_document_update_no_tx(conn, dispatch_doc_id, &req.dispatch)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries within each child collection
-    //    before touching the database. Each HashSet doubles as the dedup
-    //    guard for its collection.
     let mut kept_item_ids: HashSet<Uuid> = HashSet::new();
     for item in &req.items {
       if let Some(item_id) = item.id {
@@ -233,6 +225,7 @@ impl DocumentService {
         }
       }
     }
+
     if let Some(measurements) = &req.storage_measurements {
       let mut kept_measurement_ids: HashSet<Uuid> = HashSet::new();
       for measurement in measurements {
@@ -247,11 +240,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist both child collections as a graph save on the parent
-    //    `ActiveModelEx`. `HasManyModel::Replace(_)` deletes every existing
-    //    related row that is not present in the new set; `NotSet` leaves the
-    //    collection untouched, which is the no-op semantic for
-    //    `storage_measurements: None`.
     let items: Vec<dispatch_item::ActiveModelEx> = req
       .items
       .iter()
@@ -266,6 +254,7 @@ impl DocumentService {
         ..Default::default()
       })
       .collect();
+
     let storage_measurements: sea_orm::HasManyModel<dispatch_storage_measurement::Entity> =
       match &req.storage_measurements {
         Some(measurements) => sea_orm::HasManyModel::Replace(
@@ -301,14 +290,11 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Re-derive document routing tags. Storage / contractor changes can
-    //    shift the bases this document is routed to.
     self
       .audit
       .backfill_document_routing::<dispatch_document::Entity>(conn, dispatch_doc_id)
       .await?;
 
-    // 5. Reload the full composite using the same eager-loading shape as create.
     dtos::DispatchCompositeResponse::try_from(
       dispatch_document::Entity::load()
         .filter_by_id(dispatch_doc_id)
@@ -354,16 +340,18 @@ impl DocumentService {
     &self,
     query: TruckDispatchPipelineQuerySpec,
   ) -> Result<Vec<TruckDispatchPipelineResponse>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let db = self.db.as_ref();
 
     let mut cond = Condition::all()
       .add(dispatch_document::Column::DeletedAt.is_null())
       .add(dispatch_document::Column::DispatchMethod.eq(DispatchMethod::Truck));
+
     if let Some(cid) = query.contractor_id {
       cond = cond.add(dispatch_document::Column::ContractorId.eq(cid));
     }
+
     if let Some(ps) = query.pipeline_status {
       match ps {
         PipelineStatus::Pending => return Ok(vec![]),
@@ -413,23 +401,24 @@ impl DocumentService {
     Ok(rows)
   }
 
-  /// Returns one row per dispatch item with document fields repeated.
-  /// Used by the grouped-row list table on the frontend.
   pub async fn dispatch_flat_query(
     &self,
     query: DispatchFlatQuerySpec,
   ) -> Result<Vec<DispatchFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(dispatch_document::Column::DeletedAt.is_null());
+
     if let Some(s) = query.status {
       cond = cond.add(dispatch_document::Column::Status.eq(s));
     }
+
     if let Some(dm) = query.dispatch_method {
       cond = cond.add(dispatch_document::Column::DispatchMethod.eq(dm));
     }
+
     if let Some(dp) = query.dispatch_purpose {
       cond = cond.add(dispatch_document::Column::DispatchPurpose.eq(dp));
     }

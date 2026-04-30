@@ -108,12 +108,7 @@ async fn routes_surface_expected_404_and_409_domain_errors_in_matrix() {
   let (db, app, token) = setup_seeded_app_with_admin_token().await;
   let _catalog = seed_inventory_catalog(&db).await;
 
-  // Standalone item endpoints (dispatch/items, blending/components, blending/results)
-  // have been removed — items are managed through composite endpoints only.
-  // The 404 tests for those endpoints are no longer applicable.
-
   with_auth_token(token, async {
-    // execute endpoints with unknown IDs -> 404 for these two routes
     let dispatch_execute_missing = post_empty(
       &app,
       api_paths::dispatch::EXECUTE_BY_ID.replace("{id}", &Uuid::now_v7().to_string()),
@@ -142,7 +137,6 @@ async fn routes_surface_expected_404_and_409_domain_errors_in_matrix() {
     .await;
     assert_eq!(blending_execute_json["error"]["code"], "NOT_FOUND");
 
-    // 409 matrix
     let create_user_payload = user_create(
       "matrix-operator",
       "operator-pass",

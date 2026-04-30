@@ -45,7 +45,6 @@ pub(super) async fn load_worker_topology(
   })
 }
 
-/// Load base IDs assigned to the local node from the node_base_assignment table.
 pub(super) async fn load_local_base_ids(
   db: &DatabaseConnection,
   node_id: Uuid,
@@ -55,9 +54,6 @@ pub(super) async fn load_local_base_ids(
     .map_err(Into::into)
 }
 
-/// Find the `(last_audit_log_id, base_discriminant)` pair for a given target
-/// node and direction. Returns `(Uuid::nil(), String::new())` when no
-/// watermark row exists yet.
 pub(super) fn find_sync_watermark(
   watermarks: &[SyncWatermarkResponse],
   target_node_id: Uuid,

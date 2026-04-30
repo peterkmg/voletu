@@ -24,15 +24,10 @@ export function selectColumn<T>(): ColumnDef<T> {
   }
 }
 
-/**
- * @param Actions Row actions component to render in the actions cell
- * @param slots Number of visible button slots (1=details only, 2=edit+more, 3=details+edit+more)
- */
 export function actionsColumn<T>(
   Actions: React.ComponentType<{ row: Row<T> }>,
   slots: 1 | 2 | 3 = 3,
 ): ColumnDef<T> {
-  // 28px per button (h-7 w-7) + 4px gap + 16px cell padding
   const width = slots * 32 + 16
   return {
     id: 'actions',
@@ -75,7 +70,6 @@ export function textColumn<T>(
   opts?: {
     primary?: boolean
     className?: string
-    /** Override sizing category. Defaults to 'flex'. Use 'capped' for bounded fields like document numbers. */
     sizing?: 'capped' | 'flex'
     minSize?: number
     maxSize?: number
@@ -83,6 +77,7 @@ export function textColumn<T>(
 ): ColumnDef<T> {
   const primary = opts?.primary ?? true
   const sizing = opts?.sizing ?? 'flex'
+
   return {
     accessorKey,
     minSize: opts?.minSize ?? 120,

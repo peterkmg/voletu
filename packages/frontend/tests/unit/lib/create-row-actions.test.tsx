@@ -1,11 +1,3 @@
-/**
- * Unit tests for `createRowActions` pipeline-aware extensions.
- *
- * Plan Task 4.1: per-row predicates drive Edit visibility (replacing the
- * legacy `disableEdit` boolean for pipeline lists) and add an inline
- * "Issue acceptance" button gated on a separate predicate.
- */
-
 import type { Row } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
 import { render, screen } from '@testing-library/react'

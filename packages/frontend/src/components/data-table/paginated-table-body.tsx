@@ -14,7 +14,7 @@ interface PaginatedTableBodyProps<TData> {
   emptyMessage?: string
   emptyIcon?: React.ReactNode
   onRowAction?: (row: TData) => void
-  /** Field name for row grouping (visual merge). */
+
   groupKey?: string
 }
 
@@ -32,7 +32,6 @@ export function PaginatedTableBody<TData>({
   const bodyRef = useRef<HTMLDivElement>(null)
   const rows = table.getRowModel().rows
 
-  // Focus a row by index
   const focusRow = useCallback((el: HTMLElement | null | undefined) => {
     if (!el)
       return

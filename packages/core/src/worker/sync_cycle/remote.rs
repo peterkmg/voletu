@@ -27,6 +27,7 @@ pub(super) async fn load_sync_cycle_remote_status(
   config: &SyncConfig,
 ) -> anyhow::Result<SyncCycleRemoteStatus> {
   let assigned_base_ids_query = join_uuid_csv(assigned_base_ids);
+
   let central_status: SyncStatusResponse = get_api_json(
     client,
     &format!(

@@ -1,21 +1,3 @@
-/**
- * Per-document mutate dialog for Rail Receipt (rail waybill) - create + edit.
- *
- * The rail composite is the deepest aggregate in the system: a waybill owns
- * many wagon manifests, each of which owns its measurements and weights. The
- * dialog handles all three levels in one screen by rendering an outer
- * `<DocItemsTable>` for manifests and using its `rowDrawerExtra` slot to mount
- * two compact inner `<DocItemsTable>` instances for the currently-edited
- * manifest's measurements and weights. This validates that the shared
- * composite-form abstraction supports recursive nesting end-to-end.
- *
- * The form-state is the *update* composite shape (`UpdateRailWaybillCompositeRequest`).
- * On create we strip every `id: null` (the wire create shape forbids `id`) and
- * synthesise the denormalised `wagonNumber` field that lives on each child in
- * the create-side schema. On update the payload round-trips ids unchanged so
- * the backend's recursive diff treats existing rows as updates.
- */
-
 import type { ArrayPath } from 'react-hook-form'
 import type { RailReceiptForm, RailReceiptManifest, RailReceiptMeasurement, RailReceiptWeight } from './rail-receipt-form-config'
 import type { RailReceiptPipelineResponse } from '~/generated/types'
@@ -62,21 +44,10 @@ import {
 interface RailReceiptMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the pipeline list. When the row's
-   * `pipelineStatus === 'PENDING'`, `id` identifies the rail waybill
-   * (the basis document) and the dialog opens in edit mode. Otherwise the
-   * row maps to an acceptance, which this dialog does not handle. When
-   * `null`, the dialog opens in create mode.
-   */
+
   currentRow?: RailReceiptPipelineResponse | null
 }
 
-/**
- * Convert a measurement returned by the API into the form-state row shape.
- * The wire response carries server-only fields (timestamps, audit ids) we
- * drop here so RHF default values stay clean.
- */
 function toMeasurementRow(measurement: RailWagonMeasurementResponse): RailReceiptMeasurement {
   return {
     id: measurement.id,
@@ -108,17 +79,6 @@ function toManifestRow(manifest: RailWagonManifestResponse): RailReceiptManifest
   }
 }
 
-/**
- * Reshape the form-state into the create-side wire payload.
- *
- * The create wire shape:
- *   - has no `id` field on any row (ids are server-assigned);
- *   - carries a denormalised `wagonNumber` on every child (measurement/weight)
- *     even though the same value lives on the parent manifest.
- *
- * We strip ids and synthesise the wagonNumber here so the form state can stay
- * a single uniform shape (the update shape).
- */
 function toCreatePayload(data: RailReceiptForm) {
   return {
     documentNumber: data.documentNumber ?? '',
@@ -160,9 +120,6 @@ export function RailReceiptMutateDialog({
   const isUpdate = currentRow != null
   const waybillId = currentRow?.id ?? null
 
-  // Pre-fetch the full composite only when editing. Same approach as the
-  // truck-receipt and physical-transfer dialogs: gate on `open && isUpdate`
-  // and rely on `key` to remount once the data arrives.
   const composite = useTransportRailWaybillCompositeGet(waybillId ?? '', undefined, {
     query: { enabled: Boolean(open && waybillId) },
   })
@@ -201,8 +158,6 @@ export function RailReceiptMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetch resolves so RHF
-  // initialises with the loaded values.
   const dialogKey = isUpdate ? (loaded?.waybill.id ?? 'edit-loading') : 'create'
 
   return (

@@ -5,10 +5,6 @@ use serde_json::Value;
 
 use super::api_get;
 
-/// Wait for the sync worker to complete a cycle via the `/sync/await-cycle` endpoint.
-///
-/// Returns immediately if the worker is OnlineIdle with a completed sync (nothing to do).
-/// Otherwise blocks until the next cycle completes (server-side Notify, zero polling).
 pub async fn await_sync_cycle(client: &Client, base_url: &str, token: &str, timeout: Duration) {
   let timeout_secs = timeout.as_secs().max(1);
   let response = client
@@ -16,7 +12,7 @@ pub async fn await_sync_cycle(client: &Client, base_url: &str, token: &str, time
       "{base_url}/sync/await-cycle?timeout={timeout_secs}"
     ))
     .bearer_auth(token)
-    .timeout(timeout + Duration::from_secs(5)) // HTTP timeout > server timeout
+    .timeout(timeout + Duration::from_secs(5))
     .send()
     .await
     .expect("await-cycle request failed");
@@ -32,8 +28,6 @@ pub async fn await_sync_cycle(client: &Client, base_url: &str, token: &str, time
   );
 }
 
-/// Wait for the sync worker to reach an active state (OnlineIdle or Syncing).
-/// Uses polling on `GET /node/status` — needed during setup before the worker is running.
 pub async fn wait_for_worker_online(
   client: &Client,
   base_url: &str,
@@ -56,8 +50,6 @@ pub async fn wait_for_worker_online(
   }
 }
 
-/// Poll an async predicate until it returns true or the timeout is reached.
-/// Use for cross-node verification where we need to confirm data appeared.
 pub async fn poll_until<F, Fut>(predicate: F, timeout: Duration, label: &str)
 where
   F: Fn() -> Fut,

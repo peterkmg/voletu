@@ -21,7 +21,9 @@ use crate::{
     storage,
     warehouse,
   },
+  enums::AdjustmentType,
   services::{
+    common::normalize_pagination,
     document::specs::{ReconciliationFlatQuerySpec, ReconciliationQuerySpec},
     DocumentService,
   },
@@ -46,8 +48,7 @@ impl DocumentService {
     &self,
     query: &ReconciliationQuerySpec,
   ) -> Result<Vec<inventory_reconciliation::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(inventory_reconciliation::Column::DeletedAt.is_null());
@@ -97,10 +98,13 @@ impl DocumentService {
     req: &dtos::CreateInventoryReconciliationCompositeRequest,
   ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .inventory_reconciliation_composite_create_no_tx(&txn, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -112,6 +116,7 @@ impl DocumentService {
     let saved = inventory_reconciliation::ActiveModelEx::from(req)
       .save(conn)
       .await?;
+
     let document_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -140,21 +145,19 @@ impl DocumentService {
     )
   }
 
-  /// Composite update: applies a header partial update plus a full diff on
-  /// the adjustments list.
-  /// Adjustments with `id: Some(uuid)` matching an existing row are updated.
-  /// Adjustments with `id: None` are inserted.
-  /// Existing adjustments not present in the request are hard-deleted.
   pub async fn inventory_reconciliation_composite_update(
     &self,
     reconciliation_id: Uuid,
     req: &dtos::UpdateInventoryReconciliationCompositeRequest,
   ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .inventory_reconciliation_composite_update_no_tx(&txn, reconciliation_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -164,15 +167,10 @@ impl DocumentService {
     reconciliation_id: Uuid,
     req: &dtos::UpdateInventoryReconciliationCompositeRequest,
   ) -> Result<dtos::InventoryReconciliationCompositeResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater.
-    //    This enforces draft-only mutation, applies set_if_some semantics,
-    //    and registers an audit log row.
     self
       .reconciliation_update_no_tx(conn, reconciliation_id, &req.reconciliation)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
-    //    database. The HashSet doubles as the dedup guard.
     let mut kept_ids: HashSet<Uuid> = HashSet::new();
     for adjustment in &req.adjustments {
       if let Some(adjustment_id) = adjustment.id {
@@ -185,9 +183,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist the adjustments as a graph save on the parent
-    //    `ActiveModelEx`. `HasManyModel::Replace(_)` deletes every existing
-    //    adjustment row that is not present in the new set.
     let adjustments: Vec<inventory_adjustment::ActiveModelEx> = req
       .adjustments
       .iter()
@@ -213,13 +208,11 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Re-derive document routing tags via the existing utility.
     self
       .audit
       .backfill_document_routing::<inventory_reconciliation::Entity>(conn, reconciliation_id)
       .await?;
 
-    // 5. Reload the full composite using the same eager-loading shape as on create.
     dtos::InventoryReconciliationCompositeResponse::try_from(
       inventory_reconciliation::Entity::load()
         .filter_by_id(reconciliation_id)
@@ -260,14 +253,12 @@ impl DocumentService {
     )
   }
 
-  /// Returns one row per reconciliation adjustment with document fields repeated.
-  /// Used by the grouped-row list table on the frontend.
   pub async fn reconciliation_flat_query(
     &self,
     query: ReconciliationFlatQuerySpec,
   ) -> Result<Vec<ReconciliationFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(inventory_reconciliation::Column::DeletedAt.is_null());
@@ -313,7 +304,7 @@ impl DocumentService {
           item_id: doc.id,
           product_id_name: dash.clone(),
           storage_id_name: dash.clone(),
-          adjustment_type: crate::enums::AdjustmentType::Surplus,
+          adjustment_type: AdjustmentType::Surplus,
           amount: Default::default(),
           reason: None,
         });

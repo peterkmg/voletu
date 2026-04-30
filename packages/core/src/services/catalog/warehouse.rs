@@ -2,6 +2,7 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
+  api::ApiError,
   dtos,
   entities::{base, warehouse},
   services::{
@@ -14,7 +15,7 @@ async fn ensure_active_base(
   conn: &impl ConnectionTrait,
   base_id: Uuid,
   field_name: &str,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   let exists = base::Entity::load()
     .filter_by_id(base_id)
     .filter(base::Column::DeletedAt.is_null())
@@ -22,7 +23,7 @@ async fn ensure_active_base(
     .await?;
 
   if exists.is_none() {
-    return Err(crate::api::ApiError::BadRequest(format!(
+    return Err(ApiError::BadRequest(format!(
       "{field_name} '{base_id}' does not reference a valid record"
     )));
   }
@@ -40,7 +41,7 @@ async fn before_warehouse_create(
   _svc: &CatalogService,
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateWarehouseRequest,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   ensure_active_base(conn, req.base_id, "baseId").await?;
   Ok(())
 }
@@ -50,10 +51,11 @@ async fn before_warehouse_update(
   conn: &impl sea_orm::ConnectionTrait,
   _existing: &warehouse::Model,
   req: &dtos::UpdateWarehouseRequest,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   if let Some(base_id) = req.base_id {
     ensure_active_base(conn, base_id, "baseId").await?;
   }
+
   Ok(())
 }
 

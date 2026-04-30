@@ -73,14 +73,10 @@ async fn api_error_into_response_uses_expected_status_and_error_code_mapping() {
 
 #[tokio::test]
 async fn api_error_from_serde_json_and_validator_errors_maps_to_validation_error_variant() {
-  // serde_json failures still funnel into the legacy single-message variant —
-  // they carry no per-field context to surface.
   let serde_err = serde_json::from_str::<Value>("{not json").unwrap_err();
   let api_from_serde: ApiError = serde_err.into();
   assert!(matches!(api_from_serde, ApiError::Validation(_)));
 
-  // `validator::ValidationErrors` now produces the structured `ValidationFields`
-  // variant so the frontend can pin issues to specific form fields.
   let mut validation_errors = ValidationErrors::new();
   validation_errors.add("username", ValidationError::new("length"));
   let api_from_validator: ApiError = validation_errors.into();
@@ -88,13 +84,12 @@ async fn api_error_from_serde_json_and_validator_errors_maps_to_validation_error
     ApiError::ValidationFields(issues) => {
       assert_eq!(issues.len(), 1, "expected one issue, got {issues:?}");
       assert_eq!(issues[0].field, "username");
-      // No min/max params on the constructed error → falls through to "length".
+
       assert_eq!(issues[0].code, "length");
     }
     other => panic!("expected ApiError::ValidationFields, got {other:?}"),
   }
 
-  // Both variants must continue to share the VALIDATION_ERROR code on the wire.
   assert_eq!(api_from_validator.error_code(), "VALIDATION_ERROR");
 }
 
@@ -104,8 +99,6 @@ fn field_kind(errors: Vec<ValidationError>) -> ValidationErrorsKind {
 
 #[test]
 fn validation_errors_convert_to_dot_index_paths() {
-  // Build the structure equivalent to:
-  //   items[2].accepted_amount → "positive"
   let mut inner = ValidationErrors::new();
   let mut e = ValidationError::new("positive");
   e.message = Some(Cow::from("must be greater than 0"));
@@ -213,7 +206,6 @@ async fn non_validation_error_response_keeps_legacy_envelope() {
 
   let body = response_json(response).await;
 
-  // Legacy envelope: { success, error: { code, message } } — no `issues` key.
   assert_eq!(
     body.get("success").and_then(|v| v.as_bool()),
     Some(false),

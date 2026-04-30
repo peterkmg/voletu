@@ -89,14 +89,11 @@ async fn list_return_ok_for_empty_database_state_and_wrap_payload_in_response() 
     api_paths::transport::rail::MEASUREMENTS,
     api_paths::transport::rail::WEIGHTS,
     api_paths::acceptance::ROOT,
-    // acceptance::ITEMS removed — items managed via composite endpoints
     api_paths::dispatch::ROOT,
-    // dispatch::ITEMS removed — items managed via composite endpoints
     api_paths::dispatch::STORAGE_MEASUREMENTS,
     api_paths::operations::PHYSICAL_TRANSFERS,
     api_paths::operations::OWNERSHIP_TRANSFERS,
     api_paths::blending::ROOT,
-    // blending::COMPONENTS and ::RESULTS removed — managed via composite endpoints
     api_paths::operations::RECONCILIATIONS,
     api_paths::operations::RECONCILIATION_ADJUSTMENTS,
     api_paths::ledger::ROOT,

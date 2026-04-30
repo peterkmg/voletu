@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '~/lib/utils'
 import { TitlebarMenu } from './titlebar-menu'
 
-// Lazily resolved + cached Tauri window handle
 let cachedWindow: Awaited<
   ReturnType<typeof import('@tauri-apps/api/window').getCurrentWindow>
 > | null = null
@@ -21,7 +20,6 @@ async function getTauriWindow() {
   }
 }
 
-// Eagerly kick off resolution
 getTauriWindow()
 
 const controlBase = cn(
@@ -75,7 +73,7 @@ function WindowControls() {
 
   return (
     <div className="flex h-full items-center">
-      {/* Minimize */}
+
       <button
         type="button"
         onClick={handleMinimize}
@@ -87,7 +85,6 @@ function WindowControls() {
         </svg>
       </button>
 
-      {/* Maximize / Restore */}
       <button
         type="button"
         onClick={handleMaximize}
@@ -120,7 +117,6 @@ function WindowControls() {
             )}
       </button>
 
-      {/* Close */}
       <button
         type="button"
         onClick={handleClose}
@@ -149,7 +145,6 @@ function PageTitleDisplay() {
   const [title, setTitle] = useState(document.title)
 
   useEffect(() => {
-    // Observe document.title changes via MutationObserver on <title> element
     const titleEl = document.querySelector('title')
     if (!titleEl)
       return
@@ -174,7 +169,7 @@ export function Titlebar() {
         'border-b bg-sidebar',
       )}
     >
-      {/* Left: app name + menu bar */}
+
       <div className="flex h-full items-center">
         <span className="px-3 text-xs font-medium tracking-wide text-muted-foreground">
           voletu
@@ -182,12 +177,10 @@ export function Titlebar() {
         <TitlebarMenu />
       </div>
 
-      {/* Center: dynamic page title + drag zone */}
       <div className="flex flex-1 items-center justify-center self-stretch" data-tauri-drag-region>
         <PageTitleDisplay />
       </div>
 
-      {/* Right: window controls */}
       <WindowControls />
     </div>
   )

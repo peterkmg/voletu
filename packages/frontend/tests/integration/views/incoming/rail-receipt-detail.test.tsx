@@ -1,11 +1,3 @@
-/**
- * Integration tests for the rail-receipt detail variants. Mirror of
- * truck-receipt-detail.test.tsx with rail substitutions.
- *
- * Plan tasks covered:
- *   5.1 / 5.3 / 5.4 / 5.5 / 5.6a / 5.6 (rail twin).
- */
-
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'

@@ -14,15 +14,11 @@ interface DataRowProps<TData> {
   densityCls: string
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>, data: TData, index: number) => void
   onRowAction?: (row: TData) => void
-  /** Callback ref for virtualizer measurement (virtual mode only) */
   measureRef?: (el: HTMLElement | null) => void
-  /** Virtual row offset — when set, row uses absolute positioning with translateY */
   virtualStart?: number
-  /** Group boundary info for visual merge in grouped tables */
   groupInfo?: GroupInfo
 }
 
-/** Positioning style for virtual rows — only recomputed when virtualStart changes */
 function virtualStyle(start: number): CSSProperties {
   return {
     position: 'absolute',
@@ -50,7 +46,6 @@ function DataRowInner<TData>({
 
   const isContinuation = groupInfo && !groupInfo.isFirstOfGroup
 
-  // Group hover: highlight all rows in the same group
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!groupInfo)
       return
@@ -64,19 +59,18 @@ function DataRowInner<TData>({
   const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!groupInfo)
       return
+
     const container = e.currentTarget.parentElement
     if (!container)
       return
+
     container.querySelectorAll<HTMLElement>('[data-group-hover]')
       .forEach(el => el.removeAttribute('data-group-hover'))
   }, [groupInfo])
 
-  // Group border styling
   const groupCls = groupInfo
     ? cn(
-        // No border between rows within a group
         !groupInfo.isLastOfGroup && 'border-b-transparent',
-        // Suppress default hover on grouped rows (group hover handles it)
         'hover:bg-transparent data-[group-hover]:bg-muted/50',
       )
     : ''
@@ -103,7 +97,6 @@ function DataRowInner<TData>({
         const pinStyle = isPinning ? getPinningStyles(cell.column) : {}
         const pinBg = cell.column.getIsPinned() ? 'bg-background' : ''
 
-        // Visual merge: suppress doc-level cell content on continuation rows
         const suppressContent = isContinuation && meta?.groupRole === 'doc'
 
         return (

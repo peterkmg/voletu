@@ -29,6 +29,7 @@ async fn ensure_ownership_item_create_allowed(
   req: &dtos::CreateOwnershipTransferItemRequest,
 ) -> Result<(), ApiError> {
   let doc = get_by_id(conn, req.ownership_transfer_id).await?;
+
   ensure_doc_mod_allowed(doc.status)?;
   ensure_storage_accepts_product(conn, req.item.storage_id, req.item.product_id).await
 }

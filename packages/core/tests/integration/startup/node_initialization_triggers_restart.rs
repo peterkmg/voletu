@@ -1,12 +1,3 @@
-//! Verifies that calling the node initialization endpoint triggers a server restart
-//! and that the new credentials work after the restart.
-//!
-//! Topology: single standalone node (no sync peers).
-//!
-//! Property: after initialization the old default credentials are rejected,
-//! the new root credentials are accepted, and the sync status reports the
-//! configured node type.
-
 use std::time::Duration;
 
 use reqwest::{Client, StatusCode};

@@ -56,8 +56,6 @@ export function ChangeCentralUrlDialog({ open, onOpenChange }: ChangeCentralUrlD
     mode: 'onTouched',
   })
 
-  // Re-seed the form every time the dialog opens so we always start from the
-  // currently-persisted URL, not whatever the user last typed.
   useEffect(() => {
     if (open)
       form.reset({ url: currentUrl ?? '' })
@@ -72,10 +70,6 @@ export function ChangeCentralUrlDialog({ open, onOpenChange }: ChangeCentralUrlD
       })
     },
     onSuccess: () => {
-      // The handler returns an updated NodeStatusResponse, but the simplest
-      // way to reflect it everywhere is to invalidate the status/bases queries;
-      // use-node-status will refetch and apply the snapshot via the existing
-      // effect.
       queryClient.invalidateQueries({ queryKey: ['node', 'status'] })
       queryClient.invalidateQueries({ queryKey: ['node', 'bases'] })
       queryClient.invalidateQueries({ queryKey: ['health'] })
@@ -89,9 +83,6 @@ export function ChangeCentralUrlDialog({ open, onOpenChange }: ChangeCentralUrlD
   })
 
   function onSubmit(values: FormValues) {
-    // Use mutate (fire-and-forget) so react-hook-form's submit promise doesn't
-    // surface as an unhandled rejection on API errors. Error handling lives in
-    // mutation.onError via a toast.
     mutation.mutate(values.url.trim())
   }
 

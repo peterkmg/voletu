@@ -218,14 +218,12 @@ async fn inventory_composite_create_with_adjustments() {
       .await
       .unwrap();
 
-    // All three adjustments must be persisted under the new reconciliation.
     assert_eq!(response.document.document_number, "REC-COMP-1");
     assert_eq!(response.adjustments.len(), 3);
     for adj in &response.adjustments {
       assert_eq!(adj.reconciliation_id, response.document.id);
     }
 
-    // Spot-check values survive the round-trip.
     let surplus_a = response
       .adjustments
       .iter()
@@ -249,7 +247,6 @@ async fn inventory_composite_create_with_adjustments() {
       .expect("surplus adjustment on storage B should exist");
     assert_eq!(surplus_b.amount, dec("1.5"));
 
-    // Confirm the adjustments are queryable via the plain adjustment API too.
     assert_eq!(service.adjustment_list(None).await.unwrap().len(), 3);
   })
   .await;
@@ -266,7 +263,6 @@ async fn inventory_composite_update_inserts_updates_and_deletes_adjustments() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create a reconciliation composite with three adjustments.
     let initial = service
       .inventory_reconciliation_composite_create(&CreateInventoryReconciliationCompositeRequest {
         reconciliation: CreateInventoryReconciliationRequest {
@@ -305,8 +301,6 @@ async fn inventory_composite_update_inserts_updates_and_deletes_adjustments() {
     assert_eq!(initial.adjustments.len(), 3);
     let reconciliation_id = initial.document.id;
 
-    // Capture each adjustment by its initial amount so the test does not
-    // depend on response ordering.
     let pick = |amount: Decimal| -> (Uuid, Uuid, Uuid, AdjustmentType, Decimal) {
       let adj = initial
         .adjustments
@@ -326,11 +320,6 @@ async fn inventory_composite_update_inserts_updates_and_deletes_adjustments() {
     let (update_id, update_storage, update_product, update_type, _) = pick(dec("2.0"));
     let (delete_id, _, _, _, _) = pick(dec("3.0"));
 
-    // 2. Apply a composite update:
-    //    - keep the first adjustment as-is,
-    //    - update the second adjustment's amount,
-    //    - drop the third adjustment by omitting it,
-    //    - insert one fresh adjustment with id: None.
     let updated = service
       .inventory_reconciliation_composite_update(
         reconciliation_id,
@@ -372,7 +361,6 @@ async fn inventory_composite_update_inserts_updates_and_deletes_adjustments() {
       .await
       .unwrap();
 
-    // 3. Assertions on the response.
     assert_eq!(updated.adjustments.len(), 3);
 
     let unchanged = updated
@@ -418,7 +406,6 @@ async fn inventory_composite_update_rejects_duplicate_adjustment_ids() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // Seed: create a reconciliation composite with a single adjustment.
     let initial = service
       .inventory_reconciliation_composite_create(&CreateInventoryReconciliationCompositeRequest {
         reconciliation: CreateInventoryReconciliationRequest {
@@ -442,7 +429,6 @@ async fn inventory_composite_update_rejects_duplicate_adjustment_ids() {
     let existing = &initial.adjustments[0];
     let dup_id = existing.id;
 
-    // Build a request that references the same existing id twice.
     let err = service
       .inventory_reconciliation_composite_update(
         reconciliation_id,

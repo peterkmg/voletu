@@ -1,4 +1,25 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateProductGroupRequest,
+    EmbedParams,
+    PaginationParams,
+    ProductGroupResponse,
+    UpdateProductGroupRequest,
+  },
+  endpoints::paths,
+  services::common::normalize_pagination,
+};
 
 #[utoipa::path(
   get,
@@ -21,10 +42,7 @@ async fn product_group_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<ProductGroupResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(
-      pagination.page,
-      pagination.per_page,
-    )?)
+    Some(normalize_pagination(pagination.page, pagination.per_page)?)
   } else {
     None
   };

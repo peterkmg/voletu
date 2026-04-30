@@ -10,8 +10,10 @@ use crate::{
 
 pub fn initialize_state(app: &AppHandle) -> anyhow::Result<AppState> {
   initialize_keyring()?;
+
   let cfg = AppConfig::load()?;
   let db_password = load_db_password()?;
+
   let mut state = AppState::new(cfg.clone());
 
   match cfg.resolved_mode(db_password.is_some()) {
@@ -26,15 +28,19 @@ pub fn initialize_state(app: &AppHandle) -> anyhow::Result<AppState> {
         .db_params
         .clone()
         .ok_or_else(|| anyhow!("local db params missing"))?;
+
       let jwt_cfg = cfg
         .jwt_config
         .clone()
         .ok_or_else(|| anyhow!("local jwt config missing"))?;
+
       let password = db_password.ok_or_else(|| anyhow!("local db password missing"))?;
       let base_url = start_local_mode(app, &mut state, db_params, jwt_cfg, &password)?;
+
       state.startup.needs_setup = false;
       state.startup.mode = Some(AppMode::Local);
       state.startup.api_base_url = Some(base_url);
+
       Ok(state)
     }
     None => Ok(state),

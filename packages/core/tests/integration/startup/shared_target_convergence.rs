@@ -1,12 +1,3 @@
-//! Verifies that a document whose target bases span both Peripherals converges
-//! across all three nodes after the real sync worker runs.
-//!
-//! Topology: Central + 2 Peripherals (PA on base_alpha, PB on base_beta).
-//!
-//! Property: after Central creates a physical transfer from storage_alpha to
-//! storage_beta (routes to both bases), both PA and PB receive the document
-//! with field parity.
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -35,7 +26,6 @@ async fn physical_transfer_reaches_both_peripherals_with_field_parity() {
   ])
   .await;
 
-  // Create a physical transfer from storage_alpha to storage_beta (cross-base, routes to both)
   let transfer = create_physical_transfer_via_api(
     &client,
     &central.url,
@@ -50,11 +40,9 @@ async fn physical_transfer_reaches_both_peripherals_with_field_parity() {
   .await;
   let transfer_id = parse_doc_id(&transfer);
 
-  // Let both peripherals sync
   await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  // Both peripherals should have the transfer
   let pa_t = get_physical_transfer_composite_json(&client, &pa.url, &pa.token, transfer_id).await;
   let pb_t = get_physical_transfer_composite_json(&client, &pb.url, &pb.token, transfer_id).await;
   assert!(
@@ -66,7 +54,6 @@ async fn physical_transfer_reaches_both_peripherals_with_field_parity() {
     "PB (base_beta) should have cross-base transfer"
   );
 
-  // Field parity: all three nodes agree on amount
   let central_t =
     get_physical_transfer_composite_json(&client, &central.url, &central.token, transfer_id)
       .await

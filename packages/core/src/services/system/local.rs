@@ -31,9 +31,6 @@ impl SystemService {
     Ok((&row).into())
   }
 
-  /// Persist a new central API URL in the local bootstrap row. The worker
-  /// re-reads this value from the DB on every tick via `load_worker_topology`,
-  /// so no explicit restart/signal is required — the next cycle uses the new URL.
   pub async fn update_central_api_url(&self, url: &str) -> Result<LocalResponse, ApiError> {
     let current = load_local_bootstrap(self.db.as_ref()).await?;
     let mut model: local::ActiveModel = current.into();

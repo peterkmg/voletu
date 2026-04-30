@@ -1,9 +1,3 @@
-//! **Executed document syncs with ledger parity**: An acceptance document created and
-//! executed on Central produces a ledger entry that matches exactly on the peripheral after sync.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Ledger entry (storage + product + contractor + amount) on peripheral matches Central after syncing an executed document
-
 use std::time::Duration;
 
 use crate::common::integration::{
@@ -28,7 +22,6 @@ async fn ledger_amount_matches_central_after_executing_acceptance() {
   ])
   .await;
 
-  // Create and execute acceptance (creates ledger entry)
   api_post(&client, &format!("{}/acceptance/composite/save-and-execute", central.url), &central.token,
     serde_json::json!({
       "documentNumber": "ACC-LED-001", "dateAccepted": "2026-01-15T10:00:00Z", "arrivalType": "TRUCK",
@@ -36,7 +29,6 @@ async fn ledger_amount_matches_central_after_executing_acceptance() {
       "items": [{"productId": catalog.product, "storageId": catalog.storage_alpha, "acceptedAmount": "1234.56"}]
     })).await;
 
-  // Check ledger on Central
   let central_ledger = get_all_ledger_balances(&client, &central.url, &central.token).await;
   let central_entry = central_ledger.iter().find(|e| {
     e["storageId"].as_str() == Some(&catalog.storage_alpha.to_string())
@@ -46,10 +38,8 @@ async fn ledger_amount_matches_central_after_executing_acceptance() {
   assert!(central_entry.is_some(), "Central should have ledger entry");
   let expected_amount = &central_entry.unwrap()["currentAmount"];
 
-  // Sync to PA
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
-  // Verify ledger on PA matches
   let pa_ledger = get_all_ledger_balances(&client, &pa.url, &pa.token).await;
   let pa_entry = pa_ledger.iter().find(|e| {
     e["storageId"].as_str() == Some(&catalog.storage_alpha.to_string())

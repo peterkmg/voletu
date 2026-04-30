@@ -1,9 +1,11 @@
 use voletu_core::{endpoints::paths as api_paths, services::ledger::LedgerService};
 
-use super::super::seed_inventory_context;
-use crate::common::{
-  http::{assert_api_success, post_json, setup_seeded_app_with_admin_token, with_auth_token},
-  payloads::acceptance_composite_save_and_execute,
+use crate::{
+  common::{
+    http::{assert_api_success, post_json, setup_seeded_app_with_admin_token, with_auth_token},
+    payloads::acceptance_composite_save_and_execute,
+  },
+  documents::seed_inventory_context,
 };
 
 const ACCEPTANCE_COMPOSITE_DOC_NUMBER: &str = "ACC-COMP-1";

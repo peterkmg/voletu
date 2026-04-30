@@ -507,7 +507,6 @@ async fn update_composite_inserts_updates_and_deletes_items() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create an acceptance composite with three items.
     let initial = service
       .acceptance_composite_create(&CreateAcceptanceCompositeRequest {
         acceptance: CreateAcceptanceRequest {
@@ -544,9 +543,7 @@ async fn update_composite_inserts_updates_and_deletes_items() {
     assert_eq!(initial.items.len(), 3);
 
     let acceptance_id = initial.document.id;
-    // We capture each id by its initial amount so the test does not depend on
-    // a specific row ordering of the response. AcceptanceItemResponse is not Clone,
-    // so we extract owned copies of just the fields we need below.
+
     let pick = |amount: Decimal| -> (Uuid, Uuid, Uuid, Decimal) {
       let item = initial
         .items
@@ -564,11 +561,6 @@ async fn update_composite_inserts_updates_and_deletes_items() {
     let (update_id, update_product, update_storage, _) = pick(dec("2.0"));
     let (delete_id, _, _, _) = pick(dec("3.0"));
 
-    // 2. Apply a composite update:
-    //    - keep item_unchanged as-is,
-    //    - update item_to_update.accepted_amount,
-    //    - drop item_to_delete by omitting it,
-    //    - insert one fresh item with id: None.
     let updated = service
       .acceptance_composite_update(acceptance_id, &UpdateAcceptanceCompositeRequest {
         acceptance: UpdateAcceptanceRequest {
@@ -605,7 +597,6 @@ async fn update_composite_inserts_updates_and_deletes_items() {
       .await
       .unwrap();
 
-    // 3. Assertions on the response.
     assert_eq!(updated.items.len(), 3);
 
     let unchanged = updated
@@ -652,7 +643,6 @@ async fn update_composite_rejects_duplicate_item_ids() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // Seed: create an acceptance composite with a single item.
     let initial = service
       .acceptance_composite_create(&CreateAcceptanceCompositeRequest {
         acceptance: CreateAcceptanceRequest {
@@ -678,7 +668,6 @@ async fn update_composite_rejects_duplicate_item_ids() {
     let existing = &initial.items[0];
     let dup_id = existing.id;
 
-    // Build a request that references the same existing id twice.
     let err = service
       .acceptance_composite_update(acceptance_id, &UpdateAcceptanceCompositeRequest {
         acceptance: UpdateAcceptanceRequest {
@@ -737,9 +726,6 @@ async fn composite_update_mutates_items_and_measurements() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // Seed ledger balances so the dispatch composite create's draft-only
-    // balance check has stock to draw against. Both storages need enough
-    // headroom to cover every item line we insert across the create + update.
     seed_ledger_balance(
       &db,
       catalog.storage_a_id,
@@ -757,9 +743,6 @@ async fn composite_update_mutates_items_and_measurements() {
     )
     .await;
 
-    // 1. Seed: create a dispatch composite with three items and three storage
-    //    measurement rows so we can exercise insert / update / delete on both
-    //    child collections within a single update call.
     let initial = service
       .dispatch_composite_create(&CreateDispatchCompositeRequest {
         dispatch: CreateDispatchRequest {
@@ -837,8 +820,6 @@ async fn composite_update_mutates_items_and_measurements() {
 
     let dispatch_id = initial.document.id;
 
-    // Capture each item by its initial dispatched_amount so the test does not
-    // depend on a specific row ordering of the response.
     let pick_item = |amount: Decimal| -> (Uuid, Uuid, Uuid, Decimal) {
       let item = initial
         .items
@@ -857,7 +838,6 @@ async fn composite_update_mutates_items_and_measurements() {
     let (item_update_id, item_update_product, item_update_storage, _) = pick_item(dec("2.0"));
     let (item_delete_id, _, _, _) = pick_item(dec("3.0"));
 
-    // Capture each measurement by its initial before_mass.
     let pick_measurement = |before: Decimal| -> (Uuid, Uuid, Decimal, Decimal) {
       let row = initial
         .storage_measurements
@@ -871,11 +851,6 @@ async fn composite_update_mutates_items_and_measurements() {
     let (m_update_id, m_update_storage, _, _) = pick_measurement(dec("200.0"));
     let (m_delete_id, _, _, _) = pick_measurement(dec("300.0"));
 
-    // 2. Apply a composite update covering both child collections:
-    //    - keep the unchanged item / measurement,
-    //    - update one item's amount and one measurement's after_mass,
-    //    - drop one item and one measurement by omitting them,
-    //    - insert one fresh item and one fresh measurement with id: None.
     let updated = service
       .dispatch_composite_update(dispatch_id, &UpdateDispatchCompositeRequest {
         dispatch: UpdateDispatchRequest {
@@ -954,7 +929,6 @@ async fn composite_update_mutates_items_and_measurements() {
       .await
       .unwrap();
 
-    // 3. Item-side assertions on the response.
     assert_eq!(updated.items.len(), 3);
 
     let unchanged_item = updated
@@ -989,7 +963,6 @@ async fn composite_update_mutates_items_and_measurements() {
     assert_eq!(fresh_item.product_id, catalog.product_a_id);
     assert_eq!(fresh_item.storage_id, catalog.storage_b_id);
 
-    // 4. Measurement-side assertions on the response.
     assert_eq!(updated.storage_measurements.len(), 3);
 
     let unchanged_m = updated
@@ -1039,7 +1012,6 @@ async fn composite_update_rejects_duplicate_item_ids() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // Seed ledger balance so the dispatch composite create has stock available.
     seed_ledger_balance(
       &db,
       catalog.storage_a_id,
@@ -1049,7 +1021,6 @@ async fn composite_update_rejects_duplicate_item_ids() {
     )
     .await;
 
-    // Seed: create a dispatch composite with a single item.
     let initial = service
       .dispatch_composite_create(&CreateDispatchCompositeRequest {
         dispatch: CreateDispatchRequest {
@@ -1080,7 +1051,6 @@ async fn composite_update_rejects_duplicate_item_ids() {
     let existing = &initial.items[0];
     let dup_id = existing.id;
 
-    // Build a request that references the same existing id twice.
     let err = service
       .dispatch_composite_update(dispatch_id, &UpdateDispatchCompositeRequest {
         dispatch: UpdateDispatchRequest {

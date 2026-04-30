@@ -283,11 +283,6 @@ async fn composite_update_mutates_components_and_results() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create a blending composite with three components and three
-    //    results so we can exercise insert / update / delete on both child
-    //    collections within a single update call. The document stays in
-    //    Draft, so the per-row update / create paths run their normal
-    //    draft-only mutation guards.
     let initial = service
       .blending_composite_create(&CreateBlendingCompositeRequest {
         document_number: "BLD-COMP-UPDATE-1".to_string(),
@@ -334,8 +329,6 @@ async fn composite_update_mutates_components_and_results() {
 
     let blending_id = initial.document.id;
 
-    // Capture each component / result by its initial amount so the test does
-    // not depend on a specific row ordering of the response.
     let pick_component = |amount: Decimal| -> (Uuid, Uuid, Uuid, Decimal) {
       let row = initial
         .components
@@ -366,11 +359,6 @@ async fn composite_update_mutates_components_and_results() {
     let (r_update_id, r_update_storage, _) = pick_result(dec("20.0"));
     let (r_delete_id, _, _) = pick_result(dec("30.0"));
 
-    // 2. Apply a composite update covering both child collections:
-    //    - keep the unchanged component / result,
-    //    - update one component's amount and one result's produced amount,
-    //    - drop one component and one result by omitting them,
-    //    - insert one fresh component and one fresh result with id: None.
     let updated = service
       .blending_composite_update(blending_id, &UpdateBlendingCompositeRequest {
         blending: UpdateBlendingRequest {
@@ -420,7 +408,6 @@ async fn composite_update_mutates_components_and_results() {
       .await
       .unwrap();
 
-    // 3. Component-side assertions on the response.
     assert_eq!(updated.components.len(), 3);
 
     let unchanged_c = updated
@@ -451,7 +438,6 @@ async fn composite_update_mutates_components_and_results() {
     assert_eq!(fresh_c.storage_id, catalog.storage_a_id);
     assert_eq!(fresh_c.source_product_id, catalog.product_a_id);
 
-    // 4. Result-side assertions on the response.
     assert_eq!(updated.results.len(), 3);
 
     let unchanged_r = updated
@@ -494,8 +480,6 @@ async fn composite_update_rejects_duplicate_component_ids() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // Seed: create a blending composite with a single component and a single
-    // result so the request below can refer to the existing component id.
     let initial = service
       .blending_composite_create(&CreateBlendingCompositeRequest {
         document_number: "BLD-COMP-UPDATE-DUP".to_string(),
@@ -520,7 +504,6 @@ async fn composite_update_rejects_duplicate_component_ids() {
     let existing_result = &initial.results[0];
     let dup_id = existing_component.id;
 
-    // Build a request that references the same existing component id twice.
     let err = service
       .blending_composite_update(blending_id, &UpdateBlendingCompositeRequest {
         blending: UpdateBlendingRequest {

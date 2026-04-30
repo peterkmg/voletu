@@ -28,8 +28,6 @@ pub enum DatabaseType {
   MySQL,
 }
 
-/// Serialisable subset of database configuration (no password).
-/// Used by Tauri to persist non-sensitive settings via confy.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DbParams {
   pub db_type: DatabaseType,
@@ -166,6 +164,7 @@ impl DbConfig {
 
   pub fn connection_url_public(&self) -> Result<String, DbConfigError> {
     let url = self.connection_url()?;
+
     match self.params.db_type {
       DatabaseType::SQLite => {
         if self.params.sqlite_in_memory {
@@ -198,12 +197,15 @@ impl DbConfig {
       .host
       .as_deref()
       .ok_or(DbConfigError::MissingHost)?;
+
     let port = self.params.port.ok_or(DbConfigError::MissingPort)?;
+
     let database = self
       .params
       .database
       .as_deref()
       .ok_or(DbConfigError::MissingDatabase)?;
+
     let username = self
       .params
       .username

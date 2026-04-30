@@ -16,10 +16,10 @@ fn apply_rail_waybill_update(
 
 #[voletu_core_macros::entity_service(
   entity = rail_waybill,
-  entity_mod = crate::entities::rail_waybill,
-  create_req = crate::dtos::CreateRailWaybillRequest,
-  update_req = crate::dtos::UpdateRailWaybillRequest,
-  response = crate::dtos::RailWaybillResponse,
+  entity_mod = rail_waybill,
+  create_req = dtos::CreateRailWaybillRequest,
+  update_req = dtos::UpdateRailWaybillRequest,
+  response = dtos::RailWaybillResponse,
   apply_update = apply_rail_waybill_update,
   entity_name = "Rail waybill",
   ops(create, list, get, update, soft_delete, hard_delete),

@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use super::api_post;
 
-/// IDs returned after seeding a two-base catalog via HTTP API.
 #[derive(Clone, Copy, Debug)]
 pub struct RoutingCatalog {
   pub base_alpha: Uuid,
@@ -21,8 +20,6 @@ pub struct RoutingCatalog {
   pub contractor_b: Uuid,
 }
 
-/// Seed catalog entities on a running node via HTTP API.
-/// Creates two bases (alpha/beta), each with a warehouse + storage, plus products and companies.
 pub async fn seed_catalog_via_api(client: &Client, base_url: &str, token: &str) -> RoutingCatalog {
   let base_alpha = api_post(
     client,
@@ -211,7 +208,6 @@ pub async fn seed_catalog_via_api(client: &Client, base_url: &str, token: &str) 
   }
 }
 
-/// Parse a UUID from a JSON value field.
 fn parse_uuid(json: &Value, field: &str) -> Uuid {
   Uuid::parse_str(
     json[field]

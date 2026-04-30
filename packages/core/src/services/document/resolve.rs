@@ -21,8 +21,6 @@ use crate::{
 };
 
 impl DocumentService {
-  // ── Dispatch ──────────────────────────────
-
   pub async fn dispatch_document_list_with_names(
     &self,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
@@ -49,6 +47,7 @@ impl DocumentService {
     query: DispatchDocumentQuerySpec,
   ) -> Result<Vec<dtos::DispatchResponse>, ApiError> {
     let items = self.dispatch_document_query_models(&query).await?;
+
     let exporter_names = self
       .company_name_map(items.iter().filter_map(|item| item.exporter_id))
       .await?;
@@ -71,19 +70,23 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::DispatchCompositeResponse, ApiError> {
     let composite = self.dispatch_composite_model(id).await?;
+
     let items = composite
       .items
       .iter()
       .cloned()
       .map(dtos::DispatchItemResponse::from)
       .collect();
+
     let storage_measurements = composite
       .storage_measurements
       .iter()
       .cloned()
       .map(dtos::DispatchMeasurementResponse::from)
       .collect();
+
     let exporter_names = self.company_name_map(composite.exporter_id).await?;
+
     let exporter_id_name = composite
       .exporter_id
       .and_then(|exporter_id| exporter_names.get(&exporter_id).cloned());
@@ -131,6 +134,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::AcceptanceCompositeResponse, ApiError> {
     let composite = self.acceptance_composite_model(id).await?;
+
     let items = composite
       .items
       .iter()
@@ -182,8 +186,6 @@ impl DocumentService {
     self.blending_composite_model(id).await?.try_into()
   }
 
-  // ── Reconciliation ────────────────────────
-
   pub async fn reconciliation_list_with_names(
     &self,
   ) -> Result<Vec<dtos::InventoryReconciliationResponse>, ApiError> {
@@ -212,8 +214,6 @@ impl DocumentService {
         .collect(),
     )
   }
-
-  // ── Truck waybill ─────────────────────────
 
   pub async fn truck_waybill_get_with_names(
     &self,
@@ -249,6 +249,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
     let composite = self.truck_waybill_composite_model(id).await?;
+
     let items = (!composite.items.is_empty()).then(|| {
       composite
         .items
@@ -257,6 +258,7 @@ impl DocumentService {
         .map(dtos::TruckWaybillItemResponse::from)
         .collect()
     });
+
     let weight_docs = (!composite.weight_docs.is_empty()).then(|| {
       composite
         .weight_docs
@@ -272,8 +274,6 @@ impl DocumentService {
       weight_docs,
     })
   }
-
-  // ── Rail waybill ──────────────────────────
 
   pub async fn rail_waybill_get_with_names(
     &self,
@@ -309,6 +309,7 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
     let composite = self.rail_waybill_composite_model(id).await?;
+
     let wagon_manifests = (!composite.wagon_manifests.is_empty()).then(|| {
       composite
         .wagon_manifests
@@ -324,8 +325,6 @@ impl DocumentService {
     })
   }
 
-  // ── Physical transfer ─────────────────────
-
   pub async fn physical_transfer_list_with_names(
     &self,
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
@@ -339,11 +338,13 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
     let response = self.physical_transfer_model(id).await?;
+
     let to_storage_ids = response
       .items
       .iter()
       .map(|item| item.to_storage_id)
       .collect::<Vec<_>>();
+
     let to_storage_names = self.storage_name_map(to_storage_ids).await?;
 
     Ok(dtos::PhysicalTransferResponse::from_loaded_with_names(
@@ -357,11 +358,13 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::PhysicalTransferResponse, ApiError> {
     let response = self.physical_transfer_model(id).await?;
+
     let to_storage_ids = response
       .items
       .iter()
       .map(|item| item.to_storage_id)
       .collect::<Vec<_>>();
+
     let to_storage_names = self.storage_name_map(to_storage_ids).await?;
 
     Ok(dtos::PhysicalTransferResponse::from_loaded_with_names(
@@ -383,10 +386,12 @@ impl DocumentService {
     query: PhysicalTransferQuerySpec,
   ) -> Result<Vec<dtos::PhysicalTransferResponse>, ApiError> {
     let responses = self.physical_transfer_query_models(&query).await?;
+
     let to_storage_ids = responses
       .iter()
       .flat_map(|response| response.items.iter().map(|item| item.to_storage_id))
       .collect::<Vec<_>>();
+
     let to_storage_names = self.storage_name_map(to_storage_ids).await?;
 
     Ok(
@@ -398,8 +403,6 @@ impl DocumentService {
         .collect(),
     )
   }
-
-  // ── Ownership transfer ────────────────────
 
   pub async fn ownership_transfer_list_with_names(
     &self,
@@ -414,11 +417,13 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::OwnershipTransferResponse, ApiError> {
     let response = self.ownership_transfer_model(id).await?;
+
     let contractor_ids = response
       .items
       .iter()
       .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
       .collect::<Vec<_>>();
+
     let contractor_names = self.company_name_map(contractor_ids).await?;
 
     Ok(dtos::OwnershipTransferResponse::from_loaded_with_names(
@@ -432,11 +437,13 @@ impl DocumentService {
     id: Uuid,
   ) -> Result<dtos::OwnershipTransferResponse, ApiError> {
     let response = self.ownership_transfer_model(id).await?;
+
     let contractor_ids = response
       .items
       .iter()
       .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
       .collect::<Vec<_>>();
+
     let contractor_names = self.company_name_map(contractor_ids).await?;
 
     Ok(dtos::OwnershipTransferResponse::from_loaded_with_names(
@@ -458,6 +465,7 @@ impl DocumentService {
     query: OwnershipTransferQuerySpec,
   ) -> Result<Vec<dtos::OwnershipTransferResponse>, ApiError> {
     let responses = self.ownership_transfer_query_models(&query).await?;
+
     let contractor_ids = responses
       .iter()
       .flat_map(|response| {
@@ -467,6 +475,7 @@ impl DocumentService {
           .flat_map(|item| [item.from_contractor_id, item.to_contractor_id])
       })
       .collect::<Vec<_>>();
+
     let contractor_names = self.company_name_map(contractor_ids).await?;
 
     Ok(

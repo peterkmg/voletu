@@ -4,7 +4,6 @@ use voletu_core_macros::response_dto;
 
 use crate::services::ledger::LedgerBalanceRow;
 
-/// Response DTO for a derived inventory balance.
 #[response_dto(service_fields(common))]
 pub struct LedgerBalanceResponse {
   pub storage_id: Uuid,

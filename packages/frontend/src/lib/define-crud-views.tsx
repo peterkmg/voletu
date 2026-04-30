@@ -1,5 +1,3 @@
-/* eslint-disable react/component-hook-factories */
-
 import type { Row } from '@tanstack/react-table'
 import type {
   EntityDialogsLifecycleConfig,
@@ -45,19 +43,8 @@ export interface CrudViewConfig<TRow extends { id: string }> {
     deleteOnly?: boolean
     disableEdit?: boolean
     getDetailPath?: (row: TRow) => string
-    /**
-     * Pipeline-aware per-row predicates. When set, the row factory uses these
-     * to gate the Edit and "Issue acceptance" affordances per row instead of
-     * the single `disableEdit` boolean — see spec §3.2.
-     */
     pipelineActions?: {
-      /** Predicate gating the inline Edit button per row. */
       editVisible?: (row: TRow) => boolean
-      /**
-       * When set, an inline "Issue acceptance" button is rendered for rows
-       * matching `visible(row)`. Click invokes `openLifecycle(row, 'issueAcceptance')`,
-       * which is dispatched to the lifecycle dialog with `lifecyclePropName: 'prefillBasis'`.
-       */
       issueAcceptance?: { visible: (row: TRow) => boolean }
     }
   }
@@ -77,12 +64,14 @@ export function defineCrudViews<TRow extends { id: string }>(
     ...config.rowActions,
     pipelineActions: config.rowActions?.pipelineActions,
   })
+
   const DeleteDialog = config.deleteDialog
     ? createDeleteDialog({
         useEntity,
         ...config.deleteDialog,
       })
     : undefined
+
   const dialogsConfigBase = {
     useEntity,
     MutateDialog: config.MutateDialog,
@@ -94,6 +83,7 @@ export function defineCrudViews<TRow extends { id: string }>(
     Parameters<typeof createEntityDialogs<TRow>>[0],
     'LifecycleDialog' | 'lifecyclePropName'
   >
+
   const Dialogs = ('LifecycleDialog' in config && config.LifecycleDialog)
     ? (config.lifecyclePropName === 'action'
         ? createEntityDialogs({
@@ -107,6 +97,7 @@ export function defineCrudViews<TRow extends { id: string }>(
             lifecyclePropName: 'variant',
           }))
     : createEntityDialogs(dialogsConfigBase)
+
   const PrimaryButtons = createPrimaryButtons({ useEntity })
 
   function TableWithActions({

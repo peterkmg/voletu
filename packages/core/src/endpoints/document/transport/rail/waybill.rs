@@ -1,6 +1,23 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
 use crate::{
-  dtos::{EmbedParams, PaginationParams, RailWaybillDocumentQueryParams},
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateRailWaybillRequest,
+    EmbedParams,
+    PaginationParams,
+    RailWaybillDocumentQueryParams,
+    RailWaybillResponse,
+    UpdateRailWaybillRequest,
+  },
   endpoints::paths,
   services::document::specs::RailWaybillQuerySpec,
 };

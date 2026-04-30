@@ -5,7 +5,7 @@ import * as React from 'react'
 import { cn } from '~/lib/utils'
 
 interface TableProps extends React.ComponentProps<'div'> {
-  /** CSS Grid column template applied to all rows via --col-template variable */
+
   gridTemplate?: string
 }
 

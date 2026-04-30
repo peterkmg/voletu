@@ -1,4 +1,4 @@
-export {} // module boundary for top-level await
+export {}
 
 vi.mock('~/auth/session', () => ({
   loadSession: vi.fn(() => null),
@@ -13,10 +13,6 @@ vi.mock('~/auth/session', () => ({
 const sessionMocks = await import('~/auth/session') as any
 const { useAuthStore } = await import('~/stores/auth-store')
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const fakeUser = { id: 'u1', username: 'admin', role: 'ADMIN', displayName: 'Admin' } as any
 
 function storedSession(overrides: Record<string, unknown> = {}) {
@@ -27,18 +23,10 @@ function refreshResult(overrides: Record<string, unknown> = {}) {
   return { accessToken: 'new-access', refreshToken: 'new-refresh', user: fakeUser, ...overrides }
 }
 
-// ---------------------------------------------------------------------------
-// Setup
-// ---------------------------------------------------------------------------
-
 beforeEach(() => {
   vi.clearAllMocks()
   useAuthStore.setState({ status: 'unknown', accessToken: null, refreshToken: null, user: null })
 })
-
-// ---------------------------------------------------------------------------
-// boot()
-// ---------------------------------------------------------------------------
 
 describe('boot()', () => {
   it('no stored tokens -> status becomes unauthenticated', async () => {
@@ -123,7 +111,6 @@ describe('boot()', () => {
     const statusLog: string[] = []
     const unsub = useAuthStore.subscribe(s => statusLog.push(s.status))
 
-    // Make verifyToken resolve after we can observe state
     vi.mocked(sessionMocks.verifyToken).mockResolvedValue(fakeUser)
 
     await useAuthStore.getState().boot()
@@ -133,10 +120,6 @@ describe('boot()', () => {
     expect(statusLog).toContain('valid')
   })
 })
-
-// ---------------------------------------------------------------------------
-// onUnauthorized()
-// ---------------------------------------------------------------------------
 
 describe('onUnauthorized()', () => {
   it('refreshTokens succeeds -> status valid, returns true', async () => {
@@ -188,10 +171,6 @@ describe('onUnauthorized()', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// login()
-// ---------------------------------------------------------------------------
-
 describe('login()', () => {
   it('sets status=valid with tokens and user', () => {
     const session = { accessToken: 'at', refreshToken: 'rt', user: fakeUser }
@@ -213,10 +192,6 @@ describe('login()', () => {
     expect(sessionMocks.saveSession).toHaveBeenCalledWith(session)
   })
 })
-
-// ---------------------------------------------------------------------------
-// logout()
-// ---------------------------------------------------------------------------
 
 describe('logout()', () => {
   it('sets status=unauthenticated, clears tokens and user', () => {

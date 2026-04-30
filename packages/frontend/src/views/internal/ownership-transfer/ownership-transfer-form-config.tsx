@@ -1,39 +1,3 @@
-/**
- * Ownership-transfer composite form configuration.
- *
- * i18n keys this file depends on (all in the `ownership-transfer` namespace):
- *   ownership-transfer.dialog.title.create
- *   ownership-transfer.dialog.title.edit
- *   ownership-transfer.field.date
- *   ownership-transfer.field.contractorId
- *   ownership-transfer.field.storage
- *   ownership-transfer.field.product
- *   ownership-transfer.field.fromContractor
- *   ownership-transfer.field.toContractor
- *   ownership-transfer.field.amount
- *   ownership-transfer.section.items
- *   ownership-transfer.toast.created
- *   ownership-transfer.toast.updated
- *
- * Generated Kubb artifacts consumed (camelCase field naming throughout):
- *   - Schemas (zod/v4):
- *       packages/frontend/src/generated/zod/createOwnershipTransferRequestSchema.ts
- *       packages/frontend/src/generated/zod/updateOwnershipTransferCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/ownershipTransferItemCompositeRequestSchema.ts
- *   - Types:
- *       packages/frontend/src/generated/types/CreateOwnershipTransferRequest.ts
- *       packages/frontend/src/generated/types/UpdateOwnershipTransferCompositeRequest.ts
- *       packages/frontend/src/generated/types/OwnershipTransferItemCompositeRequest.ts
- *
- * Both create and update validate min(1) on items: a transfer with zero
- * lines is not useful and the dialog enforces at least one row.
- *
- * Per-row pickers are CONTRACTOR-scoped (`fromContractorId`, `toContractorId`)
- * because ownership transfers move stock between owners while leaving the
- * physical storage location unchanged. The header has no `documentNumber`
- * field (server generates the document identity).
- */
-
 import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
@@ -59,22 +23,10 @@ import { createOwnershipTransferRequestSchema } from '~/generated/zod/createOwne
 import { ownershipTransferItemCompositeRequestSchema } from '~/generated/zod/ownershipTransferItemCompositeRequestSchema'
 import { updateOwnershipTransferCompositeRequestSchema } from '~/generated/zod/updateOwnershipTransferCompositeRequestSchema'
 
-// --- Schemas ---
-
-/**
- * Hand-refined items schema with min(1) — the generated composite schema
- * is `z.lazy(...).and(z.object(...))` which is not `.extend()`-able, so we
- * compose at the row + array level instead. The generated row schema is
- * reused unchanged so any future Kubb refresh propagates to validation.
- */
 const ownershipTransferItemsArraySchema = z
   .array(ownershipTransferItemCompositeRequestSchema)
   .min(1, { message: 'forms.validation.itemsRequired' })
 
-/**
- * Composite schema for creating an ownership transfer. Layered min(1) is
- * surfaced before the server rejects the payload.
- */
 export const ownershipTransferCreateSchema = createOwnershipTransferRequestSchema.superRefine(
   (val, ctx) => {
     const items = (val as { items?: unknown[] }).items
@@ -87,11 +39,6 @@ export const ownershipTransferCreateSchema = createOwnershipTransferRequestSchem
   },
 ) as unknown as z.ZodType<OwnershipTransferCreate>
 
-/**
- * Composite schema for updating an ownership transfer. Mirrors the create
- * schema at the field level; the wire type allows optional per-item `id`,
- * which the dialog round-trips for existing rows.
- */
 export const ownershipTransferUpdateSchema = updateOwnershipTransferCompositeRequestSchema.superRefine(
   (val, ctx) => {
     const items = (val as { items?: unknown[] }).items
@@ -108,13 +55,6 @@ export type OwnershipTransferCreate = CreateOwnershipTransferRequest
 export type OwnershipTransferUpdate = UpdateOwnershipTransferCompositeRequest
 export type OwnershipTransferItem = OwnershipTransferItemCompositeRequest
 
-// Inputs and pickers come from the shared `composite-form/field-cells` module.
-
-// --- Header field spec ---
-//
-// Ownership transfer has no `documentNumber` (server-managed identity) and
-// no per-document contractor (per-row from/to contractors instead).
-
 export const ownershipTransferHeaderSpec: HeaderFieldSpec<OwnershipTransferCreate>[] = [
   {
     name: 'date' as Path<OwnershipTransferCreate>,
@@ -123,8 +63,6 @@ export const ownershipTransferHeaderSpec: HeaderFieldSpec<OwnershipTransferCreat
     required: true,
   },
 ]
-
-// --- Items column spec (read-only summary) ---
 
 export const ownershipTransferItemColumns: ColumnSpec<OwnershipTransferItem>[] = [
   {
@@ -156,9 +94,6 @@ export const ownershipTransferItemColumns: ColumnSpec<OwnershipTransferItem>[] =
   },
 ]
 
-// --- Row drawer field spec ---
-//
-// `colSpan: 1` for from/to so they render side-by-side on `md+`.
 export const ownershipTransferItemFields: RowFieldSpec<OwnershipTransferItem>[] = [
   {
     name: 'storageId',
@@ -194,8 +129,6 @@ export const ownershipTransferItemFields: RowFieldSpec<OwnershipTransferItem>[] 
   },
 ]
 
-// --- Empty defaults ---
-
 export const emptyOwnershipTransferItem: OwnershipTransferItem = {
   storageId: '',
   productId: '',
@@ -209,5 +142,4 @@ export const emptyOwnershipTransferCreate: OwnershipTransferCreate = {
   items: [],
 }
 
-// Re-export the row schema so the dialog can pass it to DocItemRowDrawer.
 export const ownershipTransferItemSchema = ownershipTransferItemCompositeRequestSchema

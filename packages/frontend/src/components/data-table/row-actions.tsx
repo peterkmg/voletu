@@ -21,7 +21,7 @@ export interface RowAction {
   icon?: LucideIcon
   onClick: () => void
   variant?: 'default' | 'destructive'
-  /** Show as inline icon button (true) or only in overflow menu (false/default) */
+
   inline?: boolean
   disabled?: boolean
 }

@@ -125,7 +125,6 @@ async fn endpoints_execute_workflows_and_reject_invalid_blending_as_bad_request(
     );
     assert_eq!(adjustment_json["data"]["adjustmentType"], "SURPLUS");
 
-    // Create blending document with unbalanced component/result via composite
     let blend_composite = post_json(
       &app,
       api_paths::blending::COMPOSITE_SAVE,

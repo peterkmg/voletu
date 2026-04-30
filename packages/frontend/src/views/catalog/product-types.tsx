@@ -14,8 +14,6 @@ import { catalogProductTypeListQueryKey, useCatalogProductTypeList } from '~/gen
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { defineCrudViews } from '~/lib/define-crud-views'
 
-// --- Columns ---
-
 function getProductTypeColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<ProductTypeResponse> }>,
@@ -27,8 +25,6 @@ function getProductTypeColumns(
     actionsColumn<ProductTypeResponse>(RowActions, 2),
   ]
 }
-
-// --- Table ---
 
 const productTypesRoute = getRouteApi('/_authenticated/catalog/product-types/')
 const productTypesGlobalFilterFn = createGlobalFilter<ProductTypeResponse>('commonName', 'longName')
@@ -56,8 +52,6 @@ function ProductTypesTable({ data, actions, RowActions }: ProductTypesTableProps
 function useProductTypesTitle() {
   return useTranslation(['catalog']).t('catalog:productType.title')
 }
-
-// --- Mutate Dialog ---
 
 const productTypeFormSchema = z.object({
   commonName: z.string().min(1),

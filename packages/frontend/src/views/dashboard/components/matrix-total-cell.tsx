@@ -1,15 +1,15 @@
 import { formatAmount } from '~/lib/formatters'
-// packages/frontend/src/views/dashboard/components/matrix-total-cell.tsx
+
 import { cn } from '~/lib/utils'
 import { EDGE_SHADOW, Z } from './sticky'
 
 export type MatrixTotalVariant
-  = | 'row-total' // rightmost per-row sum
-    | 'col-total' // bottom per-column sum
-    | 'grand-total' // bottom-right grand total
-    | 'row-subtotal' // full-width subtotal row cell
-    | 'col-subtotal' // vertical subtotal column cell
-    | 'subtotal-intersect' // where row-subtotal crosses col-subtotal
+  = | 'row-total'
+    | 'col-total'
+    | 'grand-total'
+    | 'row-subtotal'
+    | 'col-subtotal'
+    | 'subtotal-intersect'
 
 export interface MatrixTotalCellProps {
   amount: number | undefined

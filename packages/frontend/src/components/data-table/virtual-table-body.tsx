@@ -9,7 +9,7 @@ import { computeGroupInfo } from './table-utils'
 interface VirtualTableBodyProps<TData> {
   table: TanstackTable<TData>
   columns: ColumnDef<TData, unknown>[]
-  /** The scrollable container element (managed by parent DataTable via useState) */
+
   scrollElement: HTMLDivElement | null
   isPinning: boolean
   densityCls: string
@@ -19,7 +19,7 @@ interface VirtualTableBodyProps<TData> {
   emptyMessage?: string
   emptyIcon?: React.ReactNode
   onRowAction?: (row: TData) => void
-  /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
+
   groupKey?: string
 }
 
@@ -39,7 +39,6 @@ export function VirtualTableBody<TData>({
 }: VirtualTableBodyProps<TData>) {
   const { rows } = table.getRowModel()
 
-  // Ref keeps rows accessible in callbacks without causing re-creation
   const rowsRef = useRef(rows)
   rowsRef.current = rows
 
@@ -53,13 +52,14 @@ export function VirtualTableBody<TData>({
   const virtualRows = virtualizer.getVirtualItems()
   const totalSize = virtualizer.getTotalSize()
 
-  // Focus a virtual row, scrolling if needed
   const focusVirtualRow = useCallback((targetIndex: number) => {
     if (targetIndex < 0 || targetIndex >= rowsRef.current.length)
       return
+
     const el = scrollElement?.querySelector<HTMLElement>(
       `[data-virtual-index="${targetIndex}"]`,
     )
+
     if (el) {
       el.focus({ preventScroll: true })
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -75,7 +75,6 @@ export function VirtualTableBody<TData>({
     }
   }, [virtualizer, scrollElement])
 
-  // Keyboard navigation – stable callback (reads rows from ref)
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>, rowData: TData, virtualIndex: number) => {
       switch (e.key) {

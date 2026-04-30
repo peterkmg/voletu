@@ -116,18 +116,8 @@ impl From<&CreateAcceptanceCompositeRequest> for acceptance_document::ActiveMode
   }
 }
 
-/// Update payload for one item in an acceptance composite update.
-///
-/// Each item is a full replacement of its current state, not a partial patch:
-/// `product_id`, `storage_id`, and `accepted_amount` are all required and
-/// overwrite whatever the existing row held. Updating an existing row
-/// (`id: Some(_)`) with a different `product_id` or `storage_id` is allowed and
-/// intentionally swaps the row's product or storage, which lets users correct
-/// mistakes in the original entry. Items present here that don't exist on the
-/// document are inserted; existing items not present here are deleted.
 #[request_dto]
 pub struct UpdateAcceptanceItemCompositeRequest {
-  /// Present for existing items (an UPDATE), absent for newly inserted items (an INSERT).
   pub id: Option<Uuid>,
   pub product_id: Uuid,
   pub storage_id: Uuid,
@@ -136,14 +126,9 @@ pub struct UpdateAcceptanceItemCompositeRequest {
 
 #[request_dto]
 pub struct UpdateAcceptanceCompositeRequest {
-  /// Header fields applied as a partial update (mirrors per-row UpdateAcceptanceRequest).
   #[validate(nested)]
   #[serde(flatten)]
   pub acceptance: UpdateAcceptanceRequest,
-  /// Full new items list, diff-applied against existing rows.
-  /// Items with `id: Some(uuid)` matching an existing row are updated.
-  /// Items with `id: None` are inserted.
-  /// Existing items not present in this list are hard-deleted.
   #[validate(length(min = 1), nested)]
   pub items: Vec<UpdateAcceptanceItemCompositeRequest>,
 }

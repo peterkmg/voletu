@@ -62,7 +62,7 @@ describe('getPageNumbers()', () => {
     expect(result).toContain(9)
     expect(result).toContain(10)
     expect(result).toContain(11)
-    // Should have ellipsis on both sides
+
     const ellipsisCount = result.filter(p => p === '...').length
     expect(ellipsisCount).toBe(2)
   })
@@ -77,14 +77,13 @@ describe('getPageNumbers()', () => {
   it('does not show leading ellipsis when on page 3', () => {
     const result = getPageNumbers(3, 20)
     expect(result[0]).toBe(1)
-    expect(result[1]).toBe(2) // No ellipsis between 1 and 2
+    expect(result[1]).toBe(2)
   })
 
   it('does not show trailing ellipsis when on second-to-last page', () => {
     const result = getPageNumbers(19, 20)
     const lastEllipsisIdx = result.lastIndexOf('...')
-    // The trailing ellipsis should not appear because current (19) >= totalPages - 2 (18)
-    // If there is an ellipsis, it should be the leading one, not trailing
+
     expect(lastEllipsisIdx).toBeLessThanOrEqual(1)
     expect(lastPageToken(result)).toBe(20)
   })

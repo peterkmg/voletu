@@ -34,6 +34,7 @@ export function useInventoryMatrixData(searchQuery: string): DashboardData {
 
   const contractors = useMemo(() => {
     const list = (companies.data as any)?.data ?? []
+
     return list
       .filter((c: any) => c.isContractor === true)
       .map((c: any) => ({ id: c.id, label: c.commonName ?? c.legalName ?? c.id }))
@@ -43,6 +44,7 @@ export function useInventoryMatrixData(searchQuery: string): DashboardData {
   const vm = useMemo(() => {
     if (!hasAnyData || !contractorId)
       return null
+
     return buildMatrixVM({
       contractorId,
       ledgerBalances: (ledger.data as any)?.data ?? [],

@@ -1,4 +1,4 @@
-export {} // module boundary for top-level await
+export {}
 
 const fetchMock = vi.fn()
 const freshJwt = `x.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }))}.y`

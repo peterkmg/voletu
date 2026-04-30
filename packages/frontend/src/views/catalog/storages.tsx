@@ -20,8 +20,6 @@ import { defineCrudViews } from '~/lib/define-crud-views'
 import { ProductTypeMutateDialog } from '~/views/catalog/product-types'
 import { WarehouseMutateDialog } from '~/views/catalog/warehouses'
 
-// --- Columns ---
-
 function getStorageColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<StorageResponse> }>,
@@ -54,8 +52,6 @@ function getStorageColumns(
   ]
 }
 
-// --- Table ---
-
 const storagesRoute = getRouteApi('/_authenticated/catalog/storages/')
 const storagesGlobalFilterFn = createGlobalFilter<StorageResponse>('commonName')
 
@@ -82,8 +78,6 @@ function StoragesTable({ data, actions, RowActions }: StoragesTableProps) {
 function useStoragesTitle() {
   return useTranslation(['catalog']).t('catalog:storage.title')
 }
-
-// --- Mutate Dialog ---
 
 const storageFormSchema = z.object({
   commonName: z.string().min(1),

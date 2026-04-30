@@ -1,19 +1,3 @@
-//! **Central URL change test**: Validates the PATCH /node/central-api-url
-//! handler contract.
-//!
-//! **Topology:** Central A + Central B + 1 Peripheral (initially targeting A).
-//! **Verifies:**
-//!   - PATCH with a malformed URL → 400
-//!   - PATCH with a URL whose /health is unreachable → 400 (no DB mutation)
-//!   - PATCH with a reachable URL → 200, response includes the new URL,
-//!     and a subsequent /node/status read returns the new URL fresh from
-//!     the DB (no restart required).
-//!
-//! Not covered here: full cross-central sync after the URL change —
-//! swapping a peripheral between two unrelated centrals requires
-//! re-registering the peripheral on the new central, which is an
-//! operational migration flow beyond the scope of this feature.
-
 use std::time::Duration;
 
 use reqwest::StatusCode;
@@ -34,7 +18,6 @@ const SYNC_TIMEOUT: Duration = Duration::from_secs(20);
 async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
   let client = reqwest::Client::new();
 
-  // --- Setup: Central A + Peripheral(on A) with a base assigned --------------
   let central_a = setup_central_via_api(&client, &temp_db_path("url-change-central-a")).await;
   let catalog_a = seed_catalog_via_api(&client, &central_a.url, &central_a.token).await;
   let peripheral = setup_peripheral_via_api(
@@ -46,12 +29,10 @@ async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
   .await;
   wait_for_worker_online(&client, &peripheral.url, &peripheral.token, SYNC_TIMEOUT).await;
 
-  // --- Central B: second central, reachable but unrelated --------------------
   let central_b = setup_central_via_api(&client, &temp_db_path("url-change-central-b")).await;
 
   let patch_url = format!("{}/node/central-api-url", peripheral.url);
 
-  // --- Case 1: malformed URL → 400 ------------------------------------------
   {
     let resp = client
       .patch(&patch_url)
@@ -69,7 +50,6 @@ async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
     );
   }
 
-  // --- Case 2: reachable-URL-shape but /health unreachable → 400 ------------
   {
     let resp = client
       .patch(&patch_url)
@@ -80,7 +60,7 @@ async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
       .await
       .unwrap();
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    // Confirm the DB was NOT mutated: /node/status still points at central A.
+
     let status = api_get(
       &client,
       &format!("{}/node/status", peripheral.url),
@@ -94,7 +74,6 @@ async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
     );
   }
 
-  // --- Case 3: happy path — switch to Central B ------------------------------
   {
     let resp = client
       .patch(&patch_url)
@@ -119,7 +98,6 @@ async fn rejects_invalid_urls_and_persists_valid_url_to_db() {
     );
   }
 
-  // --- Verify /node/status also reads the new URL fresh from DB -------------
   let status = api_get(
     &client,
     &format!("{}/node/status", peripheral.url),

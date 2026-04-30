@@ -10,37 +10,17 @@ use validator::{ValidationErrors, ValidationErrorsKind};
 
 use super::response::ApiResponse;
 
-/// Zero-sized marker inserted into response extensions by `ApiError::into_response`.
-/// [`error_envelope_middleware`] uses this to skip responses that are already
-/// correctly enveloped — no body reading or JSON parsing required.
-///
-/// [`error_envelope_middleware`]: crate::middleware::error_envelope::error_envelope_middleware
 #[derive(Clone)]
 pub(crate) struct HandledByApiError;
 
-/// A single field-level validation issue.
-///
-/// Returned inside the `issues` array of a structured validation error
-/// response. Field paths use React Hook Form's dot+index syntax (e.g.
-/// `items.2.accepted_amount`) so the frontend can map issues directly onto
-/// form fields without translation.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidationIssue {
-  /// Field path in RHF dot+index format, e.g. `items.2.accepted_amount`.
   pub field: String,
-  /// Stable code for i18n key lookup, e.g. `positive`, `min_length`, `uuid`.
   pub code: String,
-  /// Human-readable default message (English).
   pub message: String,
 }
 
-/// All errors that can be returned from API handlers.
-///
-/// Variants map to HTTP status codes and are automatically logged at the
-/// appropriate level when converted to an HTTP response:
-/// - 4xx client errors → `WARN`
-/// - 5xx server errors → `ERROR`
 #[derive(Debug, thiserror::Error)]
 pub enum ApiError {
   #[error("Not found: {0}")]
@@ -49,12 +29,6 @@ pub enum ApiError {
   BadRequest(String),
   #[error("Validation error: {0}")]
   Validation(String),
-  /// Structured validation failure carrying per-field issues.
-  ///
-  /// Produced by `From<validator::ValidationErrors>`; serializes the same as
-  /// [`ApiError::Validation`] (HTTP 400, code `VALIDATION_ERROR`) but the
-  /// JSON body additionally includes an `issues` array so the frontend can
-  /// surface errors on the originating form fields.
   #[error("Validation error")]
   ValidationFields(Vec<ValidationIssue>),
   #[error("Conflict: {0}")]
@@ -125,9 +99,6 @@ impl IntoResponse for ApiError {
 
     let status = self.status_code();
 
-    // Structured validation gets a richer body with an `issues` array so the
-    // frontend can attach errors to specific form fields. Every other variant
-    // keeps the historical `ApiResponse<()>::error` shape exactly.
     let mut response = match self {
       Self::ValidationFields(issues) => {
         let body = json!({
@@ -149,7 +120,6 @@ impl IntoResponse for ApiError {
       }
     };
 
-    // Tag so the normalisation middleware can skip body-sniffing.
     response.extensions_mut().insert(HandledByApiError);
     response
   }
@@ -167,17 +137,6 @@ impl From<validator::ValidationErrors> for ApiError {
   }
 }
 
-/// Converts the validator crate's nested [`ValidationErrors`] tree into a flat
-/// list of [`ValidationIssue`]s with React Hook Form-compatible field paths.
-///
-/// The validator crate's own `Display` impl produces square-bracket paths like
-/// `items[2].accepted_amount`, but RHF uses dot+index syntax
-/// (`items.2.accepted_amount`) for nested array fields. This conversion walks
-/// the `Struct` / `List` / `Field` nodes and emits the latter form.
-///
-/// Validator codes are also normalised to a stable, frontend-friendly set
-/// (e.g. `length` becomes `min_length` / `max_length` / `length` depending on
-/// which params are present, `range` becomes `too_small` / `too_big`).
 pub fn validation_errors_to_issues(err: &ValidationErrors) -> Vec<ValidationIssue> {
   let mut out = Vec::new();
   collect_issues(err, "", &mut out);
@@ -187,6 +146,7 @@ pub fn validation_errors_to_issues(err: &ValidationErrors) -> Vec<ValidationIssu
 fn collect_issues(err: &ValidationErrors, prefix: &str, out: &mut Vec<ValidationIssue>) {
   for (field, kind) in err.errors() {
     let path = join_path(prefix, field);
+
     match kind {
       ValidationErrorsKind::Field(errors) => {
         for e in errors {
@@ -224,12 +184,6 @@ fn join_path(prefix: &str, field: &str) -> String {
   }
 }
 
-/// Maps a validator-crate error code to a stable, RHF-friendly identifier.
-///
-/// Compound codes (`length`, `range`) split into two depending on which bound
-/// triggered the failure. The split is decided by inspecting the error's
-/// `params` map (the validator crate populates `min` / `max` per the bounds
-/// that were configured on the field).
 fn map_validator_code(
   code: &str,
   params: &std::collections::HashMap<std::borrow::Cow<'static, str>, serde_json::Value>,
@@ -251,8 +205,6 @@ fn map_validator_code(
       match (has_min, has_max) {
         (true, false) => "too_small".to_string(),
         (false, true) => "too_big".to_string(),
-        // Both bounds (or neither) — keep the generic `range` so callers can
-        // disambiguate if needed.
         _ => "range".to_string(),
       }
     }
@@ -262,7 +214,6 @@ fn map_validator_code(
     "required" => "required".to_string(),
     "must_match" => "must_match".to_string(),
     "regex" => "regex".to_string(),
-    // Custom validators already use stable identifiers — pass through verbatim.
     other => other.to_string(),
   }
 }

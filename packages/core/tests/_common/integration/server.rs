@@ -33,7 +33,6 @@ pub fn reserve_port() -> u16 {
   port
 }
 
-/// SyncConfig optimized for tests: fast ticks, generous timeouts.
 pub fn test_sync_config() -> SyncConfig {
   SyncConfig {
     tick_interval: Duration::from_millis(200),
@@ -162,7 +161,6 @@ pub async fn shutdown_server(
   join_result.expect("serve_api should return Ok on shutdown");
 }
 
-/// Holds the running state of a node after API-only setup.
 pub struct NodeHandle {
   pub url: String,
   pub token: String,

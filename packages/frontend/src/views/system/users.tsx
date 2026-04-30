@@ -15,8 +15,6 @@ import { systemUserListQueryKey, useSystemUserList } from '~/generated/hooks/Sys
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { defineCrudViews } from '~/lib/define-crud-views'
 
-// --- Columns ---
-
 function getUserColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<UserResponse> }>,
@@ -46,8 +44,6 @@ function getUserColumns(
   ]
 }
 
-// --- Table ---
-
 const route = getRouteApi('/_authenticated/system/users/')
 const globalFilterFn = createGlobalFilter<UserResponse>('username', 'fullname')
 
@@ -76,8 +72,6 @@ function UsersTable({
 function useUsersTitle() {
   return useTranslation(['system']).t('system:users.title')
 }
-
-// --- Mutate Dialog ---
 
 const USER_ROLE_KEYS = ['ADMIN', 'SENIOR_SUPERVISOR', 'SUPERVISOR', 'OPERATOR'] as const
 type UserRoleKey = typeof USER_ROLE_KEYS[number]

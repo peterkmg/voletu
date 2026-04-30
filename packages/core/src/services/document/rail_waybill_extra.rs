@@ -26,6 +26,7 @@ use crate::{
   },
   enums::PipelineStatus,
   services::{
+    common::normalize_pagination,
     document::specs::{RailReceiptPipelineQuerySpec, RailWaybillQuerySpec},
     DocumentService,
   },
@@ -52,8 +53,7 @@ impl DocumentService {
     &self,
     query: &RailWaybillQuerySpec,
   ) -> Result<Vec<rail_waybill::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(rail_waybill::Column::DeletedAt.is_null());
@@ -95,8 +95,11 @@ impl DocumentService {
     req: &dtos::RailWaybillCompositeRequest,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let response = self.rail_waybill_composite_create_no_tx(&txn, req).await?;
+
     txn.commit().await?;
+
     Ok(response)
   }
 
@@ -106,6 +109,7 @@ impl DocumentService {
     req: &dtos::RailWaybillCompositeRequest,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
     let saved = rail_waybill::ActiveModelEx::from(req).save(conn).await?;
+
     let waybill_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -114,6 +118,7 @@ impl DocumentService {
         )));
       }
     };
+
     let doc = rail_waybill::Entity::load()
       .filter_by_id(waybill_id)
       .filter(rail_waybill::Column::DeletedAt.is_null())
@@ -144,27 +149,19 @@ impl DocumentService {
     })
   }
 
-  /// Composite update: applies a header partial update plus a recursive diff
-  /// over manifests and their nested measurements / weights.
-  ///
-  /// Diff semantics at every level:
-  /// - rows with `id: Some(uuid)` matching an existing row are updated;
-  /// - rows with `id: None` are inserted;
-  /// - existing rows not present in the request are hard-deleted.
-  ///
-  /// When a manifest is deleted, its measurements and weights are deleted
-  /// inline (no reliance on FK ON DELETE CASCADE) so audit log entries are
-  /// produced for every removed row.
   pub async fn rail_waybill_composite_update(
     &self,
     rail_waybill_id: Uuid,
     req: &dtos::UpdateRailWaybillCompositeRequest,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .rail_waybill_composite_update_no_tx(&txn, rail_waybill_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -174,13 +171,10 @@ impl DocumentService {
     rail_waybill_id: Uuid,
     req: &dtos::UpdateRailWaybillCompositeRequest,
   ) -> Result<dtos::RailWaybillCompositeResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater.
     self
       .rail_waybill_update_no_tx(conn, rail_waybill_id, &req.waybill)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries at every nesting level before
-    //    touching the database. The HashSets double as the dedup guards.
     let mut kept_manifest_ids: HashSet<Uuid> = HashSet::new();
     for manifest in &req.manifests {
       if let Some(manifest_id) = manifest.id {
@@ -191,6 +185,7 @@ impl DocumentService {
           )));
         }
       }
+
       let mut kept_measurement_ids: HashSet<Uuid> = HashSet::new();
       for measurement in &manifest.measurements {
         if let Some(row_id) = measurement.id {
@@ -202,6 +197,7 @@ impl DocumentService {
           }
         }
       }
+
       let mut kept_weight_ids: HashSet<Uuid> = HashSet::new();
       for weight in &manifest.weights {
         if let Some(row_id) = weight.id {
@@ -215,11 +211,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Build the nested graph and persist with a single graph-save call.
-    //    `HasManyModel::Replace(_)` at every nesting level deletes existing
-    //    related rows missing from the new set; SeaORM recurses into each
-    //    surviving child's own `action()` so the diff propagates from the
-    //    waybill down through manifests to measurements and weights.
     let manifests: Vec<rail_wagon_manifest::ActiveModelEx> = req
       .manifests
       .iter()
@@ -238,6 +229,7 @@ impl DocumentService {
             ..Default::default()
           })
           .collect();
+
         let weights: Vec<rail_wagon_weight::ActiveModelEx> = manifest
           .weights
           .iter()
@@ -278,7 +270,6 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Reload the full composite using the same eager-loading shape as create.
     let doc = rail_waybill::Entity::load()
       .filter_by_id(rail_waybill_id)
       .filter(rail_waybill::Column::DeletedAt.is_null())
@@ -338,8 +329,7 @@ impl DocumentService {
     &self,
     query: RailReceiptPipelineQuerySpec,
   ) -> Result<Vec<RailReceiptPipelineResponse>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(rail_waybill::Column::DeletedAt.is_null());

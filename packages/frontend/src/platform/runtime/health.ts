@@ -87,6 +87,7 @@ export async function fetchHealth(
   const response = await fetch(`${options?.baseUrl ?? getApiBaseUrl()}/health`, {
     signal: options?.signal,
   })
+
   const payload = await readEnvelope<HealthPayload>(response, 'Health check failed')
 
   return {
@@ -124,6 +125,7 @@ export async function fetchNodeStatus(
       url: '/node/status',
       signal: options?.signal,
     })
+
     return toNodeStatusSnapshot(response.data.data!)
   }
 

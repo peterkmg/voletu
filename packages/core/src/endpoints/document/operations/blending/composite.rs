@@ -1,4 +1,26 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Extension,
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    BlendingCompositeResponse,
+    CreateBlendingCompositeRequest,
+    EmbedParams,
+    UpdateBlendingCompositeRequest,
+  },
+  endpoints::paths,
+  services::common::ensure_supervisor_or_higher,
+  utils::jwt::Claims,
+};
 
 #[utoipa::path(
   get,
@@ -87,7 +109,7 @@ async fn blending_composite_create_and_execute(
   description = "Updates a blending document aggregate. Header fields apply set_if_some semantics; both the components and results lists are treated as the full new state and are diff-applied (insert / update / delete) keyed on the row id.",
   path = paths::blending::COMPOSITE_BY_ID,
   params(("id" = Uuid, Path)),
-  request_body = crate::dtos::UpdateBlendingCompositeRequest,
+  request_body = UpdateBlendingCompositeRequest,
   responses(
     (status = 200, body = ApiResponse<BlendingCompositeResponse>),
     (status = 400),
@@ -98,7 +120,7 @@ async fn blending_composite_create_and_execute(
 async fn blending_composite_update(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
-  Valid(Json(req)): Valid<Json<crate::dtos::UpdateBlendingCompositeRequest>>,
+  Valid(Json(req)): Valid<Json<UpdateBlendingCompositeRequest>>,
 ) -> ApiResult<BlendingCompositeResponse> {
   Ok(ApiResponse::success(
     state

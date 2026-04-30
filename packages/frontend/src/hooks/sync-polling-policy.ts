@@ -14,5 +14,6 @@ export function getCurrentSyncPollInterval(
 ): number {
   if (!doc)
     return SYNC_POLL_INTERVAL_IDLE_MS
+
   return resolveSyncPollInterval(doc.visibilityState as VisibilityStateLike)
 }

@@ -1,13 +1,31 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Extension,
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
 use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
   dtos::{
+    CreateOwnershipTransferRequest,
     EmbedParams,
     OwnershipTransferDocumentQueryParams,
+    OwnershipTransferResponse,
     PaginationParams,
     UpdateOwnershipTransferCompositeRequest,
   },
   endpoints::paths,
-  services::document::specs::OwnershipTransferQuerySpec,
+  enums,
+  services::{
+    common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
+    document::specs::OwnershipTransferQuerySpec,
+  },
+  utils::jwt::Claims,
 };
 
 #[utoipa::path(

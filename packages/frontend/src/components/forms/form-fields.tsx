@@ -35,8 +35,6 @@ interface BaseFieldProps<
   className?: string
 }
 
-// ── TextField ─────────────────────────────────
-
 interface TextFieldProps<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -82,8 +80,6 @@ export function TextField<
   )
 }
 
-// ── SelectField ───────────────────────────────
-
 interface SelectOption {
   value: string
   label: string
@@ -109,6 +105,7 @@ export function SelectField<
   className,
 }: SelectFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -138,8 +135,6 @@ export function SelectField<
   )
 }
 
-// ── CheckboxField ─────────────────────────────
-
 export function CheckboxField<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -150,6 +145,7 @@ export function CheckboxField<
   className,
 }: BaseFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -169,8 +165,6 @@ export function CheckboxField<
     />
   )
 }
-
-// ── TextAreaField ─────────────────────────────
 
 interface TextAreaFieldProps<
   TFieldValues extends FieldValues,
@@ -194,6 +188,7 @@ export function TextAreaField<
   className,
 }: TextAreaFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -216,8 +211,6 @@ export function TextAreaField<
     />
   )
 }
-
-// ── NumberField ───────────────────────────────
 
 interface NumberFieldProps<
   TFieldValues extends FieldValues,
@@ -245,6 +238,7 @@ export function NumberField<
   className,
 }: NumberFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -271,8 +265,6 @@ export function NumberField<
   )
 }
 
-// ── DatePickerField ──────────────────────────
-
 interface DatePickerFieldProps<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -293,6 +285,7 @@ export function DatePickerField<
   className,
 }: DatePickerFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -315,8 +308,6 @@ export function DatePickerField<
   )
 }
 
-// ── PasswordField ────────────────────────────
-
 interface PasswordFieldProps<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -337,6 +328,7 @@ export function PasswordField<
   className,
 }: PasswordFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -359,8 +351,6 @@ export function PasswordField<
   )
 }
 
-// ── SwitchField ──────────────────────────────
-
 export function SwitchField<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -371,6 +361,7 @@ export function SwitchField<
   className,
 }: BaseFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}
@@ -400,13 +391,9 @@ export function SwitchField<
   )
 }
 
-// ── ToggleChipGroupField ─────────────────────
-
 interface ToggleChipOption<TName extends string> {
-  /** The name of the boolean RHF field this chip toggles. */
   name: TName
   label: string
-  /** Tailwind classes applied when active (e.g. from a colorMap). */
   activeClassName?: string
 }
 
@@ -420,10 +407,6 @@ interface ToggleChipGroupFieldProps<
   options: ToggleChipOption<TName>[]
 }
 
-/**
- * Renders a group of related boolean fields as a single labeled set of toggleable chips.
- * Each chip writes back to its own RHF path (preserves existing schema shapes).
- */
 export function ToggleChipGroupField<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -440,6 +423,7 @@ export function ToggleChipGroupField<
 
   const handleValueChange = (next: string[]) => {
     const nextSet = new Set(next)
+
     for (const opt of options) {
       const isActive = nextSet.has(opt.name)
       setValue(opt.name, isActive as never, {
@@ -487,8 +471,6 @@ export function ToggleChipGroupField<
   )
 }
 
-// ── RadioField ───────────────────────────────
-
 interface RadioFieldProps<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -509,6 +491,7 @@ export function RadioField<
   className,
 }: RadioFieldProps<TFieldValues, TName>) {
   const { control } = useFormContext<TFieldValues>()
+
   return (
     <FormField
       control={control}

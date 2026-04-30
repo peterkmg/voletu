@@ -27,7 +27,6 @@ use crate::{
   },
 };
 
-/// Filter for nullable FK columns: `?field=isNull` or `?field=isNotNull`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NullableFilter {
   IsNull,

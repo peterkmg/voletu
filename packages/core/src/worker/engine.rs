@@ -97,9 +97,11 @@ pub(super) async fn publish_worker_tick_outcome(
   let notify = {
     let mut status = shared_status.write().await;
     status.state = outcome.next_state;
+
     if let Some(last_sync_at) = outcome.last_sync_at {
       status.last_sync_at = Some(last_sync_at);
     }
+
     if outcome.cycle_completed {
       status.bump_cycle_count();
       Some(Arc::clone(&status.cycle_completed))
@@ -119,6 +121,7 @@ async fn decide_worker_action(runtime: &mut WorkerRuntime) -> anyhow::Result<Wor
   let Some(loaded_context) = load_worker_context(runtime).await? else {
     return Ok(WorkerDecision::Sleep);
   };
+
   let context = loaded_context.context;
 
   if loaded_context.local_progress_changed {
@@ -193,14 +196,17 @@ async fn apply_worker_decision(
         Ok(result) => {
           runtime.has_pending_sync_work = false;
           state::transition(&mut runtime.state, WorkerState::OnlineIdle);
+
           debug!(
             changed = result.changed_log_count(),
             "sync worker cycle completed"
           );
+
           TickOutcome::cycle_completed(runtime.state)
         }
         Err(error) => {
           warn!(%error, "sync worker cycle failed");
+
           state::transition(&mut runtime.state, WorkerState::Backoff);
           TickOutcome::state_only(runtime.state)
         }

@@ -8,10 +8,6 @@ import {
   toSession,
 } from '~/auth/session'
 
-// ---------------------------------------------------------------------------
-// JWT decode tests
-// ---------------------------------------------------------------------------
-
 function makeJwt(payload: Record<string, unknown>): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
     .replace(/\+/g, '-')
@@ -63,10 +59,6 @@ describe('isTokenExpiringSoon', () => {
     expect(isTokenExpiringSoon('garbage', 300)).toBe(true)
   })
 })
-
-// ---------------------------------------------------------------------------
-// Session storage tests
-// ---------------------------------------------------------------------------
 
 const STORAGE_KEY = 'voletu.auth.session'
 
@@ -121,10 +113,6 @@ describe('clearSession', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 })
-
-// ---------------------------------------------------------------------------
-// toSession
-// ---------------------------------------------------------------------------
 
 describe('toSession', () => {
   it('maps LoginResponse fields to AuthSession', () => {

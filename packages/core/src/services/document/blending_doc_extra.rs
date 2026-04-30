@@ -14,9 +14,13 @@ use crate::{
   api::ApiError,
   dtos::{self, response::document::BlendingFlatRow},
   entities::{blending_component, blending_document, blending_result, company, product, storage},
-  services::document::{
-    specs::{BlendingDocumentQuerySpec, BlendingFlatQuerySpec},
-    DocumentService,
+  enums::DocumentStatus,
+  services::{
+    common::normalize_pagination,
+    document::{
+      specs::{BlendingDocumentQuerySpec, BlendingFlatQuerySpec},
+      DocumentService,
+    },
   },
 };
 
@@ -39,8 +43,7 @@ impl DocumentService {
     &self,
     query: &BlendingDocumentQuerySpec,
   ) -> Result<Vec<blending_document::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(blending_document::Column::DeletedAt.is_null());
@@ -92,7 +95,9 @@ impl DocumentService {
     req: &dtos::CreateBlendingCompositeRequest,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let response = self.blending_composite_create_no_tx(&txn, req).await?;
+
     txn.commit().await?;
 
     Ok(response)
@@ -111,7 +116,7 @@ impl DocumentService {
       .blending_document_execute_no_tx(&txn, res.document.id, actor_id)
       .await?;
 
-    res.document.status = crate::enums::DocumentStatus::Executed;
+    res.document.status = DocumentStatus::Executed;
     txn.commit().await?;
     Ok(res)
   }
@@ -124,6 +129,7 @@ impl DocumentService {
     let saved = blending_document::ActiveModelEx::from(req)
       .save(conn)
       .await?;
+
     let document_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -155,27 +161,17 @@ impl DocumentService {
     )
   }
 
-  /// Composite update: applies a header partial update plus full diffs over
-  /// the components and results lists.
-  ///
-  /// Diff semantics for both child collections:
-  /// - rows with `id: Some(uuid)` matching an existing row are updated;
-  /// - rows with `id: None` are inserted;
-  /// - existing rows omitted from the request are hard-deleted.
-  ///
-  /// Both lists are required (`min = 1`); a blending document with zero
-  /// components or zero results cannot be executed and the diff helpers would
-  /// happily strip every existing row. The validation layer rejects the
-  /// request before this method is called.
   pub async fn blending_composite_update(
     &self,
     blending_doc_id: Uuid,
     req: &dtos::UpdateBlendingCompositeRequest,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .blending_composite_update_no_tx(&txn, blending_doc_id, req)
       .await?;
+
     txn.commit().await?;
     Ok(res)
   }
@@ -186,16 +182,10 @@ impl DocumentService {
     blending_doc_id: Uuid,
     req: &dtos::UpdateBlendingCompositeRequest,
   ) -> Result<dtos::BlendingCompositeResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater. Enforces
-    //    draft-only mutation, applies set_if_some semantics, and registers an
-    //    audit log row.
     self
       .blending_document_update_no_tx(conn, blending_doc_id, &req.blending)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries within each child collection
-    //    before touching the database. Each HashSet doubles as the dedup
-    //    guard for its collection.
     let mut kept_component_ids: HashSet<Uuid> = HashSet::new();
     for component in &req.components {
       if let Some(component_id) = component.id {
@@ -207,6 +197,7 @@ impl DocumentService {
         }
       }
     }
+
     let mut kept_result_ids: HashSet<Uuid> = HashSet::new();
     for result in &req.results {
       if let Some(result_id) = result.id {
@@ -219,9 +210,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist both collections as a graph save on the parent
-    //    `ActiveModelEx`. Each `HasManyModel::Replace(_)` deletes every
-    //    existing related row that is not present in the new set.
     let components: Vec<blending_component::ActiveModelEx> = req
       .components
       .iter()
@@ -259,14 +247,11 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Re-derive document routing tags. Storage / contractor changes can
-    //    shift the bases this document is routed to.
     self
       .audit
       .backfill_document_routing::<blending_document::Entity>(conn, blending_doc_id)
       .await?;
 
-    // 5. Reload the full composite using the same eager-loading shape as create.
     dtos::BlendingCompositeResponse::try_from(
       blending_document::Entity::load()
         .filter_by_id(blending_doc_id)
@@ -307,17 +292,16 @@ impl DocumentService {
     dtos::BlendingCompositeResponse::try_from(doc)
   }
 
-  /// Returns one row per blending component/result with document fields repeated.
-  /// Used by the grouped-row list table on the frontend.
   pub async fn blending_flat_query(
     &self,
     query: BlendingFlatQuerySpec,
   ) -> Result<Vec<BlendingFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(blending_document::Column::DeletedAt.is_null());
+
     if let Some(s) = query.status {
       cond = cond.add(blending_document::Column::Status.eq(s));
     }
@@ -343,6 +327,7 @@ impl DocumentService {
         .as_ref()
         .map(|c| c.common_name.clone())
         .unwrap_or(dash.clone());
+
       let target_product_name = doc
         .target_product
         .as_ref()

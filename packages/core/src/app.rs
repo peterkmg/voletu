@@ -51,7 +51,9 @@ pub async fn serve_api_with_sync_config(
     let db_target = db_cfg
       .connection_url_public()
       .map_err(|err| anyhow::anyhow!("Invalid database configuration: {err}"))?;
+
     info!("Initializing database at: {db_target}");
+
     let (db, node_cfg) = init_database(&db_cfg).await?;
     let db = Arc::new(db);
 
@@ -68,6 +70,7 @@ pub async fn serve_api_with_sync_config(
     let worker_status = Arc::new(tokio::sync::RwLock::new(WorkerStatus::default()));
 
     info!("Initializing API state...");
+
     let state = Arc::new(ApiState::new(
       db.clone(),
       cfg.clone(),
@@ -78,12 +81,14 @@ pub async fn serve_api_with_sync_config(
 
     let mut worker_shutdown_tx = None;
     let mut worker_task = None;
+
     let has_central_api_url = cfg
       .node
       .central_api_url
       .as_ref()
       .map(|value| !value.trim().is_empty())
       .unwrap_or(false);
+
     if has_central_api_url {
       let (tx, rx) = oneshot::channel();
       worker_shutdown_tx = Some(tx);
@@ -95,10 +100,13 @@ pub async fn serve_api_with_sync_config(
     }
 
     info!("Building API routes...");
+
     let router = build_router(state);
 
     let listener = TcpListener::bind(address).await?;
+
     info!("API server listening on http://{address}");
+
     let mut external_shutdown_rx = shutdown_state_rx.clone();
 
     axum::serve(listener, router)

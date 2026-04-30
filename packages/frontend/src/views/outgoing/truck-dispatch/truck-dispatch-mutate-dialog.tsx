@@ -1,23 +1,3 @@
-/**
- * Per-document mutate dialog for Truck Dispatch (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the truck-dispatch header
- * spec / items table / measurements table coming from
- * `truck-dispatch-form-config.tsx`, and wires the Kubb-generated composite
- * create + update + get hooks.
- *
- * Edit-mode `defaultValues` are pre-fetched via `useDispatchCompositeGet`
- * (gated on `open && isUpdate`). While the fetch is in flight the form
- * renders with `emptyTruckDispatchCreate`; once data arrives, the dialog is
- * re-mounted with the real values by keying `<CompositeFormDialog>` on the
- * loaded document id.
- *
- * Discriminator policy: the dispatch_method / dispatch_purpose enum values
- * are hard-coded per-doc-type (TRUCK / EXTERNAL) and never user-editable.
- * They are baked into `emptyTruckDispatchCreate` and re-stamped on the
- * payload at submit time as a defensive measure.
- */
-
 import type { ArrayPath } from 'react-hook-form'
 import type { TruckDispatchCreate, TruckDispatchItem, TruckDispatchMeasurement } from './truck-dispatch-form-config'
 import type { DispatchItemResponse } from '~/generated/types/DispatchItemResponse'
@@ -62,14 +42,10 @@ export interface TruckDispatchMutationTarget {
 interface TruckDispatchMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Document currently selected for mutation. When `null`, the dialog opens in
-   * create mode.
-   */
+
   currentRow?: TruckDispatchMutationTarget | null
 }
 
-/** Drop server-only fields and keep only the shape the composite request expects. */
 function toItemRequest(item: DispatchItemResponse): TruckDispatchItem {
   return {
     productId: item.productId,
@@ -133,8 +109,6 @@ export function TruckDispatchMutateDialog({
 
   const mutationFn = useCallback(
     async (data: TruckDispatchCreate): Promise<unknown> => {
-      // Defensively re-stamp the discriminators on submit so a stray RHF
-      // edit can never change the document type.
       const payload: TruckDispatchCreate = {
         ...data,
         dispatchMethod: 'TRUCK',
@@ -152,8 +126,6 @@ export function TruckDispatchMutateDialog({
   )
 
   const handleSuccess = useCallback(() => {
-    // Invalidate both the truck-pipeline and flat-dispatch queries since
-    // edits to this document can affect either listing.
     queryClient.invalidateQueries({ queryKey: truckDispatchPipelineQueryQueryKey() })
     queryClient.invalidateQueries({
       queryKey: flowDispatchFlatQueryQueryKey({
@@ -166,8 +138,6 @@ export function TruckDispatchMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetch resolves so RHF
-  // initialises with the loaded values.
   const dialogKey = isUpdate ? (loaded?.id ?? 'edit-loading') : 'create'
 
   return (

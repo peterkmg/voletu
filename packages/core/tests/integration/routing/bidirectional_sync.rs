@@ -1,9 +1,3 @@
-//! **Bidirectional sync**: A document created on Peripheral A is pushed to Central,
-//! then pulled to Peripheral B, verifying the full relay path.
-//!
-//! **Topology:** Central + 2 Peripherals (both assigned to base_alpha)
-//! **Verifies:** Push from peripheral to Central and pull to another peripheral preserves document with field parity
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -23,7 +17,6 @@ async fn peripheral_to_central_to_peripheral() {
   let central = setup_central_via_api(&client, &temp_db_path("r5-central")).await;
   let catalog = seed_catalog_via_api(&client, &central.url, &central.token).await;
 
-  // Both peripherals handle base_alpha
   let pa = setup_peripheral_via_api(&client, &temp_db_path("r5-pa"), &central, &[
     catalog.base_alpha
   ])
@@ -33,7 +26,6 @@ async fn peripheral_to_central_to_peripheral() {
   ])
   .await;
 
-  // PA creates an acceptance document
   let acc = create_acceptance_via_api(
     &client,
     &pa.url,
@@ -47,8 +39,6 @@ async fn peripheral_to_central_to_peripheral() {
   .await;
   let acc_id = parse_doc_id(&acc);
 
-  // PA's worker pushes to Central, then PB's worker pulls from Central.
-  // Use poll_until to wait for the document to appear on PB.
   poll_until(
     || {
       let c = client.clone();
@@ -65,19 +55,16 @@ async fn peripheral_to_central_to_peripheral() {
   )
   .await;
 
-  // Central now has it
   let central_acc =
     get_acceptance_composite_json(&client, &central.url, &central.token, acc_id).await;
   assert!(central_acc.is_some(), "Central should have doc after push");
 
-  // PB has the doc created on PA
   let pb_acc = get_acceptance_composite_json(&client, &pb.url, &pb.token, acc_id).await;
   assert!(
     pb_acc.is_some(),
     "PB should have doc from PA via Central relay"
   );
 
-  // Field parity across all three nodes
   let pa_doc = get_acceptance_composite_json(&client, &pa.url, &pa.token, acc_id)
     .await
     .unwrap();

@@ -1,4 +1,18 @@
-use super::*;
+use std::collections::HashMap;
+
+use sea_orm::entity::prelude::Decimal;
+use uuid::Uuid;
+use voletu_core_macros::response_dto;
+
+use crate::{
+  api::ApiError,
+  entities::{
+    ownership_transfer,
+    ownership_transfer_item,
+    physical_storage_transfer,
+    physical_transfer_item,
+  },
+};
 
 #[response_dto(service_fields(document))]
 pub struct PhysicalTransferResponse {
@@ -20,15 +34,18 @@ impl PhysicalTransferResponse {
     to_storage_names: &HashMap<Uuid, String>,
   ) -> Self {
     let contractor_id_name = model.contractor.as_ref().map(|c| c.common_name.clone());
+
     let items = model
       .items
       .iter()
       .cloned()
       .map(|item| PhysicalTransferItemResponse::from_loaded_with_names(item, to_storage_names))
       .collect();
+
     let mut response = Self::from(physical_storage_transfer::Model::from(model));
     response.contractor_id_name = contractor_id_name;
     response.items = items;
+
     response
   }
 }
@@ -141,12 +158,16 @@ impl PhysicalTransferItemResponse {
     to_storage_names: &HashMap<Uuid, String>,
   ) -> Self {
     let product_id_name = model.product.as_ref().map(|p| p.common_name.clone());
+
     let from_storage_id_name = model.from_storage.as_ref().map(|s| s.common_name.clone());
+
     let to_storage_id_name = to_storage_names.get(&model.to_storage_id).cloned();
+
     let mut response = Self::from(physical_transfer_item::Model::from(model));
     response.product_id_name = product_id_name;
     response.from_storage_id_name = from_storage_id_name;
     response.to_storage_id_name = to_storage_id_name;
+
     response
   }
 }
@@ -197,8 +218,10 @@ impl OwnershipTransferResponse {
       .cloned()
       .map(|item| OwnershipTransferItemResponse::from_loaded_with_names(item, contractor_names))
       .collect();
+
     let mut response = Self::from(ownership_transfer::Model::from(model));
     response.items = items;
+
     response
   }
 }
@@ -305,14 +328,19 @@ impl OwnershipTransferItemResponse {
     contractor_names: &HashMap<Uuid, String>,
   ) -> Self {
     let storage_id_name = model.storage.as_ref().map(|s| s.common_name.clone());
+
     let product_id_name = model.product.as_ref().map(|p| p.common_name.clone());
+
     let from_contractor_id_name = contractor_names.get(&model.from_contractor_id).cloned();
+
     let to_contractor_id_name = contractor_names.get(&model.to_contractor_id).cloned();
+
     let mut response = Self::from(ownership_transfer_item::Model::from(model));
     response.storage_id_name = storage_id_name;
     response.product_id_name = product_id_name;
     response.from_contractor_id_name = from_contractor_id_name;
     response.to_contractor_id_name = to_contractor_id_name;
+
     response
   }
 }

@@ -102,9 +102,6 @@ export function useTableUrlState<TSearch extends SearchRecord>(
     return collected
   }, [columnFiltersCfg, search])
 
-  // Internal state keeps filters that aren't tracked in the URL (in-header
-  // multi-select filters, etc.) alive across re-renders. URL-tracked filters
-  // are merged in from `urlColumnFilters` whenever the URL changes.
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(urlColumnFilters)
   useEffect(() => {
     const configuredIds = new Set(columnFiltersCfg.map(cfg => cfg.columnId))
@@ -113,8 +110,7 @@ export function useTableUrlState<TSearch extends SearchRecord>(
         ...prev.filter(f => !configuredIds.has(f.id)),
         ...urlColumnFilters,
       ]
-      // Bail out when content is unchanged so the default `[]` columnFiltersCfg
-      // — a new array each render — doesn't ping-pong the state.
+
       if (next.length === prev.length
         && next.every((f, i) => f.id === prev[i]?.id && f.value === prev[i]?.value)) {
         return prev

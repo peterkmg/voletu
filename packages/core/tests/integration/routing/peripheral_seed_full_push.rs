@@ -1,11 +1,3 @@
-//! **Peripheral seed full push**: PA seeds via POST /dev/seed with no base assignments,
-//! and ALL data must push to Central. A second peripheral PB with a routing-filtered
-//! subset must receive only its assigned bases via central distribution.
-//!
-//! **Topology:** Central + PA (seeds, then assigned [B1, B2]) + PB (assigned [B2, B3])
-//! **Verifies:** Push from peripheral to central is complete, routing isolation on PB,
-//! and ledger parity on the shared base B2.
-
 use std::time::Duration;
 
 use reqwest::Client;
@@ -30,10 +22,8 @@ use crate::common::integration::{
   SyncNodeRef,
 };
 
-/// Push+pull of a full seed dataset can span many batches. Keep generous.
 const SYNC_DEADLINE: Duration = Duration::from_secs(300);
 
-/// Query catalog bases on a node and return all base ids.
 async fn list_all_base_ids(client: &Client, base_url: &str, token: &str) -> Vec<Uuid> {
   let response = api_get(client, &format!("{base_url}/catalog/bases"), token).await;
   response
@@ -44,8 +34,6 @@ async fn list_all_base_ids(client: &Client, base_url: &str, token: &str) -> Vec<
     .collect()
 }
 
-/// Wait until the per-doc-type counts on `target` catch up to `source` for every DocType.
-/// Uses repeated API polling — independent of the sync worker's cycle timing.
 async fn wait_for_doc_count_parity(
   client: &Client,
   source_url: &str,
@@ -77,14 +65,10 @@ async fn wait_for_doc_count_parity(
 async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   let client = Client::new();
 
-  // 1. Central
   let central = setup_central_via_api(&client, &temp_db_path("pa-seed-central")).await;
 
-  // 2. PA as peripheral with NO base assignments yet — the seed creates bases.
   let pa = setup_peripheral_via_api(&client, &temp_db_path("pa-seed-pa"), &central, &[]).await;
 
-  // 3. Seed PA. dev_seed_via_api wraps api_post which already unwraps the `data`
-  // envelope, so the SeedResult fields are at the top level.
   let seed_result: Value = dev_seed_via_api(&client, &pa.url, &pa.token).await;
   let bases_seeded = seed_result["bases"].as_u64().unwrap_or(0);
   assert!(
@@ -92,10 +76,8 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
     "seed must produce at least 3 bases for routing test (got {bases_seeded}): {seed_result}"
   );
 
-  // 4. Verify PA has all document types locally (catches seed bugs early).
   assert_seed_completeness(&client, &pa.url, &pa.token, "PA").await;
 
-  // 5. Extract bases created by seed.
   let all_bases = list_all_base_ids(&client, &pa.url, &pa.token).await;
   assert!(
     all_bases.len() >= 3,
@@ -105,11 +87,9 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   let b2 = all_bases[1];
   let b3 = all_bases[2];
 
-  // 6. Assign [B1, B2] to PA so pull direction also works.
   add_base_assignment_via_api(&client, &pa.url, &pa.token, b1).await;
   add_base_assignment_via_api(&client, &pa.url, &pa.token, b2).await;
 
-  // 7. Wait until central catches up with PA's full document set via push.
   wait_for_doc_count_parity(
     &client,
     &pa.url,
@@ -121,7 +101,6 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   )
   .await;
 
-  // 8. Central must have at least as many docs of every type as PA (belt-and-braces).
   assert_doc_count_at_least(
     &client,
     &pa.url,
@@ -133,12 +112,9 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   )
   .await;
 
-  // 9. Start PB with [B2, B3] and wait until it pulls what it should.
-  //    (We don't know exact counts up front, but PB's per-type counts should stabilize.)
   let pb =
     setup_peripheral_via_api(&client, &temp_db_path("pa-seed-pb"), &central, &[b2, b3]).await;
-  // Give PB time to pull — wait until its ledger is non-empty (some B2 entries must exist
-  // since both PA and PB share B2).
+
   poll_until(
     || async {
       let entries =
@@ -150,10 +126,8 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   )
   .await;
 
-  // 10. Routing isolation: PB must not have ledger for B1.
   assert_no_ledger_for_base(&client, &pb.url, &pb.token, "PB", b1).await;
 
-  // 11. Ledger parity on shared base B2 between PA and PB.
   assert_ledger_parity_for_base(
     &client,
     SyncNodeRef {
@@ -170,7 +144,6 @@ async fn isolates_unshared_base_and_maintains_ledger_parity_on_shared() {
   )
   .await;
 
-  // 12. Informational: note which doc types are absent on PB.
   let pb_counts = doc_counts(&client, &pb.url, &pb.token).await;
   let zero_types: Vec<&'static str> = pb_counts
     .iter()

@@ -1,6 +1,6 @@
 import type { StartupState } from '~/tauri/commands'
 
-export {} // module boundary for top-level await
+export {}
 
 vi.mock('~/platform/runtime/api-base-url', () => ({
   setApiBaseUrl: vi.fn(),
@@ -159,7 +159,6 @@ describe('ensureBootstrapped()', () => {
       useAuthStore.setState({ status: 'valid' })
     })
 
-    // startupState stays null — simulates Tauri IPC unavailable
     useStartupStore.setState({ refresh: vi.fn(async () => {}) })
     useAuthStore.setState({ status: 'unknown', boot })
 

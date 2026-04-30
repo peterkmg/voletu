@@ -17,8 +17,6 @@ import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { defineCrudViews } from '~/lib/define-crud-views'
 import { ProductTypeMutateDialog } from '~/views/catalog/product-types'
 
-// --- Columns ---
-
 function getProductGroupColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<ProductGroupResponse> }>,
@@ -30,8 +28,6 @@ function getProductGroupColumns(
     actionsColumn<ProductGroupResponse>(RowActions, 2),
   ]
 }
-
-// --- Table ---
 
 const productGroupsRoute = getRouteApi('/_authenticated/catalog/product-groups/')
 const productGroupsGlobalFilterFn = createGlobalFilter<ProductGroupResponse>('commonName')
@@ -59,8 +55,6 @@ function ProductGroupsTable({ data, actions, RowActions }: ProductGroupsTablePro
 function useProductGroupsTitle() {
   return useTranslation(['catalog']).t('catalog:productGroup.title')
 }
-
-// --- Mutate Dialog ---
 
 const productGroupFormSchema = z.object({
   commonName: z.string().min(1),

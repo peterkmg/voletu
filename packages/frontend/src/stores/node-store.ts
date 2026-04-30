@@ -26,13 +26,9 @@ const defaultStatus: NodeStatus = {
 
 interface NodeStore {
   status: NodeStatus
-  // Flipped to true once the bases list has been fetched at least once (even if empty).
-  // Lets consumers distinguish "default zero state" from "server confirmed: no bases".
+
   basesLoaded: boolean
-  // Sticky: set true the first time the worker is observed in a reachable state
-  // (OnlineIdle | Syncing), and never unset within the session. The readiness
-  // checklist's "central verified" step reads this so a transient offline does
-  // not flip a completed step back to unchecked.
+
   centralVerifiedOnce: boolean
   setStatus: (status: Partial<NodeStatus>) => void
   markBasesLoaded: () => void

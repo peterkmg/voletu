@@ -3,13 +3,13 @@ use std::str::FromStr;
 use anyhow::anyhow;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityLoaderTrait, QueryFilter};
 
-use super::super::SystemService;
 use crate::{
   api::ApiError,
   context::audit::current_actor_id,
   dtos::{CreateUserRequest, UserResponse},
   entities::{role, user},
   enums::RoleType,
+  services::system::SystemService,
   utils::password::hash_password,
 };
 
@@ -50,6 +50,7 @@ impl SystemService {
     let password_hash = hash_password(&dto.password)
       .await
       .map_err(ApiError::Internal)?;
+
     let actor_id = current_actor_id()
       .ok_or_else(|| ApiError::Unauthorized("Missing authenticated actor context".to_string()))?;
 

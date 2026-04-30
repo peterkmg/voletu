@@ -1,23 +1,3 @@
-/**
- * Per-document mutate dialog for Inventory Reconciliation (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the reconciliation header
- * spec / adjustments table coming from `reconciliation-form-config.tsx`,
- * and wires the Kubb-generated composite create and update mutations.
- *
- * Edit-mode pre-fetch:
- *   No `useInventoryReconciliationCompositeGet` hook is generated yet — the
- *   backend exposes per-row `reconciliationGet` (header only) plus
- *   `adjustmentList` (every adjustment in the system). The dialog combines
- *   the two and filters adjustments by `reconciliationId === documentId`.
- *   Both queries are gated on `open && isUpdate` so create-mode users do
- *   not pay the cost.
- *
- * Composite response shape: `InventoryReconciliationCompositeResponse =
- * InventoryReconciliationResponse & { adjustments }` — header fields are
- * flat (no `.document` wrap), so they are read directly from `loaded.X`.
- */
-
 import type { ReconciliationAdjustment, ReconciliationCreate } from './reconciliation-form-config'
 import type { InventoryAdjustmentResponse, ReconciliationFlatRow } from '~/generated/types'
 import type { InventoryReconciliationCompositeUpdateMutationRequest } from '~/generated/types/DocumentOperationsTypes/InventoryReconciliationCompositeUpdate'
@@ -51,15 +31,10 @@ import {
 interface ReconciliationMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * reconciliation; `id` is row-scoped and must not be used for the update.
-   * When `null`, the dialog opens in create mode.
-   */
+
   currentRow?: ReconciliationFlatRow | null
 }
 
-/** Drop server-only fields and keep only the shape the composite request expects. */
 function toAdjustmentRequest(
   adjustment: InventoryAdjustmentResponse,
 ): ReconciliationAdjustment {
@@ -85,14 +60,11 @@ export function ReconciliationMutateDialog({
   const isUpdate = currentRow != null
   const documentId = currentRow?.documentId ?? null
 
-  // Pre-fetch the header only when editing.
   const headerQuery = useReconciliationGet(documentId ?? '', undefined, {
     query: { enabled: Boolean(open && documentId) },
   })
   const loadedHeader = headerQuery.data?.data
 
-  // Adjustments are not embedded in the per-row Get response, so they are
-  // pulled separately from the global list and filtered to this document.
   const adjustmentsQuery = useAdjustmentList({
     query: { enabled: Boolean(open && documentId) },
   })
@@ -140,8 +112,6 @@ export function ReconciliationMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetches resolve so that
-  // defaultValues are applied via react-hook-form's initialization path.
   const dialogKey = isUpdate
     ? loadedHeader && adjustmentsLoaded
       ? loadedHeader.id

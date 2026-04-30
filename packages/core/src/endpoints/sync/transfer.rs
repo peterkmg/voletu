@@ -1,5 +1,22 @@
-use super::*;
-use crate::dtos::PullAuditLogsQueryRequest;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Query, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    PullAuditLogsQueryRequest,
+    PullAuditLogsResponse,
+    PushAuditLogsRequest,
+    PushAuditLogsResponse,
+  },
+  endpoints::paths,
+};
 
 #[utoipa::path(
   post,
@@ -32,7 +49,7 @@ async fn log_push(
   description = "Returns replication events filtered by the requesting node's base assignments. Central receives all pushed data; peripherals request only their assigned bases.",
   path = paths::sync::PULL,
   params(
-    ("lastAuditLogId" = Uuid, Query, description = "Last processed audit log ID"),
+    ("lastAuditLogId" = uuid::Uuid, Query, description = "Last processed audit log ID"),
     ("baseIds" = Option<String>, Query, description = "Comma-separated base UUIDs the requesting node handles. Empty = catalog-only sync."),
     ("limit" = Option<u64>, Query, description = "Max number of logs to return")
   ),

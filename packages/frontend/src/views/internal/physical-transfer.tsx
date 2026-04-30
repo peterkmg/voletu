@@ -19,17 +19,17 @@ function getColumns(
   RowActions: React.ComponentType<{ row: Row<PhysicalTransferFlatRow> }>,
 ): ColumnDef<PhysicalTransferFlatRow>[] {
   return [
-    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+
     { ...textColumn<PhysicalTransferFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<PhysicalTransferFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<PhysicalTransferFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    // Item-level columns (groupRole: 'item' — shown on every row)
+
     { ...textColumn<PhysicalTransferFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<PhysicalTransferFlatRow>('fromStorageIdName', t('common:columns.fromStorage'), { primary: false }), meta: { label: t('common:columns.fromStorage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<PhysicalTransferFlatRow>('toStorageIdName', t('common:columns.toStorage'), { primary: false }), meta: { label: t('common:columns.toStorage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...numericColumn<PhysicalTransferFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
     { ...statusColumn<PhysicalTransferFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    // Actions (doc-level)
+
     { ...actionsColumn<PhysicalTransferFlatRow>(RowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }

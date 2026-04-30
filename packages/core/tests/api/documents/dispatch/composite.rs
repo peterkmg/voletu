@@ -2,14 +2,16 @@ use axum::http::StatusCode;
 use sea_orm::prelude::Decimal;
 use voletu_core::{endpoints::paths as api_paths, services::ledger::LedgerService};
 
-use super::super::seed_inventory_context;
-use crate::common::{
-  catalog_seed::seed_ledger_balance,
-  http::{post_json, response_json, setup_seeded_app_with_admin_token, with_auth_token},
-  payloads::{
-    dispatch_composite_save_and_execute,
-    dispatch_composite_save_and_execute_with_measurement,
+use crate::{
+  common::{
+    catalog_seed::seed_ledger_balance,
+    http::{post_json, response_json, setup_seeded_app_with_admin_token, with_auth_token},
+    payloads::{
+      dispatch_composite_save_and_execute,
+      dispatch_composite_save_and_execute_with_measurement,
+    },
   },
+  documents::seed_inventory_context,
 };
 
 const DISPATCH_COMPOSITE_DOC_NUMBER: &str = "DISP-COMP-1";

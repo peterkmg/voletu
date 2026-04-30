@@ -20,19 +20,19 @@ function getColumns(
   RowActions: React.ComponentType<{ row: Row<ReconciliationFlatRow> }>,
 ): ColumnDef<ReconciliationFlatRow>[] {
   return [
-    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
+
     { ...textColumn<ReconciliationFlatRow>('documentNumber', t('common:table.documentNumber'), { sizing: 'capped', maxSize: 200 }), meta: { label: t('common:table.documentNumber'), sizingCategory: 'capped', groupRole: 'doc' as const } },
     { ...dateColumn<ReconciliationFlatRow>('date', t('common:table.date')), meta: { label: t('common:table.date'), sizingCategory: 'capped', align: 'left' as const, groupRole: 'doc' as const } },
     { ...textColumn<ReconciliationFlatRow>('contractorIdName', t('common:table.contractor'), { primary: false }), meta: { label: t('common:table.contractor'), sizingCategory: 'flex', groupRole: 'doc' as const } },
     { ...textColumn<ReconciliationFlatRow>('warehouseIdName', t('common:columns.warehouse'), { primary: false }), meta: { label: t('common:columns.warehouse'), sizingCategory: 'flex', groupRole: 'doc' as const } },
-    // Item-level columns (groupRole: 'item' — shown on every row)
+
     { ...textColumn<ReconciliationFlatRow>('productIdName', t('common:table.product'), { primary: false }), meta: { label: t('common:table.product'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<ReconciliationFlatRow>('storageIdName', t('common:columns.storage'), { primary: false }), meta: { label: t('common:columns.storage'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...textColumn<ReconciliationFlatRow>('adjustmentType', t('common:columns.type'), { primary: false }), meta: { label: t('common:columns.type'), sizingCategory: 'capped', groupRole: 'item' as const } },
     { ...numericColumn<ReconciliationFlatRow>('amount', t('common:table.quantity')), meta: { label: t('common:table.quantity'), sizingCategory: 'capped', align: 'right' as const, groupRole: 'item' as const } },
     { ...textColumn<ReconciliationFlatRow>('reason', t('common:columns.reason'), { primary: false }), meta: { label: t('common:columns.reason'), sizingCategory: 'flex', groupRole: 'item' as const } },
     { ...statusColumn<ReconciliationFlatRow>('status', t('common:table.status'), statusColors), meta: { label: t('common:table.status'), sizingCategory: 'capped', groupRole: 'doc' as const } },
-    // Actions (doc-level)
+
     { ...actionsColumn<ReconciliationFlatRow>(RowActions), meta: { sizingCategory: 'fixed', groupRole: 'doc' as const } },
   ]
 }

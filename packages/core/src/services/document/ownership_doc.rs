@@ -78,6 +78,7 @@ async fn before_ownership_transfer_execute(
         reverses_entry_id: None,
       })
       .await?;
+
     svc
       .ledger
       .append_delta_on(conn, LedgerDelta {
@@ -106,6 +107,7 @@ async fn before_ownership_transfer_revert(
     .ledger
     .append_reversal_deltas_on(conn, LedgerEntrySourceKind::OwnershipTransfer, existing.id)
     .await?;
+
   Ok(())
 }
 

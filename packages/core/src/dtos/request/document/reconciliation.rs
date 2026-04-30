@@ -67,17 +67,8 @@ pub struct CreateInventoryReconciliationCompositeRequest {
   pub adjustments: Vec<InventoryAdjustmentCompositeRequest>,
 }
 
-/// Update payload for one adjustment in a reconciliation composite update.
-///
-/// Each adjustment is a full replacement of its current state, not a partial
-/// patch: `storage_id`, `product_id`, `adjustment_type`, and `amount` are all
-/// required and overwrite whatever the existing row held. Adjustments present
-/// here that don't exist on the document are inserted; existing adjustments
-/// not present here are deleted.
 #[request_dto]
 pub struct UpdateInventoryAdjustmentCompositeRequest {
-  /// Present for existing adjustments (an UPDATE), absent for newly inserted
-  /// adjustments (an INSERT).
   pub id: Option<Uuid>,
   pub storage_id: Uuid,
   pub product_id: Uuid,
@@ -89,15 +80,9 @@ pub struct UpdateInventoryAdjustmentCompositeRequest {
 
 #[request_dto]
 pub struct UpdateInventoryReconciliationCompositeRequest {
-  /// Header fields applied as a partial update
-  /// (mirrors per-row UpdateInventoryReconciliationRequest).
   #[validate(nested)]
   #[serde(flatten)]
   pub reconciliation: UpdateInventoryReconciliationRequest,
-  /// Full new adjustments list, diff-applied against existing rows.
-  /// Adjustments with `id: Some(uuid)` matching an existing row are updated.
-  /// Adjustments with `id: None` are inserted.
-  /// Existing adjustments not present in this list are hard-deleted.
   #[validate(length(min = 1), nested)]
   pub adjustments: Vec<UpdateInventoryAdjustmentCompositeRequest>,
 }

@@ -9,10 +9,12 @@ export interface SaveExportFileResult {
   target: 'browser' | 'tauri'
 }
 
+const invalidFilenameChars = new Set(['<', '>', ':', '"', '/', '\\', '|', '?', '*'])
+
 export function sanitizeExportFilename(filename: string): string {
   const sanitized = filename
     .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-')
+    .replace(/./g, char => invalidFilenameChars.has(char) || char.charCodeAt(0) <= 0x1F ? '-' : char)
     .replace(/\s+/g, ' ')
 
   return sanitized || 'export'

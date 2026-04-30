@@ -2,6 +2,7 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityLoaderTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
+  api::ApiError,
   dtos,
   entities::{product_type, storage, warehouse},
   services::{
@@ -14,7 +15,7 @@ async fn ensure_active_warehouse(
   conn: &impl ConnectionTrait,
   warehouse_id: Uuid,
   field_name: &str,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   let exists = warehouse::Entity::load()
     .filter_by_id(warehouse_id)
     .filter(warehouse::Column::DeletedAt.is_null())
@@ -22,7 +23,7 @@ async fn ensure_active_warehouse(
     .await?;
 
   if exists.is_none() {
-    return Err(crate::api::ApiError::BadRequest(format!(
+    return Err(ApiError::BadRequest(format!(
       "{field_name} '{warehouse_id}' does not reference a valid record"
     )));
   }
@@ -34,7 +35,7 @@ async fn ensure_active_product_type(
   conn: &impl ConnectionTrait,
   product_type_id: Uuid,
   field_name: &str,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   let exists = product_type::Entity::load()
     .filter_by_id(product_type_id)
     .filter(product_type::Column::DeletedAt.is_null())
@@ -42,7 +43,7 @@ async fn ensure_active_product_type(
     .await?;
 
   if exists.is_none() {
-    return Err(crate::api::ApiError::BadRequest(format!(
+    return Err(ApiError::BadRequest(format!(
       "{field_name} '{product_type_id}' does not reference a valid record"
     )));
   }
@@ -63,11 +64,13 @@ async fn before_storage_create(
   _svc: &CatalogService,
   conn: &impl sea_orm::ConnectionTrait,
   req: &dtos::CreateStorageRequest,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   ensure_active_warehouse(conn, req.warehouse_id, "warehouseId").await?;
+
   if let Some(product_type_id) = req.product_type_id {
     ensure_active_product_type(conn, product_type_id, "productTypeId").await?;
   }
+
   Ok(())
 }
 
@@ -76,13 +79,15 @@ async fn before_storage_update(
   conn: &impl sea_orm::ConnectionTrait,
   _existing: &storage::Model,
   req: &dtos::UpdateStorageRequest,
-) -> Result<(), crate::api::ApiError> {
+) -> Result<(), ApiError> {
   if let Some(warehouse_id) = req.warehouse_id {
     ensure_active_warehouse(conn, warehouse_id, "warehouseId").await?;
   }
+
   if let Some(product_type_id) = req.product_type_id {
     ensure_active_product_type(conn, product_type_id, "productTypeId").await?;
   }
+
   Ok(())
 }
 

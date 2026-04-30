@@ -1,4 +1,3 @@
-// packages/frontend/src/views/dashboard/__tests__/matrix-toolbar.test.tsx
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'

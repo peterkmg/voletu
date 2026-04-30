@@ -1,18 +1,3 @@
-/**
- * Per-document mutate dialog for Acceptance (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the Acceptance-specific
- * header spec / items table coming from `acceptance-form-config.tsx`, and
- * wires the Kubb-generated composite create and update mutations.
- *
- * Edit-mode `defaultValues` are pre-fetched via `useAcceptanceCompositeGet`
- * (gated on `open && isUpdate`). While the fetch is in flight the form
- * renders with `emptyAcceptanceCreate`; once data arrives, the dialog is
- * re-mounted with the real values by keying `<CompositeFormDialog>` on the
- * loaded document id. This keeps the component stateless w.r.t. the fetch
- * and avoids a stale-form flash on open.
- */
-
 import type { AcceptanceCreate, AcceptanceItem } from './acceptance-form-config'
 import type { BasisPrefillRef } from './use-basis-prefill'
 import type { AcceptanceFlatRow } from '~/generated/types'
@@ -51,18 +36,9 @@ import { useBasisPrefill } from './use-basis-prefill'
 interface AcceptanceMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * acceptance; `id` is item-scoped and must not be used for the update.
-   * When `null`, the dialog opens in create mode.
-   */
+
   currentRow?: AcceptanceFlatRow | null
-  /**
-   * Optional basis pre-fill source. When set, the dialog opens in create
-   * mode with the matching basis tab pre-selected and locked, contractor
-   * defaulted from the waybill, and one item row per waybill item.
-   * Mutually exclusive with `currentRow` (edit mode).
-   */
+
   prefillBasis?: BasisPrefillRef
 }
 
@@ -81,18 +57,11 @@ export function AcceptanceMutateDialog({
   const documentId = currentRow?.documentId ?? null
   const hasPrefill = !isUpdate && prefillBasis != null
 
-  // Pre-fetch the full composite only when editing. While the query is
-  // resolving, `data` is undefined and `emptyAcceptanceCreate` is used as a
-  // placeholder; the dialog is keyed on the loaded doc id below so that the
-  // form re-initializes exactly once when the real data lands.
   const composite = useAcceptanceCompositeGet(documentId ?? '', undefined, {
     query: { enabled: Boolean(open && documentId) },
   })
   const loaded = composite.data?.data
 
-  // Pre-fetch the basis composite when opening from a row trigger / detail CTA.
-  // The hook is gated on `open && hasPrefill`, so it is a no-op for the
-  // standalone-create and edit paths.
   const prefill = useBasisPrefill(prefillBasis, Boolean(open && hasPrefill))
 
   const defaultValues = useMemo<AcceptanceCreate>(() => {
@@ -106,9 +75,6 @@ export function AcceptanceMutateDialog({
   const mutationFn = useCallback(
     async (data: AcceptanceCreate): Promise<AcceptanceCompositeCreateMutationResponse> => {
       if (isUpdate && documentId) {
-        // Update mode validates through acceptanceUpdateSchema, which wraps
-        // the generated update composite schema. Existing item ids are kept
-        // in defaultValues so the backend can diff rows in place.
         return updateMutation.mutateAsync({
           id: documentId,
           data: data as unknown as AcceptanceCompositeUpdateMutationRequest,
@@ -120,14 +86,8 @@ export function AcceptanceMutateDialog({
   )
 
   const handleSuccess = useCallback(() => {
-    // Always invalidate the acceptance flat query so the action list refreshes.
     queryClient.invalidateQueries({ queryKey: flowAcceptanceFlatQueryQueryKey() })
-    // Risk §6.2: when a new acceptance is created (with or without basis),
-    // invalidate the truck/rail pipeline queries so the PENDING-waybill
-    // picker (and the row-action gate on the basis lists) reflects the
-    // post-create pipeline status without a manual refresh. Also runs in
-    // edit mode, where the pipeline-status pill on the basis detail can
-    // change as a side-effect of the edit.
+
     queryClient.invalidateQueries({ queryKey: flowTruckReceiptQueryQueryKey() })
     queryClient.invalidateQueries({ queryKey: railReceiptPipelineQueryQueryKey() })
     toast.success(
@@ -135,11 +95,6 @@ export function AcceptanceMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetch (or prefill fetch)
-  // resolves so that defaultValues are applied via react-hook-form's
-  // initialization path. The loading-phase key encodes kind + basisId so
-  // that closing and reopening the dialog with a different basis remounts
-  // cleanly instead of briefly reusing the previous instance's form state.
   let dialogKey: string
   if (isUpdate) {
     dialogKey = loaded?.id ?? `edit-loading-${documentId ?? ''}`
@@ -153,18 +108,8 @@ export function AcceptanceMutateDialog({
     dialogKey = 'create'
   }
 
-  // The basis tab is locked in edit mode (rule 2.6) and in row-trigger /
-  // detail-CTA create mode (rule 2.4); only the standalone external create
-  // path leaves the tab unlocked.
   const basisLocked = isUpdate || hasPrefill
 
-  // Edit-mode schema is the lifecycle-aware factory variant when the
-  // original composite is loaded — it asserts arrivalType and basis FKs
-  // match the loaded values (rule 2.6, defense-in-depth on top of the UI
-  // tab-lock). The stateless `acceptanceUpdateSchema` is used while the
-  // fetch is in flight; submission is gated on `loaded` anyway because
-  // `mutationFn` requires `documentId`, so the stateless variant is only
-  // exercised by tests / future callers without a loaded composite.
   const schema = isUpdate
     ? loaded
       ? makeAcceptanceUpdateSchema(loaded as unknown as Parameters<typeof makeAcceptanceUpdateSchema>[0])

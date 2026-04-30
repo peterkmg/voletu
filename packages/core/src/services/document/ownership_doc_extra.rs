@@ -20,9 +20,13 @@ use crate::{
     OwnershipTransferResponse,
   },
   entities::{ownership_transfer, ownership_transfer_item, product, storage},
-  services::document::{
-    specs::{OwnershipTransferFlatQuerySpec, OwnershipTransferQuerySpec},
-    DocumentService,
+  enums::DocumentStatus,
+  services::{
+    common::normalize_pagination,
+    document::{
+      specs::{OwnershipTransferFlatQuerySpec, OwnershipTransferQuerySpec},
+      DocumentService,
+    },
   },
 };
 
@@ -33,6 +37,7 @@ impl DocumentService {
   ) -> Result<OwnershipTransferResponse, ApiError> {
     tracing::info!("Creating ownership transfer");
     let txn = self.db.begin().await?;
+
     let response = self
       .ownership_transfer_composite_create_no_tx(&txn, req)
       .await?;
@@ -57,7 +62,7 @@ impl DocumentService {
       .ownership_transfer_execute_no_tx(&txn, response.id, actor_id)
       .await?;
 
-    response.status = crate::enums::DocumentStatus::Executed;
+    response.status = DocumentStatus::Executed;
 
     txn.commit().await?;
 
@@ -72,6 +77,7 @@ impl DocumentService {
     let saved = ownership_transfer::ActiveModelEx::from(req)
       .save(conn)
       .await?;
+
     let transfer_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -100,20 +106,19 @@ impl DocumentService {
     )
   }
 
-  /// Composite update: applies a header partial update plus a full diff on the items list.
-  /// Items with `id: Some(uuid)` matching an existing row are updated.
-  /// Items with `id: None` are inserted.
-  /// Existing items not present in the request are hard-deleted.
   pub async fn ownership_transfer_composite_update(
     &self,
     ownership_transfer_id: Uuid,
     req: &dtos::UpdateOwnershipTransferCompositeRequest,
   ) -> Result<OwnershipTransferResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .ownership_transfer_composite_update_no_tx(&txn, ownership_transfer_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -123,15 +128,10 @@ impl DocumentService {
     ownership_transfer_id: Uuid,
     req: &dtos::UpdateOwnershipTransferCompositeRequest,
   ) -> Result<OwnershipTransferResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater.
-    //    This enforces draft-only mutation, applies set_if_some semantics,
-    //    and registers an audit log row.
     self
       .ownership_transfer_update_no_tx(conn, ownership_transfer_id, &req.ownership_transfer)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
-    //    database. The HashSet doubles as the dedup guard.
     let mut kept_ids: HashSet<Uuid> = HashSet::new();
     for item in &req.items {
       if let Some(item_id) = item.id {
@@ -144,8 +144,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist the items as a graph save. `HasManyModel::Replace(_)` deletes
-    //    every existing related row that is not present in the new set.
     let items: Vec<ownership_transfer_item::ActiveModelEx> = req
       .items
       .iter()
@@ -171,13 +169,11 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Re-derive document routing tags via the existing utility.
     self
       .audit
       .backfill_document_routing::<ownership_transfer::Entity>(conn, ownership_transfer_id)
       .await?;
 
-    // 5. Reload the full composite using the same eager-loading shape as on create.
     OwnershipTransferResponse::try_from(
       ownership_transfer::Entity::load()
         .filter_by_id(ownership_transfer_id)
@@ -213,8 +209,7 @@ impl DocumentService {
     &self,
     query: &OwnershipTransferQuerySpec,
   ) -> Result<Vec<ownership_transfer::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(ownership_transfer::Column::DeletedAt.is_null());
@@ -268,14 +263,12 @@ impl DocumentService {
       .collect()
   }
 
-  /// Returns one row per ownership transfer item with document fields repeated.
-  /// Used by the grouped-row list table on the frontend.
   pub async fn ownership_transfer_flat_query(
     &self,
     query: OwnershipTransferFlatQuerySpec,
   ) -> Result<Vec<OwnershipTransferFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let docs = self
       .ownership_transfer_query_models(&OwnershipTransferQuerySpec {
         status: query.status,

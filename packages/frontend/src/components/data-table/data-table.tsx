@@ -18,21 +18,13 @@ interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[]
   mode?: 'virtual' | 'paginated'
   className?: string
-  /** Height of the scrollable container (virtual mode). Default: '600px' */
   height?: string
-  /** Estimated row height in pixels (virtual mode). Default: 40 */
   estimateSize?: number
-  /** Number of rows to render outside visible area (virtual mode). Default: 20 */
   overscan?: number
-  /** Show skeleton loading state. */
   isLoading?: boolean
-  /** Custom empty state message. */
   emptyMessage?: string
-  /** Custom empty state icon. */
   emptyIcon?: React.ReactNode
-  /** Called when a row receives Enter key or is double-clicked. */
   onRowAction?: (row: TData) => void
-  /** Field name for row grouping (visual merge). When set, doc-level cells suppress on continuation rows. */
   groupKey?: string
 }
 
@@ -52,8 +44,7 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const { density } = useDensity()
   const densityCls = densityClasses[density]
-  // useState (not useRef) so that when the div mounts, the state change
-  // triggers a re-render and the virtualizer picks up the scroll element.
+
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const scrollRefCb = useCallback((node: HTMLDivElement | null) => setScrollEl(node), [])
 

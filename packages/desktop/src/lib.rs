@@ -20,7 +20,9 @@ pub fn setup_tauri(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
       AppState::new(config::AppConfig::default())
     }
   };
+
   app.manage(Mutex::new(state));
+
   Ok(())
 }
 

@@ -173,7 +173,6 @@ async fn restores_company_from_snapshot_and_is_idempotent_on_reapply() {
     assert_eq!(second_apply.accepted, 0);
     assert_eq!(second_apply.rejected, 0);
 
-    // Verify the pushed restore log exists (other audit logs may be present from entity hooks)
     let restore_log = audit_log::Entity::load()
       .filter_by_id(restore_log_id)
       .one(&*db)
@@ -448,9 +447,6 @@ async fn apply_pulled_logs_advances_watermark_within_same_transaction() {
     let central_id = Uuid::now_v7();
     let service = sync_service_with_node(db.clone(), TEST_SYNC_NODE_ID);
 
-    // Apply an empty batch under the empty discriminant (catalog-only scope
-    // with no assignments). The method should succeed and write a watermark
-    // row with the given last_audit_log_id and base_discriminant="".
     let target_last_id = Uuid::now_v7();
     service
       .apply_pulled_logs(&[], central_id, target_last_id, String::new())
@@ -472,13 +468,11 @@ async fn apply_pulled_logs_aborts_when_discriminant_drifted() {
   with_audit_context(Uuid::now_v7(), Uuid::now_v7(), || async {
     let db = Arc::new(setup_db().await);
     let catalog = seed_inventory_catalog(&db).await;
-    // Real database_instance row so the node_base_assignment FK is satisfied.
+
     let local_node_id = seed_sync_node(&db, catalog.base_id, "PA drift test").await;
     let central_id = Uuid::now_v7();
     let service = sync_service_with_node(db.clone(), local_node_id);
 
-    // Precondition: the local node has at least one base assignment, so its
-    // current discriminant is NOT empty.
     node_base_assignment::ActiveModel {
       node_id: Set(local_node_id),
       base_id: Set(catalog.base_id),
@@ -488,8 +482,6 @@ async fn apply_pulled_logs_aborts_when_discriminant_drifted() {
     .await
     .unwrap();
 
-    // Caller passes expected_discriminant="" (as if the pull was issued before
-    // the assignment was added). apply_pulled_logs must abort with Conflict.
     let err = service
       .apply_pulled_logs(&[], central_id, Uuid::now_v7(), String::new())
       .await
@@ -502,7 +494,6 @@ async fn apply_pulled_logs_aborts_when_discriminant_drifted() {
       other => panic!("expected Conflict, got {other:?}"),
     }
 
-    // Watermark must NOT be written — the transaction rolled back.
     let (last_id, disc) = service
       .load_pull_watermark(central_id, SyncDirection::Pull)
       .await

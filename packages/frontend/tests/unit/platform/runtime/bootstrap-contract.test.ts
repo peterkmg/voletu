@@ -1,4 +1,4 @@
-export {} // module boundary for top-level await
+export {}
 
 vi.mock('~/platform/runtime/api-base-url', () => ({
   setApiBaseUrl: vi.fn(),

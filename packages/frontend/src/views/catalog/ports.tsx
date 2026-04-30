@@ -14,8 +14,6 @@ import { catalogPortListQueryKey, useCatalogPortList } from '~/generated/hooks/C
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { defineCrudViews } from '~/lib/define-crud-views'
 
-// --- Columns ---
-
 function getPortColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<PortResponse> }>,
@@ -27,8 +25,6 @@ function getPortColumns(
     actionsColumn<PortResponse>(RowActions, 2),
   ]
 }
-
-// --- Table ---
 
 const portsRoute = getRouteApi('/_authenticated/catalog/ports/')
 const portsGlobalFilterFn = createGlobalFilter<PortResponse>('commonName', 'country')
@@ -56,8 +52,6 @@ function PortsTable({ data, actions, RowActions }: PortsTableProps) {
 function usePortsTitle() {
   return useTranslation(['catalog']).t('catalog:port.title')
 }
-
-// --- Mutate Dialog ---
 
 const portFormSchema = z.object({
   commonName: z.string().min(1),

@@ -14,8 +14,6 @@ import { catalogBaseListQueryKey, useCatalogBaseList } from '~/generated/hooks/C
 import { useMutateDialog } from '~/hooks/use-mutate-dialog'
 import { defineCrudViews } from '~/lib/define-crud-views'
 
-// --- Columns ---
-
 function getBaseColumns(
   t: TFunction,
   RowActions: React.ComponentType<{ row: Row<BaseResponse> }>,
@@ -27,8 +25,6 @@ function getBaseColumns(
     actionsColumn<BaseResponse>(RowActions, 2),
   ]
 }
-
-// --- Table ---
 
 const basesRoute = getRouteApi('/_authenticated/catalog/bases/')
 const basesGlobalFilterFn = createGlobalFilter<BaseResponse>('commonName', 'longName')
@@ -56,8 +52,6 @@ function BasesTable({ data, actions, RowActions }: BasesTableProps) {
 function useBasesTitle() {
   return useTranslation(['catalog']).t('catalog:base.title')
 }
-
-// --- Mutate Dialog ---
 
 const baseFormSchema = z.object({
   commonName: z.string().min(1),

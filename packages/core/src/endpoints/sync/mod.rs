@@ -1,25 +1,8 @@
 use std::sync::Arc;
 
-use axum::{
-  extract::{Query, State},
-  Json,
-};
-use axum_valid::Valid;
-use utoipa_axum::{router::OpenApiRouter, routes};
+use utoipa_axum::router::OpenApiRouter;
 
-use crate::{
-  api::{ApiResponse, ApiResult, ApiState},
-  dtos::{
-    AuditLogResponse,
-    PullAuditLogsResponse,
-    PushAuditLogRequest,
-    PushAuditLogsRequest,
-    PushAuditLogsResponse,
-    SyncWatermarkResponse,
-    UpsertWatermarkRequest,
-  },
-  endpoints::paths,
-};
+use crate::api::ApiState;
 
 mod audit;
 mod status;

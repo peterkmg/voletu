@@ -40,23 +40,13 @@ interface WithoutLifecycle {
   lifecyclePropName?: undefined
 }
 
-// Secondary dialog slot used by the truck / rail pipeline lists when the
-// "Issue acceptance" row trigger needs to spawn a *different* document
-// (an Acceptance) seeded with the row as its basis. It deliberately lives
-// alongside the existing `LifecycleDialog` slot rather than overloading it
-// because the dialog's prop signature (`prefillBasis` instead of
-// `currentRow + variant/action`) is too divergent for a discriminated
-// union to narrow cleanly in object-literal contexts. See spec §3.2 / §6.3.
 export interface IssueAcceptanceDialogConfig {
   IssueAcceptanceDialog?: React.ComponentType<{
     open: boolean
     onOpenChange: (open: boolean) => void
     prefillBasis: { kind: 'truck' | 'rail', basisId: string } | undefined
   }>
-  /**
-   * Discriminator passed through to the dialog's `prefillBasis.kind`. Required
-   * whenever `IssueAcceptanceDialog` is set.
-   */
+
   prefillBasisKind?: 'truck' | 'rail'
 }
 
@@ -99,6 +89,7 @@ export function createEntityDialogs<TRow extends { id: string }>(config: EntityD
     if ('LifecycleDialog' in config && config.LifecycleDialog) {
       if (config.lifecyclePropName === 'action') {
         const LifecycleDialog = config.LifecycleDialog
+
         lifecycleDialogs = (
           <>
             <LifecycleDialog
@@ -118,6 +109,7 @@ export function createEntityDialogs<TRow extends { id: string }>(config: EntityD
       }
       else {
         const LifecycleDialog = config.LifecycleDialog
+
         lifecycleDialogs = (
           <>
             <LifecycleDialog
@@ -140,6 +132,7 @@ export function createEntityDialogs<TRow extends { id: string }>(config: EntityD
     let issueAcceptanceDialog: React.ReactNode = null
     if (IssueAcceptanceDialog && prefillBasisKind) {
       const isIssueAcceptance = dialog?.kind === 'issueAcceptance'
+
       issueAcceptanceDialog = (
         <IssueAcceptanceDialog
           open={isIssueAcceptance}

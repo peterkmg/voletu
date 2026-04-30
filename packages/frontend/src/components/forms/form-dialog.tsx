@@ -34,6 +34,7 @@ export function FormDialog({
   children,
 }: FormDialogProps) {
   const { t } = useTranslation('forms')
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn('max-h-[85vh] flex flex-col sm:max-w-lg', className)}>

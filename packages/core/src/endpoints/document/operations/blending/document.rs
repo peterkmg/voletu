@@ -1,8 +1,31 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Extension,
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
 use crate::{
-  dtos::{BlendingDocumentQueryParams, EmbedParams, PaginationParams},
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    BlendingDocumentQueryParams,
+    BlendingResponse,
+    CreateBlendingRequest,
+    EmbedParams,
+    PaginationParams,
+    UpdateBlendingRequest,
+  },
   endpoints::paths,
-  services::document::specs::BlendingDocumentQuerySpec,
+  enums,
+  services::{
+    common::{ensure_senior_supervisor_or_higher, ensure_supervisor_or_higher},
+    document::specs::BlendingDocumentQuerySpec,
+  },
+  utils::jwt::Claims,
 };
 
 #[utoipa::path(

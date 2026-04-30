@@ -20,7 +20,6 @@ export function Breadcrumbs() {
     .filter(s => s && !s.startsWith('_') && !s.startsWith('('))
 
   if (segments.length === 0) {
-    // Authenticated root — the dashboard view. Show a single "Dashboard" crumb.
     return (
       <Breadcrumb>
         <BreadcrumbList>

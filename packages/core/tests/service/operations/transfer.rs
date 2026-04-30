@@ -308,7 +308,6 @@ async fn physical_composite_update_inserts_updates_and_deletes_items() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create a physical transfer with three items.
     let initial = service
       .physical_transfer_composite_create(&CreatePhysicalTransferRequest {
         document_number: "PT-COMP-UPDATE-1".to_string(),
@@ -343,7 +342,6 @@ async fn physical_composite_update_inserts_updates_and_deletes_items() {
     assert_eq!(initial.items.len(), 3);
     let physical_id = initial.id;
 
-    // Capture each item id by its initial amount so the test does not depend on row order.
     let pick = |amount: Decimal| -> (Uuid, Uuid, Uuid, Uuid, Decimal) {
       let item = initial
         .items
@@ -363,11 +361,6 @@ async fn physical_composite_update_inserts_updates_and_deletes_items() {
     let (update_id, update_product, update_from, update_to, _) = pick(dec("2.0"));
     let (delete_id, _, _, _, _) = pick(dec("3.0"));
 
-    // 2. Apply a composite update:
-    //    - keep item_unchanged as-is,
-    //    - update item_to_update.amount,
-    //    - drop item_to_delete by omitting it,
-    //    - insert one fresh item with id: None.
     let updated = service
       .physical_transfer_composite_update(physical_id, &UpdatePhysicalTransferCompositeRequest {
         physical_transfer: UpdatePhysicalTransferRequest {
@@ -404,7 +397,6 @@ async fn physical_composite_update_inserts_updates_and_deletes_items() {
       .await
       .unwrap();
 
-    // 3. Assertions on the response.
     assert_eq!(updated.items.len(), 3);
 
     let unchanged = updated
@@ -529,7 +521,6 @@ async fn ownership_composite_update_inserts_updates_and_deletes_items() {
     let audit = Arc::new(AuditService::new(Arc::new(cfg)));
     let service = DocumentService::new(db.clone(), ledger, audit);
 
-    // 1. Seed: create an ownership transfer with three items.
     let initial = service
       .ownership_transfer_composite_create(&CreateOwnershipTransferRequest {
         date: ts("2026-01-01T00:00:00Z"),
@@ -563,7 +554,6 @@ async fn ownership_composite_update_inserts_updates_and_deletes_items() {
     assert_eq!(initial.items.len(), 3);
     let ownership_id = initial.id;
 
-    // Capture each item id by its initial amount so the test does not depend on row order.
     let pick = |amount: Decimal| -> (Uuid, Uuid, Uuid, Uuid, Uuid, Decimal) {
       let item = initial
         .items
@@ -590,11 +580,6 @@ async fn ownership_composite_update_inserts_updates_and_deletes_items() {
     let (update_id, update_storage, update_product, update_from, update_to, _) = pick(dec("2.0"));
     let (delete_id, _, _, _, _, _) = pick(dec("3.0"));
 
-    // 2. Apply a composite update:
-    //    - keep item_unchanged as-is,
-    //    - update item_to_update.amount,
-    //    - drop item_to_delete by omitting it,
-    //    - insert one fresh item with id: None.
     let updated = service
       .ownership_transfer_composite_update(ownership_id, &UpdateOwnershipTransferCompositeRequest {
         ownership_transfer: UpdateOwnershipTransferRequest { date: None },
@@ -628,7 +613,6 @@ async fn ownership_composite_update_inserts_updates_and_deletes_items() {
       .await
       .unwrap();
 
-    // 3. Assertions on the response.
     assert_eq!(updated.items.len(), 3);
 
     let unchanged = updated

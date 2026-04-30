@@ -56,10 +56,6 @@ async fn restart_api(
   }))
 }
 
-/// Build the node-status response from the current DB state + in-memory
-/// worker status. Reading the central URL from the DB (rather than from the
-/// cached `ApiConfig`) keeps the response authoritative immediately after a
-/// URL change, without waiting for a restart.
 async fn build_node_status_response(state: &ApiState) -> ApiResult<NodeStatusResponse> {
   let node_name = load_active_database_instance(state.db.as_ref(), state.cfg.node.db_id)
     .await
@@ -134,8 +130,7 @@ async fn update_central_api_url(
   }
 
   let url = req.url.trim();
-  // URL-format validation is already enforced by `#[validate(url)]` on the
-  // request DTO. We still guard against non-http(s) schemes explicitly.
+
   let parsed =
     reqwest::Url::parse(url).map_err(|err| ApiError::BadRequest(format!("Invalid URL: {err}")))?;
   match parsed.scheme() {
@@ -147,7 +142,6 @@ async fn update_central_api_url(
     }
   }
 
-  // Reachability probe: 3s timeout, GET {url}/health, must return 2xx.
   let probe_url = format!("{}/health", url.trim_end_matches('/'));
   let client = reqwest::Client::builder()
     .timeout(Duration::from_secs(3))
@@ -166,7 +160,6 @@ async fn update_central_api_url(
     )));
   }
 
-  // Persist the new URL. The worker re-reads it from the DB per tick.
   let service = SystemService::new(state.db.clone(), state.cfg.clone());
   service.update_central_api_url(url).await?;
 

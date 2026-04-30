@@ -32,6 +32,7 @@ impl Claims {
   ) -> anyhow::Result<Self> {
     let expiration =
       Duration::try_seconds(expiration_seconds).ok_or(anyhow!("Invalid expiration time"))?;
+
     let exp = Utc::now()
       .checked_add_signed(expiration)
       .ok_or(anyhow!("Invalid expiration time"))?
@@ -70,8 +71,10 @@ pub fn parse_refresh_token(token: &str) -> Result<(Uuid, String), ApiError> {
   let (id_part, secret_part) = token.split_once('.').ok_or(ApiError::Unauthorized(
     "Invalid refresh token format".to_string(),
   ))?;
+
   let refresh_id = Uuid::parse_str(id_part)
     .map_err(|_| ApiError::Unauthorized("Invalid refresh token format".to_string()))?;
+
   if secret_part.is_empty() {
     return Err(ApiError::Unauthorized(
       "Invalid refresh token format".to_string(),

@@ -62,8 +62,7 @@ describe('docItemsTable', () => {
         />
       </Wrapper>,
     )
-    // Both the md+ table and the < md card-list render the same data,
-    // so each value appears twice in the DOM under jsdom.
+
     expect(screen.getAllByText('A').length).toBeGreaterThan(0)
     expect(screen.getAllByText('1').length).toBeGreaterThan(0)
   })
@@ -107,8 +106,7 @@ describe('docItemsTable', () => {
         />
       </EmptyWrapper>,
     )
-    // The empty state renders its translated caption from the forms namespace —
-    // once inside the md+ table (TableCell colspan) and once in the < md card-list.
+
     const emptyCaptions = screen.getAllByText(/no items yet/i)
     expect(emptyCaptions.length).toBeGreaterThan(0)
   })

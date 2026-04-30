@@ -1,18 +1,3 @@
-/**
- * Integration tests for the truck-receipt detail variants.
- *
- * Plan tasks covered:
- *   5.1 — basis status pill is derived from `pipelineStatus`, not hardcoded.
- *   5.2 — basis variant exposes Edit + Issue acceptance with predicate-driven
- *         disable / tooltip.
- *   5.4 — basis variant renders symmetric `RelatedDocuments` block when an
- *         acceptance exists.
- *   5.5 — acceptance variant exposes Edit (gated by `canEditAcceptance`).
- *   5.6a — basis items table is locked when `pipelineStatus === 'EXECUTED'`.
- *   5.6 — `RelatedDocuments` label on the acceptance side derives from the
- *         basis pipeline state.
- */
-
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
@@ -158,7 +143,7 @@ describe('truck-receipt basis detail — derived pipelineStatus', () => {
     setAcceptance(undefined)
     setPipelineRows([{ id: 'wb-1', pipelineStatus: 'PENDING' }])
     renderDetail()
-    // StatusBadge renders the value lowercased.
+
     expect(screen.getByText(/^pending$/i)).toBeInTheDocument()
   })
 
@@ -167,10 +152,9 @@ describe('truck-receipt basis detail — derived pipelineStatus', () => {
     setAcceptance(undefined)
     setPipelineRows([{ id: 'wb-1', pipelineStatus: 'DRAFT', actionId: 'a-1', actionDocumentNumber: 'ACC-1' }])
     renderDetail()
-    // The basis page no longer hardcodes 'PENDING' — pipeline state drives the pill.
-    // (Multiple "draft" texts may appear: status pill + related-docs label. Use `getAllByText`.)
+
     expect(screen.getAllByText(/^draft$/i).length).toBeGreaterThan(0)
-    // Regression guard: with pipelineStatus=DRAFT, no PENDING text appears as a status pill.
+
     expect(screen.queryByText(/^pending$/i)).not.toBeInTheDocument()
   })
 })
@@ -227,9 +211,7 @@ describe('truck-receipt basis detail — symmetric RelatedDocuments + items lock
     setAcceptance(undefined)
     setPipelineRows([{ id: 'wb-1', pipelineStatus: 'EXECUTED', actionId: 'a-1' }])
     renderDetail()
-    // ChildItemsTable hides the add button when isLocked is true. The
-    // truck-receipt items panel does not pass `onAddItem`, so the button
-    // should never appear regardless. Use this as a coarse sanity check.
+
     expect(screen.queryByRole('button', { name: /add item/i })).not.toBeInTheDocument()
   })
 })

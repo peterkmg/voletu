@@ -1,9 +1,3 @@
-//! **Soft delete propagates via sync**: A soft-deleted catalog entity on Central
-//! disappears from the peripheral's active list after sync.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Soft-deleted entity is no longer in the active catalog list on the peripheral after pull
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -31,7 +25,6 @@ async fn active_catalog_excludes_entity_after_deletion_on_central() {
   ])
   .await;
 
-  // Create and sync a company
   let company = api_post(&client, &format!("{}/catalog/companies", central.url), &central.token,
     serde_json::json!({"commonName": "SoftDel Co", "legalName": null, "isContractor": true, "isExporter": false, "isManufacturer": false, "isSender": false})).await;
   let company_id = Uuid::parse_str(company["id"].as_str().unwrap()).unwrap();
@@ -49,7 +42,6 @@ async fn active_catalog_excludes_entity_after_deletion_on_central() {
     "PA should have company"
   );
 
-  // Soft-delete on Central
   soft_delete_via_api(
     &client,
     &central.url,
@@ -59,7 +51,6 @@ async fn active_catalog_excludes_entity_after_deletion_on_central() {
   )
   .await;
 
-  // Verify soft-deleted on Central (no longer in active list)
   assert!(
     !has_catalog_entity(
       &client,
@@ -72,10 +63,8 @@ async fn active_catalog_excludes_entity_after_deletion_on_central() {
     "Central: company should be soft-deleted"
   );
 
-  // Sync to PA
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
-  // PA should also not have it in active list
   assert!(
     !has_catalog_entity(
       &client,

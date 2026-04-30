@@ -16,7 +16,7 @@ interface DataTableToolbarProps<TData> {
   tableMode?: TableMode
   onTableModeChange?: (mode: TableMode) => void
   exportFilename?: string
-  /** Optional action buttons (e.g. Create) rendered in the toolbar's right section. */
+
   actions?: React.ReactNode
 }
 

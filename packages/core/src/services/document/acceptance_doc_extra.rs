@@ -24,9 +24,13 @@ use crate::{
     storage,
     truck_waybill,
   },
-  services::document::{
-    specs::{AcceptanceDocumentQuerySpec, AcceptanceFlatQuerySpec},
-    DocumentService,
+  enums::DocumentStatus,
+  services::{
+    common::normalize_pagination,
+    document::{
+      specs::{AcceptanceDocumentQuerySpec, AcceptanceFlatQuerySpec},
+      DocumentService,
+    },
   },
 };
 
@@ -51,8 +55,7 @@ impl DocumentService {
     &self,
     query: &AcceptanceDocumentQuerySpec,
   ) -> Result<Vec<acceptance_document::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(acceptance_document::Column::DeletedAt.is_null());
@@ -157,7 +160,7 @@ impl DocumentService {
       .acceptance_document_execute_no_tx(&txn, response.document.id, actor_id)
       .await?;
 
-    response.document.status = crate::enums::DocumentStatus::Executed;
+    response.document.status = DocumentStatus::Executed;
     txn.commit().await?;
 
     Ok(response)
@@ -203,20 +206,19 @@ impl DocumentService {
     )
   }
 
-  /// Composite update: applies a header partial update plus a full diff on the items list.
-  /// Items with `id: Some(uuid)` matching an existing row are updated.
-  /// Items with `id: None` are inserted.
-  /// Existing items not present in the request are hard-deleted.
   pub async fn acceptance_composite_update(
     &self,
     acceptance_id: Uuid,
     req: &dtos::UpdateAcceptanceCompositeRequest,
   ) -> Result<dtos::AcceptanceCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .acceptance_composite_update_no_tx(&txn, acceptance_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -226,17 +228,10 @@ impl DocumentService {
     acceptance_id: Uuid,
     req: &dtos::UpdateAcceptanceCompositeRequest,
   ) -> Result<dtos::AcceptanceCompositeResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater.
-    //    This enforces draft-only mutation, applies set_if_some semantics,
-    //    and registers an audit log row.
     self
       .acceptance_document_update_no_tx(conn, acceptance_id, &req.acceptance)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
-    //    database. The HashSet doubles as the dedup guard: if the same id
-    //    appears twice we bail out before any items are persisted, so the
-    //    transaction stays clean.
     let mut kept_ids: HashSet<Uuid> = HashSet::new();
     for item in &req.items {
       if let Some(item_id) = item.id {
@@ -249,22 +244,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist the items as a graph save on the parent `ActiveModelEx`. The
-    //    parent itself carries only `id: Unchanged(_)` and no scalar mutations
-    //    (the header was already updated in step 1), so the macro-generated
-    //    `save` skips the parent UPDATE because `is_changed()` is false and
-    //    proceeds straight to the children.
-    //
-    //    Each request item is mapped to an `acceptance_item::ActiveModelEx`:
-    //      * `id: Some(uuid)` -> primary key as `Unchanged(uuid)` -> UPDATE,
-    //      * `id: None`       -> primary key left `NotSet`         -> INSERT.
-    //    `acceptance_doc_id` is set automatically by SeaORM via
-    //    `set_parent_key` during the save action.
-    //
-    //    Wrapping the items in `HasManyModel::Replace(_)` (instead of the
-    //    `Vec::into()` shorthand which produces `Append`) tells SeaORM to
-    //    delete every existing related row that is not present in the new
-    //    set — this is the diff semantic we need.
     let items: Vec<acceptance_item::ActiveModelEx> = req
       .items
       .iter()
@@ -288,13 +267,11 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Re-derive document routing tags via the existing utility.
     self
       .audit
       .backfill_document_routing::<acceptance_document::Entity>(conn, acceptance_id)
       .await?;
 
-    // 5. Reload the full composite using the same eager-loading shape as on create.
     dtos::AcceptanceCompositeResponse::try_from(
       acceptance_document::Entity::load()
         .filter_by_id(acceptance_id)
@@ -336,14 +313,12 @@ impl DocumentService {
     dtos::AcceptanceCompositeResponse::try_from(doc)
   }
 
-  /// Returns one row per acceptance item with document fields repeated.
-  /// Used by the grouped-row list table on the frontend.
   pub async fn acceptance_flat_query(
     &self,
     query: AcceptanceFlatQuerySpec,
   ) -> Result<Vec<AcceptanceFlatRow>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(acceptance_document::Column::DeletedAt.is_null());

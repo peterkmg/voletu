@@ -174,13 +174,16 @@ impl<'a> AwaitCycleCoordinator<'a> {
     };
 
     let watermarks = self.sync.list_sync_watermarks().await?;
+
     let local_status = self
       .sync
       .sync_status(SyncStatusQuerySpec::default())
       .await?;
+
     let current_discriminant = compute_base_discriminant(&local_base_ids);
 
     let (push_cursor, _) = watermark_for(&watermarks, central_status.node_id, SyncDirection::Push);
+
     let push = (local_status.highest_audit_log_id > push_cursor).then_some(PendingFence {
       target_node_id: central_status.node_id,
       target_audit_log_id: local_status.highest_audit_log_id,
@@ -188,11 +191,13 @@ impl<'a> AwaitCycleCoordinator<'a> {
 
     let (stored_pull_cursor, stored_discriminant) =
       watermark_for(&watermarks, central_status.node_id, SyncDirection::Pull);
+
     let effective_pull_cursor = if stored_discriminant == current_discriminant {
       stored_pull_cursor
     } else {
       Uuid::nil()
     };
+
     let pull =
       (central_status.highest_matching_id > effective_pull_cursor).then_some(PendingFence {
         target_node_id: central_status.node_id,
@@ -214,6 +219,7 @@ impl<'a> AwaitCycleCoordinator<'a> {
         Some(fence) => self.fence_satisfied(fence, SyncDirection::Pull).await?,
         None => true,
       };
+
       let push_done = match targets.push {
         Some(fence) => self.fence_satisfied(fence, SyncDirection::Push).await?,
         None => true,

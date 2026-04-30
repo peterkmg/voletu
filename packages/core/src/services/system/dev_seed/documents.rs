@@ -176,6 +176,7 @@ async fn seed_dispatches(
   counts: &mut DocumentCounts,
 ) -> Result<(), ApiError> {
   let purposes = [DispatchPurpose::External, DispatchPurpose::Internal];
+
   let methods = [
     DispatchMethod::Truck,
     DispatchMethod::VesselTerminal,
@@ -251,7 +252,9 @@ async fn seed_dispatches(
     .await?;
 
     let dispatch_id = saved_uuid(saved.id, "dispatch")?;
+
     counts.dispatch_docs += 1;
+
     ctx
       .audit
       .backfill_document_routing::<dispatch_document::Entity>(ctx.conn, dispatch_id)
@@ -376,7 +379,9 @@ async fn seed_blends(
     .await?;
 
     let blending_id = saved_uuid(saved.id, "blending")?;
+
     counts.blending_docs += 1;
+
     ctx
       .audit
       .backfill_document_routing::<blending_document::Entity>(ctx.conn, blending_id)
@@ -429,7 +434,9 @@ async fn seed_ownership_transfers(
     .await?;
 
     let ownership_id = saved_uuid(saved.id, "ownership transfer")?;
+
     counts.ownership_transfers += 1;
+
     ctx
       .audit
       .backfill_document_routing::<ownership_transfer::Entity>(ctx.conn, ownership_id)
@@ -490,7 +497,9 @@ async fn seed_physical_transfers(
     .await?;
 
     let physical_id = saved_uuid(saved.id, "physical transfer")?;
+
     counts.physical_transfers += 1;
+
     ctx
       .audit
       .backfill_document_routing::<physical_storage_transfer::Entity>(ctx.conn, physical_id)
@@ -541,7 +550,9 @@ async fn seed_reconciliations(
     .await?;
 
     let reconciliation_id = saved_uuid(saved.id, "reconciliation")?;
+
     counts.reconciliations += 1;
+
     ctx
       .audit
       .backfill_document_routing::<inventory_reconciliation::Entity>(ctx.conn, reconciliation_id)
@@ -564,6 +575,7 @@ fn pick_waybill_for_base(
     .enumerate()
   {
     let seen = seen + 1;
+
     if rng.random_range(0..seen) == 0 {
       selected = Some(waybill.id);
     }

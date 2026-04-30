@@ -4,8 +4,6 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { TableCell, TableRow } from '~/components/ui/table'
 import { SKELETON_ROWS } from '~/lib/ux-constants'
 
-// ── Empty State ──────────────────────────────────
-
 interface EmptyStateProps {
   colSpan: number
   message?: string
@@ -15,6 +13,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ colSpan, message, icon, action }: EmptyStateProps) {
   const { t } = useTranslation('tables')
+
   return (
     <TableRow>
       <TableCell colSpan={colSpan} className="h-32">
@@ -27,8 +26,6 @@ export function EmptyState({ colSpan, message, icon, action }: EmptyStateProps) 
     </TableRow>
   )
 }
-
-// ── Table Skeleton ───────────────────────────────
 
 interface TableSkeletonProps {
   columns: number

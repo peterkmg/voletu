@@ -134,25 +134,16 @@ pub struct CreateDispatchCompositeRequest {
   pub storage_measurements: Option<Vec<DispatchMeasurementCompositeRequest>>,
 }
 
-/// Update payload for a single dispatch item inside a composite update.
-///
-/// Diff conventions match the rail / truck composite update DTOs: rows with
-/// `id: Some(_)` are updates against the existing row, rows with `id: None`
-/// are inserts, and rows present in the database but missing from the request
-/// are hard-deleted.
 #[request_dto]
 pub struct UpdateDispatchItemCompositeRequest {
-  /// Present for existing rows (UPDATE), absent for newly inserted rows (INSERT).
   pub id: Option<Uuid>,
   pub product_id: Uuid,
   pub storage_id: Uuid,
   pub dispatched_amount: Decimal,
 }
 
-/// Update payload for a single dispatch storage measurement inside a composite update.
 #[request_dto]
 pub struct UpdateDispatchMeasurementCompositeRequest {
-  /// Present for existing rows (UPDATE), absent for newly inserted rows (INSERT).
   pub id: Option<Uuid>,
   pub storage_id: Uuid,
   pub before_height: Option<Decimal>,
@@ -165,25 +156,13 @@ pub struct UpdateDispatchMeasurementCompositeRequest {
   pub after_mass: Decimal,
 }
 
-/// Composite update payload for a dispatch document.
-///
-/// Header fields are applied as a partial update (mirrors `UpdateDispatchRequest`).
-/// `items` is required and is the full new state of the document's dispatch
-/// items. `storage_measurements` is optional; when absent the existing list is
-/// left untouched, when present it is the full new state and is diff-applied.
-/// Both lists use insert / update / delete semantics keyed on the row id.
 #[request_dto]
 pub struct UpdateDispatchCompositeRequest {
-  /// Header fields applied as a partial update (mirrors per-row UpdateDispatchRequest).
   #[validate(nested)]
   #[serde(flatten)]
   pub dispatch: UpdateDispatchRequest,
-  /// Full new items list, diff-applied against existing rows.
   #[validate(length(min = 1), nested)]
   pub items: Vec<UpdateDispatchItemCompositeRequest>,
-  /// Optional full new storage-measurements list, diff-applied against existing rows.
-  /// `None` leaves the existing list untouched; `Some(vec![])` deletes every
-  /// existing measurement.
   #[validate(nested)]
   pub storage_measurements: Option<Vec<UpdateDispatchMeasurementCompositeRequest>>,
 }

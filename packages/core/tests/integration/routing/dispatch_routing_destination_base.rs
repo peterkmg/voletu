@@ -1,9 +1,3 @@
-//! **Dispatch routing with destination base**: A dispatch from alpha with destination_base = beta
-//! routes to both bases, making it visible on both peripherals.
-//!
-//! **Topology:** Central + 2 Peripherals (one base each)
-//! **Verifies:** Audit log targets both source and destination bases; both peripherals receive the dispatch
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -35,7 +29,6 @@ async fn targets_source_and_destination_bases_in_audit_log() {
   ])
   .await;
 
-  // Pre-fill inventory so dispatch validation passes
   api_post(&client, &format!("{}/acceptance/composite/save-and-execute", central.url), &central.token,
     serde_json::json!({
       "documentNumber": "ACC-PRE", "dateAccepted": "2026-01-14T10:00:00Z", "arrivalType": "TRUCK",
@@ -43,7 +36,6 @@ async fn targets_source_and_destination_bases_in_audit_log() {
       "items": [{"productId": catalog.product, "storageId": catalog.storage_alpha, "acceptedAmount": "500.0"}]
     })).await;
 
-  // Dispatch from alpha with destination = beta → routes to BOTH
   let dispatch = create_dispatch_via_api(
     &client,
     &central.url,

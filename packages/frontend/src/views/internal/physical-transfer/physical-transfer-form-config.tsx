@@ -1,36 +1,3 @@
-/**
- * Physical-storage-transfer composite form configuration.
- *
- * i18n keys this file depends on (all in the `physical-transfer` namespace):
- *   physical-transfer.dialog.title.create
- *   physical-transfer.dialog.title.edit
- *   physical-transfer.field.documentNumber
- *   physical-transfer.field.date
- *   physical-transfer.field.contractorId
- *   physical-transfer.field.startCargoOps
- *   physical-transfer.field.endCargoOps
- *   physical-transfer.field.product
- *   physical-transfer.field.fromStorage
- *   physical-transfer.field.toStorage
- *   physical-transfer.field.amount
- *   physical-transfer.section.items
- *   physical-transfer.toast.created
- *   physical-transfer.toast.updated
- *
- * Generated Kubb artifacts consumed (camelCase field naming throughout):
- *   - Schemas (zod/v4):
- *       packages/frontend/src/generated/zod/createPhysicalTransferRequestSchema.ts
- *       packages/frontend/src/generated/zod/updatePhysicalTransferCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/physicalTransferItemCompositeRequestSchema.ts
- *   - Types:
- *       packages/frontend/src/generated/types/CreatePhysicalTransferRequest.ts
- *       packages/frontend/src/generated/types/UpdatePhysicalTransferCompositeRequest.ts
- *       packages/frontend/src/generated/types/PhysicalTransferItemCompositeRequest.ts
- *
- * Both create and update validate min(1) on items: a transfer with zero
- * lines is not useful and the dialog enforces at least one row.
- */
-
 import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
@@ -56,22 +23,10 @@ import { createPhysicalTransferRequestSchema } from '~/generated/zod/createPhysi
 import { physicalTransferItemCompositeRequestSchema } from '~/generated/zod/physicalTransferItemCompositeRequestSchema'
 import { updatePhysicalTransferCompositeRequestSchema } from '~/generated/zod/updatePhysicalTransferCompositeRequestSchema'
 
-// --- Schemas ---
-
-/**
- * Hand-refined items schema with min(1) — the generated composite schema
- * is `z.lazy(...).and(z.object(...))` which is not `.extend()`-able, so we
- * compose at the row + array level instead. The generated row schema is
- * reused unchanged so any future Kubb refresh propagates to validation.
- */
 const physicalTransferItemsArraySchema = z
   .array(physicalTransferItemCompositeRequestSchema)
   .min(1, { message: 'forms.validation.itemsRequired' })
 
-/**
- * Composite schema for creating a physical transfer. Layered min(1) is
- * surfaced before the server rejects the payload.
- */
 export const physicalTransferCreateSchema = createPhysicalTransferRequestSchema.superRefine(
   (val, ctx) => {
     const items = (val as { items?: unknown[] }).items
@@ -84,11 +39,6 @@ export const physicalTransferCreateSchema = createPhysicalTransferRequestSchema.
   },
 ) as unknown as z.ZodType<PhysicalTransferCreate>
 
-/**
- * Composite schema for updating a physical transfer. Mirrors the create
- * schema at the field level; the wire type allows optional per-item `id`,
- * which the dialog does not yet round-trip (every row treated as insert).
- */
 export const physicalTransferUpdateSchema = updatePhysicalTransferCompositeRequestSchema.superRefine(
   (val, ctx) => {
     const items = (val as { items?: unknown[] }).items
@@ -104,10 +54,6 @@ export const physicalTransferUpdateSchema = updatePhysicalTransferCompositeReque
 export type PhysicalTransferCreate = CreatePhysicalTransferRequest
 export type PhysicalTransferUpdate = UpdatePhysicalTransferCompositeRequest
 export type PhysicalTransferItem = PhysicalTransferItemCompositeRequest
-
-// Inputs and pickers come from the shared `composite-form/field-cells` module.
-
-// --- Header field spec ---
 
 export const physicalTransferHeaderSpec: HeaderFieldSpec<PhysicalTransferCreate>[] = [
   {
@@ -142,8 +88,6 @@ export const physicalTransferHeaderSpec: HeaderFieldSpec<PhysicalTransferCreate>
   },
 ]
 
-// --- Items column spec (read-only summary) ---
-
 export const physicalTransferItemColumns: ColumnSpec<PhysicalTransferItem>[] = [
   {
     key: 'productId',
@@ -169,9 +113,6 @@ export const physicalTransferItemColumns: ColumnSpec<PhysicalTransferItem>[] = [
   },
 ]
 
-// --- Row drawer field spec ---
-//
-// `colSpan: 1` for from/to so they render side-by-side on `md+`.
 export const physicalTransferItemFields: RowFieldSpec<PhysicalTransferItem>[] = [
   {
     name: 'productId',
@@ -201,8 +142,6 @@ export const physicalTransferItemFields: RowFieldSpec<PhysicalTransferItem>[] = 
   },
 ]
 
-// --- Empty defaults ---
-
 export const emptyPhysicalTransferItem: PhysicalTransferItem = {
   productId: '',
   fromStorageId: '',
@@ -219,5 +158,4 @@ export const emptyPhysicalTransferCreate: PhysicalTransferCreate = {
   items: [],
 }
 
-// Re-export the row schema so the dialog can pass it to DocItemRowDrawer.
 export const physicalTransferItemSchema = physicalTransferItemCompositeRequestSchema

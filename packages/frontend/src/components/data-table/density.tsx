@@ -22,8 +22,6 @@ export const densityClasses: Record<TableDensity, string> = {
   comfortable: 'py-3',
 }
 
-// ── Density Toggle ───────────────────────────────
-
 type DensityLabelKey = 'tables:density.compact' | 'tables:density.normal' | 'tables:density.comfortable'
 
 export const tableDensityOptions: { value: TableDensity, icon: typeof Rows3, labelKey: DensityLabelKey }[] = [

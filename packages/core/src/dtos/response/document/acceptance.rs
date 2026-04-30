@@ -1,4 +1,12 @@
-use super::*;
+use sea_orm::entity::prelude::Decimal;
+use uuid::Uuid;
+use voletu_core_macros::response_dto;
+
+use crate::{
+  api::ApiError,
+  entities::{acceptance_document, acceptance_item},
+  enums::ArrivalType,
+};
 
 #[response_dto(service_fields(document))]
 pub struct AcceptanceResponse {

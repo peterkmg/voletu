@@ -66,7 +66,6 @@ function CargoFlowRowActions({ row }: { row: { original: CargoFlowFlatRow } }) {
 
 function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
   return [
-    // Document-level columns (groupRole: 'doc' — shown only on first row of group)
     {
       accessorKey: 'type',
       header: ({ column }) => (
@@ -146,7 +145,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         groupRole: 'doc' as const,
       },
     },
-    // Item-level columns (groupRole: 'item' — shown on every row)
     {
       ...textColumn<CargoFlowFlatRow>(
         'productName',
@@ -183,7 +181,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         groupRole: 'item' as const,
       },
     },
-    // Status last before actions (doc-level)
     {
       ...statusColumn<CargoFlowFlatRow>(
         'status',
@@ -196,7 +193,6 @@ function getColumns(t: TFunction): ColumnDef<CargoFlowFlatRow>[] {
         groupRole: 'doc' as const,
       },
     },
-    // Actions (doc-level)
     {
       ...actionsColumn<CargoFlowFlatRow>(CargoFlowRowActions, 1),
       meta: { sizingCategory: 'fixed', groupRole: 'doc' as const },
@@ -332,7 +328,9 @@ export function CargoFlowPage() {
     perPage: pageSize,
     filter,
   })
+
   usePageTitle(t('nav.cargoFlow'))
+
   const payload = data?.data
   const pageCount = payload ? Math.ceil(payload.total / pageSize) : 0
 

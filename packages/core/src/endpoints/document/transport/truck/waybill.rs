@@ -1,6 +1,23 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
 use crate::{
-  dtos::{EmbedParams, PaginationParams, TruckWaybillDocumentQueryParams},
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateTruckWaybillRequest,
+    EmbedParams,
+    PaginationParams,
+    TruckWaybillDocumentQueryParams,
+    TruckWaybillResponse,
+    UpdateTruckWaybillRequest,
+  },
   endpoints::paths,
   services::document::specs::TruckWaybillQuerySpec,
 };

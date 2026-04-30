@@ -1,4 +1,25 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateWarehouseRequest,
+    EmbedParams,
+    PaginationParams,
+    UpdateWarehouseRequest,
+    WarehouseResponse,
+  },
+  endpoints::paths,
+  services::common::normalize_pagination,
+};
 
 #[utoipa::path(
   get,
@@ -21,10 +42,7 @@ async fn warehouse_list(
   Query(pagination): Query<PaginationParams>,
 ) -> ApiResult<Vec<WarehouseResponse>> {
   let pg = if pagination.page.is_some() || pagination.per_page.is_some() {
-    Some(crate::services::common::normalize_pagination(
-      pagination.page,
-      pagination.per_page,
-    )?)
+    Some(normalize_pagination(pagination.page, pagination.per_page)?)
   } else {
     None
   };
@@ -37,6 +55,7 @@ async fn warehouse_list(
   } else {
     state.svc.catalog_service.warehouse_list(pg).await?
   };
+
   Ok(ApiResponse::success(items))
 }
 
@@ -84,6 +103,7 @@ async fn warehouse_get(
   } else {
     state.svc.catalog_service.warehouse_get(id).await?
   };
+
   Ok(ApiResponse::success(item))
 }
 
@@ -163,6 +183,7 @@ async fn warehouse_restore(
     .catalog_service
     .warehouse_soft_delete_undo(id)
     .await?;
+
   Ok(ApiResponse::success(()))
 }
 

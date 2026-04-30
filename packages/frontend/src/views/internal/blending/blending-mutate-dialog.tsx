@@ -1,23 +1,3 @@
-/**
- * Per-document mutate dialog for Blending (create + edit).
- *
- * Composes the shared `<CompositeFormDialog>` with the blending header spec
- * plus two sibling `<DocItemsTable>` instances — one for the input
- * `components` collection and one for the output `results` collection — coming
- * from `blending-form-config.tsx`, and wires the Kubb-generated composite
- * create and update mutations.
- *
- * Edit-mode `defaultValues` are pre-fetched via `useBlendingCompositeGet`
- * (gated on `open && isUpdate`). While the fetch is in flight the form
- * renders with `emptyBlendingCreate`; once data arrives, the dialog is
- * re-mounted with the real values by keying `<CompositeFormDialog>` on the
- * loaded document id.
- *
- * Composite response shape: `BlendingCompositeResponse = { document, components, results }`,
- * so header fields are read from `loaded.document.X` while the two child
- * collections live at `loaded.components` / `loaded.results`.
- */
-
 import type { BlendingComponent, BlendingCreate, BlendingResult } from './blending-form-config'
 import type { BlendingComponentResponse, BlendingFlatRow, BlendingResultResponse } from '~/generated/types'
 import type { BlendingCompositeUpdateMutationRequest } from '~/generated/types/DocumentOperationsTypes/BlendingCompositeUpdate'
@@ -55,15 +35,10 @@ import {
 interface BlendingMutateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /**
-   * Row currently selected in the flat list. `documentId` identifies the
-   * blending document; `id` is row-scoped and must not be used for the update.
-   * When `null`, the dialog opens in create mode.
-   */
+
   currentRow?: BlendingFlatRow | null
 }
 
-/** Drop server-only fields and keep only the shape the composite request expects. */
 function toComponentRequest(row: BlendingComponentResponse): BlendingComponent {
   return {
     sourceProductId: row.sourceProductId,
@@ -92,7 +67,6 @@ export function BlendingMutateDialog({
   const isUpdate = currentRow != null
   const documentId = currentRow?.documentId ?? null
 
-  // Pre-fetch the full composite only when editing.
   const composite = useBlendingCompositeGet(documentId ?? '', undefined, {
     query: { enabled: Boolean(open && documentId) },
   })
@@ -133,8 +107,6 @@ export function BlendingMutateDialog({
     )
   }, [isUpdate, queryClient, t])
 
-  // `key` forces a fresh mount once the edit-mode fetch resolves so that
-  // defaultValues are applied via react-hook-form's initialization path.
   const dialogKey = isUpdate ? (loaded?.document.id ?? 'edit-loading') : 'create'
 
   return (

@@ -1,11 +1,11 @@
 use sea_orm::{ColumnTrait, Condition, QueryFilter, QueryOrder};
 use uuid::Uuid;
 
-use super::super::SystemService;
 use crate::{
   api::ApiError,
   dtos::UserResponse,
   entities::{role, user},
+  services::system::SystemService,
 };
 
 impl SystemService {

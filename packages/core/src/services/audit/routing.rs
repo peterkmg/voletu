@@ -275,12 +275,6 @@ impl AuditTable {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/// Resolve the target base IDs for a given entity change.
-/// Returns empty vec for global/broadcast tables (catalog, system).
 pub async fn resolve_target_base_ids<C: ConnectionTrait>(
   conn: &C,
   table: AuditTable,
@@ -312,16 +306,13 @@ async fn resolve_target_base_ids_by_category<C: ConnectionTrait>(
     AuditTableCategory::Transport => {
       resolve_transport_bases(conn, table, record_id, new_values).await
     }
-    // --- Dispatch measurements: inherit from parent dispatch document ---
     AuditTableCategory::DispatchMeasurements => {
       resolve_dispatch_measurement_base(conn, new_values, record_id).await
     }
-    // --- Global tables (catalog, system): broadcast to all ---
     AuditTableCategory::Broadcast => Ok(vec![]),
   }
 }
 
-/// Resolve the role weight for an actor (user) for conflict resolution.
 pub async fn resolve_role_weight<C: ConnectionTrait>(
   conn: &C,
   actor_id: Uuid,
@@ -345,17 +336,12 @@ pub async fn resolve_role_weight<C: ConnectionTrait>(
   Ok(weight)
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 fn dedupe_base_ids(mut base_ids: Vec<Uuid>) -> Vec<Uuid> {
   base_ids.sort();
   base_ids.dedup();
   base_ids
 }
 
-/// Extract a UUID field from a JSON Value (the serialized entity snapshot).
 fn extract_uuid_field(json: Option<&Value>, field: &str) -> Option<Uuid> {
   json
     .and_then(|v| v.get(field))
@@ -363,7 +349,6 @@ fn extract_uuid_field(json: Option<&Value>, field: &str) -> Option<Uuid> {
     .and_then(|s| Uuid::try_parse(s).ok())
 }
 
-/// Resolve a single storage_id → warehouse → base chain.
 async fn resolve_storage_to_base<C: ConnectionTrait>(
   conn: &C,
   storage_id: Uuid,
@@ -382,7 +367,6 @@ async fn resolve_storage_to_base<C: ConnectionTrait>(
   }))
 }
 
-/// Resolve multiple storage_ids → base_ids (deduped).
 async fn resolve_storages_to_bases<C: ConnectionTrait>(
   conn: &C,
   storage_ids: &[Uuid],
@@ -410,7 +394,6 @@ async fn resolve_storages_to_bases<C: ConnectionTrait>(
   ))
 }
 
-/// Resolve via a single storage FK field on the entity.
 async fn resolve_via_storage<C: ConnectionTrait>(
   conn: &C,
   new_values: Option<&Value>,
@@ -421,16 +404,10 @@ async fn resolve_via_storage<C: ConnectionTrait>(
       Some(base_id) => Ok(vec![base_id]),
       None => Ok(vec![]),
     },
-    None => {
-      // No new_values (update/delete) — can't resolve without loading entity.
-      // For items, the audit log from creation already has routing.
-      // Updates/deletes inherit the same routing scope.
-      Ok(vec![])
-    }
+    None => Ok(vec![]),
   }
 }
 
-/// Resolve reconciliation via warehouse_id on the document.
 async fn resolve_via_warehouse<C: ConnectionTrait>(
   conn: &C,
   new_values: Option<&Value>,
@@ -588,10 +565,6 @@ async fn resolve_warehouse_reference_bases<C: ConnectionTrait>(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Document header resolvers — load headers with child rows, collect storage_ids
-// ---------------------------------------------------------------------------
-
 async fn resolve_acceptance_doc_bases<C: ConnectionTrait>(
   conn: &C,
   doc_id: Uuid,
@@ -700,11 +673,6 @@ async fn resolve_blending_doc_bases<C: ConnectionTrait>(
   resolve_storages_to_bases(conn, &storage_ids).await
 }
 
-// ---------------------------------------------------------------------------
-// Waybill + measurement routing helpers
-// ---------------------------------------------------------------------------
-
-/// Resolve routing via a direct `base_id` field on the entity.
 async fn resolve_via_base_id<Fut>(
   new_values: Option<&Value>,
   record_id: Uuid,
@@ -929,7 +897,6 @@ async fn load_rail_waybill_base_id<C: ConnectionTrait>(
   Ok(waybill.map(|waybill| waybill.base_id))
 }
 
-/// Resolve rail wagon manifest → parent rail waybill → base_id.
 async fn resolve_rail_manifest_base<C: ConnectionTrait>(
   conn: &C,
   new_values: Option<&Value>,
@@ -952,7 +919,6 @@ async fn resolve_rail_manifest_base<C: ConnectionTrait>(
   resolve_rail_waybill_base(conn, waybill_id).await
 }
 
-/// Resolve dispatch_storage_measurement → parent dispatch document → routing.
 async fn resolve_dispatch_measurement_base<C: ConnectionTrait>(
   conn: &C,
   new_values: Option<&Value>,

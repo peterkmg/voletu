@@ -1,4 +1,3 @@
-// packages/frontend/src/views/dashboard/__tests__/matrix-cell.test.tsx
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MatrixCell } from '~/views/dashboard/components/matrix-cell'
@@ -20,7 +19,7 @@ describe('matrixCell', () => {
 
   it('renders a button with formatted amount for a non-zero value', () => {
     wrapTable(<MatrixCell productId="p" storageId="s" amount={123.456} />)
-    // French locale formatting: "123,456" with 3 decimals
+
     expect(screen.getByRole('button')).toHaveTextContent('123,456')
   })
 

@@ -4,8 +4,6 @@ import type { LedgerBalanceResponse } from '~/generated/types'
 import { getRouteApi } from '@tanstack/react-router'
 import { DataTableColumnHeader, EntityTable, numericColumn } from '~/components/data-table'
 
-// --- Columns ---
-
 function getLedgerColumns(t: TFunction): ColumnDef<LedgerBalanceResponse>[] {
   return [
     {

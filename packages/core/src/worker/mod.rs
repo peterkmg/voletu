@@ -35,6 +35,7 @@ pub fn spawn_sync_worker_with_config(
   tokio::spawn(async move {
     let mut interval = time::interval(config.tick_interval);
     interval.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
+
     let mut runtime = engine::WorkerRuntime::new(db, cfg, config);
 
     info!("sync worker started");

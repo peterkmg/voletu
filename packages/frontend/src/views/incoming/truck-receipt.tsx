@@ -36,9 +36,7 @@ function getColumns(
     textColumn<TruckReceiptPipelineResponse>('actionDocumentNumber', t('common:table.acceptanceNumber'), { primary: false, sizing: 'capped', maxSize: 200 }),
     numericColumn<TruckReceiptPipelineResponse>('actualQuantity', t('common:table.actualQty')),
     statusColumn<TruckReceiptPipelineResponse>('pipelineStatus', t('common:table.status'), statusColors),
-    // 3 inline slots: View details (always), Edit (PENDING only), Issue
-    // acceptance (PENDING only). With fewer slots the kebab takes the only
-    // visible cell and the inline icons clip out of view.
+
     actionsColumn<TruckReceiptPipelineResponse>(RowActions, 3),
   ]
 }
@@ -73,17 +71,6 @@ function useTruckReceiptTitle() {
   return useTranslation(['common', 'documents']).t('common:nav.truckReceipt')
 }
 
-// `IssueAcceptanceDialog` is a secondary lifecycle slot — separate from the
-// classic `LifecycleDialog` (execute/revert) — used here because the basis →
-// action "Issue acceptance" trigger spawns a *different* document seeded with
-// the row as its basis. The slot wires the row id into the
-// AcceptanceMutateDialog's `prefillBasis` prop and fires when
-// `openIssueAcceptance(row)` is dispatched. See design spec §3.2 / §6.3.
-//
-// Pipeline-row Edit visibility uses `row.pipelineStatus === 'PENDING'`, not
-// `canEditBasis`. The row only exposes the basis edit affordance for PENDING;
-// once an acceptance exists (DRAFT), editing the basis is reachable from the
-// basis detail page (which uses the broader `canEditBasis` predicate).
 const truckReceiptViewDefinition = defineCrudViews<TruckReceiptPipelineResponse>({
   displayName: 'TruckReceipt',
   useTitle: useTruckReceiptTitle,
@@ -106,19 +93,10 @@ export function TruckReceiptPage() {
   return <truckReceiptViewDefinition.View />
 }
 
-/**
- * Acceptance status keys are normalized via `lowerCaseStatus` to look up the
- * matching `documents:related.acceptance.{pending|draft|executed}` label.
- */
 function lowerCaseStatus(s: string) {
   return s.toLowerCase() as 'pending' | 'draft' | 'executed'
 }
 
-/**
- * Adapt a fetched acceptance composite into the minimal `AcceptanceFlatRow`
- * shape the `AcceptanceMutateDialog` expects in edit mode (it only reads
- * `documentId` for the GET, but the prop is typed end-to-end).
- */
 function makeAcceptanceFlatRow(
   doc: { id: string, documentNumber: string, status: AcceptanceFlatRow['status'], dateAccepted: string, contractorIdName?: string | null, sourceEntity?: string | null },
 ): AcceptanceFlatRow {
@@ -148,7 +126,6 @@ function useTruckReceiptDetailVariants(id: string) {
   const [issueAcceptanceOpen, setIssueAcceptanceOpen] = useState(false)
   const [editAcceptanceOpen, setEditAcceptanceOpen] = useState(false)
 
-  // Acceptance variant
   let acceptanceContent: ReactNode
   if (acceptanceQuery.data?.data) {
     const doc = acceptanceQuery.data.data
@@ -156,8 +133,6 @@ function useTruckReceiptDetailVariants(id: string) {
     const basisPipelineStatus: PipelineStatus = matchingRow?.pipelineStatus ?? 'DRAFT'
     const relatedDocs: RelatedDocument[] = []
     if (doc.truckWaybillId) {
-      // The label derives from the basis pipeline state (spec §3.3): PENDING →
-      // "pending acceptance"; DRAFT → "in draft"; EXECUTED → "accepted".
       relatedDocs.push({
         type: 'basis',
         label: t('documents:document.truckWaybill'),
@@ -233,7 +208,6 @@ function useTruckReceiptDetailVariants(id: string) {
     )
   }
 
-  // Basis (waybill) variant
   let basisContent: ReactNode
   if (waybillQuery.data?.data) {
     const composite = waybillQuery.data.data
@@ -280,9 +254,7 @@ function useTruckReceiptDetailVariants(id: string) {
             statusColorMap: statusColors,
             actions: basisActions,
           }}
-          // Status pill reflects the *pipeline* state, not a hardcoded
-          // 'PENDING'. The basis itself has no own status column; pipeline
-          // state is the single observable source.
+
           document={{ id: wb.id, documentNumber: wb.documentNumber, status: pipelineStatus }}
           subtitle={t('common:nav.truckReceipt')}
           relatedContent={basisRelated.length > 0 ? <RelatedDocuments documents={basisRelated} /> : undefined}

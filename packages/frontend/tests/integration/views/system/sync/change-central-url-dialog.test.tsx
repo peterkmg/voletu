@@ -60,9 +60,8 @@ describe('changeCentralUrlDialog', () => {
     await user.type(input, 'not-a-url')
     await user.click(screen.getByRole('button', { name: /^apply$/i }))
 
-    // Give react-hook-form a chance to run validation. The API must not be hit.
     await waitFor(() => expect(apiCalls.length).toBe(0))
-    // aria-invalid is set on the input when validation fails.
+
     expect(input).toHaveAttribute('aria-invalid', 'true')
   })
 
@@ -122,7 +121,7 @@ describe('changeCentralUrlDialog', () => {
     await user.click(screen.getByRole('button', { name: /^apply$/i }))
 
     await waitFor(() => expect(apiCalls.length).toBe(1))
-    // Dialog must NOT be closed on error.
+
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
   })
 

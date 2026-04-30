@@ -35,7 +35,7 @@ describe('decimal()', () => {
   it('creates a Decimal from a very large number string', () => {
     const large = '99999999999999999999999999999.123456789'
     const result = decimal(large)
-    // Decimal.js may use exponential notation; verify value equivalence
+
     expect(result.equals(large)).toBe(true)
   })
 })
@@ -62,7 +62,6 @@ describe('addDecimals()', () => {
   })
 
   it('preserves precision for decimal fractions', () => {
-    // In floating-point: 0.1 + 0.2 = 0.30000000000000004
     const result = addDecimals('0.1', '0.2')
     expect(result.toString()).toBe('0.3')
   })
@@ -197,8 +196,8 @@ describe('isDecimalString()', () => {
   })
 
   it('returns false for special values', () => {
-    expect(isDecimalString('NaN')).toBe(true) // Decimal.js accepts NaN
-    expect(isDecimalString('Infinity')).toBe(true) // Decimal.js accepts Infinity
+    expect(isDecimalString('NaN')).toBe(true)
+    expect(isDecimalString('Infinity')).toBe(true)
   })
 
   it('returns false for whitespace-only', () => {

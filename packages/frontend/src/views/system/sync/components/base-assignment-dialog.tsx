@@ -27,7 +27,6 @@ interface BaseResponse {
   longName?: string | null
 }
 
-/** Symmetric diff between two id sets. */
 function diff(
   prev: ReadonlySet<string>,
   next: ReadonlySet<string>,
@@ -50,14 +49,9 @@ export function BaseAssignmentDialog({ open, onOpenChange }: BaseAssignmentDialo
   const queryClient = useQueryClient()
   const assignedBaseIds = useNodeStore(s => s.status.assignedBaseIds)
 
-  // Local pending selection, kept separate from the store so the user can
-  // freely check/uncheck without hitting the API until they click Apply.
   const [pending, setPending] = useState<Set<string>>(() => new Set(assignedBaseIds))
   const [isApplying, setIsApplying] = useState(false)
 
-  // Re-seed the pending set every time the dialog opens so we reflect the
-  // current server-confirmed assignment, not a stale selection from a
-  // previous session of the dialog.
   useEffect(() => {
     if (open)
       setPending(new Set(assignedBaseIds))
@@ -115,8 +109,6 @@ export function BaseAssignmentDialog({ open, onOpenChange }: BaseAssignmentDialo
     const failed = results.filter(r => r.status === 'rejected').length
     const succeeded = results.length - failed
 
-    // Reflect the actual server state in the store by invalidating the bases
-    // query; use-node-status will apply the new list on refetch.
     queryClient.invalidateQueries({ queryKey: ['node', 'bases'] })
 
     setIsApplying(false)

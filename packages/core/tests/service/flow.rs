@@ -52,7 +52,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let svc = DocumentService::new(db.clone(), ledger, audit);
 
-    // Waybill 1: no acceptance → Pending
     let wb1 = truck_waybill::ActiveModel {
       document_number: Set("TWB-001".into()),
       date: Set(date("2026-04-01")),
@@ -74,7 +73,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
     .await
     .unwrap();
 
-    // Waybill 2: with draft acceptance → Draft
     let wb2 = truck_waybill::ActiveModel {
       document_number: Set("TWB-002".into()),
       date: Set(date("2026-03-31")),
@@ -100,7 +98,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
     .await
     .unwrap();
 
-    // Waybill 3: with posted acceptance + item → Executed
     let wb3 = truck_waybill::ActiveModel {
       document_number: Set("TWB-003".into()),
       date: Set(date("2026-03-30")),
@@ -137,9 +134,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
     .await
     .unwrap();
 
-    // --- Assertions ---
-
-    // All rows
     let all = svc
       .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec::list(Some(1), Some(50)))
       .await
@@ -170,7 +164,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
     assert_eq!(executed.action_id, Some(acc3.id));
     assert_eq!(executed.actual_quantity, Some(Decimal::new(24900, 0)));
 
-    // Filter by status
     let pending_only = svc
       .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
         pipeline_status: Some(PipelineStatus::Pending),
@@ -201,7 +194,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
     assert_eq!(executed_only.len(), 1);
     assert_eq!(executed_only[0].basis_document_number, "TWB-003");
 
-    // Filter by contractor
     let by_sender = svc
       .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec {
         contractor_id: Some(fix.sender_id),
@@ -219,7 +211,6 @@ async fn truck_receipt_returns_correct_pipeline_statuses() {
       .unwrap();
     assert_eq!(by_nobody.len(), 0);
 
-    // Pagination
     let page1 = svc
       .truck_receipt_pipeline_query(TruckReceiptPipelineQuerySpec::list(Some(1), Some(2)))
       .await
@@ -248,7 +239,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     let ledger = Arc::new(LedgerService::new(db.clone()));
     let svc = DocumentService::new(db.clone(), ledger, audit);
 
-    // Create acceptance doc with 2 items
     let doc = acceptance_document::ActiveModel {
       document_number: Set("ACC-FLAT-001".into()),
       date_accepted: Set(chrono::Utc::now()),
@@ -285,7 +275,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     .await
     .unwrap();
 
-    // Create a second doc with 1 item
     let doc2 = acceptance_document::ActiveModel {
       document_number: Set("ACC-FLAT-002".into()),
       date_accepted: Set(chrono::Utc::now()),
@@ -310,14 +299,12 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     .await
     .unwrap();
 
-    // --- All rows: should get 3 (2 items from doc1 + 1 item from doc2) ---
     let all = svc
       .acceptance_flat_query(AcceptanceFlatQuerySpec::list(Some(1), Some(50)))
       .await
       .unwrap();
     assert_eq!(all.len(), 3, "Expected 3 flat rows (2 + 1 items)");
 
-    // Check document fields are repeated for items in same group
     let doc1_rows: Vec<_> = all
       .iter()
       .filter(|r| r.document_number == "ACC-FLAT-001")
@@ -329,7 +316,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     );
     assert_eq!(doc1_rows[0].status, enums::DocumentStatus::Draft);
 
-    // Check resolved names
     let has_product_a = doc1_rows.iter().any(|r| r.product_id_name == "Product A");
     let has_product_b = doc1_rows.iter().any(|r| r.product_id_name == "Product B");
     assert!(has_product_a, "Should resolve Product A name");
@@ -340,7 +326,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     assert!(has_tank_a, "Should resolve Tank A name");
     assert!(has_tank_b, "Should resolve Tank B name");
 
-    // Check doc2 rows
     let doc2_rows: Vec<_> = all
       .iter()
       .filter(|r| r.document_number == "ACC-FLAT-002")
@@ -348,7 +333,6 @@ async fn acceptance_flat_query_returns_one_row_per_item() {
     assert_eq!(doc2_rows.len(), 1, "Doc2 should have 1 row");
     assert_eq!(doc2_rows[0].status, enums::DocumentStatus::Executed);
 
-    // --- Filter by status ---
     let drafts = svc
       .acceptance_flat_query(AcceptanceFlatQuerySpec {
         status: Some(enums::DocumentStatus::Draft),

@@ -31,18 +31,18 @@ type DrawerState
 export interface DocItemsTableProps<TForm extends FieldValues, TItem extends FieldValues> {
   name: ArrayPath<TForm>
   columns: ColumnSpec<TItem>[]
-  /** Use `unknown` to mirror DocFormProvider's loosened typing. */
+
   rowSchema: unknown
   rowFields: RowFieldSpec<TItem>[]
-  /** Default values for a new (empty) row. */
+
   emptyRow: TItem
-  /** i18n key for the section heading rendered above the table. */
+
   sectionTitleKey?: string
-  /** i18n key for the empty-state caption. Default: forms.itemsTable.empty. */
+
   emptyStateKey?: string
-  /** Compact density for nested inner tables (rail-receipt). */
+
   density?: TableDensity
-  /** Optional content rendered inside the row drawer below the field grid (used for nested tables). */
+
   rowDrawerExtra?: (rowIndex: number) => ReactNode
 }
 
@@ -59,19 +59,17 @@ export function DocItemsTable<TForm extends FieldValues, TItem extends FieldValu
 }: DocItemsTableProps<TForm, TItem>) {
   const { t } = useTranslation('forms')
   const { control } = useFormContext<TForm>()
+
   const { fields, append, remove, update } = useFieldArray<TForm, ArrayPath<TForm>, typeof FORM_ROW_ID>({
     control,
     name,
     keyName: FORM_ROW_ID,
   })
+
   const [drawer, setDrawer] = useState<DrawerState>({ kind: 'idle' })
 
   const compact = density === 'compact'
 
-  // CSS Grid track sizes for the bespoke `<Table>` (see ui/table.tsx). Each data
-  // column defaults to an equal flex share; the trailing actions column is fixed
-  // at 96px to comfortably fit the two ghost icon buttons (edit + delete) plus
-  // padding. Per-column overrides come from `ColumnSpec.gridWidth`.
   const gridTemplate = useMemo(() => {
     const dataCols = columns.map(col => col.gridWidth ?? 'minmax(0, 1fr)').join(' ')
     const actionsCol = '96px'
@@ -88,6 +86,7 @@ export function DocItemsTable<TForm extends FieldValues, TItem extends FieldValu
       update(drawer.index, data as unknown as FieldArray<TForm, ArrayPath<TForm>>)
     else if (drawer.kind === 'create')
       append(data as unknown as FieldArray<TForm, ArrayPath<TForm>>)
+
     setDrawer({ kind: 'idle' })
   }
 
@@ -97,9 +96,10 @@ export function DocItemsTable<TForm extends FieldValues, TItem extends FieldValu
       setDrawer({ kind: 'create', nonce: 0 })
       return
     }
+
     if (drawer.kind === 'create') {
       append(data as unknown as FieldArray<TForm, ArrayPath<TForm>>)
-      // Bump the nonce so the drawer remounts with a clean RHF state.
+
       setDrawer({ kind: 'create', nonce: drawer.nonce + 1 })
     }
   }

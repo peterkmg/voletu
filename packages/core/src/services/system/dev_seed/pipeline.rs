@@ -49,7 +49,7 @@ use crate::{
     user,
     warehouse,
   },
-  enums::RoleType,
+  enums::{LedgerEntrySourceEvent, LedgerEntrySourceKind, RoleType},
   services::{audit::AuditService, system::local::load_local_bootstrap, SystemService},
   utils::password::hash_password,
 };
@@ -359,6 +359,7 @@ async fn seed_companies(
     let company_serial = ctx.name_offsets.companies + index;
     let role_tail = COMPANY_ROLE_TAILS[index % COMPANY_ROLE_TAILS.len()];
     let company_common_name = numbered_name(format!("{role_tail} Company"), company_serial);
+
     let saved = company::ActiveModel {
       common_name: Set(company_common_name.clone()),
       legal_name: Set(Some(format!(
@@ -410,6 +411,7 @@ async fn seed_ports(
     .await?;
     port_ids.push(saved.id);
   }
+
   Ok(port_ids)
 }
 
@@ -423,6 +425,7 @@ async fn seed_locations(
   for _ in 0..rng.random_range(4..=6) {
     let warehouse_count = rng.random_range(2..=4);
     let base_serial = ctx.name_offsets.bases + locations.len();
+
     let graph = base::ActiveModelEx {
       common_name: Set(numbered_name(*pick(rng, BASE_SUFFIXES), base_serial)),
       long_name: Set(Some(fake_fragment(5..9))),
@@ -463,6 +466,7 @@ async fn seed_locations(
     .await?;
 
     let base_id = saved_uuid(graph.id, "base")?;
+
     let loaded = base::Entity::load()
       .filter_by_id(base_id)
       .with(warehouse::Entity)
@@ -575,9 +579,9 @@ async fn seed_ledger(
           product_id: Set(product_id),
           contractor_id: Set(contractor_id),
           quantity_delta: Set(amount),
-          source_kind: Set(crate::enums::LedgerEntrySourceKind::OpeningBalance),
+          source_kind: Set(LedgerEntrySourceKind::OpeningBalance),
           source_id: Set(Uuid::now_v7()),
-          source_event: Set(crate::enums::LedgerEntrySourceEvent::OpeningBalance),
+          source_event: Set(LedgerEntrySourceEvent::OpeningBalance),
           reverses_entry_id: Set(None),
           ..Default::default()
         }
@@ -601,9 +605,9 @@ async fn seed_ledger(
             product_id: Set(secondary_product_id),
             contractor_id: Set(secondary_contractor_id),
             quantity_delta: Set(secondary_amount),
-            source_kind: Set(crate::enums::LedgerEntrySourceKind::OpeningBalance),
+            source_kind: Set(LedgerEntrySourceKind::OpeningBalance),
             source_id: Set(Uuid::now_v7()),
-            source_event: Set(crate::enums::LedgerEntrySourceEvent::OpeningBalance),
+            source_event: Set(LedgerEntrySourceEvent::OpeningBalance),
             reverses_entry_id: Set(None),
             ..Default::default()
           }

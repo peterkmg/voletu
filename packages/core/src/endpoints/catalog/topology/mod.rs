@@ -1,33 +1,8 @@
 use std::sync::Arc;
 
-use axum::{
-  extract::{Path, Query, State},
-  Json,
-};
-use axum_valid::Valid;
-use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
+use utoipa_axum::router::OpenApiRouter;
 
-use crate::{
-  api::{ApiResponse, ApiResult, ApiState},
-  dtos::{
-    BaseResponse,
-    CreateBaseRequest,
-    CreatePortRequest,
-    CreateStorageRequest,
-    CreateWarehouseRequest,
-    EmbedParams,
-    PaginationParams,
-    PortResponse,
-    StorageResponse,
-    UpdateBaseRequest,
-    UpdatePortRequest,
-    UpdateStorageRequest,
-    UpdateWarehouseRequest,
-    WarehouseResponse,
-  },
-  endpoints::paths,
-};
+use crate::api::ApiState;
 
 mod base;
 mod port;

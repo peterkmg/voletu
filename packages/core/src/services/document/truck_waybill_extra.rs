@@ -25,6 +25,7 @@ use crate::{
   },
   enums::PipelineStatus,
   services::{
+    common::normalize_pagination,
     document::specs::{TruckReceiptPipelineQuerySpec, TruckWaybillQuerySpec},
     DocumentService,
   },
@@ -50,8 +51,7 @@ impl DocumentService {
     &self,
     query: &TruckWaybillQuerySpec,
   ) -> Result<Vec<truck_waybill::ModelEx>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
 
     let mut condition = Condition::all();
     condition = condition.add(truck_waybill::Column::DeletedAt.is_null());
@@ -104,6 +104,7 @@ impl DocumentService {
     req: &dtos::TruckWaybillCompositeRequest,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
     let saved = truck_waybill::ActiveModelEx::from(req).save(conn).await?;
+
     let waybill_id = match saved.id {
       sea_orm::ActiveValue::Set(id) | sea_orm::ActiveValue::Unchanged(id) => id,
       sea_orm::ActiveValue::NotSet => {
@@ -129,6 +130,7 @@ impl DocumentService {
         dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone()))
       })
       .collect();
+
     let weight_docs: Vec<dtos::TruckWeightDocResponse> = doc
       .weight_docs
       .iter()
@@ -149,20 +151,19 @@ impl DocumentService {
     })
   }
 
-  /// Composite update: applies a header partial update plus a full diff on the items list.
-  /// Items with `id: Some(uuid)` matching an existing row are updated.
-  /// Items with `id: None` are inserted.
-  /// Existing items not present in the request are hard-deleted.
   pub async fn truck_waybill_composite_update(
     &self,
     truck_waybill_id: Uuid,
     req: &dtos::UpdateTruckWaybillCompositeRequest,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
     let txn = self.db.begin().await?;
+
     let res = self
       .truck_waybill_composite_update_no_tx(&txn, truck_waybill_id, req)
       .await?;
+
     txn.commit().await?;
+
     Ok(res)
   }
 
@@ -172,16 +173,10 @@ impl DocumentService {
     truck_waybill_id: Uuid,
     req: &dtos::UpdateTruckWaybillCompositeRequest,
   ) -> Result<dtos::TruckWaybillCompositeResponse, ApiError> {
-    // 1. Header update via the macro-generated per-row updater.
-    //    Applies set_if_some semantics and registers an audit log row.
     self
       .truck_waybill_update_no_tx(conn, truck_waybill_id, &req.waybill)
       .await?;
 
-    // 2. Reject duplicate `Some(id)` entries in the payload before touching the
-    //    database. The HashSet doubles as the dedup guard: if the same id
-    //    appears twice we bail out before any items are persisted, so the
-    //    transaction stays clean.
     let mut kept_ids: HashSet<Uuid> = HashSet::new();
     for item in &req.items {
       if let Some(item_id) = item.id {
@@ -194,13 +189,6 @@ impl DocumentService {
       }
     }
 
-    // 3. Persist the items as a graph save on the parent `ActiveModelEx`.
-    //    Items with `id: Some(uuid)` map to `Unchanged(uuid)` -> UPDATE,
-    //    items with `id: None` keep `NotSet` -> INSERT.
-    //    `truck_waybill_id` is propagated automatically by SeaORM via
-    //    `set_parent_key`. Wrapping in `HasManyModel::Replace(_)` (instead of
-    //    the `Vec::into()` shorthand which produces `Append`) tells SeaORM to
-    //    delete every existing related row missing from the new set.
     let items: Vec<truck_waybill_item::ActiveModelEx> = req
       .items
       .iter()
@@ -223,7 +211,6 @@ impl DocumentService {
     .save(conn)
     .await?;
 
-    // 4. Reload the full composite using the same eager-loading shape as on create.
     let doc = truck_waybill::Entity::load()
       .filter_by_id(truck_waybill_id)
       .filter(truck_waybill::Column::DeletedAt.is_null())
@@ -243,6 +230,7 @@ impl DocumentService {
         dtos::TruckWaybillItemResponse::from(truck_waybill_item::Model::from(item.clone()))
       })
       .collect();
+
     let weight_docs: Vec<dtos::TruckWeightDocResponse> = doc
       .weight_docs
       .iter()
@@ -300,8 +288,7 @@ impl DocumentService {
     &self,
     query: TruckReceiptPipelineQuerySpec,
   ) -> Result<Vec<TruckReceiptPipelineResponse>, ApiError> {
-    let (page, per_page) =
-      crate::services::common::normalize_pagination(query.page, query.per_page)?;
+    let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
     let db = self.db.as_ref();
 
     let mut cond = Condition::all().add(truck_waybill::Column::DeletedAt.is_null());

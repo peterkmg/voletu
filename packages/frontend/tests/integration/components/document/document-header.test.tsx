@@ -11,7 +11,6 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }))
 
-// Supervisor role id taken from src/lib/rbac.ts so isSupervisorOrHigher() returns true.
 const SUPERVISOR_ROLE_ID = '019c8cc4-9048-7b61-9443-52858a953a17'
 
 vi.mock('~/stores/auth-store', () => ({

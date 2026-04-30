@@ -47,7 +47,6 @@ export function useNodeStatus() {
     meta: backgroundPollingMeta,
   })
 
-  // Also fetch base assignments for peripheral nodes
   const nodeType = useNodeStore(s => s.status.nodeType)
   const basesQuery = useQuery<{ success: true, data: Array<{ baseId: string }> }>({
     queryKey: ['node', 'bases'],

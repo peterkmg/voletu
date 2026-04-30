@@ -25,8 +25,6 @@ Object.defineProperty(Element.prototype, 'scrollIntoView', {
   value: vi.fn(),
 })
 
-// jsdom lacks ResizeObserver; radix-ui's ScrollArea + a few others require it.
-// Minimal no-op polyfill is enough for layout-insensitive component tests.
 if (typeof globalThis.ResizeObserver === 'undefined') {
   class ResizeObserverPolyfill {
     observe(): void {}
@@ -36,9 +34,6 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = ResizeObserverPolyfill as unknown as typeof ResizeObserver
 }
 
-// jsdom lacks the Pointer Events API that radix-ui's Select / DropdownMenu
-// rely on. Without these polyfills any test that opens a radix Select via
-// userEvent click throws `target.hasPointerCapture is not a function`.
 const elementProto = globalThis.Element?.prototype as
   | (Element & { hasPointerCapture?: unknown, releasePointerCapture?: unknown, scrollIntoView?: unknown })
   | undefined

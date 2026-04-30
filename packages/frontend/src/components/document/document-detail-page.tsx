@@ -14,12 +14,7 @@ interface DocumentDetailConfig {
   revertFn?: (id: string) => Promise<unknown>
   queryKey?: readonly unknown[]
   statusColorMap?: Record<string, string>
-  /**
-   * Optional toolbar actions rendered next to the status badge in
-   * `DocumentHeader`. Each descriptor carries its own `disabled` /
-   * `disabledReason` so pipeline-aware predicates can drive visibility
-   * and tooltips without conditional rendering at the call site.
-   */
+
   actions?: ActionDescriptor[]
 }
 

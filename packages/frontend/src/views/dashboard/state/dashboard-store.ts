@@ -1,29 +1,22 @@
 import type { Orientation, Uuid } from '../types'
-// packages/frontend/src/views/dashboard/state/dashboard-store.ts
+
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
 interface DashboardState {
-  // Selection
+
   contractorId: Uuid | null
 
-  // Layout
   orientation: Orientation
 
-  // Structure toggles
   showType: boolean
   showBase: boolean
 
-  // Subtotal toggles — replaces the single showSubtotals with four named ones.
-  // Gated in the UI: productTypeTotals is disabled when showType is off;
-  // baseTotals is disabled when showBase is off. Store keeps the value so
-  // re-enabling the structure toggle restores the prior choice.
   productGroupTotals: boolean
   productTypeTotals: boolean
   warehouseTotals: boolean
   baseTotals: boolean
 
-  // Setters
   setContractorId: (id: Uuid | null) => void
   setOrientation: (o: Orientation) => void
   setShowType: (v: boolean) => void

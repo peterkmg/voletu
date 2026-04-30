@@ -1,16 +1,3 @@
-//! **Incremental pull advances watermark correctly**: After a pull cycle, the
-//! stored PULL watermark moves forward. A second cycle starts from the new
-//! watermark and does not re-pull data the peripheral already has.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:**
-//!   1. After wave 1, the peripheral's PULL watermark points at a non-nil audit log id.
-//!   2. After wave 2, the PULL watermark has advanced to a strictly greater id.
-//!   3. Both waves are present on the peripheral with exact count parity.
-//!
-//! This replaces a weaker earlier version that only asserted "both waves exist"
-//! and never actually read the watermark.
-
 use std::time::Duration;
 
 use serde_json::Value;
@@ -30,8 +17,6 @@ use crate::common::integration::{
 
 const SYNC_TIMEOUT: Duration = Duration::from_secs(15);
 
-/// Fetch the peripheral's PULL watermark for the central node. Returns the
-/// `last_audit_log_id` as a Uuid (nil if no watermark row exists yet).
 async fn read_pull_watermark(client: &reqwest::Client, base_url: &str, token: &str) -> Uuid {
   let response: Value = api_get(client, &format!("{base_url}/sync/watermarks"), token).await;
   let watermarks = response
@@ -55,7 +40,6 @@ async fn watermark_advances_strictly_and_no_double_pull_on_second_wave() {
   ])
   .await;
 
-  // Wave 1
   create_acceptance_via_api(
     &client,
     &central.url,
@@ -77,7 +61,6 @@ async fn watermark_advances_strictly_and_no_double_pull_on_second_wave() {
     .len();
   assert_eq!(wave1_count, 1, "wave 1 should sync exactly one acceptance");
 
-  // Capture watermark after wave 1.
   let watermark_after_wave1 = read_pull_watermark(&client, &pa.url, &pa.token).await;
   assert_ne!(
     watermark_after_wave1,
@@ -85,7 +68,6 @@ async fn watermark_advances_strictly_and_no_double_pull_on_second_wave() {
     "PULL watermark must advance past nil after the first sync"
   );
 
-  // Wave 2
   let acc2 = create_acceptance_via_api(
     &client,
     &central.url,
@@ -101,16 +83,12 @@ async fn watermark_advances_strictly_and_no_double_pull_on_second_wave() {
 
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
-  // Watermark must strictly advance. If the worker re-pulled wave 1 instead of
-  // starting from the previous cursor, this will still pass — but if the cursor
-  // never advanced at all (a bug we want to catch), this assertion fails.
   let watermark_after_wave2 = read_pull_watermark(&client, &pa.url, &pa.token).await;
   assert!(
     watermark_after_wave2 > watermark_after_wave1,
     "PULL watermark must strictly advance between waves: wave1={watermark_after_wave1}, wave2={watermark_after_wave2}"
   );
 
-  // Both waves are present.
   assert!(
     get_acceptance_composite_json(&client, &pa.url, &pa.token, acc2_id)
       .await

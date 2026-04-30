@@ -1,9 +1,3 @@
-//! **Catalog broadcast**: Catalog entities (products, companies, bases, storages) reach
-//! all peripherals regardless of their base assignment.
-//!
-//! **Topology:** Central + 2 Peripherals (one base each)
-//! **Verifies:** Global catalog entities are present on both peripherals, including cross-base entities
-
 use std::time::Duration;
 
 use crate::common::integration::{
@@ -32,11 +26,9 @@ async fn reaches_all_peripherals() {
   ])
   .await;
 
-  // Workers already ran initial sync during setup; run one more cycle to be sure
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
   await_sync_cycle(&client, &pb.url, &pb.token, SYNC_TIMEOUT).await;
 
-  // Products are global — both have it
   assert!(
     has_catalog_entity(
       &client,
@@ -58,7 +50,6 @@ async fn reaches_all_peripherals() {
     .await
   );
 
-  // Companies are global
   assert!(
     has_catalog_entity(
       &client,
@@ -80,7 +71,6 @@ async fn reaches_all_peripherals() {
     .await
   );
 
-  // Bases are global — PA has beta's base, PB has alpha's base
   assert!(
     has_catalog_entity(
       &client,
@@ -102,7 +92,6 @@ async fn reaches_all_peripherals() {
     .await
   );
 
-  // Storages are global — cross-base visibility
   assert!(
     has_catalog_entity(
       &client,

@@ -21,6 +21,7 @@ export function TableHeaderRow<TData>({
         const pinStyle = isPinning ? getPinningStyles(header.column) : {}
         const pinnedSide = header.column.getIsPinned()
         const pinBg = pinnedSide ? 'bg-background' : ''
+
         return (
           <TableHead
             key={header.id}

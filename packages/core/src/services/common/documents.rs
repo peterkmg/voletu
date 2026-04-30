@@ -6,5 +6,6 @@ pub fn ensure_doc_mod_allowed(status: DocumentStatus) -> Result<(), ApiError> {
       "Only draft documents can be modified".to_string(),
     ));
   }
+
   Ok(())
 }

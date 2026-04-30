@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createTauriSaveAdapter,
-  saveExportFileInBrowser,
   sanitizeExportFilename,
+  saveExportFileInBrowser,
 } from '~/lib/files'
 
 describe('export file saving', () => {

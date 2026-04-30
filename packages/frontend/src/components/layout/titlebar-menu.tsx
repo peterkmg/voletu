@@ -37,11 +37,6 @@ import { settingsViewTarget } from '~/router/view-targets'
 import { useStartupStore } from '~/stores/startup-store'
 import { getSidebarData } from './data/sidebar-data'
 
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-/** Cached Tauri window handle for fullscreen / quit. */
 let tauriWin: Awaited<
   ReturnType<typeof import('@tauri-apps/api/window').getCurrentWindow>
 > | null = null
@@ -51,7 +46,7 @@ let tauriWin: Awaited<
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     tauriWin = getCurrentWindow()
   }
-  catch { /* not in Tauri */ }
+  catch { }
 })()
 
 function MenuTriggerButton({ children, className, ...props }: React.ComponentProps<'button'>) {
@@ -72,10 +67,6 @@ function MenuTriggerButton({ children, className, ...props }: React.ComponentPro
   )
 }
 
-// ---------------------------------------------------------------------------
-// Keyboard shortcuts data
-// ---------------------------------------------------------------------------
-
 const shortcutEntries = [
   { key: 'Ctrl+B', action: 'titlebar.toggleSidebar' },
   { key: 'Ctrl+,', action: 'titlebar.settings' },
@@ -92,10 +83,6 @@ const titlebarDensityLabelKeys: Record<TableDensity, string> = {
   normal: 'titlebar.densityNormal',
   comfortable: 'titlebar.densityComfortable',
 }
-
-// ---------------------------------------------------------------------------
-// File menu
-// ---------------------------------------------------------------------------
 
 function FileMenu() {
   const { t, i18n } = useTranslation()
@@ -182,10 +169,6 @@ function FileMenu() {
   )
 }
 
-// ---------------------------------------------------------------------------
-// View menu
-// ---------------------------------------------------------------------------
-
 function ViewMenu() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
@@ -207,6 +190,7 @@ function ViewMenu() {
   const handleFullscreen = useCallback(async () => {
     if (!tauriWin)
       return
+
     const isFull = await tauriWin.isFullscreen()
     await tauriWin.setFullscreen(!isFull)
   }, [])
@@ -279,10 +263,6 @@ function ViewMenu() {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Go menu — generated from sidebar navigation data
-// ---------------------------------------------------------------------------
-
 function GoMenu() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -341,10 +321,6 @@ function GoMenu() {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Help menu
-// ---------------------------------------------------------------------------
-
 function HelpMenu() {
   const { t } = useTranslation()
   const isDebugBuild = useStartupStore(s => s.startupState?.isDebugBuild ?? false)
@@ -368,7 +344,6 @@ function HelpMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Keyboard Shortcuts dialog */}
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -404,7 +379,6 @@ function HelpMenu() {
         </DialogContent>
       </Dialog>
 
-      {/* About dialog */}
       <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
         <DialogContent className="sm:max-w-xs">
           <DialogHeader>
@@ -422,10 +396,6 @@ function HelpMenu() {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Global keyboard shortcuts (Ctrl+, / Ctrl+Q / F11)
-// ---------------------------------------------------------------------------
-
 function useGlobalShortcuts() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -434,28 +404,24 @@ function useGlobalShortcuts() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // Ctrl+, → Settings
       if (e.key === ',' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         navigate(settingsViewTarget)
         return
       }
 
-      // Ctrl+Q → Quit (Tauri only)
       if (e.key === 'q' && (e.ctrlKey || e.metaKey) && isTauri) {
         e.preventDefault()
         tauriWin?.close()
         return
       }
 
-      // F11 → Toggle fullscreen (Tauri only)
       if (e.key === 'F11' && isTauri) {
         e.preventDefault()
         tauriWin?.isFullscreen().then(isFull => tauriWin?.setFullscreen(!isFull))
         return
       }
 
-      // Ctrl+Shift+D → Toggle DevTools (debug builds only)
       if (e.key === 'D' && e.shiftKey && (e.ctrlKey || e.metaKey) && isDebugBuild) {
         e.preventDefault()
         const next = toggleDevTools()
@@ -464,13 +430,10 @@ function useGlobalShortcuts() {
     }
 
     window.addEventListener('keydown', onKeyDown)
+
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isDebugBuild, isTauri, navigate, t])
 }
-
-// ---------------------------------------------------------------------------
-// Exported composite
-// ---------------------------------------------------------------------------
 
 export function TitlebarMenu() {
   useGlobalShortcuts()

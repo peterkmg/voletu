@@ -90,12 +90,7 @@ function CommandList({
   return (
     <CommandPrimitive.List
       data-slot="command-list"
-      // `overscroll-contain` keeps wheel events from bubbling to the page
-      // (or to a parent dialog body) once the inner list reaches its top /
-      // bottom — without it, scrolling the list inside a Radix Popover that
-      // is itself nested in a scroll-locked Dialog feels "dead" because the
-      // wheel event ends up on the locked body. `stopPropagation` on the
-      // wheel handler covers older WebKit builds that ignore overscroll.
+
       onWheel={(event) => {
         event.stopPropagation()
         onWheel?.(event)

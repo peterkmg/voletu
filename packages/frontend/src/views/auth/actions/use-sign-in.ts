@@ -19,8 +19,6 @@ export function useSignIn(): UseSignInResult {
     setError(null)
 
     try {
-      // authLogin returns ApiResponseLoginResponse (full envelope).
-      // kubb-client throws if success === false, so .data is always defined here.
       const result = await authLogin({ username, password })
       if (!result.data)
         throw new Error('Login failed')

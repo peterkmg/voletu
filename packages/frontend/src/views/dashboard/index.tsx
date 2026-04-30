@@ -26,7 +26,6 @@ export function DashboardView() {
   const warehouseTotals = useDashboardStore(s => s.warehouseTotals)
   const baseTotals = useDashboardStore(s => s.baseTotals)
 
-  // Auto-select the first contractor if nothing is selected yet
   useEffect(() => {
     if (!contractorId && data.contractors.length > 0) {
       setContractorId(data.contractors[0]!.id)
@@ -41,14 +40,15 @@ export function DashboardView() {
   const sheetContext = useMemo(() => {
     if (!sheetCell || !data.vm)
       return null
+
     const productName = findLeafLabel(data.vm.productAxis.root, sheetCell.productId)
     const storageName = findLeafLabel(data.vm.storageAxis.root, sheetCell.storageId)
     const warehouseName = findParentGroupLabel(data.vm.storageAxis.root, sheetCell.storageId, 'warehouse')
     const balance = data.vm.cell(sheetCell.productId, sheetCell.storageId)
+
     return { productName, storageName, warehouseName, balance, contractorName: contractorLabel }
   }, [sheetCell, data.vm, contractorLabel])
 
-  // --- Branching render ---
   if (data.isLoading && !data.hasAnyData) {
     return (
       <DashboardShell>
@@ -86,7 +86,6 @@ export function DashboardView() {
     />
   )
 
-  // No stock at all for the selected contractor (and not a search situation).
   if ((data.vm?.stats.nonEmptyCellCount ?? 0) === 0 && !searchQuery) {
     return (
       <DashboardShell toolbar={toolbar}>
@@ -95,7 +94,6 @@ export function DashboardView() {
     )
   }
 
-  // Search narrowed everything out
   if (data.vm && (data.vm.stats.leafRowCount === 0 || data.vm.stats.leafColCount === 0) && searchQuery) {
     return (
       <DashboardShell toolbar={toolbar}>

@@ -1,9 +1,3 @@
-//! **Data parity after full sync cycle**: After syncing an acceptance and a physical transfer
-//! to a peripheral, every field matches the Central copy exactly.
-//!
-//! **Topology:** Central + 1 Peripheral (base_alpha)
-//! **Verifies:** Full field-level parity for both acceptance and physical transfer composites
-
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -61,7 +55,6 @@ async fn replicates_all_fields_for_acceptance_and_physical_transfer() {
 
   await_sync_cycle(&client, &pa.url, &pa.token, SYNC_TIMEOUT).await;
 
-  // Acceptance parity
   let c_acc = get_acceptance_composite_json(&client, &central.url, &central.token, acc_id)
     .await
     .unwrap();
@@ -83,7 +76,6 @@ async fn replicates_all_fields_for_acceptance_and_physical_transfer() {
     assert_eq!(ci["acceptedAmount"], pi["acceptedAmount"]);
   }
 
-  // Physical transfer parity
   let c_t =
     get_physical_transfer_composite_json(&client, &central.url, &central.token, transfer_id)
       .await

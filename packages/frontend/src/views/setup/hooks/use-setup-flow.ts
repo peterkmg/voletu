@@ -32,7 +32,6 @@ export function useSetupFlow() {
       useRuntimeStore.getState().markHealthHydrated()
       setApiBaseUrl(state.apiBaseUrl ?? remoteApiUrl)
       applyStartupState(state)
-      // Keep isSubmitting=true — page will navigate away
     }
     catch (err) {
       setIsSubmitting(false)
@@ -57,7 +56,6 @@ export function useSetupFlow() {
       useRuntimeStore.getState().markHealthHydrated()
       setApiBaseUrl(baseUrl)
       applyStartupState(state)
-      // Keep isSubmitting=true — page will navigate away
     }
     catch (err) {
       setIsSubmitting(false)

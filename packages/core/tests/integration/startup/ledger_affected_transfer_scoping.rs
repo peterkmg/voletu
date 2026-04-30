@@ -1,18 +1,3 @@
-//! Verifies that ledger-affected documents propagate with correct scope
-//! narrowing across a three-node topology using the real sync worker.
-//!
-//! Wave 1 creates a cross-base physical transfer (routes to both bases) and
-//! executes it, so all three nodes converge on the document and ledger entries.
-//! Wave 2 creates a single-base acceptance (routes to base_alpha only) and
-//! executes it, so only Central and PA receive it while PB's ledger stays at
-//! the prior value.
-//!
-//! Topology: Central + 2 Peripherals (PA on base_alpha, PB on base_beta).
-//!
-//! Property: shared-scope executed documents and their ledger entries reach all
-//! nodes; local-scope executed documents and their ledger entries reach only
-//! Central and the relevant Peripheral.
-
 use std::time::Duration;
 
 use super::parse_doc_id;
@@ -78,8 +63,6 @@ async fn targets_shared_then_local_scope_via_worker() {
       .collect::<Vec<_>>()
   };
 
-  // ── Wave 1: cross-base physical transfer (routes to BOTH bases) ──
-
   let transfer_1 = api_post(
     &client,
     &format!("{}/physical-transfers/save-and-execute", central.url),
@@ -101,11 +84,9 @@ async fn targets_shared_then_local_scope_via_worker() {
   .await;
   let transfer_1_id = parse_doc_id(&transfer_1);
 
-  // Let both peripherals sync wave 1
   await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  // Both peripherals should have the transfer
   let pa_t1 =
     get_physical_transfer_composite_json(&client, &pa.url, &pa.token, transfer_1_id).await;
   let pb_t1 =
@@ -113,7 +94,6 @@ async fn targets_shared_then_local_scope_via_worker() {
   assert!(pa_t1.is_some(), "PA should have wave-1 transfer");
   assert!(pb_t1.is_some(), "PB should have wave-1 transfer");
 
-  // Field parity on the transfer
   let central_t1 =
     get_physical_transfer_composite_json(&client, &central.url, &central.token, transfer_1_id)
       .await
@@ -129,8 +109,6 @@ async fn targets_shared_then_local_scope_via_worker() {
     "PB wave-1 amount should match Central"
   );
 
-  // Ledger rows are storage-scoped, so each peripheral should mirror the
-  // subset of Central rows whose storage belongs to its assigned base.
   let central_ledger_w1 = get_all_ledger_balances(&client, &central.url, &central.token).await;
   let pa_ledger_w1 = get_all_ledger_balances(&client, &pa.url, &pa.token).await;
   let pb_ledger_w1 = get_all_ledger_balances(&client, &pb.url, &pb.token).await;
@@ -150,8 +128,6 @@ async fn targets_shared_then_local_scope_via_worker() {
     summarize(&central_beta_w1),
     "PB should mirror Central's beta-scoped ledger rows after wave 1"
   );
-
-  // ── Wave 2: single-base acceptance (routes to base_alpha ONLY) ──
 
   let _acc_2 = api_post(
     &client,
@@ -175,11 +151,9 @@ async fn targets_shared_then_local_scope_via_worker() {
   )
   .await;
 
-  // Let both peripherals sync wave 2
   await_sync_cycle(&client, &pa.url, &pa.token, Duration::from_secs(15)).await;
   await_sync_cycle(&client, &pb.url, &pb.token, Duration::from_secs(15)).await;
 
-  // Wave 2 only affects alpha-scoped ledger rows.
   let pa_ledger_w2 = get_all_ledger_balances(&client, &pa.url, &pa.token).await;
   let central_ledger_w2 = get_all_ledger_balances(&client, &central.url, &central.token).await;
   let central_alpha_w2 = filter_by_storage(&central_ledger_w2, &alpha_storage_ids);
@@ -189,7 +163,6 @@ async fn targets_shared_then_local_scope_via_worker() {
     "PA should mirror Central's alpha-scoped ledger rows after wave 2"
   );
 
-  // PB should remain on the beta-scoped subset it already had after wave 1.
   let pb_ledger_w2 = get_all_ledger_balances(&client, &pb.url, &pb.token).await;
   let central_beta_w2 = filter_by_storage(&central_ledger_w2, &beta_storage_ids);
   assert_eq!(

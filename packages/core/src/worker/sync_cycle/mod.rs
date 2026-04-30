@@ -27,6 +27,7 @@ pub(super) async fn run_sync_cycle(
   let remote_status =
     remote::load_sync_cycle_remote_status(client, central_sync_api_url, assigned_base_ids, config)
       .await?;
+
   let watermarks = sync_service.list_sync_watermarks().await?;
 
   let push_outcome = push::push_outbound_logs(
@@ -38,6 +39,7 @@ pub(super) async fn run_sync_cycle(
     config,
   )
   .await?;
+
   let pull_outcome = pull::pull_remote_logs(
     client,
     sync_service,

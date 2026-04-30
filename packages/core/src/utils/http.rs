@@ -31,6 +31,7 @@ pub async fn post_api_json<Req: Serialize, Res: DeserializeOwned>(
     .timeout(timeout)
     .send()
     .await?;
+
   parse_api_response(response, "POST", url).await
 }
 

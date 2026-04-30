@@ -301,6 +301,7 @@ impl DocumentService {
     query: CargoFlowQuerySpec,
   ) -> Result<CargoFlowPageResponse, ApiError> {
     let (page, per_page) = normalize_pagination(query.page, query.per_page)?;
+
     let filter = query
       .filter
       .as_deref()
@@ -309,6 +310,7 @@ impl DocumentService {
       .map(str::to_owned);
 
     let total = self.count_cargo_flow_rows(filter.as_deref()).await?;
+
     let rows = self
       .load_cargo_flow_rows(page, per_page, filter.as_deref())
       .await?;
@@ -355,11 +357,13 @@ impl DocumentService {
 
 fn cargo_flow_count_statement(backend: DbBackend, filter: Option<&str>) -> Statement {
   let pattern = filter.map(|value| format!("%{}%", value.to_lowercase()));
+
   let mut sql = raw_sql_builder(backend);
   sql
     .push_fragment("SELECT COUNT(*) AS total FROM (")
     .push_fragment(CARGO_FLOW_UNION_SQL)
     .push_fragment(") cargo_flow");
+
   if pattern.is_some() {
     append_cargo_flow_filter_sql(&mut sql);
   }
@@ -380,11 +384,13 @@ fn cargo_flow_load_statement(
   filter: Option<&str>,
 ) -> Statement {
   let pattern = filter.map(|value| format!("%{}%", value.to_lowercase()));
+
   let mut sql = raw_sql_builder(backend);
   sql
     .push_fragment("SELECT * FROM (")
     .push_fragment(CARGO_FLOW_UNION_SQL)
     .push_fragment(") cargo_flow");
+
   if pattern.is_some() {
     append_cargo_flow_filter_sql(&mut sql);
   }
@@ -434,9 +440,11 @@ fn append_cargo_flow_filter_sql(sql: &mut RawSqlQueryBuilder) {
 
 fn append_cargo_flow_filter(query: RawSqlQuery, pattern: &String) -> RawSqlQuery {
   let mut query = query;
+
   for _ in 0..7 {
     query = query.bind(pattern);
   }
+
   query
 }
 

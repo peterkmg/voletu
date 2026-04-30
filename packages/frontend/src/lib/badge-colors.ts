@@ -1,9 +1,3 @@
-/**
- * Pastel badge color maps for enum/status values.
- * Each value maps to Tailwind classes for background, text, and border.
- * Uses moderately pastel colors with /30 opacity that work in both light and dark themes.
- */
-
 export type BadgeColorMap = Record<string, string>
 
 export const statusColors: BadgeColorMap = {
@@ -52,9 +46,6 @@ export const entityActiveColors: BadgeColorMap = {
   archived: 'bg-slate-100/50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
 }
 
-/**
- * Generic fallback: assigns colors from a palette based on value hash.
- */
 const fallbackPalette = [
   'bg-blue-100/30 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
   'bg-emerald-100/30 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
@@ -67,7 +58,7 @@ const fallbackPalette = [
 export function getBadgeColor(value: string, colorMap?: BadgeColorMap): string {
   if (colorMap && value in colorMap)
     return colorMap[value]!
-  // Stable hash for consistent color assignment
+
   let hash = 0
   for (let i = 0; i < value.length; i++) {
     hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0

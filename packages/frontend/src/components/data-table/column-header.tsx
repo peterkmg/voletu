@@ -30,13 +30,14 @@ type DataTableColumnHeaderProps<TData, TValue>
     title: string
   }
 
-/** Checks whether a column has an active filter value. */
 function hasActiveFilter<TData, TValue>(column: Column<TData, TValue>): boolean {
   const val = column.getFilterValue()
   if (val == null)
     return false
+
   if (Array.isArray(val))
     return val.length > 0
+
   return true
 }
 
@@ -54,7 +55,6 @@ export function DataTableColumnHeader<TData, TValue>({
   const canHide = column.getCanHide()
   const hasInteraction = canSort || canFilter || canPin || canHide
 
-  // No interactive controls — plain title
   if (!hasInteraction) {
     return (
       <div className={cn('flex items-center gap-1', justifyCls, className)}>
@@ -66,7 +66,6 @@ export function DataTableColumnHeader<TData, TValue>({
   const sorted = column.getIsSorted()
   const filterActive = canFilter && hasActiveFilter(column)
 
-  // Determine trigger icon based on state
   let TriggerIcon = canSort ? ChevronsUpDown : Filter
   if (sorted === 'asc')
     TriggerIcon = ArrowUp
@@ -124,7 +123,6 @@ export function DataTableColumnHeader<TData, TValue>({
   )
 }
 
-/** Compact dropdown with sort items + filter/column submenus. */
 function HeaderDropdownContent<TData, TValue>({
   column,
   canSort,
@@ -145,7 +143,7 @@ function HeaderDropdownContent<TData, TValue>({
 
   return (
     <DropdownMenuContent align="start" className="w-40 text-xs">
-      {/* --- Sort items (always top-level for quick access) --- */}
+
       {canSort && (
         <>
           <DropdownMenuItem onSelect={() => column.toggleSorting(false)}>
@@ -160,7 +158,7 @@ function HeaderDropdownContent<TData, TValue>({
         </>
       )}
 
-      {/* --- Filter submenu --- */}
+      { }
       {canFilter && (
         <>
           <DropdownMenuSub>
@@ -172,8 +170,7 @@ function HeaderDropdownContent<TData, TValue>({
               )}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-52 p-0 text-xs">
-              {/* Stop propagation prevents DropdownMenu from stealing keyboard
-                  events that cmdk needs for search input and list navigation. */}
+
               <div onKeyDown={e => e.stopPropagation()}>
                 <ColumnFilterInline column={column} />
               </div>
@@ -183,7 +180,7 @@ function HeaderDropdownContent<TData, TValue>({
         </>
       )}
 
-      {/* --- Column management submenu --- */}
+      { }
       {hasColumnMgmt && (
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>

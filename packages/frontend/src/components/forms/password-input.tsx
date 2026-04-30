@@ -37,6 +37,7 @@ function PasswordInput({ ref, className, ...props }: React.ComponentProps<'input
     </div>
   )
 }
+
 PasswordInput.displayName = 'PasswordInput'
 
 export { PasswordInput }

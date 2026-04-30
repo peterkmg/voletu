@@ -28,21 +28,18 @@ export interface CompositeFormDialogProps<TForm extends FieldValues, TResponse> 
   open: boolean
   onOpenChange: (open: boolean) => void
   mode: CompositeMode
-  /** Use `unknown` to mirror DocFormProvider's loosened typing (works around @hookform/resolvers v5 generics). */
+
   schema: unknown
   defaultValues: DefaultValues<TForm>
   mutationFn: CompositeMutationFn<TForm, TResponse>
   onSuccess?: CompositeSuccessHandler<TResponse>
-  /** i18n key for the dialog title. */
+
   titleKey: string
-  /** i18n key for the optional description below the title. */
+
   descriptionKey?: string
-  /** Whether to render Save & New (only meaningful in create mode). Default true in create. */
+
   showSaveAndNew?: boolean
-  /**
-   * Vestigial — currently has no effect after the xl two-column grid was dropped.
-   * Reserved for future width-extension scenarios. Safe to omit.
-   */
+
   heavy?: boolean
   children: ReactNode
 }
@@ -63,10 +60,7 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
 }: CompositeFormDialogProps<TForm, TResponse>) {
   const { t } = useTranslation('forms')
   const [globalIssues, setGlobalIssues] = useState<ServerValidationIssue[]>([])
-  // Tracks which footer button initiated the current submit. Set by the
-  // button's onClick handler before the native submit event fires, then
-  // consulted in the success handler to decide between close-on-success
-  // (Save) and reset-and-keep-open (Save & New). See spec §4.5.
+
   const submitActionRef = useRef<'save' | 'saveAndNew'>('save')
   const formApiRef = useRef<UseFormReturn<TForm> | null>(null)
 
@@ -74,12 +68,13 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
     (saved) => {
       setGlobalIssues([])
       onSuccess?.(saved)
+
       if (submitActionRef.current === 'saveAndNew' && mode === 'create') {
-        // Keep the modal open and clear the form for the next entry.
         formApiRef.current?.reset(defaultValues)
         submitActionRef.current = 'save'
         return
       }
+
       submitActionRef.current = 'save'
       onOpenChange(false)
     },
@@ -93,10 +88,10 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
         data-heavy={heavy || undefined}
         className={cn(
           'flex flex-col overflow-hidden gap-0 p-0',
-          'w-full h-full max-w-full max-h-[100dvh]', // < md: full viewport
-          'md:h-auto md:max-h-[90dvh] md:max-w-2xl md:rounded-lg', // md – lg
-          'lg:max-w-3xl', // lg – xl
-          'xl:max-w-4xl', // ≥ xl, capped (no further growth)
+          'w-full h-full max-w-full max-h-[100dvh]',
+          'md:h-auto md:max-h-[90dvh] md:max-w-2xl md:rounded-lg',
+          'lg:max-w-3xl',
+          'xl:max-w-4xl',
         )}
       >
         <DocFormProvider
@@ -154,7 +149,7 @@ interface FooterProps {
   mode: CompositeMode
   showSaveAndNew: boolean
   onCancel: () => void
-  /** Notifies the dialog which submit button was clicked, before the form fires. */
+
   onSelectAction: (action: 'save' | 'saveAndNew') => void
 }
 
@@ -178,7 +173,6 @@ function CompositeFormFooter({ mode, showSaveAndNew, onCancel, onSelectAction }:
     onCancel()
   }, [onCancel])
 
-  // Ctrl/Cmd+S submits
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {

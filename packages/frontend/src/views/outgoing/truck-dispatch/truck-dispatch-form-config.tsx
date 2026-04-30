@@ -1,41 +1,3 @@
-/**
- * Truck-dispatch composite form configuration.
- *
- * The truck-dispatch document is a `dispatch_document` with `dispatchMethod`
- * hard-locked to `TRUCK` and `dispatchPurpose` hard-locked to `EXTERNAL`.
- * Both discriminators are injected at submit time by the dialog and never
- * surface as user-editable header fields.
- *
- * i18n keys this file depends on (all in the `truck-dispatch` namespace):
- *   truck-dispatch.dialog.title.create
- *   truck-dispatch.dialog.title.edit
- *   truck-dispatch.field.documentNumber
- *   truck-dispatch.field.date
- *   truck-dispatch.field.contractorId
- *   truck-dispatch.field.destinationBaseId
- *   truck-dispatch.field.product
- *   truck-dispatch.field.storage
- *   truck-dispatch.field.dispatchedAmount
- *   truck-dispatch.field.measurementStorage
- *   truck-dispatch.field.{before,after}{Height,Volume,Density,Mass}
- *   truck-dispatch.section.items
- *   truck-dispatch.section.storageMeasurements
- *   truck-dispatch.toast.created
- *   truck-dispatch.toast.updated
- *
- * Generated Kubb artifacts consumed (camelCase field naming throughout):
- *   - Schemas (zod/v4):
- *       packages/frontend/src/generated/zod/createDispatchCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/updateDispatchCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/dispatchItemCompositeRequestSchema.ts
- *       packages/frontend/src/generated/zod/dispatchMeasurementCompositeRequestSchema.ts
- *   - Types:
- *       packages/frontend/src/generated/types/CreateDispatchCompositeRequest.ts
- *       packages/frontend/src/generated/types/UpdateDispatchCompositeRequest.ts
- *       packages/frontend/src/generated/types/DispatchItemCompositeRequest.ts
- *       packages/frontend/src/generated/types/DispatchMeasurementCompositeRequest.ts
- */
-
 import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
@@ -64,21 +26,10 @@ import { dispatchItemCompositeRequestSchema } from '~/generated/zod/dispatchItem
 import { dispatchMeasurementCompositeRequestSchema } from '~/generated/zod/dispatchMeasurementCompositeRequestSchema'
 import { updateDispatchCompositeRequestSchema } from '~/generated/zod/updateDispatchCompositeRequestSchema'
 
-// --- Schemas ---
-
-/**
- * Hand-refined items schema with min(1) — the generated composite schema is
- * a `z.lazy(...).and(z.object(...))` intersection that is not `.extend()`-able,
- * so we compose at the row + array level instead. The generated row schema is
- * reused unchanged so any future Kubb refresh propagates to validation.
- */
 const dispatchItemsArraySchema = z
   .array(dispatchItemCompositeRequestSchema)
   .min(1, { message: 'forms.validation.itemsRequired' })
 
-/**
- * Storage measurements are optional. When present we still validate each row.
- */
 const dispatchMeasurementsArraySchema = z
   .array(dispatchMeasurementCompositeRequestSchema)
   .optional()
@@ -130,10 +81,6 @@ export type TruckDispatchUpdate = UpdateDispatchCompositeRequest
 export type TruckDispatchItem = DispatchItemCompositeRequest
 export type TruckDispatchMeasurement = DispatchMeasurementCompositeRequest
 
-// Inputs and pickers come from the shared `composite-form/field-cells` module.
-
-// --- Header field spec ---
-
 export const truckDispatchHeaderSpec: HeaderFieldSpec<TruckDispatchCreate>[] = [
   {
     name: 'documentNumber' as Path<TruckDispatchCreate>,
@@ -160,8 +107,6 @@ export const truckDispatchHeaderSpec: HeaderFieldSpec<TruckDispatchCreate>[] = [
   },
 ]
 
-// --- Items column spec (read-only summary) ---
-
 export const truckDispatchItemColumns: ColumnSpec<TruckDispatchItem>[] = [
   {
     key: 'productId',
@@ -181,8 +126,6 @@ export const truckDispatchItemColumns: ColumnSpec<TruckDispatchItem>[] = [
     render: value => formatAmount(value),
   },
 ]
-
-// --- Items row drawer field spec ---
 
 export const truckDispatchItemFields: RowFieldSpec<TruckDispatchItem>[] = [
   {
@@ -204,8 +147,6 @@ export const truckDispatchItemFields: RowFieldSpec<TruckDispatchItem>[] = [
     required: true,
   },
 ]
-
-// --- Measurements column spec (read-only summary) ---
 
 export const truckDispatchMeasurementColumns: ColumnSpec<TruckDispatchMeasurement>[] = [
   {
@@ -262,8 +203,6 @@ export const truckDispatchMeasurementColumns: ColumnSpec<TruckDispatchMeasuremen
     render: value => formatAmount(value),
   },
 ]
-
-// --- Measurements row drawer field spec ---
 
 export const truckDispatchMeasurementFields: RowFieldSpec<TruckDispatchMeasurement>[] = [
   {
@@ -325,8 +264,6 @@ export const truckDispatchMeasurementFields: RowFieldSpec<TruckDispatchMeasureme
   },
 ]
 
-// --- Empty defaults ---
-
 export const emptyTruckDispatchItem: TruckDispatchItem = {
   productId: '',
   storageId: '',
@@ -345,13 +282,6 @@ export const emptyTruckDispatchMeasurement: TruckDispatchMeasurement = {
   afterMass: '',
 }
 
-/**
- * Empty `CreateDispatchCompositeRequest` defaults for the truck variant.
- *
- * The dispatch_method / dispatch_purpose discriminators are hard-coded here
- * (TRUCK / EXTERNAL) and never user-editable; they are also re-applied at
- * submit time as a defensive measure inside the dialog.
- */
 export const emptyTruckDispatchCreate: TruckDispatchCreate = {
   documentNumber: '',
   date: '',
@@ -369,6 +299,5 @@ export const emptyTruckDispatchCreate: TruckDispatchCreate = {
   storageMeasurements: null,
 }
 
-// Re-export the row schemas so the dialog can pass them to DocItemRowDrawer.
 export const truckDispatchItemSchema = dispatchItemCompositeRequestSchema
 export const truckDispatchMeasurementSchema = dispatchMeasurementCompositeRequestSchema

@@ -13,6 +13,7 @@ fn unique_ids(ids: impl IntoIterator<Item = Uuid>) -> Vec<Uuid> {
   let mut ids = ids.into_iter().collect::<Vec<_>>();
   ids.sort_unstable();
   ids.dedup();
+
   ids
 }
 

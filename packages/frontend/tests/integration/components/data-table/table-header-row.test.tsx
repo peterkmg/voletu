@@ -64,22 +64,20 @@ describe('tableHeaderRow', () => {
     headerGroup.headers[0]!.isPlaceholder = true
     renderHeaderRow(headerGroup)
 
-    // Only Status header should have rendered content
     expect(screen.queryByText('Name')).not.toBeInTheDocument()
     expect(screen.getByText('Status')).toBeInTheDocument()
-    // Both columnheader elements still exist (just one is empty)
+
     expect(screen.getAllByRole('columnheader')).toHaveLength(2)
   })
 
   it('applies alignment class from column meta', () => {
     renderHeaderRow()
     const headers = screen.getAllByRole('columnheader')
-    // Status header has meta.align = 'right'
+
     const statusHeader = headers.find(h => h.textContent === 'Status')
     expect(statusHeader).toBeDefined()
     expect(statusHeader!.className).toContain('text-right')
 
-    // Name header has no alignment
     const nameHeader = headers.find(h => h.textContent === 'Name')
     expect(nameHeader).toBeDefined()
     expect(nameHeader!.className).not.toContain('text-right')

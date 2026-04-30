@@ -1,4 +1,26 @@
-use super::*;
+use std::sync::Arc;
+
+use axum::{
+  extract::{Path, Query, State},
+  Extension,
+  Json,
+};
+use axum_valid::Valid;
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+use crate::{
+  api::{ApiResponse, ApiResult, ApiState},
+  dtos::{
+    CreateDispatchCompositeRequest,
+    DispatchCompositeResponse,
+    EmbedParams,
+    UpdateDispatchCompositeRequest,
+  },
+  endpoints::paths,
+  services::common::ensure_supervisor_or_higher,
+  utils::jwt::Claims,
+};
 
 #[utoipa::path(
   get,
@@ -89,7 +111,7 @@ async fn dispatch_composite_create_and_execute(
   description = "Updates a dispatch document aggregate. Header fields apply set_if_some semantics; the items list is treated as the full new state and is diff-applied (insert / update / delete). The optional storage_measurements list, when provided, is also diff-applied; when omitted, existing measurements are left untouched.",
   path = paths::dispatch::COMPOSITE_BY_ID,
   params(("id" = Uuid, Path)),
-  request_body = crate::dtos::UpdateDispatchCompositeRequest,
+  request_body = UpdateDispatchCompositeRequest,
   responses(
     (status = 200, body = ApiResponse<DispatchCompositeResponse>),
     (status = 400),
@@ -100,7 +122,7 @@ async fn dispatch_composite_create_and_execute(
 async fn dispatch_composite_update(
   State(state): State<Arc<ApiState>>,
   Path(id): Path<Uuid>,
-  Valid(Json(req)): Valid<Json<crate::dtos::UpdateDispatchCompositeRequest>>,
+  Valid(Json(req)): Valid<Json<UpdateDispatchCompositeRequest>>,
 ) -> ApiResult<DispatchCompositeResponse> {
   Ok(ApiResponse::success(
     state
