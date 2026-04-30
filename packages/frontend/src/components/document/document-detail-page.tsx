@@ -1,3 +1,4 @@
+import type { ActionDescriptor } from './document-header'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { isDocEditable } from '~/hooks/use-doc-editable'
@@ -13,6 +14,13 @@ interface DocumentDetailConfig {
   revertFn?: (id: string) => Promise<unknown>
   queryKey?: readonly unknown[]
   statusColorMap?: Record<string, string>
+  /**
+   * Optional toolbar actions rendered next to the status badge in
+   * `DocumentHeader`. Each descriptor carries its own `disabled` /
+   * `disabledReason` so pipeline-aware predicates can drive visibility
+   * and tooltips without conditional rendering at the call site.
+   */
+  actions?: ActionDescriptor[]
 }
 
 interface DocumentDetailPageProps {
@@ -62,6 +70,7 @@ export function DocumentDetailPage({
             queryKey={config.queryKey}
             entityLabel={config.entityLabel}
             documentId={document.id}
+            actions={config.actions}
           />
         </div>
       </div>

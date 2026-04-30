@@ -89,6 +89,9 @@
   "error": {
     "serverUnreachable": "Не удалось связаться с сервером. Попробуйте ещё раз."
   },
+  "select": {
+    "placeholder": "Выбрать…"
+  },
   "picker": {
     "placeholder": "Выбрать…",
     "selectEntity": "Выбор: {{entity}}",

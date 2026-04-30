@@ -66,6 +66,15 @@
     "executeConfirm": "Are you sure you want to execute this document?",
     "revertConfirm": "Are you sure you want to revert this document?"
   },
+  "actions": {
+    "edit": "Edit",
+    "issueAcceptance": "Issue acceptance"
+  },
+  "reasons": {
+    "executedLocked": "Locked: acceptance has been executed",
+    "alreadyIssued": "Acceptance already issued ({{ref}})",
+    "basisRequired": "Pick a {{kind}} waybill to continue"
+  },
   "items": {
     "title": "Items",
     "addItem": "Add Item",
@@ -100,7 +109,12 @@
   },
   "related": {
     "basis": "Basis",
-    "referencedBy": "Referenced by"
+    "referencedBy": "Referenced by",
+    "acceptance": {
+      "pending": "Pending acceptance",
+      "draft": "Acceptance in draft",
+      "executed": "Accepted"
+    }
   },
   "messages": {
     "notFound": "Document not found"

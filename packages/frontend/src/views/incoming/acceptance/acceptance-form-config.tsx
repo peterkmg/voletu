@@ -37,10 +37,9 @@
  *       packages/frontend/src/generated/types/UpdateAcceptanceItemCompositeRequest.ts
  */
 
-import type { FieldValues, Path } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import type {
   ColumnSpec,
-  HeaderFieldComponentProps,
   HeaderFieldSpec,
   RowFieldSpec,
 } from '~/components/composite-form'
@@ -54,20 +53,12 @@ import {
   DateTimeInput,
   DecimalAmountInput,
   formatAmount,
-  NullableTextInput,
   PlainTextInput,
   ProductCell,
   ProductPicker,
   StorageCell,
   StoragePicker,
 } from '~/components/composite-form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select'
 import { arrivalTypeEnum } from '~/generated/types/ArrivalType'
 import { acceptanceItemCompositeRequestSchema } from '~/generated/zod/acceptanceItemCompositeRequestSchema'
 import { createAcceptanceCompositeRequestSchema } from '~/generated/zod/createAcceptanceCompositeRequestSchema'
@@ -90,13 +81,107 @@ const acceptanceUpdateItemsArraySchema = z
   .min(1, { message: 'forms.validation.itemsRequired' })
 
 /**
+ * Discriminated-union refine for the basis tab.
+ *
+ * Spec rule 2.4 / 3.1: `arrivalType` selects exactly one basis surface.
+ * EXTERNAL allows `sourceEntity` (a free-text label, optional); TRUCK
+ * requires `truckWaybillId`; RAIL requires `railWaybillId`. The other
+ * two basis fields must be null/absent in each case.
+ *
+ * Error messages are i18n keys (translations land in Phase 6); the
+ * key path is `acceptance:basis.error.*`.
+ *
+ * Applies identically to create and update schemas. Per spec rule 2.6,
+ * arrivalType / FK immutability in edit mode is a UI affordance enforced
+ * by the dialog (Task 3.5), not by the schema layer.
+ */
+function refineBasisDiscriminatedUnion(
+  val: unknown,
+  ctx: z.RefinementCtx,
+) {
+  const v = val as {
+    arrivalType?: string | null
+    truckWaybillId?: string | null
+    railWaybillId?: string | null
+    sourceEntity?: string | null
+  }
+  const truckSet = v.truckWaybillId != null
+  const railSet = v.railWaybillId != null
+  const sourceSet = v.sourceEntity != null
+
+  if (v.arrivalType === 'TRUCK') {
+    if (!truckSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['truckWaybillId'],
+        message: 'acceptance:basis.error.basisRequired',
+      })
+    }
+    if (railSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['railWaybillId'],
+        message: 'acceptance:basis.error.basisMismatch',
+      })
+    }
+    if (sourceSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sourceEntity'],
+        message: 'acceptance:basis.error.basisMismatch',
+      })
+    }
+  }
+  else if (v.arrivalType === 'RAIL') {
+    if (!railSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['railWaybillId'],
+        message: 'acceptance:basis.error.basisRequired',
+      })
+    }
+    if (truckSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['truckWaybillId'],
+        message: 'acceptance:basis.error.basisMismatch',
+      })
+    }
+    if (sourceSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sourceEntity'],
+        message: 'acceptance:basis.error.basisMismatch',
+      })
+    }
+  }
+  else if (v.arrivalType === 'EXTERNAL') {
+    if (truckSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['truckWaybillId'],
+        message: 'acceptance:basis.error.basisMismatch',
+      })
+    }
+    if (railSet) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['railWaybillId'],
+        message: 'acceptance:basis.error.basisMismatch',
+      })
+    }
+  }
+}
+
+/**
  * Composite schema for creating an acceptance.
  *
  * The generated `createAcceptanceCompositeRequestSchema` already validates
  * the full request; we layer an additional `superRefine` that re-asserts
- * the items.min(1) constraint. We retain the generated schema as the
- * authoritative type contract and cast through `as z.ZodType<...>` to
- * keep the inferred type aligned with the Kubb-generated TS type.
+ * the items.min(1) constraint and applies the basis discriminated-union
+ * rule. We retain the generated schema as the authoritative type contract
+ * and cast through `as z.ZodType<...>` to keep the inferred type aligned
+ * with the Kubb-generated TS type.
  */
 export const acceptanceCreateSchema = createAcceptanceCompositeRequestSchema.superRefine(
   (val, ctx) => {
@@ -107,11 +192,18 @@ export const acceptanceCreateSchema = createAcceptanceCompositeRequestSchema.sup
         ctx.addIssue({ ...issue, path: ['items', ...(issue.path ?? [])] })
       }
     }
+    refineBasisDiscriminatedUnion(val, ctx)
   },
 ) as unknown as z.ZodType<CreateAcceptanceCompositeRequest>
 
 /**
  * Composite schema for updating an acceptance.
+ *
+ * Stateless variant — applies the items + discriminated-union refines but
+ * does not enforce arrivalType / basis-FK immutability (spec rule 2.6).
+ * Prefer `makeAcceptanceUpdateSchema(original)` whenever the original
+ * loaded values are available; this stateless export remains for tests
+ * and code paths that do not have access to the original.
  */
 export const acceptanceUpdateSchema = updateAcceptanceCompositeRequestSchema.superRefine(
   (val, ctx) => {
@@ -122,42 +214,80 @@ export const acceptanceUpdateSchema = updateAcceptanceCompositeRequestSchema.sup
         ctx.addIssue({ ...issue, path: ['items', ...(issue.path ?? [])] })
       }
     }
+    refineBasisDiscriminatedUnion(val, ctx)
   },
 ) as unknown as z.ZodType<UpdateAcceptanceCompositeRequest>
+
+/**
+ * Lifecycle-aware update schema factory (spec rule 2.6 — `arrivalType` is
+ * immutable post-creation; the basis FK that matched the original
+ * `arrivalType` is also immutable). The dialog uses the loaded composite
+ * to seed `original`, providing a defense-in-depth guard against a
+ * malicious or buggy submission that would change the arrival type.
+ */
+export interface AcceptanceUpdateOriginal {
+  arrivalType: string | null | undefined
+  truckWaybillId: string | null | undefined
+  railWaybillId: string | null | undefined
+  sourceEntity: string | null | undefined
+}
+
+export function makeAcceptanceUpdateSchema(
+  original: AcceptanceUpdateOriginal,
+): z.ZodType<UpdateAcceptanceCompositeRequest> {
+  return updateAcceptanceCompositeRequestSchema.superRefine(
+    (val, ctx) => {
+      const items = (val as { items?: unknown[] }).items
+      const result = acceptanceUpdateItemsArraySchema.safeParse(items)
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          ctx.addIssue({ ...issue, path: ['items', ...(issue.path ?? [])] })
+        }
+      }
+      refineBasisDiscriminatedUnion(val, ctx)
+
+      const v = val as {
+        arrivalType?: string | null
+        truckWaybillId?: string | null
+        railWaybillId?: string | null
+      }
+      if (v.arrivalType !== original.arrivalType) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['arrivalType'],
+          message: 'acceptance:basis.error.arrivalTypeImmutable',
+        })
+      }
+      if ((v.truckWaybillId ?? null) !== (original.truckWaybillId ?? null)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['truckWaybillId'],
+          message: 'acceptance:basis.error.basisImmutable',
+        })
+      }
+      if ((v.railWaybillId ?? null) !== (original.railWaybillId ?? null)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['railWaybillId'],
+          message: 'acceptance:basis.error.basisImmutable',
+        })
+      }
+    },
+  ) as unknown as z.ZodType<UpdateAcceptanceCompositeRequest>
+}
 
 export type AcceptanceCreate = CreateAcceptanceCompositeRequest
 export type AcceptanceUpdate = UpdateAcceptanceCompositeRequest
 export type AcceptanceItem = UpdateAcceptanceItemCompositeRequest
 
-// `ArrivalTypeSelect` is form-specific and stays here; everything else (text /
-// date / decimal / picker inputs) lives in `composite-form/field-cells`.
-function ArrivalTypeSelect<TForm extends FieldValues>({
-  field,
-  placeholder,
-  disabled,
-}: HeaderFieldComponentProps<TForm>) {
-  return (
-    <Select
-      onValueChange={field.onChange}
-      value={field.value as string | undefined}
-      disabled={disabled}
-    >
-      <SelectTrigger>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {Object.values(arrivalTypeEnum).map(value => (
-          <SelectItem key={value} value={value}>
-            {value}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
-
 // --- Header field spec ---
-
+//
+// Only the *common* header fields live here. `arrivalType` (the basis
+// discriminator) and the per-tab fields (`sourceEntity` / `truckWaybillId` /
+// `railWaybillId`) are owned by `<AcceptanceBasisSection>`, which renders
+// the tab strip and the conditional field for the active arrival type.
+// This split keeps each surface focused on one concern: common
+// metadata here, basis selection there.
 export const acceptanceHeaderSpec: HeaderFieldSpec<AcceptanceCreate>[] = [
   {
     name: 'documentNumber' as Path<AcceptanceCreate>,
@@ -172,22 +302,10 @@ export const acceptanceHeaderSpec: HeaderFieldSpec<AcceptanceCreate>[] = [
     required: true,
   },
   {
-    name: 'arrivalType' as Path<AcceptanceCreate>,
-    labelKey: 'acceptance:field.arrivalType',
-    component: ArrivalTypeSelect,
-    required: true,
-  },
-  {
     name: 'contractorId' as Path<AcceptanceCreate>,
     labelKey: 'acceptance:field.contractorId',
     component: ContractorPicker,
     required: true,
-  },
-  {
-    name: 'sourceEntity' as Path<AcceptanceCreate>,
-    labelKey: 'acceptance:field.sourceEntity',
-    component: NullableTextInput,
-    colSpan: 2,
   },
 ]
 
@@ -252,6 +370,8 @@ export const emptyAcceptanceCreate: AcceptanceCreate = {
   arrivalType: DEFAULT_ARRIVAL_TYPE,
   contractorId: '',
   sourceEntity: null,
+  truckWaybillId: null,
+  railWaybillId: null,
   items: [],
 }
 

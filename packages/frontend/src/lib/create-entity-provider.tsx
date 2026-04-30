@@ -15,6 +15,7 @@ interface EntityContextType<
   openUpdate: (row: TRow) => void
   openDelete: (row: TRow, mode?: EntityDeleteMode) => void
   openLifecycle: (row: TRow, action: EntityLifecycleAction) => void
+  openIssueAcceptance: (row: TRow) => void
 }
 
 export function createEntityProvider<
@@ -32,9 +33,11 @@ export function createEntityProvider<
       setDialog({ kind: 'delete', row, mode })
     const openLifecycle = (row: TRow, action: EntityLifecycleAction) =>
       setDialog({ kind: 'lifecycle', row, action })
+    const openIssueAcceptance = (row: TRow) =>
+      setDialog({ kind: 'issueAcceptance', row })
 
     return (
-      <Context value={{ dialog, closeDialog, openCreate, openUpdate, openDelete, openLifecycle }}>
+      <Context value={{ dialog, closeDialog, openCreate, openUpdate, openDelete, openLifecycle, openIssueAcceptance }}>
         {children}
       </Context>
     )

@@ -40,7 +40,27 @@ interface WithoutLifecycle {
   lifecyclePropName?: undefined
 }
 
-interface EntityDialogsConfigBase<TRow> {
+// Secondary dialog slot used by the truck / rail pipeline lists when the
+// "Issue acceptance" row trigger needs to spawn a *different* document
+// (an Acceptance) seeded with the row as its basis. It deliberately lives
+// alongside the existing `LifecycleDialog` slot rather than overloading it
+// because the dialog's prop signature (`prefillBasis` instead of
+// `currentRow + variant/action`) is too divergent for a discriminated
+// union to narrow cleanly in object-literal contexts. See spec §3.2 / §6.3.
+export interface IssueAcceptanceDialogConfig {
+  IssueAcceptanceDialog?: React.ComponentType<{
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    prefillBasis: { kind: 'truck' | 'rail', basisId: string } | undefined
+  }>
+  /**
+   * Discriminator passed through to the dialog's `prefillBasis.kind`. Required
+   * whenever `IssueAcceptanceDialog` is set.
+   */
+  prefillBasisKind?: 'truck' | 'rail'
+}
+
+interface EntityDialogsConfigBase<TRow> extends IssueAcceptanceDialogConfig {
   useEntity: () => EntityHook<TRow>
   MutateDialog: React.ComponentType<MutateDialogProps<TRow>>
   DeleteDialog?: React.ComponentType
@@ -52,20 +72,25 @@ export type EntityDialogsLifecycleConfig<TRow>
     | LifecycleDialogWithAction<TRow>
     | WithoutLifecycle
 
-export type EntityDialogsConfig<TRow>
+export type EntityDialogsConfig<TRow extends { id: string }>
   = EntityDialogsConfigBase<TRow> & EntityDialogsLifecycleConfig<TRow>
 
-export function createEntityDialogs<TRow>(config: EntityDialogsConfig<TRow>) {
+export function createEntityDialogs<TRow extends { id: string }>(config: EntityDialogsConfig<TRow>) {
   const {
     useEntity,
     DeleteDialog,
     supportsUpdate,
+    IssueAcceptanceDialog,
+    prefillBasisKind,
   } = config
 
   function EntityDialogs() {
     const { dialog, closeDialog } = useEntity()
     const Mutate = config.MutateDialog
-    const currentRow = dialog?.kind === 'update' || dialog?.kind === 'delete' || dialog?.kind === 'lifecycle'
+    const currentRow = dialog?.kind === 'update'
+      || dialog?.kind === 'delete'
+      || dialog?.kind === 'lifecycle'
+      || dialog?.kind === 'issueAcceptance'
       ? dialog.row
       : null
 
@@ -112,6 +137,20 @@ export function createEntityDialogs<TRow>(config: EntityDialogsConfig<TRow>) {
       }
     }
 
+    let issueAcceptanceDialog: React.ReactNode = null
+    if (IssueAcceptanceDialog && prefillBasisKind) {
+      const isIssueAcceptance = dialog?.kind === 'issueAcceptance'
+      issueAcceptanceDialog = (
+        <IssueAcceptanceDialog
+          open={isIssueAcceptance}
+          onOpenChange={() => closeDialog()}
+          prefillBasis={isIssueAcceptance && currentRow
+            ? { kind: prefillBasisKind, basisId: currentRow.id }
+            : undefined}
+        />
+      )
+    }
+
     return (
       <>
         <Mutate
@@ -121,6 +160,7 @@ export function createEntityDialogs<TRow>(config: EntityDialogsConfig<TRow>) {
         />
         {DeleteDialog && <DeleteDialog />}
         {lifecycleDialogs}
+        {issueAcceptanceDialog}
       </>
     )
   }

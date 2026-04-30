@@ -193,6 +193,64 @@ describe('locale integrity', () => {
     }
   })
 
+  it('keeps Russian leaf values free of leftover English copy', () => {
+    const locales = collectLocales()
+    const russianTrees = locales.ru
+    const englishTrees = locales.en
+
+    if (!russianTrees || !englishTrees)
+      throw new Error('Missing locale trees')
+
+    const interpolationPattern = /\{\{[^}]+\}\}/g
+    // Unicode property escape: any letter in the Cyrillic script (Russian
+    // plus all Cyrillic-script extensions). Avoids the obscure-range lint.
+    const cyrillicPattern = /\p{Script=Cyrillic}/u
+    const latinLetterPattern = /[a-z]/i
+    // Keys whose value is a keyboard shortcut, brand name, or technical token
+    // that is correctly identical in en and ru.
+    const identicalLatinAllowlist = new Set([
+      'forms:saveAndAddHint',
+      'auth:setup.databasePlaceholder',
+      'common:table.id',
+      'common:language.en',
+    ])
+    const offences: string[] = []
+
+    function walk(namespace: string, ru: unknown, en: unknown, prefix: string) {
+      if (typeof ru === 'string' && typeof en === 'string') {
+        const stripped = ru.replace(interpolationPattern, '').trim()
+
+        if (stripped.length === 0)
+          return
+
+        const fullKey = `${namespace}:${prefix}`
+        if (latinLetterPattern.test(stripped) && !cyrillicPattern.test(stripped) && ru === en && !identicalLatinAllowlist.has(fullKey))
+          offences.push(`${fullKey} = ${JSON.stringify(ru)} (untranslated; matches en/)`)
+
+        return
+      }
+
+      if (!ru || typeof ru !== 'object' || Array.isArray(ru))
+        return
+
+      const enObject = (en && typeof en === 'object' && !Array.isArray(en)) ? en as LocaleTree : {}
+
+      for (const [key, child] of Object.entries(ru as LocaleTree)) {
+        walk(namespace, child, (enObject as LocaleTree)[key], prefix ? `${prefix}.${key}` : key)
+      }
+    }
+
+    for (const namespace of Object.keys(russianTrees)) {
+      walk(namespace, russianTrees[namespace], englishTrees[namespace], '')
+    }
+
+    expect(offences, [
+      'Russian leaf values must be translated, not left as English copy.',
+      'Offences:',
+      ...offences,
+    ].join('\n')).toEqual([])
+  })
+
   it('resolves literal translation keys used by source files', async () => {
     const locales = collectLocales()
     const sourceFiles = await collectSourceFiles(frontendSrc)

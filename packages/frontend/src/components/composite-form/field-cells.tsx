@@ -83,16 +83,28 @@ export function DateTimeInput<TForm extends FieldValues>({
   field,
   disabled,
 }: HeaderFieldComponentProps<TForm>) {
-  // Wire values may arrive as ISO with seconds/milliseconds; the native
-  // `datetime-local` control only renders `YYYY-MM-DDTHH:MM`.
+  // The native `datetime-local` control round-trips `YYYY-MM-DDTHH:MM`,
+  // but the wire/schema layer expects a full RFC 3339 string (z.iso.datetime()).
+  // Display: coerce any wire ISO down to local form. Submit: re-expand to ISO.
   const value = toDateTimeLocalValue(field.value as string | null | undefined)
   return (
     <Input
       type="datetime-local"
       disabled={disabled}
       data-empty={value === '' || undefined}
-      {...field}
+      name={field.name}
+      ref={field.ref}
+      onBlur={field.onBlur}
       value={value}
+      onChange={(event) => {
+        const raw = event.target.value
+        if (raw === '') {
+          field.onChange('')
+          return
+        }
+        const parsed = new Date(raw)
+        field.onChange(Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString())
+      }}
     />
   )
 }

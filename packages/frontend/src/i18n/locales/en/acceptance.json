@@ -6,7 +6,8 @@
     }
   },
   "section": {
-    "items": "Acceptance Items"
+    "items": "Acceptance Items",
+    "basis": "Based on"
   },
   "field": {
     "documentNumber": "Document number",
@@ -17,6 +18,30 @@
     "product": "Product",
     "storage": "Storage",
     "acceptedAmount": "Accepted amount"
+  },
+  "basis": {
+    "tab": {
+      "external": "External",
+      "truck": "Truck waybill",
+      "rail": "Rail waybill"
+    },
+    "picker": {
+      "placeholder": "Select a pending waybill",
+      "noPending": "No pending waybills available"
+    },
+    "lockedHint": "Based on {{number}}",
+    "confirmSwitch": {
+      "title": "Switch basis?",
+      "message": "Switching basis will clear {{count}} item rows. Continue?",
+      "confirm": "Continue",
+      "cancel": "Cancel"
+    },
+    "error": {
+      "basisRequired": "A basis selection is required for this arrival type",
+      "basisMismatch": "This basis field does not match the selected arrival type",
+      "arrivalTypeImmutable": "Arrival type cannot be changed after creation",
+      "basisImmutable": "The basis reference cannot be changed after creation"
+    }
   },
   "toast": {
     "created": "Acceptance {{number}} created",

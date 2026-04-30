@@ -3,6 +3,7 @@
 import type { Row } from '@tanstack/react-table'
 import type {
   EntityDialogsLifecycleConfig,
+  IssueAcceptanceDialogConfig,
   MutateDialogProps,
 } from './create-entity-dialogs'
 import { EntityPage } from '~/components/entity-page'
@@ -44,12 +45,28 @@ export interface CrudViewConfig<TRow extends { id: string }> {
     deleteOnly?: boolean
     disableEdit?: boolean
     getDetailPath?: (row: TRow) => string
+    /**
+     * Pipeline-aware per-row predicates. When set, the row factory uses these
+     * to gate the Edit and "Issue acceptance" affordances per row instead of
+     * the single `disableEdit` boolean — see spec §3.2.
+     */
+    pipelineActions?: {
+      /** Predicate gating the inline Edit button per row. */
+      editVisible?: (row: TRow) => boolean
+      /**
+       * When set, an inline "Issue acceptance" button is rendered for rows
+       * matching `visible(row)`. Click invokes `openLifecycle(row, 'issueAcceptance')`,
+       * which is dispatched to the lifecycle dialog with `lifecyclePropName: 'prefillBasis'`.
+       */
+      issueAcceptance?: { visible: (row: TRow) => boolean }
+    }
   }
 }
 
 export type CrudViewDefinitionConfig<TRow extends { id: string }>
   = CrudViewConfig<TRow>
     & EntityDialogsLifecycleConfig<TRow>
+    & IssueAcceptanceDialogConfig
 
 export function defineCrudViews<TRow extends { id: string }>(
   config: CrudViewDefinitionConfig<TRow>,
@@ -58,6 +75,7 @@ export function defineCrudViews<TRow extends { id: string }>(
   const RowActions = createRowActions<TRow>({
     useEntity,
     ...config.rowActions,
+    pipelineActions: config.rowActions?.pipelineActions,
   })
   const DeleteDialog = config.deleteDialog
     ? createDeleteDialog({
@@ -70,6 +88,8 @@ export function defineCrudViews<TRow extends { id: string }>(
     MutateDialog: config.MutateDialog,
     DeleteDialog,
     supportsUpdate: config.supportsUpdate,
+    IssueAcceptanceDialog: config.IssueAcceptanceDialog,
+    prefillBasisKind: config.prefillBasisKind,
   } satisfies Omit<
     Parameters<typeof createEntityDialogs<TRow>>[0],
     'LifecycleDialog' | 'lifecyclePropName'

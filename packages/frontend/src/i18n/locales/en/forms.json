@@ -89,6 +89,9 @@
   "error": {
     "serverUnreachable": "Could not reach the server. Please try again."
   },
+  "select": {
+    "placeholder": "Select…"
+  },
   "picker": {
     "placeholder": "Select…",
     "selectEntity": "Select {{entity}}",
