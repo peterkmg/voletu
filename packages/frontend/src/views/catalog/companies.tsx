@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, StatusBadge, textColumn } from '~/components/data-table'
 import { FormDialog } from '~/components/forms/form-dialog'
-import { CheckboxField, TextField } from '~/components/forms/form-fields'
+import { TextField, ToggleChipGroupField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { catalogCompanyCreate, catalogCompanyHardDelete, catalogCompanySoftDelete, catalogCompanyUpdate } from '~/generated/client'
 import { catalogCompanyListQueryKey, useCatalogCompanyList } from '~/generated/hooks/CatalogHooks/useCatalogCompanyList'
@@ -163,12 +163,15 @@ export function CompanyMutateDialog({
         >
           <TextField<CompanyFormValues> name="commonName" label={t('entities:commonName')} />
           <TextField<CompanyFormValues> name="legalName" label={t('entities:legalName')} nullable />
-          <div className="space-y-3">
-            <CheckboxField<CompanyFormValues> name="isContractor" label={t('entities:isContractor')} />
-            <CheckboxField<CompanyFormValues> name="isExporter" label={t('entities:isExporter')} />
-            <CheckboxField<CompanyFormValues> name="isManufacturer" label={t('entities:isManufacturer')} />
-            <CheckboxField<CompanyFormValues> name="isSender" label={t('entities:isSender')} />
-          </div>
+          <ToggleChipGroupField<CompanyFormValues>
+            label={t('entities:roles')}
+            options={[
+              { name: 'isContractor', label: t('entities:contractor'), activeClassName: companyRoleColors.isContractor },
+              { name: 'isExporter', label: t('entities:exporter'), activeClassName: companyRoleColors.isExporter },
+              { name: 'isManufacturer', label: t('entities:manufacturer'), activeClassName: companyRoleColors.isManufacturer },
+              { name: 'isSender', label: t('entities:sender'), activeClassName: companyRoleColors.isSender },
+            ]}
+          />
         </form>
       </Form>
     </FormDialog>

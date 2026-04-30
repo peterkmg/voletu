@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::{
   api::{ApiResponse, ApiResult, ApiState},
-  dtos::{CreateUserRequest, UserResponse},
+  dtos::{CreateUserRequest, UpdateUserRequest, UserResponse},
   endpoints::paths,
 };
 
@@ -57,6 +57,35 @@ async fn user_create(
 }
 
 #[utoipa::path(
+  put,
+  tag = "System - User",
+  operation_id = "system_user_update",
+  summary = "Update user",
+  description = "Updates an existing user. Only provided fields are modified; password is re-hashed when supplied.",
+  path = paths::users::BY_ID,
+  params(
+    ("id" = Uuid, Path, description = "UUID of the user to update"),
+  ),
+  request_body = UpdateUserRequest,
+  responses(
+    (status = 200, description = "User updated", body = ApiResponse<UserResponse>),
+    (status = 400, description = "Validation error envelope for malformed request fields."),
+    (status = 404, description = "Not found envelope when user or referenced role does not exist."),
+    (status = 409, description = "Conflict envelope when the new username is already taken."),
+  )
+)]
+#[axum::debug_handler]
+async fn user_update(
+  State(state): State<Arc<ApiState>>,
+  Path(id): Path<Uuid>,
+  Valid(Json(req)): Valid<Json<UpdateUserRequest>>,
+) -> ApiResult<UserResponse> {
+  tracing::debug!(id = %id, "PUT /users/:id");
+  let user = state.svc.system.user_update(id, &req).await?;
+  Ok(ApiResponse::success(user))
+}
+
+#[utoipa::path(
   delete,
   tag = "System - User",
   operation_id = "system_user_delete",
@@ -81,6 +110,6 @@ async fn user_delete(State(state): State<Arc<ApiState>>, Path(id): Path<Uuid>) -
 pub fn user_routes(state: Arc<ApiState>) -> OpenApiRouter {
   OpenApiRouter::new()
     .routes(routes!(user_list, user_create))
-    .routes(routes!(user_delete))
+    .routes(routes!(user_update, user_delete))
     .with_state(state)
 }

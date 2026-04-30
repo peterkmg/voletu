@@ -52,5 +52,6 @@
   "row": {
     "menu": "Open menu"
   },
-  "export": "Export"
+  "export": "Export",
+  "exportFailed": "Export failed"
 }

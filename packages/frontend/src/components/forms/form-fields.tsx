@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes } from 'react'
 import type { FieldPath, FieldValues } from 'react-hook-form'
 import { useFormContext } from 'react-hook-form'
+import { PasswordInput } from '~/components/forms/password-input'
 import { Checkbox } from '~/components/ui/checkbox'
 import {
   FormControl,
@@ -19,7 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import { Switch } from '~/components/ui/switch'
 import { Textarea } from '~/components/ui/textarea'
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { cn } from '~/lib/utils'
 
 interface BaseFieldProps<
@@ -309,6 +312,178 @@ export function DatePickerField<
         </FormItem>
       )}
     />
+  )
+}
+
+// ── PasswordField ────────────────────────────
+
+interface PasswordFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends BaseFieldProps<TFieldValues, TName> {
+  placeholder?: string
+  autoComplete?: string
+}
+
+export function PasswordField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  name,
+  label,
+  placeholder,
+  autoComplete = 'new-password',
+  description,
+  className,
+}: PasswordFieldProps<TFieldValues, TName>) {
+  const { control } = useFormContext<TFieldValues>()
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <PasswordInput
+              placeholder={placeholder}
+              autoComplete={autoComplete}
+              {...field}
+            />
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+// ── SwitchField ──────────────────────────────
+
+export function SwitchField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  name,
+  label,
+  description,
+  className,
+}: BaseFieldProps<TFieldValues, TName>) {
+  const { control } = useFormContext<TFieldValues>()
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem
+          className={cn(
+            'flex items-center justify-between rounded-lg border bg-card/40 px-4 py-3',
+            className,
+          )}
+        >
+          <div className="space-y-0.5">
+            <FormLabel className="!mt-0 cursor-pointer">{label}</FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+          </div>
+          <FormControl>
+            <Switch
+              checked={!!field.value}
+              onCheckedChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+            />
+          </FormControl>
+        </FormItem>
+      )}
+    />
+  )
+}
+
+// ── ToggleChipGroupField ─────────────────────
+
+interface ToggleChipOption<TName extends string> {
+  /** The name of the boolean RHF field this chip toggles. */
+  name: TName
+  label: string
+  /** Tailwind classes applied when active (e.g. from a colorMap). */
+  activeClassName?: string
+}
+
+interface ToggleChipGroupFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> {
+  label: string
+  description?: string
+  className?: string
+  options: ToggleChipOption<TName>[]
+}
+
+/**
+ * Renders a group of related boolean fields as a single labeled set of toggleable chips.
+ * Each chip writes back to its own RHF path (preserves existing schema shapes).
+ */
+export function ToggleChipGroupField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  label,
+  description,
+  className,
+  options,
+}: ToggleChipGroupFieldProps<TFieldValues, TName>) {
+  const { watch, setValue } = useFormContext<TFieldValues>()
+  const activeNames = options
+    .filter(opt => !!watch(opt.name))
+    .map(opt => opt.name)
+
+  const handleValueChange = (next: string[]) => {
+    const nextSet = new Set(next)
+    for (const opt of options) {
+      const isActive = nextSet.has(opt.name)
+      setValue(opt.name, isActive as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      })
+    }
+  }
+
+  const activeSet = new Set(activeNames)
+
+  return (
+    <FormItem className={cn('space-y-2', className)}>
+      <FormLabel>{label}</FormLabel>
+      <FormControl>
+        <ToggleGroup
+          type="multiple"
+          value={activeNames}
+          onValueChange={handleValueChange}
+          variant="outline"
+          className="flex flex-wrap gap-2"
+        >
+          {options.map((opt) => {
+            const isActive = activeSet.has(opt.name)
+            return (
+              <ToggleGroupItem
+                key={opt.name}
+                value={opt.name}
+                aria-label={opt.label}
+                className={cn(
+                  'h-8 rounded-full border px-3 text-xs font-medium',
+                  isActive
+                    ? opt.activeClassName ?? 'bg-primary text-primary-foreground border-transparent'
+                    : 'bg-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {opt.label}
+              </ToggleGroupItem>
+            )
+          })}
+        </ToggleGroup>
+      </FormControl>
+      {description && <FormDescription>{description}</FormDescription>}
+    </FormItem>
   )
 }
 

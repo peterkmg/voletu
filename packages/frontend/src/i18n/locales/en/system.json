@@ -3,6 +3,7 @@
     "title": "Users",
     "singular": "User",
     "create": "Create User",
+    "edit": "Edit User",
     "columns": {
       "username": "Username",
       "fullname": "Full Name",
@@ -13,6 +14,7 @@
       "username": "Username",
       "fullname": "Full Name",
       "password": "Password",
+      "passwordEditHint": "Leave blank to keep current password",
       "roleId": "Role",
       "homeBaseId": "Home Base"
     },

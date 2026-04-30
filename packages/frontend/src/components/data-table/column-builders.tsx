@@ -121,7 +121,11 @@ export function resolvedColumn<T>(
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    meta: { label: title, sizingCategory: 'flex' as const },
+    meta: {
+      label: title,
+      sizingCategory: 'flex' as const,
+      exportValue: row => (row as Record<string, unknown>)[resolvedKey],
+    },
     cell: ({ row }) => (
       <ResolvedCell value={(row.original as Record<string, unknown>)[resolvedKey] as string} />
     ),

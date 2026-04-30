@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { actionsColumn, createGlobalFilter, dateColumn, EntityTable, numericColumn, resolvedColumn, StatusBadge, textColumn } from '~/components/data-table'
 import { EntityPickerField } from '~/components/entity-picker'
 import { FormDialog } from '~/components/forms/form-dialog'
-import { CheckboxField, TextField } from '~/components/forms/form-fields'
+import { SwitchField, TextField } from '~/components/forms/form-fields'
 import { Form } from '~/components/ui/form'
 import { catalogStorageCreate, catalogStorageHardDelete, catalogStorageSoftDelete, catalogStorageUpdate } from '~/generated/client'
 import { useCatalogProductTypeList } from '~/generated/hooks/CatalogHooks/useCatalogProductTypeList'
@@ -181,7 +181,7 @@ function StorageMutateDialog({
             allowCreate
             createDialog={ProductTypeMutateDialog}
           />
-          <CheckboxField<StorageFormValues> name="isTypeSpecific" label={t('entities:isTypeSpecific')} />
+          <SwitchField<StorageFormValues> name="isTypeSpecific" label={t('entities:isTypeSpecific')} />
         </form>
       </Form>
     </FormDialog>

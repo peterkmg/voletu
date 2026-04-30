@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { useReactTable } from '@tanstack/react-table'
 import { act, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@tests/common'
 import { textColumn } from '~/components/data-table'
 import { setTableDensityPreference } from '~/components/data-table/density-state'
@@ -13,6 +14,10 @@ const reactTableMock = vi.hoisted(() => ({
 
 const tableUrlStateMock = vi.hoisted(() => ({
   calls: [] as unknown[],
+}))
+
+const fileSaveMock = vi.hoisted(() => ({
+  saveExportFile: vi.fn().mockResolvedValue({ status: 'saved', target: 'browser' }),
 }))
 
 vi.mock('@tanstack/react-table', async (importOriginal) => {
@@ -46,6 +51,10 @@ vi.mock('~/hooks/use-table-url-state', () => ({
       ensurePageInRange: vi.fn(),
     }
   }),
+}))
+
+vi.mock('~/lib/files', () => ({
+  saveExportFile: fileSaveMock.saveExportFile,
 }))
 
 // ---------- test helpers ----------
@@ -95,6 +104,7 @@ describe('entityTable', () => {
     localStorage.clear()
     reactTableMock.options = []
     tableUrlStateMock.calls = []
+    fileSaveMock.saveExportFile.mockClear()
     vi.mocked(useReactTable).mockClear()
   })
 
@@ -184,5 +194,24 @@ describe('entityTable', () => {
         defaultPageSize: 25,
       },
     })
+  })
+
+  it('exports the filtered table using the configured export filename', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem('table-mode-test', 'paginated')
+
+    renderEntityTable([{ id: '1', name: 'Alpha' }], 'test', {
+      exportFilename: 'simple-items',
+    })
+
+    await user.click(screen.getByRole('button', { name: 'tables:export' }))
+
+    expect(fileSaveMock.saveExportFile).toHaveBeenCalledTimes(1)
+    const savedFile = fileSaveMock.saveExportFile.mock.calls[0]?.[0]
+    expect(savedFile).toMatchObject({
+      suggestedName: expect.stringMatching(/^simple-items-\d{4}-\d{2}-\d{2}\.csv$/),
+      mimeType: 'text/csv;charset=utf-8',
+    })
+    expect(savedFile?.contents).toContain('Alpha')
   })
 })

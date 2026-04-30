@@ -84,7 +84,12 @@ export function TextEnumFilterContent<TData, TValue>({
         <CommandEmpty className="text-xs py-4">{resolvedEmptyMessage}</CommandEmpty>
         <CommandGroup>
           {/* Select All */}
-          <CommandItem onSelect={toggleSelectAll} className="text-xs font-medium">
+          <CommandItem
+            value="__table-filter-select-all"
+            keywords={[t('tables:selectAll')]}
+            onSelect={toggleSelectAll}
+            className="text-xs font-medium"
+          >
             <Checkbox
               checked={selectAllState(allValues, selectedSet)}
               className="size-3.5 pointer-events-none"
@@ -94,7 +99,13 @@ export function TextEnumFilterContent<TData, TValue>({
           </CommandItem>
           <CommandSeparator className="my-1" />
           {sortedOptions.map(option => (
-            <CommandItem key={option.value} onSelect={() => toggle(option.value)} className="text-xs">
+            <CommandItem
+              key={option.value}
+              value={option.value}
+              keywords={[option.label]}
+              onSelect={() => toggle(option.value)}
+              className="text-xs"
+            >
               <Checkbox
                 checked={selectedSet.has(option.value)}
                 className="size-3.5 pointer-events-none"
@@ -112,6 +123,8 @@ export function TextEnumFilterContent<TData, TValue>({
             <CommandSeparator />
             <CommandGroup>
               <CommandItem
+                value="__table-filter-clear"
+                keywords={[t('tables:filter.clear')]}
                 onSelect={() => column.setFilterValue(undefined)}
                 className="justify-center text-center text-xs"
               >
@@ -206,7 +219,12 @@ export function DateGroupFilterContent<TData, TValue>({
         <CommandEmpty className="text-xs py-4">{t('tables:filter.noDates')}</CommandEmpty>
         <CommandGroup>
           {/* Select All */}
-          <CommandItem onSelect={toggleSelectAll} className="text-xs font-medium">
+          <CommandItem
+            value="__date-filter-select-all"
+            keywords={[t('tables:selectAll')]}
+            onSelect={toggleSelectAll}
+            className="text-xs font-medium"
+          >
             <Checkbox
               checked={selectAllState(allDates, selectedSet)}
               className="size-3.5 pointer-events-none"
@@ -305,6 +323,8 @@ export function DateGroupFilterContent<TData, TValue>({
             <CommandSeparator />
             <CommandGroup>
               <CommandItem
+                value="__date-filter-clear"
+                keywords={[t('tables:filter.clear')]}
                 onSelect={() => column.setFilterValue(undefined)}
                 className="justify-center text-center text-xs"
               >

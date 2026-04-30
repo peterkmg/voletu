@@ -1,4 +1,5 @@
 import '@tanstack/react-table'
+import type { Row } from '@tanstack/react-table'
 
 declare module '@tanstack/react-table' {
 
@@ -9,6 +10,8 @@ declare module '@tanstack/react-table' {
     align?: 'left' | 'center' | 'right'
     /** Localized display name for view-options dropdown. */
     label?: string
+    /** Optional raw value override used by CSV and future tabular export formats. */
+    exportValue?: (row: TData, tableRow: Row<TData>, columnId: string) => unknown
     filterType?: 'text' | 'date' | 'number' | 'enum'
     enableHeaderFilter?: boolean
     /** Role required to see this column in view-options dropdown. */

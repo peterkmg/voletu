@@ -20,6 +20,11 @@ Object.defineProperty(window, 'scrollTo', {
   value: vi.fn(),
 })
 
+Object.defineProperty(Element.prototype, 'scrollIntoView', {
+  writable: true,
+  value: vi.fn(),
+})
+
 // jsdom lacks ResizeObserver; radix-ui's ScrollArea + a few others require it.
 // Minimal no-op polyfill is enough for layout-insensitive component tests.
 if (typeof globalThis.ResizeObserver === 'undefined') {

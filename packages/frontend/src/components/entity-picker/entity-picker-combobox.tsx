@@ -1,3 +1,4 @@
+import type { EntityItem } from './entity-picker-types'
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -17,12 +18,7 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { cn } from '~/lib/utils'
-
-export interface EntityItem {
-  id: string
-  label: string
-  secondary?: string
-}
+import { entityItemKeywords } from './entity-picker-utils'
 
 interface EntityPickerComboboxProps {
   items: EntityItem[]
@@ -93,7 +89,8 @@ export function EntityPickerCombobox({
               {items.map(item => (
                 <CommandItem
                   key={item.id}
-                  value={item.label}
+                  value={item.id}
+                  keywords={entityItemKeywords(item)}
                   onSelect={() => {
                     onChange(item.id)
                     setOpen(false)
@@ -119,6 +116,8 @@ export function EntityPickerCombobox({
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
+                    value="__entity-picker-browse-all"
+                    keywords={[t('picker.viewAll')]}
                     onSelect={() => {
                       onBrowseAll()
                       setOpen(false)

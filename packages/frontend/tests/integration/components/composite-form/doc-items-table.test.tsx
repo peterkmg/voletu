@@ -184,4 +184,78 @@ describe('docItemsTable', () => {
 
     expect(formRef.current?.getValues('items.1')).toEqual(validEmptyRow)
   })
+
+  it('does not append a draft row until Save is clicked', async () => {
+    const user = userEvent.setup()
+    const formRef: { current: UseFormReturn<{ items: Item[] }> | null } = { current: null }
+
+    function DraftWrapper({ children }: { children: ReactNode }) {
+      const form = useForm<{ items: Item[] }>({
+        defaultValues: { items: [{ product: 'A', qty: 1 }] },
+      })
+      formRef.current = form
+      return (
+        <I18nextProvider i18n={i18n}>
+          <FormProvider {...form}>{children}</FormProvider>
+        </I18nextProvider>
+      )
+    }
+
+    render(
+      <DraftWrapper>
+        <DocItemsTable
+          name="items"
+          columns={columns}
+          rowSchema={itemSchema}
+          rowFields={fields}
+          emptyRow={emptyRow}
+        />
+      </DraftWrapper>,
+    )
+
+    expect(formRef.current?.getValues('items')).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: /add item/i }))
+    expect(
+      document.querySelector('[data-slot="doc-item-row-drawer"]'),
+    ).toBeInTheDocument()
+    expect(formRef.current?.getValues('items')).toHaveLength(1)
+  })
+
+  it('leaves the list unchanged when Cancel is clicked from the Add drawer', async () => {
+    const user = userEvent.setup()
+    const formRef: { current: UseFormReturn<{ items: Item[] }> | null } = { current: null }
+
+    function CancelWrapper({ children }: { children: ReactNode }) {
+      const form = useForm<{ items: Item[] }>({
+        defaultValues: { items: [{ product: 'A', qty: 1 }] },
+      })
+      formRef.current = form
+      return (
+        <I18nextProvider i18n={i18n}>
+          <FormProvider {...form}>{children}</FormProvider>
+        </I18nextProvider>
+      )
+    }
+
+    render(
+      <CancelWrapper>
+        <DocItemsTable
+          name="items"
+          columns={columns}
+          rowSchema={itemSchema}
+          rowFields={fields}
+          emptyRow={emptyRow}
+        />
+      </CancelWrapper>,
+    )
+
+    await user.click(screen.getByRole('button', { name: /add item/i }))
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }))
+
+    expect(
+      document.querySelector('[data-slot="doc-item-row-drawer"]'),
+    ).not.toBeInTheDocument()
+    expect(formRef.current?.getValues('items')).toHaveLength(1)
+    expect(formRef.current?.getValues('items.0.product')).toBe('A')
+  })
 })

@@ -1,4 +1,4 @@
-import type { EntityItem } from './entity-picker-combobox'
+import type { EntityItem } from './entity-picker-types'
 import { Check, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog'
 import { cn } from '~/lib/utils'
+import { entityItemKeywords } from './entity-picker-utils'
 
 interface EntityPickerDialogProps {
   open: boolean
@@ -71,7 +72,8 @@ export function EntityPickerDialog({
               {items.map(item => (
                 <CommandItem
                   key={item.id}
-                  value={`${item.label} ${item.secondary ?? ''}`}
+                  value={item.id}
+                  keywords={entityItemKeywords(item)}
                   onSelect={() => setSelectedId(item.id)}
                   data-active={selectedId === item.id || undefined}
                   className="data-[active]:bg-accent data-[active]:text-accent-foreground"

@@ -1,6 +1,6 @@
 export { EntityPickerCombobox } from './entity-picker-combobox'
-export type { EntityItem } from './entity-picker-combobox'
 export { EntityPickerDialog } from './entity-picker-dialog'
 export { EntityPickerField } from './entity-picker-field'
 export { EntityPickerInput } from './entity-picker-input'
 export type { EntityPickerInputProps } from './entity-picker-input'
+export type { EntityItem } from './entity-picker-types'

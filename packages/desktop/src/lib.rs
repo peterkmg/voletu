@@ -27,6 +27,8 @@ pub fn setup_tauri(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> anyhow::Result<()> {
   let app = tauri::Builder::default()
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![
       commands::get_startup_state,

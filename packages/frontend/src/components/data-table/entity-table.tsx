@@ -46,6 +46,8 @@ interface EntityTableProps<T> {
   groupKey?: keyof T & string
   /** Optional action buttons rendered in the toolbar (e.g. Create button). */
   actions?: React.ReactNode
+  /** Base filename for table exports. Defaults to `tableId` when available. */
+  exportFilename?: string
   /** Force a specific table mode and hide the mode toggle. */
   forcedTableMode?: TableMode
   /** Use server-provided pagination instead of slicing locally. */
@@ -73,6 +75,7 @@ export function EntityTable<T>({
   tableId,
   groupKey,
   actions,
+  exportFilename,
   forcedTableMode,
   serverPagination,
   manualFiltering = false,
@@ -188,6 +191,7 @@ export function EntityTable<T>({
         searchPlaceholder={`${t('common:actions.search')}...`}
         tableMode={forcedTableMode ? undefined : tableMode}
         onTableModeChange={forcedTableMode ? undefined : handleModeChange}
+        exportFilename={exportFilename ?? tableId}
         actions={actions}
       />
       <div className="flex-1 min-h-0">

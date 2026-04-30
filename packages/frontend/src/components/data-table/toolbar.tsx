@@ -15,6 +15,7 @@ interface DataTableToolbarProps<TData> {
   searchKey?: string
   tableMode?: TableMode
   onTableModeChange?: (mode: TableMode) => void
+  exportFilename?: string
   /** Optional action buttons (e.g. Create) rendered in the toolbar's right section. */
   actions?: React.ReactNode
 }
@@ -25,6 +26,7 @@ export function DataTableToolbar<TData>({
   searchKey,
   tableMode,
   onTableModeChange,
+  exportFilename,
   actions,
 }: DataTableToolbarProps<TData>) {
   const { t } = useTranslation('tables')
@@ -71,7 +73,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <ExportButton table={table} />
+        <ExportButton table={table} filename={exportFilename} />
         {tableMode && onTableModeChange && (
           <TableModeToggle mode={tableMode} onModeChange={onTableModeChange} />
         )}

@@ -134,7 +134,7 @@ export function CompositeFormDialog<TForm extends FieldValues, TResponse>({
             </div>
           )}
 
-          <div data-slot="composite-form-body" className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
+          <div data-slot="composite-form-body" className="min-h-0 flex-1 overflow-y-auto p-6 space-y-6">{children}</div>
 
           <CompositeFormFooter
             mode={mode}

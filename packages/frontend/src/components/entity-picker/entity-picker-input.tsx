@@ -1,5 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query'
-import type { EntityItem } from './entity-picker-combobox'
+import type { EntityItem } from './entity-picker-types'
 import { useMemo, useState } from 'react'
 import { EntityPickerCombobox } from './entity-picker-combobox'
 import { EntityPickerDialog } from './entity-picker-dialog'
