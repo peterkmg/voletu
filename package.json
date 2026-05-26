@@ -2,6 +2,7 @@
   "name": "voletu",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev:frontend": "pnpm --filter @voletu/frontend dev",
     "dev:server": "cargo run --package voletu-server",
